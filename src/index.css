@@ -249,90 +249,87 @@ html {
   .markdown-body h5,
   .markdown-body h6 {
     color: inherit !important;
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
     border-bottom: none !important;
-    margin-top: 1.5rem !important;
-    margin-bottom: 1rem !important;
   }
 
   .markdown-body h1 {
-    font-size: 1.875rem !important;
+    font-size: 2.25rem !important;
     font-weight: 600 !important;
-    line-height: 1.25 !important;
+    margin-bottom: 1.5rem !important;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
   }
 
   .markdown-body h2 {
-    font-size: 1.5rem !important;
+    font-size: 1.875rem !important;
     font-weight: 600 !important;
-    line-height: 1.25 !important;
+    margin-top: 2rem !important;
+    margin-bottom: 1rem !important;
   }
 
   .markdown-body h3 {
-    font-size: 1.25rem !important;
-    font-weight: 600 !important;
-    line-height: 1.25 !important;
+    font-size: 1.5rem !important;
+    font-weight: 500 !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
   .markdown-body p {
     color: inherit !important;
-    font-size: 0.875rem !important;
-    line-height: 1.6 !important;
+    line-height: 1.7 !important;
     margin-bottom: 1rem !important;
   }
 
   .markdown-body code {
     background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #e879f9 !important;
-    padding: 0.125rem 0.25rem !important;
+    color: #f8f8f2 !important;
+    padding: 0.2rem 0.4rem !important;
     border-radius: 0.25rem !important;
-    font-size: 0.8125rem !important;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    font-size: 0.875rem !important;
   }
 
   .markdown-body pre {
-    background-color: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background-color: #1e1e1e !important;
+    border: 1px solid #333 !important;
     border-radius: 0.5rem !important;
     padding: 1rem !important;
     overflow-x: auto !important;
     margin: 1rem 0 !important;
-    font-size: 0.8125rem !important;
   }
 
   .markdown-body pre code {
     background-color: transparent !important;
     padding: 0 !important;
-    color: inherit !important;
   }
 
   .markdown-body ul,
   .markdown-body ol {
+    color: inherit !important;
     padding-left: 1.5rem !important;
     margin-bottom: 1rem !important;
-    color: inherit !important;
   }
 
   .markdown-body li {
     margin-bottom: 0.5rem !important;
-    color: inherit !important;
+    line-height: 1.6 !important;
   }
 
   .markdown-body blockquote {
     border-left: 4px solid #3b82f6 !important;
     padding-left: 1rem !important;
     margin: 1rem 0 !important;
+    font-style: italic !important;
     color: inherit !important;
-    background-color: rgba(59, 130, 246, 0.1) !important;
-    border-radius: 0 0.5rem 0.5rem 0 !important;
-    padding: 1rem !important;
+    opacity: 0.8 !important;
   }
 
   .markdown-body table {
-    width: 100% !important;
     border-collapse: collapse !important;
+    width: 100% !important;
     margin: 1rem 0 !important;
-    background-color: transparent !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid #333 !important;
     border-radius: 0.5rem !important;
     overflow: hidden !important;
   }
@@ -341,9 +338,8 @@ html {
   .markdown-body td {
     padding: 0.75rem !important;
     text-align: left !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid #333 !important;
     color: inherit !important;
-    font-size: 0.875rem !important;
   }
 
   .markdown-body th {
@@ -353,324 +349,320 @@ html {
 
   .markdown-body a {
     color: #3b82f6 !important;
-    text-decoration: underline !important;
+    text-decoration: none !important;
+    transition: color 0.2s !important;
   }
 
   .markdown-body a:hover {
     color: #60a5fa !important;
+    text-decoration: underline !important;
   }
 }
 
-/* Custom markdown styles for AI reports */
+/* 마크다운 커스텀 스타일링 */
 .custom-markdown {
-  /* Code blocks with syntax highlighting */
+  /* 코드 블록 스타일링 */
   .markdown-body pre {
-    position: relative;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 0.75rem !important;
-    padding: 1.5rem !important;
-    margin: 1.5rem 0 !important;
+    background: #1e1e1e !important;
+    border: 1px solid #333 !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    margin: 16px 0 !important;
     overflow-x: auto !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    position: relative !important;
   }
 
   .markdown-body pre code {
     background: transparent !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace !important;
-    font-size: 0.8125rem !important;
+    color: #d4d4d4 !important;
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace !important;
+    font-size: 14px !important;
     line-height: 1.5 !important;
-    color: #e2e8f0 !important;
+    padding: 0 !important;
+    border: none !important;
   }
 
-  /* Inline code styling */
+  /* 인라인 코드 스타일링 */
   .markdown-body code:not(pre code) {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2)) !important;
-    color: #a78bfa !important;
-    padding: 0.125rem 0.375rem !important;
-    border-radius: 0.375rem !important;
-    font-size: 0.8125rem !important;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace !important;
-    font-weight: 500 !important;
-    border: 1px solid rgba(168, 139, 250, 0.3) !important;
+    background: #2a2a2a !important;
+    color: #e6e6e6 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace !important;
+    font-size: 0.9em !important;
+    border: 1px solid #404040 !important;
   }
 
-  /* Copy button for code blocks */
+  /* 코드 블록 복사 버튼 */
   .copy-code-button {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 0.375rem !important;
-    padding: 0.25rem 0.5rem !important;
-    font-size: 0.75rem !important;
-    color: #e2e8f0 !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.25rem !important;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
   }
 
   .copy-code-button:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #e5e7eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .copy-code-button:active {
-    transform: translateY(0) !important;
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   }
 
   .copy-code-button svg {
-    width: 0.875rem !important;
-    height: 0.875rem !important;
-    stroke-width: 2 !important;
+    width: 16px;
+    height: 16px;
   }
 
-  /* Language label for code blocks */
+  /* 코드 블록 언어 표시 */
   .markdown-body pre::before {
-    content: attr(data-language);
+    content: attr(data-lang);
     position: absolute;
-    top: -0.5rem;
-    left: 1rem;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
-    color: white !important;
-    padding: 0.125rem 0.5rem !important;
-    border-radius: 0.25rem !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.025em !important;
+    top: 8px;
+    right: 12px;
+    background: #333;
+    color: #ccc;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Pretendard', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
-  /* Enhanced table styling */
+  /* 테이블 스타일링 */
   .markdown-body table {
+    border-collapse: collapse !important;
     width: 100% !important;
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-    margin: 1.5rem 0 !important;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 0.75rem !important;
+    min-width: 100% !important;
+    margin: 16px 0 !important;
+    background: #1a1a1a !important;
+    border-radius: 8px !important;
     overflow: hidden !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    table-layout: fixed !important;
   }
 
   .markdown-body th,
   .markdown-body td {
-    padding: 0.875rem 1rem !important;
+    border: 1px solid #333 !important;
+    padding: 16px !important;
     text-align: left !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: inherit !important;
-    font-size: 0.875rem !important;
-    line-height: 1.5 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
   }
 
   .markdown-body th {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(29, 78, 216, 0.1)) !important;
+    background: #2a2a2a !important;
     font-weight: 600 !important;
-    color: #60a5fa !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.025em !important;
-    font-size: 0.8125rem !important;
+    color: #e6e6e6 !important;
+    font-size: 14px !important;
   }
 
   .markdown-body td {
-    transition: background-color 0.2s ease !important;
+    background: #1a1a1a !important;
+    color: #d4d4d4 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
   }
 
-  /* Table wrapper for horizontal scrolling */
+  /* 테이블 컨테이너 */
   .markdown-body .table-wrapper {
+    width: 100% !important;
     overflow-x: auto !important;
-    margin: 1.5rem 0 !important;
-    border-radius: 0.75rem !important;
+    margin: 16px 0 !important;
   }
 
-  /* Hover effect for table rows */
+  /* 테이블 행 호버 효과 */
   .markdown-body tbody tr:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: #222 !important;
   }
 
   .markdown-body tbody tr:hover td {
-    background: transparent !important;
+    background: #222 !important;
   }
 
-  /* Prose table compatibility */
+  /* Prose 클래스의 테이블 제한 해제 */
   .prose table {
-    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .prose .markdown-body table {
-    margin: 1.5rem 0 !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
-  /* Enhanced blockquote styling */
+  /* 블록쿼트 스타일링 */
   .markdown-body blockquote {
-    border-left: 4px solid #3b82f6 !important;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(29, 78, 216, 0.05)) !important;
-    margin: 1.5rem 0 !important;
-    padding: 1.25rem 1.5rem !important;
-    border-radius: 0 0.75rem 0.75rem 0 !important;
-    position: relative !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    border-left: 4px solid #0ea5e9 !important;
+    background: #1a1a1a !important;
+    padding: 16px 20px !important;
+    margin: 16px 0 !important;
+    border-radius: 0 8px 8px 0 !important;
   }
 
   .markdown-body blockquote p {
+    color: #d4d4d4 !important;
     margin: 0 !important;
-    font-style: italic !important;
-    color: #cbd5e1 !important;
   }
 
-  /* Enhanced list styling */
+  /* 리스트 스타일링 */
   .markdown-body ul,
   .markdown-body ol {
-    padding-left: 1.5rem !important;
-    margin-bottom: 1.5rem !important;
+    padding-left: 24px !important;
+    margin: 16px 0 !important;
   }
 
   .markdown-body li {
-    margin-bottom: 0.5rem !important;
+    color: #d4d4d4 !important;
+    margin: 8px 0 !important;
     line-height: 1.6 !important;
   }
 
   .markdown-body ul li::marker {
-    color: #3b82f6 !important;
+    color: #0ea5e9 !important;
   }
 
   .markdown-body ol li::marker {
-    color: #3b82f6 !important;
+    color: #0ea5e9 !important;
     font-weight: 600 !important;
   }
 
-  /* Enhanced link styling */
+  /* 링크 스타일링 */
   .markdown-body a {
-    color: #60a5fa !important;
+    color: #0ea5e9 !important;
     text-decoration: none !important;
-    border-bottom: 1px solid rgba(96, 165, 250, 0.3) !important;
+    border-bottom: 1px solid transparent !important;
     transition: all 0.2s ease !important;
   }
 
   .markdown-body a:hover {
-    color: #93c5fd !important;
-    border-bottom-color: rgba(147, 197, 253, 0.6) !important;
+    color: #38bdf8 !important;
+    border-bottom-color: #38bdf8 !important;
   }
 
-  /* Enhanced heading styling */
+  /* 제목 스타일링 */
   .markdown-body h1,
   .markdown-body h2,
   .markdown-body h3,
   .markdown-body h4,
   .markdown-body h5,
   .markdown-body h6 {
-    color: #f1f5f9 !important;
+    color: #f8fafc !important;
+    margin-top: 32px !important;
+    margin-bottom: 16px !important;
     font-weight: 600 !important;
-    line-height: 1.25 !important;
-    margin-top: 2rem !important;
-    margin-bottom: 1rem !important;
-    position: relative !important;
+    line-height: 1.3 !important;
   }
 
   .markdown-body h1 {
-    font-size: 2rem !important;
-    background: linear-gradient(135deg, #60a5fa, #3b82f6) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    font-size: 2.25em !important;
+    border-bottom: 2px solid #333 !important;
+    padding-bottom: 8px !important;
   }
 
   .markdown-body h2 {
-    font-size: 1.5rem !important;
-    color: #e2e8f0 !important;
+    font-size: 1.875em !important;
+    border-bottom: 1px solid #333 !important;
+    padding-bottom: 6px !important;
   }
 
   .markdown-body h3 {
-    font-size: 1.25rem !important;
-    color: #cbd5e1 !important;
+    font-size: 1.5em !important;
   }
 
   .markdown-body h4 {
-    font-size: 1.125rem !important;
-    color: #94a3b8 !important;
+    font-size: 1.25em !important;
   }
 
+  /* 단락 스타일링 */
   .markdown-body p {
-    color: #e2e8f0 !important;
-    font-size: 0.875rem !important;
+    color: #d4d4d4 !important;
     line-height: 1.7 !important;
-    margin-bottom: 1.25rem !important;
+    margin: 16px 0 !important;
   }
 
+  /* 강조 텍스트 */
   .markdown-body strong {
-    color: #f1f5f9 !important;
+    color: #f8fafc !important;
     font-weight: 600 !important;
   }
 
   .markdown-body em {
-    color: #cbd5e1 !important;
+    color: #e6e6e6 !important;
     font-style: italic !important;
   }
 
-  /* Horizontal rule styling */
+  /* 구분선 */
   .markdown-body hr {
     border: none !important;
     height: 1px !important;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
-    margin: 2rem 0 !important;
+    background: linear-gradient(to right, transparent, #333, transparent) !important;
+    margin: 32px 0 !important;
   }
 }
 
-/* Dark mode adjustments */
+/* 다크 테마 전용 마크다운 스타일 */
 .dark .custom-markdown {
   .markdown-body {
-    color: #e2e8f0 !important;
+    color: #d4d4d4 !important;
+    background: transparent !important;
   }
 }
 
-/* Custom table styles for better readability */
+/* 테이블 전용 스타일 - 다크 테마에서 neutral 색상 적용 */
 .custom-table-styles table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin: 1rem 0;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  overflow: hidden;
+  border-collapse: collapse !important;
+  width: 100% !important;
+  margin: 1rem 0 !important;
+  background: #1a1a1a !important;
+  border: 1px solid #333 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
 }
 
 .custom-table-styles th,
 .custom-table-styles td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: inherit;
-  font-size: 0.875rem;
+  padding: 0.75rem !important;
+  text-align: left !important;
+  border: 1px solid #333 !important;
+  color: inherit !important;
 }
 
 .custom-table-styles th {
-  background: rgba(255, 255, 255, 0.05);
-  font-weight: 600;
-  color: #60a5fa;
+  background-color: #2a2a2a !important;
+  color: #e6e6e6 !important;
+  font-weight: 600 !important;
 }
 
 .custom-table-styles td {
-  transition: background-color 0.2s ease;
+  background-color: #1a1a1a !important;
+  color: #d4d4d4 !important;
 }
 
 .custom-table-styles tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background-color: #222 !important;
 }
 
 .custom-table-styles tbody tr:hover td {
-  background: transparent;
+  background-color: #222 !important;
 }

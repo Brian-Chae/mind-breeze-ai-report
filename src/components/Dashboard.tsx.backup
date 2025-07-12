@@ -1,0 +1,521 @@
+import React, { useEffect, useState } from 'react'
+import { Card } from './ui/card'
+import { Badge } from './ui/badge'
+import { Button } from './ui/button'
+import { cn } from './ui/utils'
+import { 
+  Activity, 
+  Database, 
+  Bluetooth, 
+  TrendingUp,
+  CircuitBoard,
+  Heart,
+  Brain,
+  FileText,
+  Wifi,
+  WifiOff,
+  FolderOpen,
+  Save,
+  AlertCircle,
+  CheckCircle,
+  HardDrive,
+  Play,
+  Square
+} from 'lucide-react'
+// Phase 4: 새로운 스토어 구조 사용
+import { 
+  useSystemStatus, 
+  useDeviceStatus, 
+  useStreamingStatus, 
+  useRecordingStatus,
+  useSystemActions,
+  useScanStatus 
+} from '../stores/systemStore'
+import { useRealtimeAnalysis, useSignalQuality, useDeviceStatus as useProcessedDeviceStatus } from '../stores/processedDataStore'
+import BrainStateIndicator from './EEGVisualization/BrainStateIndicator'
+// 스트리밍 저장소 시스템 통합
+import { useStorageStore } from '../stores/storageStore'
+
+export function Dashboard() {
+  // Phase 4: 새로운 스토어 Hook 사용
+  const { systemStatus, isInitialized } = useSystemStatus()
+  const { isConnected, currentDeviceId, deviceName } = useDeviceStatus()
+  const { isScanning, availableDevices } = useScanStatus()
+  const { isStreaming } = useStreamingStatus()
+  const { isRecording } = useRecordingStatus()
+  const { 
+    initializeSystem, 
+    scanDevices, 
+    connectDevice, 
+    disconnectDevice,
+    startStreaming,
+    stopStreaming 
+  } = useSystemActions()
+  
+  // 처리된 데이터 및 분석 결과
+  const realtimeAnalysis = useRealtimeAnalysis()
+  const signalQuality = useSignalQuality()
+  const deviceStatus = useProcessedDeviceStatus()
+
+  // 스트리밍 저장소 시스템
+  const {
+    isInitialized: storageInitialized,
+    storageStats,
+    storageStatus,
+    currentSession,
+    selectStorageDirectory
+  } = useStorageStore()
+
+  // 로컬 상태
+  const [devices, setDevices] = useState<any[]>([]);
+  const [isLocalScanning, setIsLocalScanning] = useState(false);
+
+  // 시스템 초기화
+  useEffect(() => {
+    if (!isInitialized && systemStatus === 'idle') {
+      initializeSystem();
+    }
+  }, [isInitialized, systemStatus, initializeSystem]);
+
+  // 사용 가능한 디바이스 목록 업데이트
+  useEffect(() => {
+    setDevices(availableDevices);
+  }, [availableDevices]);
+
+  // 스캔 상태 동기화
+  useEffect(() => {
+    setIsLocalScanning(isScanning);
+  }, [isScanning]);
+
+  // 디바이스 스캔
+  const handleScanDevices = async () => {
+    try {
+      setIsLocalScanning(true);
+      await scanDevices();
+    } catch (error) {
+      console.error('Device scan failed:', error);
+    } finally {
+      setIsLocalScanning(false);
+    }
+  };
+
+  // 디바이스 연결
+  const handleConnectDevice = async (deviceId: string) => {
+    try {
+      await connectDevice(deviceId);
+      if (!isStreaming) {
+        await startStreaming();
+      }
+    } catch (error) {
+      console.error('Device connection failed:', error);
+    }
+  };
+
+  // 디바이스 연결 해제
+  const handleDisconnectDevice = async () => {
+    try {
+      if (isStreaming) {
+        await stopStreaming();
+      }
+      await disconnectDevice();
+    } catch (error) {
+      console.error('Device disconnection failed:', error);
+    }
+  };
+
+  // 연결 상태 정보
+  const getConnectionStatus = () => {
+    if (!isConnected) {
+      return {
+        status: 'disconnected',
+        label: 'No Device',
+        color: 'text-gray-600',
+        bgColor: 'bg-gray-100'
+      };
+    }
+    
+    if (isStreaming) {
+      return {
+        status: 'streaming',
+        label: 'Streaming',
+        color: 'text-green-600',
+        bgColor: 'bg-green-100'
+      };
+    }
+    
+    return {
+      status: 'connected',
+      label: 'Connected',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100'
+    };
+  };
+
+  const connectionStatus = getConnectionStatus();
+
+  return (
+    <div className="flex-1 overflow-auto p-6">
+      <div className="max-w-7xl mx-auto space-y-6 pb-20">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-medium text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">시스템 상태 및 실시간 모니터링</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className={connectionStatus.color}>
+              {connectionStatus.label}
+            </Badge>
+            {systemStatus === 'initializing' && (
+              <Badge variant="outline" className="text-yellow-600">
+                시스템 초기화 중...
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* System Status Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* 연결 상태 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", connectionStatus.bgColor)}>
+                <Bluetooth className={cn("w-6 h-6", connectionStatus.color)} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">디바이스 연결</p>
+                <p className="text-lg font-medium">
+                  {isConnected ? (deviceName || 'LINK BAND') : '연결 없음'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 데이터 스트리밍 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", isStreaming ? "bg-green-100" : "bg-gray-100")}>
+                <Activity className={cn("w-6 h-6", isStreaming ? "text-green-600" : "text-gray-600")} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">데이터 스트리밍</p>
+                <p className="text-lg font-medium">
+                  {isStreaming ? '활성' : '비활성'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 저장소 상태 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", storageInitialized ? "bg-green-100" : "bg-yellow-100")}>
+                <HardDrive className={cn("w-6 h-6", storageInitialized ? "text-green-600" : "text-yellow-600")} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">저장소</p>
+                <p className="text-lg font-medium">
+                  {storageInitialized ? '준비됨' : '설정 필요'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 신호 품질 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", 
+                signalQuality.overall === 'excellent' ? "bg-green-100" :
+                signalQuality.overall === 'good' ? "bg-blue-100" :
+                signalQuality.overall === 'fair' ? "bg-yellow-100" : "bg-red-100"
+              )}>
+                <CircuitBoard className={cn("w-6 h-6",
+                  signalQuality.overall === 'excellent' ? "text-green-600" :
+                  signalQuality.overall === 'good' ? "text-blue-600" :
+                  signalQuality.overall === 'fair' ? "text-yellow-600" : "text-red-600"
+                )} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">신호 품질</p>
+                <p className="text-lg font-medium">
+                  {signalQuality.overall === 'excellent' ? '우수' :
+                   signalQuality.overall === 'good' ? '양호' :
+                   signalQuality.overall === 'fair' ? '보통' : '불량'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 배터리 상태 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", 
+                (deviceStatus.batteryLevel || 0) > 50 ? "bg-green-100" :
+                (deviceStatus.batteryLevel || 0) > 20 ? "bg-yellow-100" : "bg-red-100"
+              )}>
+                <Database className={cn("w-6 h-6",
+                  (deviceStatus.batteryLevel || 0) > 50 ? "text-green-600" :
+                  (deviceStatus.batteryLevel || 0) > 20 ? "text-yellow-600" : "text-red-600"
+                )} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">배터리</p>
+                <p className="text-lg font-medium">
+                  {deviceStatus.batteryLevel ? `${deviceStatus.batteryLevel}%` : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Real-time Analysis */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* 심박수 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-100">
+                <Heart className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">심박수</p>
+                <p className="text-lg font-medium">
+                  {realtimeAnalysis.heartRate ? `${realtimeAnalysis.heartRate.toFixed(0)} BPM` : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 집중도 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100">
+                <Brain className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">집중도</p>
+                <p className="text-lg font-medium">
+                  {realtimeAnalysis.focusLevel ? `${realtimeAnalysis.focusLevel.toFixed(0)}%` : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* 스트레스 */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-orange-100">
+                <TrendingUp className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">스트레스</p>
+                <p className="text-lg font-medium">
+                  {realtimeAnalysis.stressLevel ? `${realtimeAnalysis.stressLevel.toFixed(0)}%` : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* HRV */}
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-100">
+                <Activity className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">HRV</p>
+                <p className="text-lg font-medium">
+                  {realtimeAnalysis.hrv ? `${realtimeAnalysis.hrv.toFixed(1)} ms` : 'N/A'}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Brain State Indicator */}
+        <BrainStateIndicator />
+
+        {/* Storage Status & Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Storage Status */}
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">저장소 상태</h2>
+              {!storageInitialized && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={selectStorageDirectory}
+                >
+                  <FolderOpen className="w-4 h-4 mr-2" />
+                  저장소 선택
+                </Button>
+              )}
+            </div>
+
+            {!storageInitialized ? (
+              <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-yellow-600" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">저장소 디렉토리를 선택해주세요</p>
+                  <p className="text-xs text-yellow-700">데이터 저장을 위해 로컬 저장소를 설정해야 합니다.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">저장소 준비 완료</p>
+                    <p className="text-xs text-green-700">데이터 저장이 가능합니다.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">사용량</p>
+                    <p className="text-lg font-medium">{storageStats.used}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">사용 가능</p>
+                    <p className="text-lg font-medium">{storageStats.available}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">세션 수</p>
+                    <p className="text-lg font-medium">{storageStats.sessions}</p>
+                  </div>
+                </div>
+
+                {/* 현재 세션 상태 */}
+                {currentSession && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">현재 레코딩 중</p>
+                        <p className="text-xs text-blue-700">{currentSession.name}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-blue-700">
+                      메모리 사용량: {storageStatus.memoryUsage.toFixed(1)}MB
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="p-6">
+            <h2 className="text-lg font-medium mb-4">빠른 작업</h2>
+            <div className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => window.open('/data-center', '_blank')}
+              >
+                <Database className="w-4 h-4 mr-2" />
+                데이터 센터 열기
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                disabled={!storageInitialized}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                세션 내보내기
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                disabled={!storageInitialized}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                수동 저장
+              </Button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Device Management */}
+        <Card className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium">디바이스 관리</h2>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleScanDevices}
+                disabled={isLocalScanning}
+              >
+                {isLocalScanning ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mr-2" />
+                    스캔 중...
+                  </>
+                ) : (
+                  <>
+                    <Bluetooth className="w-4 h-4 mr-2" />
+                    디바이스 스캔
+                  </>
+                )}
+              </Button>
+              
+              {isConnected && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDisconnectDevice}
+                >
+                  <WifiOff className="w-4 h-4 mr-2" />
+                  연결 해제
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Device List */}
+          <div className="space-y-2">
+            {devices.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bluetooth className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>사용 가능한 디바이스가 없습니다.</p>
+                <p className="text-sm">스캔 버튼을 클릭하여 디바이스를 검색하세요.</p>
+              </div>
+            ) : (
+              devices.map((device) => (
+                <div key={device.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-100">
+                      <Bluetooth className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{device.name}</p>
+                      <p className="text-sm text-muted-foreground">{device.id}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {currentDeviceId === device.id ? (
+                      <Badge variant="default">연결됨</Badge>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleConnectDevice(device.id)}
+                        disabled={isConnected}
+                      >
+                        <Wifi className="w-4 h-4 mr-2" />
+                        연결
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}

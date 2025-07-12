@@ -1,0 +1,140 @@
+{
+  "name": "LINK BAND SDK",
+  "short_name": "LINK BAND SDK",
+  "description": "SDK for LINK BAND EEG device integration",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f14",
+  "theme_color": "#4f8cc9",
+  "categories": ["medical", "health", "utilities"],
+  "lang": "ko",
+  "shortcuts": [
+    {
+      "name": "대시보드",
+      "short_name": "Dashboard",
+      "description": "시스템 상태 및 실시간 모니터링",
+      "url": "/?shortcut=dashboard",
+      "icons": [
+        {
+          "src": "/symbols_looxidlabs_1024_circle.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "데이터 센터",
+      "short_name": "Data Center",
+      "description": "데이터 관리 및 내보내기",
+      "url": "/?shortcut=datacenter",
+      "icons": [
+        {
+          "src": "/symbols_looxidlabs_1024_circle.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "시각화",
+      "short_name": "Visualizer",
+      "description": "실시간 EEG 데이터 시각화",
+      "url": "/?shortcut=visualizer",
+      "icons": [
+        {
+          "src": "/symbols_looxidlabs_1024_circle.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "디바이스 관리",
+      "short_name": "Device Manager",
+      "description": "LINK BAND 디바이스 연결 및 관리",
+      "url": "/?shortcut=device",
+      "icons": [
+        {
+          "src": "/symbols_looxidlabs_1024_circle.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/symbols_looxidlabs_1024_circle.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+} 

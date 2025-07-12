@@ -1,0 +1,152 @@
+import React, { useEffect, useState } from 'react';
+import { useEEGAnalysis, useConnectionState } from '../../../stores/processedDataStore';
+import { useDeviceStore } from '../../../stores/deviceStore';
+import { useSensorContactStatus } from '../../../stores/systemStore';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
+import { indexGuides } from '../../../constants/indexGuides';
+import { AlertTriangle } from 'lucide-react';
+
+const EEGIndexCards: React.FC = () => {
+  const { connectionState } = useDeviceStore();
+  const eegAnalysis = useEEGAnalysis();
+  const isConnected = useConnectionState();
+  const { isSensorContacted, leadOffStatus } = useSensorContactStatus();
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // 1초마다 데이터 업데이트
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 카드 데이터 정의 (processedDataStore EEG 분석 결과 사용)
+  const cardData = [
+    {
+      label: '총 파워',
+      value: eegAnalysis?.indices?.totalPower,
+      unit: 'μV²',
+      color: 'bg-purple-500',
+      description: '전체 뇌파 활동 강도'
+    },
+    {
+      label: '집중력',
+      value: eegAnalysis?.indices?.focusIndex,
+      unit: '',
+      color: 'bg-blue-500',
+      description: '베타파 기반 집중도 지수'
+    },
+    {
+      label: '이완도',
+      value: eegAnalysis?.indices?.relaxationIndex,
+      unit: '',
+      color: 'bg-green-500',
+      description: '알파파 기반 이완 상태'
+    },
+    {
+      label: '스트레스',
+      value: eegAnalysis?.indices?.stressIndex,
+      unit: '',
+      color: 'bg-red-500',
+      description: '고주파 활동 기반 스트레스'
+    },
+    {
+      label: '좌우뇌 균형',
+      value: eegAnalysis?.indices?.hemisphericBalance,
+      unit: '',
+      color: 'bg-cyan-500',
+      description: '반구간 활동 균형 지표'
+    },
+    {
+      label: '인지 부하',
+      value: eegAnalysis?.indices?.cognitiveLoad,
+      unit: '',
+      color: 'bg-yellow-500',
+      description: '세타/알파 비율 기반 인지 부하'
+    },
+    {
+      label: '정서 안정성',
+      value: eegAnalysis?.indices?.emotionalStability,
+      unit: '',
+      color: 'bg-pink-500',
+      description: '감마파 기반 정서 안정도'
+    }
+  ];
+
+  // 연결되지 않았거나 데이터가 없는 경우 메시지 표시
+  if (!isConnected || !eegAnalysis?.indices) {
+    return (
+      <div className="w-full h-80 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-6xl mb-4">🧠</div>
+          <div className="text-lg text-gray-300">
+            그래프에 표시할 데이터가 없습니다
+          </div>
+          <div className="text-sm text-gray-400">
+            LINK BAND 디바이스를 연결해주세요
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            연결 후 뇌파 분석 지수를 실시간으로 확인할 수 있습니다
+          </div>
+          <div className="text-xs text-gray-600 mt-3 p-2 bg-gray-800 rounded">
+            processedDataStore EEG 분석 결과 기반 지수 계산 중...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      {/* 센서 접촉 상태 경고 */}
+      {isConnected && !isSensorContacted && (
+        <div className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-400" />
+          <div className="text-red-300">
+            <div className="font-medium">전극 접촉 불량 감지</div>
+            <div className="text-sm">
+              FP1: {leadOffStatus.fp1 ? '접촉 불량' : '정상'}, 
+              FP2: {leadOffStatus.fp2 ? '접촉 불량' : '정상'} - 
+              뇌파 지수 정확도가 저하될 수 있습니다
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        {cardData.map((card, index) => (
+          <Tooltip key={index}>
+            <TooltipTrigger asChild>
+              <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 text-center hover:border-gray-600 transition-colors cursor-help">
+                <div className={`w-3 h-3 ${card.color} rounded-full mx-auto mb-2`}></div>
+                <div className="text-xs text-gray-400 mb-1">{card.label}</div>
+                <div className="text-lg font-bold text-white">
+                  {card.value !== null && card.value !== undefined 
+                    ? `${card.value.toFixed(2)}${card.unit}` 
+                    : '--'
+                  }
+                </div>
+                <div className="text-xs text-gray-500 mt-1">{card.description}</div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent 
+              side="top" 
+              className="max-w-md p-4 bg-gray-800 border border-gray-600 text-white"
+            >
+              <div 
+                className="text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: indexGuides[card.label] || '이 지수에 대한 설명이 준비되지 않았습니다.' 
+                }}
+              />
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
+  );
+};
+
+export default EEGIndexCards; 

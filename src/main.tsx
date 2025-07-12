@@ -21,7 +21,7 @@ const forceCacheRefresh = () => {
         });
       }
       // 로컬 스토리지 일부 클리어 (설정은 유지)
-      const keysToPreserve = ['mindbreeze-settings', 'mindbreeze-storage-config'];
+      const keysToPreserve = ['linkband-settings', 'linkband-storage-config'];
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
         if (!keysToPreserve.some(preserve => key.includes(preserve))) {

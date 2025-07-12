@@ -1,0 +1,399 @@
+import React, { useState } from 'react'
+import { Card } from './ui/card'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Badge } from './ui/badge'
+import { cn } from './ui/utils'
+import { 
+  FileText, 
+  Search, 
+  ChevronRight,
+  ChevronDown,
+  ExternalLink,
+  Copy,
+  Check,
+  ArrowRight,
+  Code,
+  Zap,
+  BookOpen,
+  Settings,
+  Download,
+  Lightbulb,
+  Wrench,
+  Star,
+  Clock,
+  Languages,
+  Globe
+} from 'lucide-react'
+import { marked } from 'marked'
+import Prism from 'prismjs'
+import 'prismjs/themes/prism-tomorrow.css'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-typescript'
+import 'prismjs/components/prism-python'
+import 'prismjs/components/prism-json'
+import 'prismjs/components/prism-bash'
+import 'prismjs/components/prism-jsx'
+import 'prismjs/components/prism-tsx'
+import 'github-markdown-css/github-markdown.css'
+
+// 마크다운 렌더러 컴포넌트
+function MarkdownRenderer({ filePath }: { filePath: string }) {
+  const [content, setContent] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+  const [copiedBlocks, setCopiedBlocks] = useState<Set<number>>(new Set())
+
+  React.useEffect(() => {
+    const loadMarkdown = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // public/docs 폴더에서 마크다운 파일 로드
+        const response = await fetch(`/docs/${filePath}`)
+        if (!response.ok) {
+          throw new Error(`Failed to load ${filePath}`)
+        }
+        
+        const markdown = await response.text()
+        
+        // marked 설정
+        marked.setOptions({
+          gfm: true, // GitHub Flavored Markdown 지원
+          breaks: true, // 줄바꿈을 <br>로 변환
+        })
+        
+        const html = await marked(markdown)
+        setContent(html)
+      } catch (err) {
+        console.error('Error loading markdown:', err)
+        setError(err instanceof Error ? err.message : 'Unknown error')
+        // 에러 시 기본 콘텐츠 표시
+        setContent('<h1>문서를 불러올 수 없습니다</h1><p>요청하신 문서를 찾을 수 없습니다.</p>')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (filePath) {
+      loadMarkdown()
+    }
+  }, [filePath])
+
+  // 콘텐츠가 로드된 후 Prism.js 적용 및 복사 버튼 추가
+  React.useEffect(() => {
+    if (content) {
+      // DOM이 업데이트된 후 Prism 적용 및 복사 버튼 추가
+      setTimeout(() => {
+        Prism.highlightAll()
+        addCopyButtons()
+      }, 0)
+    }
+  }, [content])
+
+  const addCopyButtons = () => {
+    const codeBlocks = document.querySelectorAll('.custom-markdown pre')
+    codeBlocks.forEach((block, index) => {
+      // 이미 복사 버튼이 있다면 제거
+      const existingButton = block.querySelector('.copy-code-button')
+      if (existingButton) {
+        existingButton.remove()
+      }
+
+      const code = block.querySelector('code')
+      if (code) {
+        const button = document.createElement('button')
+        button.className = 'copy-code-button'
+        button.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        `
+        button.title = 'Copy code'
+        
+        button.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(code.textContent || '')
+            
+            // 복사 성공 피드백
+            button.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+            `
+            button.style.color = '#10b981'
+            
+            // 2초 후 원래 아이콘으로 복원
+            setTimeout(() => {
+              button.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              `
+              button.style.color = '#9ca3af'
+            }, 2000)
+          } catch (err) {
+            console.error('Failed to copy code:', err)
+          }
+        })
+
+        // 블록에 상대 위치 설정
+        if (block instanceof HTMLElement) {
+          block.style.position = 'relative'
+          block.appendChild(button)
+        }
+      }
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">문서를 불러오는 중...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div 
+      className="markdown-body prose prose-neutral dark:prose-invert max-w-none custom-markdown"
+      dangerouslySetInnerHTML={{ __html: content }}
+      style={{
+        backgroundColor: 'transparent',
+        color: 'inherit'
+      }}
+    />
+  )
+}
+
+export function Documents() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSection, setActiveSection] = useState('introduction')
+  const [expandedSections, setExpandedSections] = useState<string[]>(['getting-started', 'api-reference'])
+  const [language, setLanguage] = useState<'ko' | 'en'>('ko')
+
+  const documentStructure = [
+    {
+      id: 'getting-started',
+      title: 'Getting Started',
+      icon: Zap,
+      items: [
+        { id: 'introduction', title: 'Introduction', filePath: 'ko/quick-start/overview.md' },
+        { id: 'installation', title: 'Installation', filePath: 'ko/quick-start/installation.md' },
+        { id: 'quick-start', title: 'Quick Start', filePath: 'ko/quick-start/first-steps.md' },
+        { id: 'first-connection', title: 'System Requirements', filePath: 'ko/quick-start/system-requirements.md' }
+      ]
+    },
+    {
+      id: 'api-reference',
+      title: 'API Reference',
+      icon: Code,
+      items: [
+        { id: 'device-api', title: 'Device API', filePath: 'ko/api-reference/device-api.md' },
+        { id: 'data-api', title: 'Data API', filePath: 'ko/api-reference/data-api.md' },
+        { id: 'visualization-api', title: 'Stream API', filePath: 'ko/api-reference/stream-api.md' },
+        { id: 'analysis-api', title: 'Metrics API', filePath: 'ko/api-reference/metrics-api.md' }
+      ]
+    },
+    {
+      id: 'guides',
+      title: 'User Guide',
+      icon: BookOpen,
+      items: [
+        { id: 'eeg-analysis', title: 'LinkBand Module', filePath: 'ko/user-guide/linkband-module.md' },
+        { id: 'ppg-processing', title: 'Engine Module', filePath: 'ko/user-guide/engine-module.md' },
+        { id: 'real-time-viz', title: 'Visualizer Module', filePath: 'ko/user-guide/visualizer-module.md' },
+        { id: 'custom-algorithms', title: 'DataCenter Module', filePath: 'ko/user-guide/datacenter-module.md' }
+      ]
+    },
+    {
+      id: 'advanced',
+      title: 'Examples',
+      icon: Settings,
+      items: [
+        { id: 'integration-examples', title: 'Integration Examples', filePath: 'ko/examples/integration-examples.md' },
+        { id: 'javascript-examples', title: 'JavaScript Examples', filePath: 'ko/examples/javascript-examples.md' },
+        { id: 'python-examples', title: 'Python Examples', filePath: 'ko/examples/python-examples.md' },
+        { id: 'python-integration', title: 'Python Integration', filePath: 'ko/examples/python-integration.md' },
+        { id: 'python-integration-advanced', title: 'Python Integration Advanced', filePath: 'ko/examples/python-integration-advanced.md' },
+        { id: 'react-integration', title: 'React Integration', filePath: 'ko/examples/react-integration.md' },
+        { id: 'vue-integration', title: 'Vue Integration', filePath: 'ko/examples/vue-integration.md' },
+        { id: 'nodejs-integration', title: 'Node.js Integration', filePath: 'ko/examples/nodejs-integration.md' },
+        { id: 'unity-integration', title: 'Unity Integration', filePath: 'ko/examples/unity-integration.md' },
+        { id: 'troubleshooting', title: 'Troubleshooting', filePath: 'ko/examples/troubleshooting.md' },
+        { id: 'faq', title: 'FAQ', filePath: 'ko/examples/faq.md' }
+      ]
+    }
+  ]
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => 
+      prev.includes(sectionId) 
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
+    )
+  }
+
+  const handleLanguageToggle = () => {
+    const newLanguage = language === 'ko' ? 'en' : 'ko'
+    setLanguage(newLanguage)
+    
+    // 언어 변경 시 파일 경로도 업데이트
+    const updatedStructure = documentStructure.map(section => ({
+      ...section,
+      items: section.items.map(item => ({
+        ...item,
+        filePath: item.filePath.replace(/^(ko|en)\//, `${newLanguage}/`)
+      }))
+    }))
+  }
+
+  const getCurrentFilePath = () => {
+    for (const section of documentStructure) {
+      for (const item of section.items) {
+        if (item.id === activeSection) {
+          return item.filePath
+        }
+      }
+    }
+    return 'ko/quick-start/overview.md' // 기본값
+  }
+
+  return (
+    <div className="h-full flex bg-background">
+      {/* Sidebar */}
+      <div className="w-64 flex-shrink-0 border-r border-border bg-card">
+        <div className="h-full flex flex-col">
+          {/* Sidebar Header */}
+          <div className="p-5 border-b border-border">
+            <h2 className="text-base font-semibold text-foreground mb-4">
+              목차
+            </h2>
+            {/* Search */}
+            <div className="relative bg-black border border-gray-500 rounded-lg p-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search docs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-8 bg-transparent border-none text-white placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex-1 overflow-auto p-6">
+            <nav className="space-y-8">
+              {documentStructure.map((section) => {
+                const Icon = section.icon;
+                const isExpanded = expandedSections.includes(section.id);
+                
+                return (
+                  <div key={section.id} className="space-y-2 mb-4">
+                    <Button
+                      variant={isExpanded ? "default" : "ghost"}
+                      className={`w-full justify-start text-left h-auto py-3.5 px-4 ${
+                        isExpanded ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                      }`}
+                      onClick={() => toggleSection(section.id)}
+                    >
+                      <Icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className="flex-1 text-sm font-medium text-left">{section.title}</span>
+                      <ChevronRight 
+                        className={`w-4 h-4 transition-transform ${
+                          isExpanded ? 'rotate-90' : ''
+                        }`} 
+                      />
+                    </Button>
+                    
+                    {/* Subsections */}
+                    {isExpanded && section.items.length > 0 && (
+                      <div className="ml-6 space-y-2 mt-3">
+                        {section.items.map((item) => (
+                          <Button
+                            key={item.id}
+                            variant="ghost"
+                            className={`w-full justify-start text-left h-auto py-2.5 px-3 text-sm flex items-start ${
+                              activeSection === item.id 
+                                ? 'bg-muted text-foreground' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            }`}
+                            onClick={() => setActiveSection(item.id)}
+                          >
+                            <span className="block w-full text-left">{item.title}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-border">
+            <div className="space-y-2">
+              <Button variant="ghost" className="w-full justify-start h-8 px-3 text-sm">
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button variant="ghost" className="w-full justify-start h-8 px-3 text-sm">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                GitHub
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <div className="flex-shrink-0 border-b border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="w-8 h-8 text-foreground" />
+              <div>
+                <h1 className="text-2xl font-semibold text-foreground">
+                  Documentation
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  LINK BAND SDK 개발 문서
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* Language Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={handleLanguageToggle}
+              >
+                <Languages className="w-4 h-4" />
+                {language === 'ko' ? '한국어' : 'English'}
+                <Globe className="w-3 h-3 opacity-50" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto bg-black">
+          <div className="min-h-full">
+            <div className="max-w-5xl mx-auto px-8 py-12">
+              <div className="bg-black border border-gray-500 rounded-3xl shadow-2xl p-8 card-hover animate-fade-in-up">
+                <MarkdownRenderer filePath={getCurrentFilePath()} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

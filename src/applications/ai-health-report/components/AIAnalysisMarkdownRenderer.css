@@ -1,0 +1,346 @@
+/**
+ * AI 분석 결과 마크다운 렌더러 스타일
+ * - 의료 리포트에 최적화된 디자인
+ * - 가독성과 전문성을 고려한 스타일링
+ * - 전체 애플리케이션과 일관된 디자인
+ */
+
+/* 기본 컨테이너 스타일 */
+.ai-analysis-markdown-renderer {
+  @apply text-gray-800 leading-relaxed;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+/* 로딩 상태 */
+.ai-analysis-loading {
+  @apply p-4;
+}
+
+/* 오류 메시지 */
+.ai-analysis-error {
+  @apply text-red-600 bg-red-50 border border-red-200 rounded-lg p-4 text-sm;
+}
+
+/* 제목 스타일 */
+.ai-analysis-markdown-renderer h1 {
+  @apply text-2xl font-bold text-gray-900 mb-6 mt-8 first:mt-0;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.ai-analysis-markdown-renderer h2 {
+  @apply text-xl font-semibold text-gray-800 mb-4 mt-6 first:mt-0;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 0.25rem;
+}
+
+.ai-analysis-markdown-renderer h3 {
+  @apply text-lg font-semibold text-gray-800 mb-3 mt-5 first:mt-0;
+}
+
+.ai-analysis-markdown-renderer h4 {
+  @apply text-base font-semibold text-gray-700 mb-2 mt-4 first:mt-0;
+}
+
+.ai-analysis-markdown-renderer h5 {
+  @apply text-sm font-semibold text-gray-700 mb-2 mt-3 first:mt-0;
+}
+
+.ai-analysis-markdown-renderer h6 {
+  @apply text-sm font-medium text-gray-600 mb-2 mt-3 first:mt-0;
+}
+
+/* 제목 아이콘 스타일 */
+.ai-analysis-markdown-renderer .heading-icon {
+  @apply mr-2 text-blue-600;
+}
+
+.ai-analysis-markdown-renderer .heading-text {
+  @apply text-gray-900;
+}
+
+/* 문단 스타일 */
+.ai-analysis-markdown-renderer p {
+  @apply mb-4 text-gray-700 leading-relaxed;
+}
+
+/* 강조 텍스트 */
+.ai-analysis-markdown-renderer strong {
+  @apply font-semibold text-gray-900;
+}
+
+.ai-analysis-markdown-renderer em {
+  @apply italic text-gray-800;
+}
+
+/* 리스트 스타일 */
+.ai-analysis-markdown-renderer ul {
+  @apply mb-4 ml-6 space-y-1;
+}
+
+.ai-analysis-markdown-renderer ol {
+  @apply mb-4 ml-6 space-y-1;
+}
+
+.ai-analysis-markdown-renderer li {
+  @apply text-gray-700 leading-relaxed;
+}
+
+.ai-analysis-markdown-renderer ul li {
+  @apply relative;
+}
+
+.ai-analysis-markdown-renderer ul li::before {
+  content: "•";
+  @apply absolute -left-4 text-blue-600 font-bold;
+}
+
+.ai-analysis-markdown-renderer ol li {
+  @apply list-decimal;
+}
+
+/* 중첩된 리스트 */
+.ai-analysis-markdown-renderer ul ul,
+.ai-analysis-markdown-renderer ol ol,
+.ai-analysis-markdown-renderer ul ol,
+.ai-analysis-markdown-renderer ol ul {
+  @apply mt-2 mb-0;
+}
+
+/* 블록 인용 */
+.ai-analysis-markdown-renderer blockquote {
+  @apply border-l-4 border-blue-200 bg-blue-50 pl-4 py-2 mb-4 italic text-gray-700;
+}
+
+/* 코드 스타일 */
+.ai-analysis-markdown-renderer code {
+  @apply bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+.ai-analysis-markdown-renderer pre {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg mb-4 overflow-x-auto;
+}
+
+.ai-analysis-markdown-renderer pre code {
+  @apply bg-transparent text-gray-100 p-0;
+}
+
+/* 테이블 스타일 */
+.ai-analysis-markdown-renderer table {
+  @apply w-full border-collapse border border-gray-300 mb-4;
+}
+
+.ai-analysis-markdown-renderer th {
+  @apply bg-gray-50 border border-gray-300 px-4 py-2 text-left font-semibold text-gray-900;
+}
+
+.ai-analysis-markdown-renderer td {
+  @apply border border-gray-300 px-4 py-2 text-gray-700;
+}
+
+.ai-analysis-markdown-renderer tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+/* 구분선 */
+.ai-analysis-markdown-renderer hr {
+  @apply border-0 border-t border-gray-300 my-6;
+}
+
+/* 링크 스타일 */
+.ai-analysis-markdown-renderer a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+/* 변형별 스타일 */
+
+/* 기본 변형 */
+.ai-analysis-renderer-default {
+  @apply text-base;
+}
+
+/* 컴팩트 변형 */
+.ai-analysis-renderer-compact {
+  @apply text-base text-left;
+}
+
+.ai-analysis-renderer-compact h1 {
+  @apply text-lg mb-3 mt-0 first:mt-0 font-bold text-gray-900 text-left;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.25rem;
+}
+
+.ai-analysis-renderer-compact h2 {
+  @apply text-base mb-2 mt-3 first:mt-0 font-semibold text-gray-800 text-left;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 0.125rem;
+}
+
+.ai-analysis-renderer-compact h3 {
+  @apply text-sm mb-2 mt-3 first:mt-0 font-semibold text-gray-800 text-left;
+}
+
+.ai-analysis-renderer-compact h4 {
+  @apply text-sm mb-1 mt-2 font-medium text-gray-700 text-left;
+}
+
+.ai-analysis-renderer-compact p {
+  @apply mb-3 text-gray-700 leading-relaxed text-left;
+}
+
+.ai-analysis-renderer-compact ul,
+.ai-analysis-renderer-compact ol {
+  @apply mb-3 ml-4 text-left;
+}
+
+/* 첫 번째 문단의 여백 조정 */
+.ai-analysis-renderer-compact p:first-child {
+  @apply mt-0;
+}
+
+/* 마지막 문단의 여백 조정 */
+.ai-analysis-renderer-compact p:last-child {
+  @apply mb-0;
+}
+
+.ai-analysis-renderer-compact li {
+  @apply mb-1 text-gray-700 leading-relaxed text-left;
+}
+
+.ai-analysis-renderer-compact ul li::before {
+  content: "•";
+  @apply absolute -left-3 text-blue-600 font-bold;
+}
+
+.ai-analysis-renderer-compact ul li {
+  @apply relative pl-4 text-left;
+}
+
+.ai-analysis-renderer-compact strong {
+  @apply font-semibold text-gray-900;
+}
+
+.ai-analysis-renderer-compact em {
+  @apply italic text-gray-800;
+}
+
+.ai-analysis-renderer-compact blockquote {
+  @apply border-l-2 border-blue-200 bg-blue-50 pl-3 py-1 mb-2 italic text-gray-700 text-sm;
+}
+
+.ai-analysis-renderer-compact code {
+  @apply bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono;
+}
+
+/* 상세 변형 */
+.ai-analysis-renderer-detailed {
+  @apply text-base;
+}
+
+.ai-analysis-renderer-detailed h1 {
+  @apply text-xl mb-4 mt-6 font-bold text-gray-900;
+}
+
+.ai-analysis-renderer-detailed h2 {
+  @apply text-lg mb-3 mt-4 font-semibold text-gray-800;
+}
+
+.ai-analysis-renderer-detailed h3 {
+  @apply text-base mb-2 mt-3 font-semibold text-gray-800;
+}
+
+.ai-analysis-renderer-detailed p {
+  @apply mb-3 text-gray-700 leading-relaxed;
+}
+
+.ai-analysis-renderer-detailed ul,
+.ai-analysis-renderer-detailed ol {
+  @apply mb-3 ml-4;
+}
+
+/* 의료 리포트 특화 스타일 */
+.ai-analysis-markdown-renderer .medical-highlight {
+  @apply bg-yellow-100 border-l-4 border-yellow-400 pl-4 py-2 mb-4;
+}
+
+.ai-analysis-markdown-renderer .medical-warning {
+  @apply bg-red-50 border-l-4 border-red-400 pl-4 py-2 mb-4 text-red-800;
+}
+
+.ai-analysis-markdown-renderer .medical-success {
+  @apply bg-green-50 border-l-4 border-green-400 pl-4 py-2 mb-4 text-green-800;
+}
+
+.ai-analysis-markdown-renderer .medical-info {
+  @apply bg-blue-50 border-l-4 border-blue-400 pl-4 py-2 mb-4 text-blue-800;
+}
+
+/* 점수 및 지표 스타일 */
+.ai-analysis-markdown-renderer .score-high {
+  @apply text-green-600 font-bold;
+}
+
+.ai-analysis-markdown-renderer .score-medium {
+  @apply text-yellow-600 font-bold;
+}
+
+.ai-analysis-markdown-renderer .score-low {
+  @apply text-red-600 font-bold;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .ai-analysis-markdown-renderer {
+    @apply text-sm;
+  }
+  
+  .ai-analysis-markdown-renderer h1 {
+    @apply text-xl;
+  }
+  
+  .ai-analysis-markdown-renderer h2 {
+    @apply text-lg;
+  }
+  
+  .ai-analysis-markdown-renderer h3 {
+    @apply text-base;
+  }
+  
+  .ai-analysis-markdown-renderer table {
+    @apply text-xs;
+  }
+  
+  .ai-analysis-markdown-renderer th,
+  .ai-analysis-markdown-renderer td {
+    @apply px-2 py-1;
+  }
+}
+
+/* 인쇄 스타일 */
+@media print {
+  .ai-analysis-markdown-renderer {
+    @apply text-black;
+  }
+  
+  .ai-analysis-markdown-renderer h1,
+  .ai-analysis-markdown-renderer h2,
+  .ai-analysis-markdown-renderer h3,
+  .ai-analysis-markdown-renderer h4,
+  .ai-analysis-markdown-renderer h5,
+  .ai-analysis-markdown-renderer h6 {
+    @apply text-black;
+  }
+  
+  .ai-analysis-markdown-renderer a {
+    @apply text-black no-underline;
+  }
+  
+  .ai-analysis-markdown-renderer blockquote {
+    @apply bg-white border-gray-400;
+  }
+  
+  .ai-analysis-markdown-renderer pre {
+    @apply bg-white text-black border border-gray-400;
+  }
+} 
