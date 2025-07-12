@@ -5,12 +5,14 @@ import './index.css'
 
 // Cache busting - 브라우저 캐시 강제 새로고침
 const forceCacheRefresh = () => {
+  // 빌드 타임스탬프 확인
   const buildTimestamp = document.querySelector('meta[name="build-timestamp"]')?.getAttribute('content');
   const storedTimestamp = localStorage.getItem('app-build-timestamp');
   
   if (buildTimestamp && buildTimestamp !== 'BUILD_TIMESTAMP_PLACEHOLDER') {
     if (storedTimestamp && storedTimestamp !== buildTimestamp) {
       console.log('🔄 New build detected, clearing cache...');
+      // 캐시 클리어
       if ('caches' in window) {
         caches.keys().then(names => {
           names.forEach(name => {
@@ -18,6 +20,7 @@ const forceCacheRefresh = () => {
           });
         });
       }
+      // 로컬 스토리지 일부 클리어 (설정은 유지)
       const keysToPreserve = ['mindbreeze-settings', 'mindbreeze-storage-config'];
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
@@ -26,10 +29,12 @@ const forceCacheRefresh = () => {
         }
       });
     }
+    // 새로운 빌드 타임스탬프 저장
     localStorage.setItem('app-build-timestamp', buildTimestamp);
   }
 };
 
+// 캐시 새로고침 실행
 forceCacheRefresh();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
