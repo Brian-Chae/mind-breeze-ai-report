@@ -1,8 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
 import './services/firebase' // Firebase 초기화
+import { AuthProvider } from './components/AuthProvider'
 
 // Cache busting - 브라우저 캐시 강제 새로고침
 const forceCacheRefresh = () => {
@@ -40,6 +42,10 @@ forceCacheRefresh();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>,
 )

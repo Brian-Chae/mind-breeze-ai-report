@@ -1,4 +1,4 @@
-import { Language } from '../stores/languageStore';
+import { Language, useLanguageStore } from '../stores/languageStore';
 import { landingTexts } from './landing';
 
 // 번역 키 타입 정의
@@ -50,7 +50,7 @@ const translations = {
 
 // 번역 훅
 export const useTranslation = (language?: Language): TranslationKeys => {
-  const { language: currentLanguage } = require('../stores/languageStore').useLanguageStore();
+  const { currentLanguage } = useLanguageStore();
   const lang = (language || currentLanguage) as Language;
   return translations[lang];
 };

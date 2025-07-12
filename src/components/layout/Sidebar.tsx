@@ -1,22 +1,38 @@
 import { useState } from 'react';
-import { Brain, Home, Eye, Database, FileText, ChevronLeft, Settings, Grid3X3 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Brain, Home, Eye, Database, FileText, ChevronLeft, Settings, Grid3X3, LogOut, User } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
 import { useUIStore } from '../../stores/uiStore';
 import type { MenuId } from '../../stores/uiStore';
+import { useAuth } from '../AuthProvider';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../services/firebase';
 
 export function Sidebar() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { activeMenu, setActiveMenu } = useUIStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+    }
+  };
 
   const menuItems = [
-    { icon: Home, label: 'HOME', id: 'engine' as MenuId },
-    { icon: Brain, label: 'LINK BAND', id: 'linkband' as MenuId },
-    { icon: Eye, label: 'VISUALIZER', id: 'visualizer' as MenuId },
-    { icon: Database, label: 'DATA CENTER', id: 'datacenter' as MenuId },
-    { icon: FileText, label: 'DOCUMENTS', id: 'cloudmanager' as MenuId },
-    { icon: Grid3X3, label: 'APPLICATIONS', id: 'applications' as MenuId },
-    { icon: Settings, label: 'SETTINGS', id: 'settings' as MenuId },
+    { icon: Home, label: 'HOME', id: 'engine' as MenuId, path: '/app/dashboard' },
+    { icon: Brain, label: 'LINK BAND', id: 'linkband' as MenuId, path: '/app/device' },
+    { icon: Eye, label: 'VISUALIZER', id: 'visualizer' as MenuId, path: '/app/visualizer' },
+    { icon: Database, label: 'DATA CENTER', id: 'datacenter' as MenuId, path: '/app/datacenter' },
+    { icon: FileText, label: 'DOCUMENTS', id: 'cloudmanager' as MenuId, path: '/app/documents' },
+    { icon: Grid3X3, label: 'APPLICATIONS', id: 'applications' as MenuId, path: '/app/applications' },
+    { icon: Settings, label: 'SETTINGS', id: 'settings' as MenuId, path: '/app/settings' },
   ];
 
   return (
@@ -28,8 +44,8 @@ export function Sidebar() {
       <div className="flex-shrink-0 px-4 py-6 border-sidebar-border h-16 flex items-center">
         <div className="flex items-center justify-between w-full">
           {!isCollapsed && (
-            <h1 className="text-sidebar-foreground font-semibold text-left text-xl ml-2">
-              LINK BAND SDK
+            <h1 className="text-sidebar-foreground font-semibold text-left text-lg ml-2">
+              MIND BREEZE AI
             </h1>
           )}
           <Button
@@ -61,7 +77,7 @@ export function Sidebar() {
       >
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeMenu === item.id;
+          const isActive = location.pathname === item.path;
           
           return (
             <Button
@@ -74,7 +90,10 @@ export function Sidebar() {
                   : "text-sidebar-foreground hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-sidebar-foreground",
                 isCollapsed && "!justify-center"
               )}
-              onClick={() => setActiveMenu(item.id)}
+              onClick={() => {
+                setActiveMenu(item.id);
+                navigate(item.path);
+              }}
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
               {!isCollapsed && <span className="flex-1 text-left">{item.label}</span>}
@@ -82,6 +101,42 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* User Profile & Logout - 하단 고정 */}
+      <div className="flex-shrink-0 border-t border-sidebar-border p-4 space-y-2">
+        {/* User Info */}
+        <div className={cn(
+          "flex items-center gap-3 p-2 rounded-lg",
+          isCollapsed && "justify-center"
+        )}>
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <User className="w-4 h-4 text-white" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.displayName || user?.email || '사용자'}
+              </p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">
+                {user?.email}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Logout Button */}
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full gap-3 h-10 !justify-start text-sidebar-foreground hover:bg-red-50 hover:text-red-600 transition-colors",
+            isCollapsed && "!justify-center"
+          )}
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span className="flex-1 text-left">로그아웃</span>}
+        </Button>
+      </div>
     </div>
   );
 } 
