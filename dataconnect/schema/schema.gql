@@ -1,0 +1,50 @@
+type User @table {
+  email: String!
+  createdAt: Timestamp!
+  displayName: String
+  lastLoginAt: Timestamp
+}
+
+type Device @table {
+  user: User!
+  serialNumber: String!
+  model: String!
+  pairedAt: Timestamp!
+  manufacturer: String
+  lastSyncAt: Timestamp
+}
+
+type BioSignalSession @table {
+  user: User!
+  device: Device!
+  startTime: Timestamp!
+  endTime: Timestamp!
+  durationSeconds: Int!
+  avgHeartRate: Float
+  hrvMetrics: String
+  eegDominantFrequency: Float
+  stressIndex: Float
+  rawDataUri: String
+}
+
+type MentalHealthReport @table {
+  user: User!
+  reportDate: Date!
+  overallScore: Int!
+  generatedAt: Timestamp!
+  stressLevel: Float
+  focusLevel: Float
+  sleepQualityScore: Float
+  anxietyIndicators: String
+  summaryText: String
+  recommendations: String
+  associatedSessionIds: [UUID]
+}
+
+type ManualMoodLog @table {
+  user: User!
+  timestamp: Timestamp!
+  mood: String!
+  notes: String
+  stressors: [String]
+}

@@ -11,6 +11,7 @@ import Documents from './components/Documents'
 import { Applications } from './components/Applications'
 import { Settings } from './components/Settings'
 import { WelcomeScreen } from './components/WelcomeScreen'
+import { LandingPage } from './components/LandingPage'
 import { useUIStore } from './stores/uiStore'
 import { useSystemStore } from './stores/systemStore'
 import { useStorageStore } from './stores/storageStore'
@@ -19,7 +20,10 @@ import { usePWAUpdate } from './hooks/usePWAUpdate'
 import UpdateNotification from './components/PWA/UpdateNotification'
 import type { MenuId } from './stores/uiStore'
 
+type AppMode = 'landing' | 'app'
+
 export default function App() {
+  const [appMode, setAppMode] = useState<AppMode>('landing')
   const [showWelcome, setShowWelcome] = useState(true)
   const { activeMenu, setActiveMenu } = useUIStore()
   const { initializeSystem, isInitialized, systemStatus, systemError } = useSystemStore()
@@ -108,6 +112,15 @@ export default function App() {
     }
   }, [initializeSystem, isInitialized, systemStatus, checkAndRestoreStorage, initializeStorage])
 
+  const handleNavigate = (page: string) => {
+    if (page === 'app' || page === 'home') {
+      setAppMode('app')
+      setShowWelcome(false)
+    } else if (page === 'landing') {
+      setAppMode('landing')
+    }
+  }
+
   const renderContent = () => {
     switch (activeMenu) {
       case 'engine':
@@ -127,6 +140,11 @@ export default function App() {
       default:
         return <Dashboard />
     }
+  }
+
+  // 랜딩 페이지 모드
+  if (appMode === 'landing') {
+    return <LandingPage onNavigate={handleNavigate} />
   }
 
   if (showWelcome) {

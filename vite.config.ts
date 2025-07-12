@@ -13,6 +13,8 @@ export default defineConfig({
         // 개발 환경에서 경고 최소화
         globDirectory: 'dist',
         globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
+        // 파일 크기 제한 증가 (4MB로 설정)
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         // 캐시 무효화 전략 강화
         runtimeCaching: [
           {

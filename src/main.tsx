@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './services/firebase' // Firebase 초기화
 
 // Cache busting - 브라우저 캐시 강제 새로고침
 const forceCacheRefresh = () => {

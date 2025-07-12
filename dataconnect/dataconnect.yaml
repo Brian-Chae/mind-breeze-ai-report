@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "mind-breeze-ai-report"
+location: "asia-northeast1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "mind-breeze-ai-report-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]

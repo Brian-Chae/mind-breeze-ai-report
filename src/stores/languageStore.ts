@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Language = 'ko' | 'en';
+export type Language = 'ko' | 'en' | 'jp';
 
 interface LanguageState {
   currentLanguage: Language;
