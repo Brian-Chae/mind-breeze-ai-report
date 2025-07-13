@@ -36,7 +36,20 @@ export default function Dashboard() {
     );
   }
 
-  const { userType, displayName } = authContext.user;
+  const { userType, displayName, organizationId } = authContext.user;
+
+  // 조직 사용자인데 organizationId가 없는 경우
+  if ((userType === 'ORGANIZATION_ADMIN' || userType === 'ORGANIZATION_MEMBER') && !organizationId) {
+    return (
+      <div className="p-6">
+        <Card className="p-8 text-center">
+          <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">조직 정보 누락</h2>
+          <p className="text-gray-600">조직 사용자이지만 조직 정보가 없습니다. 관리자에게 문의해주세요.</p>
+        </Card>
+      </div>
+    );
+  }
 
   // 사용자 타입별 대시보드 분기
   switch (userType) {
@@ -46,8 +59,19 @@ export default function Dashboard() {
     case 'ORGANIZATION_ADMIN':
       return (
         <OrganizationAdminDashboard 
-          user={authContext.user} 
-          organization={authContext.organization}
+          user={{
+            displayName: authContext.user.displayName,
+            email: authContext.user.email,
+            userType: authContext.user.userType,
+            organizationId: organizationId! // 위에서 체크했으므로 안전
+          }}
+          organization={authContext.organization ? {
+            name: authContext.organization.name,
+            id: authContext.organization.id,
+            creditBalance: authContext.organization.creditBalance,
+            memberCount: authContext.organization.totalMemberCount,
+            totalMeasurements: 0 // TODO: 실제 값으로 대체
+          } : undefined}
           permissions={authContext.permissions}
         />
       );
@@ -65,8 +89,19 @@ export default function Dashboard() {
       // 시스템 관리자는 조직 관리자 대시보드 + 추가 권한으로 처리
       return (
         <OrganizationAdminDashboard 
-          user={authContext.user} 
-          organization={authContext.organization}
+          user={{
+            displayName: authContext.user.displayName,
+            email: authContext.user.email,
+            userType: authContext.user.userType,
+            organizationId: organizationId || 'system' // 시스템 관리자는 특별 처리
+          }}
+          organization={authContext.organization ? {
+            name: authContext.organization.name,
+            id: authContext.organization.id,
+            creditBalance: authContext.organization.creditBalance,
+            memberCount: authContext.organization.totalMemberCount,
+            totalMeasurements: 0 // TODO: 실제 값으로 대체
+          } : undefined}
           permissions={authContext.permissions}
           isSystemAdmin={true}
         />
