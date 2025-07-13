@@ -61,6 +61,21 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
+          },
+          // Firebase APIs - 네트워크 우선
+          {
+            urlPattern: /^https:\/\/identitytoolkit\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly', // 캐시하지 않음
+          },
+          // Google APIs - 네트워크 우선
+          {
+            urlPattern: /^https:\/\/apis\.google\.com\/.*/i,
+            handler: 'NetworkOnly', // 캐시하지 않음
+          },
+          // Google Analytics - 네트워크 우선
+          {
+            urlPattern: /^https:\/\/www\.google-analytics\.com\/.*/i,
+            handler: 'NetworkOnly', // 캐시하지 않음
           }
         ],
         // 즉시 업데이트를 위한 설정
@@ -84,7 +99,10 @@ export default defineConfig({
       // 개발 모드에서도 PWA 기능 활성화
       devOptions: {
         enabled: true,
-        type: 'module'
+        type: 'module',
+        // 개발 환경에서 workbox 로그 레벨 조정
+        navigateFallback: 'index.html',
+        suppressWarnings: true
       }
     })
   ],

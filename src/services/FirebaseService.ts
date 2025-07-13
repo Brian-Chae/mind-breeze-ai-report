@@ -11,7 +11,8 @@ import {
   orderBy, 
   limit,
   onSnapshot,
-  Timestamp 
+  Timestamp,
+  setDoc 
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -43,6 +44,8 @@ export class FirebaseService {
   static async signUp(email: string, password: string) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // 사용자 프로필 문서 생성
+      await this.createUserProfile(userCredential.user);
       return userCredential.user;
     } catch (error) {
       console.error('Sign up error:', error);
@@ -63,7 +66,170 @@ export class FirebaseService {
     return onAuthStateChanged(auth, callback);
   }
 
-  // Firestore methods
+  // User Profile Management
+  static async createUserProfile(user: User) {
+    try {
+      const userDoc = {
+        email: user.email,
+        displayName: user.displayName || '',
+        createdAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+        profileCompleted: false,
+        preferences: {
+          language: 'ko',
+          notifications: true,
+          dataSharing: false
+        }
+      };
+      
+      await setDoc(doc(db, 'users', user.uid), userDoc);
+      console.log('✅ 사용자 프로필 생성 완료:', user.email);
+      return userDoc;
+    } catch (error) {
+      console.error('❌ 사용자 프로필 생성 실패:', error);
+      throw error;
+    }
+  }
+
+  static async getUserProfile(userId: string) {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        return { id: userDoc.id, ...userDoc.data() };
+      }
+      return null;
+    } catch (error) {
+      console.error('Get user profile error:', error);
+      throw error;
+    }
+  }
+
+  static async updateUserProfile(userId: string, data: any) {
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        ...data,
+        updatedAt: Timestamp.now()
+      });
+      console.log('✅ 사용자 프로필 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 사용자 프로필 업데이트 실패:', error);
+      throw error;
+    }
+  }
+
+  // Health Reports Management
+  static async saveHealthReport(userId: string, reportData: any) {
+    try {
+      const reportDoc = {
+        userId,
+        ...reportData,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+      
+      const docRef = await addDoc(collection(db, 'healthReports'), reportDoc);
+      console.log('✅ 건강 리포트 저장 완료:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ 건강 리포트 저장 실패:', error);
+      throw error;
+    }
+  }
+
+  static async getUserHealthReports(userId: string, limitCount: number = 50) {
+    try {
+      const q = query(
+        collection(db, 'healthReports'),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('❌ 건강 리포트 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // Chat History Management
+  static async saveChatMessage(userId: string, messageData: any) {
+    try {
+      const chatDoc = {
+        userId,
+        ...messageData,
+        timestamp: Timestamp.now()
+      };
+      
+      const docRef = await addDoc(collection(db, 'chatHistory'), chatDoc);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ 채팅 메시지 저장 실패:', error);
+      throw error;
+    }
+  }
+
+  static async getChatHistory(userId: string, limitCount: number = 100) {
+    try {
+      const q = query(
+        collection(db, 'chatHistory'),
+        where('userId', '==', userId),
+        orderBy('timestamp', 'desc'),
+        limit(limitCount)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('❌ 채팅 히스토리 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // Device Management
+  static async saveDeviceInfo(userId: string, deviceData: any) {
+    try {
+      const deviceDoc = {
+        userId,
+        ...deviceData,
+        pairedAt: Timestamp.now(),
+        lastSyncAt: Timestamp.now()
+      };
+      
+      await setDoc(doc(db, 'devices', deviceData.serialNumber), deviceDoc);
+      console.log('✅ 디바이스 정보 저장 완료:', deviceData.serialNumber);
+    } catch (error) {
+      console.error('❌ 디바이스 정보 저장 실패:', error);
+      throw error;
+    }
+  }
+
+  static async getUserDevices(userId: string) {
+    try {
+      const q = query(
+        collection(db, 'devices'),
+        where('userId', '==', userId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('❌ 사용자 디바이스 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 기존 범용 메서드들...
   static async addDocument(collectionName: string, data: any) {
     try {
       const docRef = await addDoc(collection(db, collectionName), {
@@ -78,13 +244,16 @@ export class FirebaseService {
     }
   }
 
-  static async getDocument(collectionName: string, documentId: string) {
+  static async getDocument(collectionName: string, docId: string) {
     try {
-      const docRef = doc(db, collectionName, documentId);
+      const docRef = doc(db, collectionName, docId);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
+        };
       } else {
         return null;
       }
@@ -94,9 +263,9 @@ export class FirebaseService {
     }
   }
 
-  static async updateDocument(collectionName: string, documentId: string, data: any) {
+  static async updateDocument(collectionName: string, docId: string, data: any) {
     try {
-      const docRef = doc(db, collectionName, documentId);
+      const docRef = doc(db, collectionName, docId);
       await updateDoc(docRef, {
         ...data,
         updatedAt: Timestamp.now()
@@ -107,10 +276,9 @@ export class FirebaseService {
     }
   }
 
-  static async deleteDocument(collectionName: string, documentId: string) {
+  static async deleteDocument(collectionName: string, docId: string) {
     try {
-      const docRef = doc(db, collectionName, documentId);
-      await deleteDoc(docRef);
+      await deleteDoc(doc(db, collectionName, docId));
     } catch (error) {
       console.error('Delete document error:', error);
       throw error;
@@ -141,15 +309,12 @@ export class FirebaseService {
     }
   }
 
-  static subscribeToCollection(
-    collectionName: string, 
-    callback: (data: any[]) => void,
-    filters?: any[]
-  ) {
-    const collectionRef = collection(db, collectionName);
-    
-    if (filters && filters.length > 0) {
-      const q = query(collectionRef, ...filters);
+  // Real-time subscriptions
+  static subscribeToCollection(collectionName: string, callback: (data: any[]) => void, filters?: any[]) {
+    try {
+      const collectionRef = collection(db, collectionName);
+      const q = filters ? query(collectionRef, ...filters) : collectionRef;
+      
       return onSnapshot(q, (querySnapshot) => {
         const data = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -157,18 +322,13 @@ export class FirebaseService {
         }));
         callback(data);
       });
-    } else {
-      return onSnapshot(collectionRef, (querySnapshot) => {
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        callback(data);
-      });
+    } catch (error) {
+      console.error('Subscribe to collection error:', error);
+      throw error;
     }
   }
 
-  // Storage methods
+  // File upload methods
   static async uploadFile(path: string, file: File) {
     try {
       const storageRef = ref(storage, path);
@@ -191,7 +351,7 @@ export class FirebaseService {
     }
   }
 
-  // Helper methods for common queries
+  // Query helper methods
   static createWhereFilter(field: string, operator: any, value: any) {
     return where(field, operator, value);
   }

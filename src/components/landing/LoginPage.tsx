@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { auth } from '../../services/firebase';
+import { FirebaseService } from '../../services/FirebaseService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthProvider';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -20,16 +22,70 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // 인증 상태 변화 감지하여 자동 리다이렉션
+  useEffect(() => {
+    console.log('인증 상태 변화:', { loading, user: user?.email || null });
+    if (!loading && user) {
+      console.log('사용자 로그인 감지, 대시보드로 이동:', user.email);
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // 리다이렉트 결과 확인 (Google 로그인)
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('Google 리다이렉트 로그인 성공:', result.user);
+          // useEffect에서 자동으로 리다이렉션됨
+        }
+      } catch (error: any) {
+        console.error('리다이렉트 결과 처리 오류:', error);
+        setError(getErrorMessage(error.code));
+      }
+    };
+
+    checkRedirectResult();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
+    console.log('🔵 로그인 시도 시작:', formData.email);
+    
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      window.location.href = '/app/dashboard';
+      console.log('🔵 Firebase 인증 시도 중...');
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      
+      console.log('✅ Firebase 인증 성공:', {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        emailVerified: userCredential.user.emailVerified
+      });
+      
+      // 마지막 로그인 시간 업데이트
+      try {
+        await FirebaseService.updateUserProfile(userCredential.user.uid, {
+          lastLoginAt: new Date()
+        });
+        console.log('✅ 로그인 시간 업데이트 완료');
+      } catch (updateError) {
+        console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
+      }
+      
+      console.log('✅ 로그인 프로세스 완료, 인증 상태 변화 대기 중...');
+      // useEffect에서 자동으로 리다이렉션됨
     } catch (error: any) {
+      console.error('❌ 로그인 오류:', {
+        code: error.code,
+        message: error.message,
+        details: error
+      });
       setError(getErrorMessage(error.code));
     } finally {
       setIsLoading(false);
@@ -40,35 +96,105 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setIsLoading(true);
     setError('');
     
+    console.log('🔵 Google 로그인 시도 시작');
+    console.log('🔍 현재 환경:', {
+      hostname: window.location.hostname,
+      port: window.location.port,
+      protocol: window.location.protocol,
+      href: window.location.href
+    });
+    
+    const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+    
+    // 개발 환경에서는 팝업 방식 강제 사용
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.port === '5173' ||
+                         window.location.port === '5174';
+    
+    console.log('🔍 환경 감지 결과:', { isDevelopment });
+    
     try {
-      const provider = new GoogleAuthProvider();
-      provider.addScope('email');
-      provider.addScope('profile');
-      
-      // 팝업 차단 문제를 해결하기 위해 리다이렉트 방식도 시도
-      try {
-        const result = await signInWithPopup(auth, provider);
-        console.log('Google 로그인 성공:', result.user);
-        window.location.href = '/app/dashboard';
-      } catch (popupError: any) {
-        console.log('팝업 로그인 실패, 리다이렉트 방식 시도:', popupError);
-        // 팝업이 차단된 경우 리다이렉트 방식 사용
-        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
-          const { signInWithRedirect } = await import('firebase/auth');
-          await signInWithRedirect(auth, provider);
-          return;
+      if (isDevelopment) {
+        // 개발 환경: 팝업 방식만 사용
+        console.log('🔵 개발 환경 감지 - 팝업 방식 강제 사용');
+        
+        // 팝업 차단 확인을 위한 테스트 팝업
+        const testPopup = window.open('', '_blank', 'width=1,height=1');
+        if (!testPopup || testPopup.closed) {
+          console.warn('⚠️ 팝업이 차단되었습니다. 리다이렉트 방식으로 전환합니다.');
+          setError('팝업이 차단되어 리다이렉트 방식으로 진행합니다. 잠시만 기다려주세요...');
+          
+          // 팝업이 차단된 경우 리다이렉트 방식으로 폴백
+          try {
+            const { signInWithRedirect } = await import('firebase/auth');
+            await signInWithRedirect(auth, provider);
+            return; // 리다이렉트 후에는 페이지가 새로고침되므로 return
+          } catch (redirectError: any) {
+            console.error('❌ 리다이렉트 로그인도 실패:', redirectError);
+            setError('로그인에 실패했습니다. 브라우저에서 팝업을 허용하거나 페이지를 새로고침해주세요.');
+            setIsLoading(false);
+            return;
+          }
         }
-        throw popupError;
+        testPopup.close();
+        
+        console.log('🔵 팝업 차단 확인 완료, Google 팝업 로그인 시도 중...');
+        const result = await signInWithPopup(auth, provider);
+        console.log('✅ Google 팝업 로그인 성공:', {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName
+        });
+        
+        // 마지막 로그인 시간 업데이트
+        try {
+          await FirebaseService.updateUserProfile(result.user.uid, {
+            lastLoginAt: new Date()
+          });
+        } catch (updateError) {
+          console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
+        }
+      } else {
+        // 프로덕션 환경: 리다이렉트 방식 사용
+        console.log('🔵 프로덕션 환경 - Google 리다이렉트 로그인 시도 중...');
+        const { signInWithRedirect } = await import('firebase/auth');
+        await signInWithRedirect(auth, provider);
       }
+      
     } catch (error: any) {
-      console.error('Google 로그인 오류:', error);
-      setError(getErrorMessage(error.code));
-    } finally {
+      console.error('❌ Google 로그인 오류:', {
+        code: error.code,
+        message: error.message,
+        details: error
+      });
+      
+      // 개발 환경에서는 팝업 실패 시 사용자에게 안내
+      if (isDevelopment) {
+        if (error.code === 'auth/popup-blocked') {
+          setError('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 후 다시 시도해주세요.');
+        } else if (error.code === 'auth/popup-closed-by-user') {
+          setError(''); // 사용자가 팝업을 닫은 경우는 에러 표시하지 않음
+        } else if (error.code === 'auth/unauthorized-domain') {
+          setError(`도메인이 승인되지 않았습니다. Firebase Console에서 ${window.location.hostname}:${window.location.port}을 승인된 도메인에 추가해주세요.`);
+        } else {
+          setError(getErrorMessage(error.code));
+        }
+      } else {
+        const errorMessage = getErrorMessage(error.code);
+        if (errorMessage) {
+          setError(errorMessage);
+        }
+      }
+      
       setIsLoading(false);
     }
   };
 
   const getErrorMessage = (errorCode: string) => {
+    console.log('인증 오류 코드:', errorCode);
     switch (errorCode) {
       case 'auth/user-not-found':
         return '등록되지 않은 이메일입니다.';
@@ -81,9 +207,16 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       case 'auth/too-many-requests':
         return '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
       case 'auth/popup-closed-by-user':
-        return '로그인이 취소되었습니다.';
+      case 'auth/cancelled-popup-request':
+        return ''; // 사용자가 취소한 경우 에러 메시지 표시하지 않음
+      case 'auth/invalid-credential':
+        return '잘못된 인증 정보입니다. 이메일과 비밀번호를 확인해주세요.';
+      case 'auth/network-request-failed':
+        return '네트워크 연결을 확인해주세요.';
+      case 'auth/unauthorized-domain':
+        return '승인되지 않은 도메인입니다. 관리자에게 문의하세요.';
       default:
-        return '로그인 중 오류가 발생했습니다.';
+        return `로그인 중 오류가 발생했습니다. (${errorCode})`;
     }
   };
 
@@ -93,6 +226,18 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       [e.target.name]: e.target.value
     });
   };
+
+  // 로딩 중이면 로딩 화면 표시
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">인증 상태 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
@@ -164,6 +309,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={formData.email}
                   onChange={handleChange}
@@ -183,6 +329,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   required
                   value={formData.password}
                   onChange={handleChange}

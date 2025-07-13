@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
 import { Checkbox } from '../ui/checkbox';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile, getRedirectResult } from 'firebase/auth';
 import { auth } from '../../services/firebase';
+import { FirebaseService } from '../../services/FirebaseService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthProvider';
 
 interface SignupPageProps {
   onNavigate: (page: string) => void;
@@ -36,6 +38,33 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
   const [step, setStep] = useState(1); // 1: 기본정보, 2: 약관동의
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // 인증 상태 변화 감지하여 자동 리다이렉션
+  useEffect(() => {
+    if (!loading && user) {
+      console.log('사용자 회원가입/로그인 감지, 대시보드로 이동:', user.email);
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // 리다이렉트 결과 확인 (Google 로그인)
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('Google 리다이렉트 회원가입 성공:', result.user);
+          // useEffect에서 자동으로 리다이렉션됨
+        }
+      } catch (error: any) {
+        console.error('리다이렉트 결과 처리 오류:', error);
+        setError(getErrorMessage(error.code));
+      }
+    };
+
+    checkRedirectResult();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +98,16 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
         displayName: formData.name
       });
       
-      window.location.href = '/app/dashboard';
+      // Firebase Firestore에 사용자 프로필 생성
+      try {
+        await FirebaseService.createUserProfile(userCredential.user);
+        console.log('✅ 사용자 프로필 생성 완료');
+      } catch (profileError) {
+        console.warn('⚠️ 사용자 프로필 생성 실패 (로그인은 성공):', profileError);
+      }
+      
+      console.log('이메일 회원가입 성공:', userCredential.user.email);
+      // useEffect에서 자동으로 리다이렉션됨
     } catch (error: any) {
       setError(getErrorMessage(error.code));
     } finally {
@@ -81,35 +119,104 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
     setIsLoading(true);
     setError('');
     
+    console.log('🔵 Google 회원가입 시도 시작');
+    console.log('🔍 현재 환경:', {
+      hostname: window.location.hostname,
+      port: window.location.port,
+      protocol: window.location.protocol,
+      href: window.location.href
+    });
+    
+    const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+    
+    // 개발 환경에서는 팝업 방식 강제 사용
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.port === '5173' ||
+                         window.location.port === '5174';
+    
+    console.log('🔍 환경 감지 결과:', { isDevelopment });
+    
     try {
-      const provider = new GoogleAuthProvider();
-      provider.addScope('email');
-      provider.addScope('profile');
-      
-      // 팝업 차단 문제를 해결하기 위해 리다이렉트 방식도 시도
-      try {
-        const result = await signInWithPopup(auth, provider);
-        console.log('Google 회원가입 성공:', result.user);
-        window.location.href = '/app/dashboard';
-      } catch (popupError: any) {
-        console.log('팝업 회원가입 실패, 리다이렉트 방식 시도:', popupError);
-        // 팝업이 차단된 경우 리다이렉트 방식 사용
-        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
-          const { signInWithRedirect } = await import('firebase/auth');
-          await signInWithRedirect(auth, provider);
-          return;
+      if (isDevelopment) {
+        // 개발 환경: 팝업 방식만 사용
+        console.log('🔵 개발 환경 감지 - 팝업 방식 강제 사용');
+        
+        // 팝업 차단 확인을 위한 테스트 팝업
+        const testPopup = window.open('', '_blank', 'width=1,height=1');
+        if (!testPopup || testPopup.closed) {
+          console.warn('⚠️ 팝업이 차단되었습니다. 리다이렉트 방식으로 전환합니다.');
+          setError('팝업이 차단되어 리다이렉트 방식으로 진행합니다. 잠시만 기다려주세요...');
+          
+          // 팝업이 차단된 경우 리다이렉트 방식으로 폴백
+          try {
+            const { signInWithRedirect } = await import('firebase/auth');
+            await signInWithRedirect(auth, provider);
+            return; // 리다이렉트 후에는 페이지가 새로고침되므로 return
+          } catch (redirectError: any) {
+            console.error('❌ 리다이렉트 회원가입도 실패:', redirectError);
+            setError('로그인에 실패했습니다. 브라우저에서 팝업을 허용하거나 페이지를 새로고침해주세요.');
+            setIsLoading(false);
+            return;
+          }
         }
-        throw popupError;
+        testPopup.close();
+        
+        console.log('🔵 팝업 차단 확인 완료, Google 팝업 회원가입 시도 중...');
+        const result = await signInWithPopup(auth, provider);
+        console.log('✅ Google 팝업 회원가입 성공:', {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName
+        });
+        
+        // 사용자 프로필 생성
+        try {
+          await FirebaseService.createUserProfile(result.user);
+          console.log('✅ 사용자 프로필 생성 완료');
+        } catch (profileError) {
+          console.warn('⚠️ 사용자 프로필 생성 실패 (로그인은 성공):', profileError);
+        }
+      } else {
+        // 프로덕션 환경: 리다이렉트 방식 사용
+        console.log('🔵 프로덕션 환경 - Google 리다이렉트 회원가입 시도 중...');
+        const { signInWithRedirect } = await import('firebase/auth');
+        await signInWithRedirect(auth, provider);
       }
+      
     } catch (error: any) {
-      console.error('Google 회원가입 오류:', error);
-      setError(getErrorMessage(error.code));
-    } finally {
+      console.error('❌ Google 회원가입 오류:', {
+        code: error.code,
+        message: error.message,
+        details: error
+      });
+      
+      // 개발 환경에서는 팝업 실패 시 사용자에게 안내
+      if (isDevelopment) {
+        if (error.code === 'auth/popup-blocked') {
+          setError('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 후 다시 시도해주세요.');
+        } else if (error.code === 'auth/popup-closed-by-user') {
+          setError(''); // 사용자가 팝업을 닫은 경우는 에러 표시하지 않음
+        } else if (error.code === 'auth/unauthorized-domain') {
+          setError(`도메인이 승인되지 않았습니다. Firebase Console에서 ${window.location.hostname}:${window.location.port}을 승인된 도메인에 추가해주세요.`);
+        } else {
+          setError(getErrorMessage(error.code));
+        }
+      } else {
+        const errorMessage = getErrorMessage(error.code);
+        if (errorMessage) {
+          setError(errorMessage);
+        }
+      }
+      
       setIsLoading(false);
     }
   };
 
   const getErrorMessage = (errorCode: string) => {
+    console.log('회원가입 오류 코드:', errorCode);
     switch (errorCode) {
       case 'auth/email-already-in-use':
         return '이미 사용 중인 이메일입니다.';
@@ -118,9 +225,12 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
       case 'auth/weak-password':
         return '비밀번호가 너무 약합니다. 6자 이상 입력해주세요.';
       case 'auth/popup-closed-by-user':
-        return '로그인이 취소되었습니다.';
+      case 'auth/cancelled-popup-request':
+        return ''; // 사용자가 취소한 경우 에러 메시지 표시하지 않음
+      case 'auth/unauthorized-domain':
+        return '승인되지 않은 도메인입니다. 관리자에게 문의하세요.';
       default:
-        return '회원가입 중 오류가 발생했습니다.';
+        return `회원가입 중 오류가 발생했습니다. (${errorCode})`;
     }
   };
 
@@ -132,18 +242,25 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
   };
 
   const handleAgreementChange = (key: string, checked: boolean) => {
-    if (key === 'allAgree') {
-      setAgreements({
-        terms: checked,
-        privacy: checked,
-        marketing: checked,
-        allAgree: checked
-      });
-    } else {
-      const newAgreements = { ...agreements, [key]: checked };
-      newAgreements.allAgree = newAgreements.terms && newAgreements.privacy && newAgreements.marketing;
-      setAgreements(newAgreements);
-    }
+    console.log('🔄 약관 동의 상태 변화:', { key, checked, currentAgreements: agreements });
+    
+    setAgreements(prevAgreements => {
+      if (key === 'allAgree') {
+        const newAgreements = {
+          terms: checked,
+          privacy: checked,
+          marketing: checked,
+          allAgree: checked
+        };
+        console.log('✅ 전체 동의 설정:', newAgreements);
+        return newAgreements;
+      } else {
+        const newAgreements = { ...prevAgreements, [key]: checked };
+        newAgreements.allAgree = newAgreements.terms && newAgreements.privacy && newAgreements.marketing;
+        console.log('✅ 개별 동의 설정:', newAgreements);
+        return newAgreements;
+      }
+    });
   };
 
   return (
@@ -239,16 +356,17 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="홍길동"
-                      className="pl-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
-                    />
+                                      <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="홍길동"
+                    className="pl-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
+                  />
                   </div>
                 </div>
 
@@ -258,16 +376,17 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="your@email.com"
-                      className="pl-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
-                    />
+                                      <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="your@email.com"
+                    className="pl-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
+                  />
                   </div>
                 </div>
 
@@ -281,6 +400,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                       id="phone"
                       name="phone"
                       type="tel"
+                      autoComplete="tel"
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="010-0000-0000"
@@ -298,6 +418,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                       id="birthDate"
                       name="birthDate"
                       type="date"
+                      autoComplete="bday"
                       value={formData.birthDate}
                       onChange={handleChange}
                       className="py-3 bg-gray-50 border-gray-200 focus:bg-white"
@@ -312,7 +433,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                       name="gender"
                       value={formData.gender}
                       onChange={handleChange}
-                      className="w-full py-3 px-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full py-3 px-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">선택</option>
                       <option value="male">남성</option>
@@ -328,16 +449,17 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="8자 이상, 영문/숫자/특수문자 포함"
-                      className="pl-10 pr-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
-                    />
+                                      <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="8자 이상, 영문/숫자/특수문자 포함"
+                    className="pl-10 pr-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
+                  />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -354,16 +476,17 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      required
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="비밀번호를 다시 입력하세요"
-                      className="pl-10 pr-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
-                    />
+                                      <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    className="pl-10 pr-10 py-3 bg-gray-50 border-gray-200 focus:bg-white"
+                  />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -384,13 +507,13 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 {/* All Agreement */}
-                <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl">
+                <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
                   <Checkbox
                     id="allAgree"
                     checked={agreements.allAgree}
                     onCheckedChange={(checked) => handleAgreementChange('allAgree', checked as boolean)}
                   />
-                  <label htmlFor="allAgree" className="font-medium text-gray-900">
+                  <label htmlFor="allAgree" className="font-medium text-gray-900 cursor-pointer flex-1">
                     전체 약관에 동의합니다
                   </label>
                 </div>
@@ -399,50 +522,50 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
 
                 {/* Individual Agreements */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center space-x-3 flex-1">
                       <Checkbox
                         id="terms"
                         checked={agreements.terms}
                         onCheckedChange={(checked) => handleAgreementChange('terms', checked as boolean)}
                       />
-                      <label htmlFor="terms" className="text-gray-700">
+                      <label htmlFor="terms" className="text-gray-700 cursor-pointer">
                         <span className="text-red-500">[필수]</span> 서비스 이용약관
                       </label>
                     </div>
-                    <button type="button" className="text-sm text-blue-600 hover:text-blue-700">
+                    <button type="button" className="text-sm text-blue-600 hover:text-blue-700 ml-2">
                       보기
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center space-x-3 flex-1">
                       <Checkbox
                         id="privacy"
                         checked={agreements.privacy}
                         onCheckedChange={(checked) => handleAgreementChange('privacy', checked as boolean)}
                       />
-                      <label htmlFor="privacy" className="text-gray-700">
+                      <label htmlFor="privacy" className="text-gray-700 cursor-pointer">
                         <span className="text-red-500">[필수]</span> 개인정보 처리방침
                       </label>
                     </div>
-                    <button type="button" className="text-sm text-blue-600 hover:text-blue-700">
+                    <button type="button" className="text-sm text-blue-600 hover:text-blue-700 ml-2">
                       보기
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center space-x-3 flex-1">
                       <Checkbox
                         id="marketing"
                         checked={agreements.marketing}
                         onCheckedChange={(checked) => handleAgreementChange('marketing', checked as boolean)}
                       />
-                      <label htmlFor="marketing" className="text-gray-700">
+                      <label htmlFor="marketing" className="text-gray-700 cursor-pointer">
                         [선택] 마케팅 정보 수신 동의
                       </label>
                     </div>
-                    <button type="button" className="text-sm text-blue-600 hover:text-blue-700">
+                    <button type="button" className="text-sm text-blue-600 hover:text-blue-700 ml-2">
                       보기
                     </button>
                   </div>
