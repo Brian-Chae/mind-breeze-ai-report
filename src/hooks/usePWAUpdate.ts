@@ -24,8 +24,18 @@ const useRegisterSW = (options: PWARegisterOptions): PWARegisterReturn => {
   const [offlineReady, setOfflineReady] = useState(false);
 
   useEffect(() => {
+    // PWA가 비활성화된 상태에서는 Service Worker 등록을 시도하지 않음
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
+      // sw.js 파일이 존재하는지 먼저 확인
+      fetch('/sw.js', { method: 'HEAD' })
+        .then((response) => {
+          if (response.ok && response.headers.get('content-type')?.includes('javascript')) {
+            // sw.js가 올바른 JavaScript 파일인 경우에만 등록 시도
+            return navigator.serviceWorker.register('/sw.js');
+          } else {
+            throw new Error('Service Worker not available or PWA disabled');
+          }
+        })
         .then((registration) => {
           options.onRegistered?.(registration);
           
@@ -43,7 +53,8 @@ const useRegisterSW = (options: PWARegisterOptions): PWARegisterReturn => {
           });
         })
         .catch((error) => {
-          options.onRegisterError?.(error);
+          // PWA가 비활성화된 경우 에러를 무시
+          console.log('Service Worker registration skipped (PWA disabled):', error.message);
         });
 
       // 오프라인 상태 확인

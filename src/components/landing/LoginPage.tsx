@@ -6,6 +6,7 @@ import { Separator } from '../ui/separator';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { FirebaseService } from '../../services/FirebaseService';
+import { enterpriseAuthService } from '../../services/EnterpriseAuthService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthProvider';
 
@@ -158,6 +159,53 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
+
+          {/* Test Login Button - 개발용 */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h3 className="text-sm font-medium text-yellow-800 mb-2">🧪 개발 테스트용</h3>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    email: 'brian.chae@looxidlabs.com',
+                    password: 'dlguswl8286!'
+                  });
+                }}
+                className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded hover:bg-yellow-200 transition-colors mr-2"
+              >
+                테스트 계정 정보 자동 입력
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsLoading(true);
+                  setError('');
+                  try {
+                    console.log('🧪 EnterpriseAuthService 테스트 시작...');
+                    const user = await enterpriseAuthService.signIn({
+                      email: 'brian.chae@looxidlabs.com',
+                      password: 'dlguswl8286!'
+                    });
+                    console.log('✅ EnterpriseAuthService 로그인 성공:', user);
+                    setError('✅ EnterpriseAuthService 로그인 성공: ' + user.email);
+                  } catch (testError: any) {
+                    console.error('❌ EnterpriseAuthService 테스트 실패:', testError);
+                    setError('❌ EnterpriseAuthService 테스트 실패: ' + testError.message);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
+                disabled={isLoading}
+              >
+                {isLoading ? '테스트 중...' : 'EnterpriseAuthService 테스트'}
+              </button>
+            </div>
+            <p className="text-xs text-yellow-700 mt-2">
+              실제 Firebase 인증 및 EnterpriseAuthService 테스트를 위한 계정 정보입니다.
+            </p>
+          </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">

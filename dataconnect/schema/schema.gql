@@ -1,8 +1,67 @@
 type User @table {
-  email: String!
-  createdAt: Timestamp!
+  # 기본 사용자 정보
+  email: String
   displayName: String
+  createdAt: Timestamp!
   lastLoginAt: Timestamp
+  
+  # B2B/B2C 확장 필드
+  employeeId: String           # 조직 구성원용 직원 ID
+  organizationId: UUID         # 조직 참조 (조직 사용자만)
+  userType: UserType!          # 사용자 유형
+  department: String           # 부서 (조직 사용자만)
+  position: String             # 직책 (조직 사용자만)
+  personalCreditBalance: Int   # 개인 크레딧 (개인 사용자만)
+  isActive: Boolean!           # 활성 상태
+  profileImage: String         # 프로필 이미지 URL
+  
+  # 권한 (JSON 배열로 저장)
+  permissions: String          # JSON string array
+  
+  updatedAt: Timestamp
+}
+
+enum UserType {
+  SYSTEM_ADMIN
+  ORGANIZATION_ADMIN  
+  ORGANIZATION_MEMBER
+  INDIVIDUAL_USER
+}
+
+enum VolumeDiscountTier {
+  TIER_0  # 1-99명
+  TIER_1  # 100-499명  
+  TIER_2  # 500-999명
+  TIER_3  # 1000-4999명
+  TIER_4  # 5000명+
+}
+
+enum TrialType {
+  FREE_TRIAL
+  PAID_TRIAL
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  TERMINATED
+}
+
+enum ServicePackageType {
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  TRIAL_GRANT
+  BONUS_GRANT
+  REPORT_USAGE
+  CONSULTATION_USAGE
+  REFUND
+  EXPIRY
 }
 
 type Device @table {
@@ -47,4 +106,215 @@ type ManualMoodLog @table {
   mood: String!
   notes: String
   stressors: [String]
+}
+
+# === B2B/B2C 확장 테이블들 ===
+
+type Organization @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  businessNumber: String!
+  contactEmail: String!
+  contactPhone: String
+  address: String
+  
+  # 크레딧 관리
+  creditBalance: Int!
+  totalMemberCount: Int!
+  volumeTier: VolumeDiscountTier!
+  basePrice: Int!              # 7900원
+  discountedPrice: Int!        # 할인 적용된 가격
+  
+  # 체험 서비스
+  isTrialActive: Boolean!
+  trialType: TrialType
+  trialStartDate: Date
+  trialEndDate: Date
+  trialCreditsUsed: Int!
+  trialCreditsTotal: Int!
+  
+  # 계약 정보
+  contractStartDate: Date
+  contractEndDate: Date
+  servicePackage: ServicePackageType!
+  status: OrganizationStatus!
+  
+  # 관리자 정보
+  adminUser: User!
+  
+  # 설정 (JSON으로 저장)
+  settings: String             # JSON settings object
+  
+  # 메타데이터
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type OrganizationMember @table {
+  id: UUID! @default(expr: "uuidV4()")
+  user: User!
+  organization: Organization!
+  employeeId: String!
+  department: String
+  position: String
+  joinedAt: Timestamp!
+  isActive: Boolean!
+  
+  # 사용 통계
+  reportsGenerated: Int!
+  consultationsUsed: Int!
+  lastActivityAt: Timestamp
+}
+
+type CreditTransaction @table {
+  id: UUID! @default(expr: "uuidV4()")
+  organization: Organization    # 조직 크레딧인 경우
+  user: User                   # 개인 크레딧인 경우
+  
+  amount: Int!                 # 양수: 충전, 음수: 사용
+  balanceAfter: Int!           # 거래 후 잔액
+  
+  type: CreditTransactionType!
+  description: String!
+  
+  # 추가 정보 (JSON으로 저장)
+  metadata: String             # JSON metadata object
+  
+  createdAt: Timestamp!
+  createdBy: User!             # 트랜잭션 생성자
+}
+
+type TrialService @table {
+  id: UUID! @default(expr: "uuidV4()")
+  organization: Organization!
+  trialType: TrialType!
+  
+  # 체험 조건
+  maxCredits: Int!             # 최대 사용 가능 크레딧
+  validityDays: Int!           # 유효 기간
+  
+  # 현재 상태
+  creditsUsed: Int!
+  remainingCredits: Int!
+  
+  startDate: Date!
+  endDate: Date!
+  isActive: Boolean!
+  
+  # 결과
+  conversionDate: Date         # 정식 계약 전환일
+  conversionDiscount: Int      # 전환시 추가 할인 (%)
+  
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type Contract @table {
+  id: UUID! @default(expr: "uuidV4()")
+  organization: Organization!
+  
+  servicePackage: ServicePackageType!
+  memberCount: Int!
+  pricePerMember: Int!
+  totalAmount: Int!
+  
+  startDate: Date!
+  endDate: Date!
+  
+  # 갱신 조건 (JSON으로 저장)
+  renewalTerms: String         # JSON renewal terms object
+  
+  # 결제 정보
+  paymentMethod: String!       # 'BANK_TRANSFER' | 'CREDIT_CARD' | 'CORPORATE_CARD'
+  billingCycle: String!        # 'MONTHLY' | 'QUARTERLY' | 'ANNUAL'
+  
+  status: String!              # 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+  
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  signedBy: User!              # 서명자
+}
+
+type AIReportUsage @table {
+  id: UUID! @default(expr: "uuidV4()")
+  user: User!
+  organization: Organization   # 조직 사용자인 경우
+  
+  reportType: String!          # 'BASIC' | 'DETAILED' | 'COMPREHENSIVE'
+  creditCost: Int!
+  
+  sessionDataId: String!       # 세션 데이터 참조
+  reportContent: String        # 리포트 내용 (큰 텍스트)
+  generatedAt: Timestamp!
+  
+  # 품질 평가
+  qualityScore: Float
+  feedback: String
+}
+
+type ConsultationUsage @table {
+  id: UUID! @default(expr: "uuidV4()")
+  user: User!
+  organization: Organization   # 조직 사용자인 경우
+  
+  consultationType: String!    # 'BASIC' | 'PREMIUM'
+  creditCost: Int!
+  
+  # 메시지 (JSON 배열로 저장)
+  messages: String!            # JSON messages array
+  
+  startedAt: Timestamp!
+  endedAt: Timestamp
+  duration: Int                # 초 단위
+  
+  # 만족도 평가
+  satisfaction: Int            # 1-5점
+  feedback: String
+}
+
+type BusinessMetrics @table {
+  id: UUID! @default(expr: "uuidV4()")
+  organization: Organization!
+  
+  # 기간
+  periodStart: Date!
+  periodEnd: Date!
+  
+  # 사용량 메트릭
+  reportsGenerated: Int!
+  consultationsSessions: Int!
+  creditsConsumed: Int!
+  
+  # 참여도 메트릭
+  activeMemberCount: Int!
+  totalMemberCount: Int!
+  participationRate: Float!    # %
+  
+  # 완료율 메트릭
+  completedMeasurements: Int!
+  scheduledMeasurements: Int!
+  completionRate: Float!       # %
+  
+  # 만족도 메트릭
+  avgReportRating: Float!
+  avgConsultationRating: Float!
+  npsScore: Float              # Net Promoter Score
+  
+  generatedAt: Timestamp!
+}
+
+type CreditPackage @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  description: String!
+  creditAmount: Int!
+  price: Int!                  # 원
+  validityDays: Int!           # 유효기간 (일)
+  isActive: Boolean!
+  
+  # 할인 조건 (JSON 배열로 저장)
+  volumeDiscounts: String      # JSON volume discounts array
+  
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
 }

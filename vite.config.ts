@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
@@ -9,13 +10,17 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    port: 3000,
-    https: {}  // Google OAuth 필수: 자체 서명 인증서로 HTTPS 활성화
+    port: 3000
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
     },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
   },
   build: {
     rollupOptions: {

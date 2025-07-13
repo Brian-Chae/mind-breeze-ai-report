@@ -106,7 +106,35 @@ export class FirebaseService {
 
   static async updateUserProfile(userId: string, data: any) {
     try {
-      await updateDoc(doc(db, 'users', userId), {
+      // 먼저 문서가 존재하는지 확인
+      const userDoc = doc(db, 'users', userId);
+      const userSnapshot = await getDoc(userDoc);
+      
+      if (!userSnapshot.exists()) {
+        // 문서가 없으면 기본 프로필 생성
+        console.log('🔧 사용자 프로필이 없어서 자동 생성 중...');
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          await this.createUserProfile(currentUser);
+        } else {
+          // currentUser가 없으면 기본 프로필 생성
+          await setDoc(userDoc, {
+            email: 'unknown@example.com',
+            displayName: '',
+            createdAt: Timestamp.now(),
+            lastLoginAt: Timestamp.now(),
+            profileCompleted: false,
+            preferences: {
+              language: 'ko',
+              notifications: true,
+              dataSharing: false
+            }
+          });
+        }
+      }
+      
+      // 이제 문서가 존재하므로 업데이트
+      await updateDoc(userDoc, {
         ...data,
         updatedAt: Timestamp.now()
       });
