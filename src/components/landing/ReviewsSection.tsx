@@ -43,7 +43,7 @@ const reviews = [
     rating: 4,
     review: "직장 스트레스를 관리하는 데 정말 유용해요. AI 상담 기능이 특히 좋아요. 밤에 잠들기 전에 체크하는 것이 습관이 되었습니다.",
     highlight: "바쁜 부모에게 완벽",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
     verified: true
   },
   {

@@ -95,7 +95,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError('');
-    
+
     console.log('🔵 Google 로그인 시도 시작');
     console.log('🔍 현재 환경:', {
       hostname: window.location.hostname,
@@ -104,91 +104,68 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       href: window.location.href
     });
     
+    const isDevelopment = window.location.hostname === 'localhost';
+    console.log('🔍 환경 감지 결과:', { isDevelopment });
+    
+    console.log('🔵 Firebase Auth 인스턴스:', auth);
+    console.log('🔵 Firebase Config:', {
+      authDomain: auth.config.authDomain,
+      apiKey: auth.config.apiKey ? '***' : 'NOT_SET'
+    });
+
     const provider = new GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
     
-    // 개발 환경에서는 팝업 방식 강제 사용
-    const isDevelopment = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' ||
-                         window.location.port === '5173' ||
-                         window.location.port === '5174';
-    
-    console.log('🔍 환경 감지 결과:', { isDevelopment });
-    
+    // 추가 파라미터 설정
+    provider.setCustomParameters({
+      'prompt': 'select_account'
+    });
+
+    console.log('🔍 Google Auth Provider 생성 완료. 팝업 방식으로 시도합니다.');
+
     try {
-      if (isDevelopment) {
-        // 개발 환경: 팝업 방식만 사용
-        console.log('🔵 개발 환경 감지 - 팝업 방식 강제 사용');
-        
-        // 팝업 차단 확인을 위한 테스트 팝업
-        const testPopup = window.open('', '_blank', 'width=1,height=1');
-        if (!testPopup || testPopup.closed) {
-          console.warn('⚠️ 팝업이 차단되었습니다. 리다이렉트 방식으로 전환합니다.');
-          setError('팝업이 차단되어 리다이렉트 방식으로 진행합니다. 잠시만 기다려주세요...');
-          
-          // 팝업이 차단된 경우 리다이렉트 방식으로 폴백
-          try {
-            const { signInWithRedirect } = await import('firebase/auth');
-            await signInWithRedirect(auth, provider);
-            return; // 리다이렉트 후에는 페이지가 새로고침되므로 return
-          } catch (redirectError: any) {
-            console.error('❌ 리다이렉트 로그인도 실패:', redirectError);
-            setError('로그인에 실패했습니다. 브라우저에서 팝업을 허용하거나 페이지를 새로고침해주세요.');
-            setIsLoading(false);
-            return;
-          }
-        }
-        testPopup.close();
-        
-        console.log('🔵 팝업 차단 확인 완료, Google 팝업 로그인 시도 중...');
-        const result = await signInWithPopup(auth, provider);
-        console.log('✅ Google 팝업 로그인 성공:', {
-          uid: result.user.uid,
-          email: result.user.email,
-          displayName: result.user.displayName
-        });
-        
-        // 마지막 로그인 시간 업데이트
-        try {
-          await FirebaseService.updateUserProfile(result.user.uid, {
-            lastLoginAt: new Date()
-          });
-        } catch (updateError) {
-          console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
-        }
-      } else {
-        // 프로덕션 환경: 리다이렉트 방식 사용
-        console.log('🔵 프로덕션 환경 - Google 리다이렉트 로그인 시도 중...');
-        const { signInWithRedirect } = await import('firebase/auth');
-        await signInWithRedirect(auth, provider);
-      }
-      
-    } catch (error: any) {
-      console.error('❌ Google 로그인 오류:', {
-        code: error.code,
-        message: error.message,
-        details: error
+      // 팝업 방식으로 시도 (페이지 이동 없음)
+      console.log('🔍 signInWithPopup 호출 시작');
+      const result = await signInWithPopup(auth, provider);
+      console.log('✅ Google 팝업 로그인 성공:', {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName
       });
       
-      // 개발 환경에서는 팝업 실패 시 사용자에게 안내
-      if (isDevelopment) {
-        if (error.code === 'auth/popup-blocked') {
-          setError('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 후 다시 시도해주세요.');
-        } else if (error.code === 'auth/popup-closed-by-user') {
-          setError(''); // 사용자가 팝업을 닫은 경우는 에러 표시하지 않음
-        } else if (error.code === 'auth/unauthorized-domain') {
-          setError(`도메인이 승인되지 않았습니다. Firebase Console에서 ${window.location.hostname}:${window.location.port}을 승인된 도메인에 추가해주세요.`);
-        } else {
-          setError(getErrorMessage(error.code));
-        }
-      } else {
-        const errorMessage = getErrorMessage(error.code);
-        if (errorMessage) {
-          setError(errorMessage);
-        }
+      // Firebase Firestore에 사용자 프로필 생성/업데이트
+      try {
+        await FirebaseService.createUserProfile(result.user);
+        console.log('✅ 사용자 프로필 처리 완료');
+      } catch (profileError) {
+        console.warn('⚠️ 사용자 프로필 처리 실패 (로그인은 성공):', profileError);
       }
       
+      console.log('✅ 로그인 프로세스 완료, 인증 상태 변화 대기 중...');
+      // useEffect에서 자동으로 리다이렉션됨
+    } catch (error: any) {
+      console.error('❌ Google 팝업 로그인 실패:', {
+        code: error.code,
+        message: error.message,
+        details: error,
+        authDomain: auth.config.authDomain
+      });
+      
+      // 더 자세한 오류 정보 출력
+      if (error.code === 'auth/unauthorized-domain') {
+        console.error('❌ 승인되지 않은 도메인 오류. Firebase Console에서 승인된 도메인을 확인하세요.');
+        console.error('❌ 현재 도메인:', window.location.hostname);
+      } else if (error.code === 'auth/popup-blocked') {
+        console.error('❌ 팝업이 차단되었습니다. 브라우저 팝업 차단을 해제해주세요.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        console.log('ℹ️ 사용자가 팝업을 닫았습니다.');
+        setError(''); // 사용자가 취소한 경우 에러 메시지 표시하지 않음
+        setIsLoading(false);
+        return;
+      }
+      
+      setError(getErrorMessage(error.code));
       setIsLoading(false);
     }
   };
@@ -274,12 +251,13 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('🔴 Google 로그인 버튼 클릭됨!');
                 handleGoogleLogin();
               }}
               disabled={isLoading}
             >
               <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5 mr-3" />
-              Google로 계속하기
+              Google로 로그인
             </Button>
           </div>
 
@@ -293,7 +271,27 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
-              <p className="text-red-600 text-sm">{error}</p>
+              <p className="text-red-600 text-sm font-medium">{error}</p>
+              
+              {/* Firebase Console 설정 안내 */}
+              {(error.includes('승인되지 않은') || error.includes('unauthorized-domain') || error.includes('타임아웃')) && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-xs font-medium text-yellow-800 mb-2">🔧 즉시 해결 방법:</p>
+                  <ol className="text-xs text-yellow-700 space-y-1 ml-4">
+                    <li>1. <a 
+                      href="https://console.firebase.google.com/project/mind-breeze-ai-report-47942/authentication/settings" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="underline text-blue-600 hover:text-blue-800"
+                    >
+                      Firebase Console 열기
+                    </a></li>
+                    <li>2. "Authorized domains" → "Add domain"</li>
+                    <li>3. <code className="bg-gray-100 px-1 rounded">localhost</code> 추가</li>
+                    <li>4. 페이지 새로고침 후 다시 시도</li>
+                  </ol>
+                </div>
+              )}
             </div>
           )}
 

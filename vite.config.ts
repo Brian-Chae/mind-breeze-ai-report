@@ -1,114 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        // 개발 환경에서 경고 최소화
-        globDirectory: 'dist',
-        globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
-        // 파일 크기 제한 증가 (4MB로 설정)
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        // 캐시 무효화 전략 강화
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1년
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30일
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:js|css)$/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'static-resources',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7일
-              }
-            }
-          },
-          // Google AI API 호출은 네트워크 우선으로 처리 (타임아웃 후 캐시 사용)
-          {
-            urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'google-ai-api',
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          // Firebase APIs - 네트워크 우선
-          {
-            urlPattern: /^https:\/\/identitytoolkit\.googleapis\.com\/.*/i,
-            handler: 'NetworkOnly', // 캐시하지 않음
-          },
-          // Google APIs - 네트워크 우선
-          {
-            urlPattern: /^https:\/\/apis\.google\.com\/.*/i,
-            handler: 'NetworkOnly', // 캐시하지 않음
-          },
-          // Google Analytics - 네트워크 우선
-          {
-            urlPattern: /^https:\/\/www\.google-analytics\.com\/.*/i,
-            handler: 'NetworkOnly', // 캐시하지 않음
-          }
-        ],
-        // 즉시 업데이트를 위한 설정
-        skipWaiting: true,
-        clientsClaim: true,
-        // 캐시 무효화 전략
-        cleanupOutdatedCaches: true
-      },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
-      manifest: {
-        name: 'MIND BREEZE AI Report',
-        short_name: 'MindBreeze',
-        description: 'AI-powered health analysis using EEG and PPG biomarkers',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        orientation: 'portrait'
-      },
-      // 개발 모드에서도 PWA 기능 활성화
-      devOptions: {
-        enabled: true,
-        type: 'module',
-        // 개발 환경에서 workbox 로그 레벨 조정
-        navigateFallback: 'index.html',
-        suppressWarnings: true
-      }
-    })
+    react()
+    // PWA 일시적으로 비활성화 - Firebase 로딩 문제 해결 후 다시 활성화
   ],
   server: {
     host: true,
-    port: 5173
+    port: 3000,
+    https: {}  // Google OAuth 필수: 자체 서명 인증서로 HTTPS 활성화
   },
   resolve: {
     alias: {
