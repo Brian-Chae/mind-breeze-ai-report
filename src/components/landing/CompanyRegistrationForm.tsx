@@ -1,0 +1,616 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Checkbox } from '../ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
+import { Alert, AlertDescription } from '../ui/alert';
+import { 
+  Building2, 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  CreditCard, 
+  Shield, 
+  AlertCircle,
+  CheckCircle,
+  ArrowLeft,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+import { CompanyService } from '../../services/CompanyService';
+import { CompanyCodeService } from '../../services/CompanyCodeService';
+import { toast } from 'sonner';
+
+interface CompanyRegistrationData {
+  // 회사 정보
+  companyName: string;
+  businessNumber: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  
+  // 관리자 정보
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+  adminPasswordConfirm: string;
+  
+  // 서비스 설정
+  servicePackage: 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
+  estimatedMemberCount: number;
+  
+  // 약관 동의
+  agreeToTerms: boolean;
+  agreeToPrivacy: boolean;
+  agreeToMarketing: boolean;
+}
+
+export default function CompanyRegistrationForm() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null);
+  
+  const [formData, setFormData] = useState<CompanyRegistrationData>({
+    companyName: '',
+    businessNumber: '',
+    contactEmail: '',
+    contactPhone: '',
+    address: '',
+    adminName: '',
+    adminEmail: '',
+    adminPassword: '',
+    adminPasswordConfirm: '',
+    servicePackage: 'BASIC',
+    estimatedMemberCount: 10,
+    agreeToTerms: false,
+    agreeToPrivacy: false,
+    agreeToMarketing: false
+  });
+
+  const [errors, setErrors] = useState<Partial<Record<keyof CompanyRegistrationData, string>>>({});
+
+  const handleInputChange = (field: keyof CompanyRegistrationData, value: string | number | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // 에러 제거
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof CompanyRegistrationData, string>> = {};
+
+    // 회사 정보 검증
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = '회사명을 입력해주세요';
+    }
+    
+    if (!formData.businessNumber.trim()) {
+      newErrors.businessNumber = '사업자등록번호를 입력해주세요';
+    } else if (!/^\d{3}-\d{2}-\d{5}$/.test(formData.businessNumber)) {
+      newErrors.businessNumber = '올바른 사업자등록번호 형식을 입력해주세요 (예: 123-45-67890)';
+    }
+    
+    if (!formData.contactEmail.trim()) {
+      newErrors.contactEmail = '회사 연락처 이메일을 입력해주세요';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
+      newErrors.contactEmail = '올바른 이메일 형식을 입력해주세요';
+    }
+    
+    if (!formData.contactPhone.trim()) {
+      newErrors.contactPhone = '회사 연락처를 입력해주세요';
+    }
+
+    // 관리자 정보 검증
+    if (!formData.adminName.trim()) {
+      newErrors.adminName = '관리자 이름을 입력해주세요';
+    }
+    
+    if (!formData.adminEmail.trim()) {
+      newErrors.adminEmail = '관리자 이메일을 입력해주세요';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.adminEmail)) {
+      newErrors.adminEmail = '올바른 이메일 형식을 입력해주세요';
+    }
+    
+    if (!formData.adminPassword) {
+      newErrors.adminPassword = '비밀번호를 입력해주세요';
+    } else if (formData.adminPassword.length < 6) {
+      newErrors.adminPassword = '비밀번호는 최소 6자 이상이어야 합니다';
+    }
+    
+    if (formData.adminPassword !== formData.adminPasswordConfirm) {
+      newErrors.adminPasswordConfirm = '비밀번호가 일치하지 않습니다';
+    }
+
+    // 약관 동의 검증
+    if (!formData.agreeToTerms) {
+      newErrors.agreeToTerms = '서비스 이용약관에 동의해주세요';
+    }
+    
+    if (!formData.agreeToPrivacy) {
+      newErrors.agreeToPrivacy = '개인정보처리방침에 동의해주세요';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error('입력 정보를 확인해주세요');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // 기존 CompanyService.registerCompany 메서드에 맞게 데이터 변환
+      const registrationData = {
+        companyName: formData.companyName,
+        businessRegistrationNumber: formData.businessNumber,
+        address: formData.address,
+        employeeCount: formData.estimatedMemberCount,
+        industry: undefined,
+        contactPhone: formData.contactPhone,
+        contactEmail: formData.contactEmail,
+        adminUserData: {
+          name: formData.adminName,
+          email: formData.adminEmail,
+          password: formData.adminPassword,
+          position: '관리자',
+          phone: formData.contactPhone
+        }
+      };
+
+      // 회사 등록 (CompanyService가 내부적으로 회사 코드 생성)
+      const registrationResult = await CompanyService.registerCompany(registrationData);
+
+      if (registrationResult.success) {
+        setGeneratedCompanyCode(registrationResult.companyCode || null);
+        toast.success('회사 등록이 완료되었습니다!');
+        
+        // 성공 페이지로 이동
+        navigate('/company-registration-success', { 
+          state: { 
+            companyCode: registrationResult.companyCode,
+            companyName: formData.companyName,
+            adminEmail: formData.adminEmail
+          } 
+        });
+      } else {
+        throw new Error(registrationResult.error || '회사 등록에 실패했습니다');
+      }
+      
+    } catch (error) {
+      console.error('회사 등록 오류:', error);
+      toast.error(error instanceof Error ? error.message : '회사 등록 중 오류가 발생했습니다');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getServicePackagePrice = (packageType: string, memberCount: number) => {
+    const basePrice = 7900;
+    let discountRate = 0;
+    
+    if (memberCount >= 1000) discountRate = 0.25;
+    else if (memberCount >= 500) discountRate = 0.20;
+    else if (memberCount >= 100) discountRate = 0.10;
+    
+    const discountedPrice = basePrice * (1 - discountRate);
+    const monthlyTotal = discountedPrice * memberCount;
+    
+    return { basePrice, discountedPrice, monthlyTotal, discountRate };
+  };
+
+  const pricing = getServicePackagePrice(formData.servicePackage, formData.estimatedMemberCount);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/company-signup-selection')}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            이전으로
+          </Button>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            신규 회사 등록
+          </h1>
+          <p className="text-gray-600">
+            MIND BREEZE AI 리포트 서비스를 위한 회사 정보를 등록해주세요
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* 회사 정보 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                회사 정보
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                    회사명 *
+                  </label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => handleInputChange('companyName', e.target.value)}
+                    placeholder="주식회사 마인드브리즈"
+                    className={errors.companyName ? 'border-red-500' : ''}
+                  />
+                  {errors.companyName && (
+                    <p className="text-sm text-red-500 mt-1">{errors.companyName}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="businessNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                    사업자등록번호 *
+                  </label>
+                  <Input
+                    id="businessNumber"
+                    value={formData.businessNumber}
+                    onChange={(e) => handleInputChange('businessNumber', e.target.value)}
+                    placeholder="123-45-67890"
+                    className={errors.businessNumber ? 'border-red-500' : ''}
+                  />
+                  {errors.businessNumber && (
+                    <p className="text-sm text-red-500 mt-1">{errors.businessNumber}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                    회사 연락처 이메일 *
+                  </label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                    placeholder="contact@company.com"
+                    className={errors.contactEmail ? 'border-red-500' : ''}
+                  />
+                  {errors.contactEmail && (
+                    <p className="text-sm text-red-500 mt-1">{errors.contactEmail}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-2">
+                    회사 연락처 *
+                  </label>
+                  <Input
+                    id="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                    placeholder="02-1234-5678"
+                    className={errors.contactPhone ? 'border-red-500' : ''}
+                  />
+                  {errors.contactPhone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.contactPhone}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                  회사 주소 (선택사항)
+                </label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  placeholder="서울시 강남구 테헤란로 123, 4층"
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 관리자 정보 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                관리자 정보
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-2">
+                    관리자 이름 *
+                  </label>
+                  <Input
+                    id="adminName"
+                    value={formData.adminName}
+                    onChange={(e) => handleInputChange('adminName', e.target.value)}
+                    placeholder="홍길동"
+                    className={errors.adminName ? 'border-red-500' : ''}
+                  />
+                  {errors.adminName && (
+                    <p className="text-sm text-red-500 mt-1">{errors.adminName}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="adminEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                    관리자 이메일 *
+                  </label>
+                  <Input
+                    id="adminEmail"
+                    type="email"
+                    value={formData.adminEmail}
+                    onChange={(e) => handleInputChange('adminEmail', e.target.value)}
+                    placeholder="admin@company.com"
+                    className={errors.adminEmail ? 'border-red-500' : ''}
+                  />
+                  {errors.adminEmail && (
+                    <p className="text-sm text-red-500 mt-1">{errors.adminEmail}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    비밀번호 *
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="adminPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.adminPassword}
+                      onChange={(e) => handleInputChange('adminPassword', e.target.value)}
+                      placeholder="최소 6자 이상"
+                      className={errors.adminPassword ? 'border-red-500' : ''}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.adminPassword && (
+                    <p className="text-sm text-red-500 mt-1">{errors.adminPassword}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="adminPasswordConfirm" className="block text-sm font-medium text-gray-700 mb-2">
+                    비밀번호 확인 *
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="adminPasswordConfirm"
+                      type={showPasswordConfirm ? 'text' : 'password'}
+                      value={formData.adminPasswordConfirm}
+                      onChange={(e) => handleInputChange('adminPasswordConfirm', e.target.value)}
+                      placeholder="비밀번호 재입력"
+                      className={errors.adminPasswordConfirm ? 'border-red-500' : ''}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPasswordConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.adminPasswordConfirm && (
+                    <p className="text-sm text-red-500 mt-1">{errors.adminPasswordConfirm}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 서비스 패키지 선택 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                서비스 패키지
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="servicePackage" className="block text-sm font-medium text-gray-700 mb-2">
+                    패키지 선택
+                  </label>
+                  <Select 
+                    value={formData.servicePackage} 
+                    onValueChange={(value) => handleInputChange('servicePackage', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="패키지를 선택해주세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BASIC">베이직 패키지</SelectItem>
+                      <SelectItem value="PREMIUM">프리미엄 패키지</SelectItem>
+                      <SelectItem value="ENTERPRISE">엔터프라이즈 패키지</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label htmlFor="estimatedMemberCount" className="block text-sm font-medium text-gray-700 mb-2">
+                    예상 구성원 수
+                  </label>
+                  <Input
+                    id="estimatedMemberCount"
+                    type="number"
+                    value={formData.estimatedMemberCount}
+                    onChange={(e) => handleInputChange('estimatedMemberCount', parseInt(e.target.value) || 0)}
+                    min="1"
+                    max="10000"
+                    placeholder="10"
+                  />
+                </div>
+              </div>
+
+              {/* 요금 정보 */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold mb-2">예상 요금 정보</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>기본 요금 (인당):</span>
+                    <span>{pricing.basePrice.toLocaleString()}원</span>
+                  </div>
+                  {pricing.discountRate > 0 && (
+                    <>
+                      <div className="flex justify-between text-green-600">
+                        <span>볼륨 할인 ({Math.round(pricing.discountRate * 100)}%):</span>
+                        <span>-{((pricing.basePrice - pricing.discountedPrice) * formData.estimatedMemberCount).toLocaleString()}원</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>할인 적용가 (인당):</span>
+                        <span>{pricing.discountedPrice.toLocaleString()}원</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                    <span>월 예상 요금:</span>
+                    <span>{pricing.monthlyTotal.toLocaleString()}원</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 약관 동의 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                약관 동의
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="agreeToTerms"
+                    checked={formData.agreeToTerms}
+                    onCheckedChange={(checked) => handleInputChange('agreeToTerms', checked)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer">
+                      서비스 이용약관 동의 (필수)
+                    </label>
+                    <p className="text-xs text-gray-600 mt-1">
+                      MIND BREEZE AI 서비스 이용에 관한 약관에 동의합니다.
+                    </p>
+                  </div>
+                </div>
+                {errors.agreeToTerms && (
+                  <p className="text-sm text-red-500 ml-6">{errors.agreeToTerms}</p>
+                )}
+
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="agreeToPrivacy"
+                    checked={formData.agreeToPrivacy}
+                    onCheckedChange={(checked) => handleInputChange('agreeToPrivacy', checked)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer">
+                      개인정보처리방침 동의 (필수)
+                    </label>
+                    <p className="text-xs text-gray-600 mt-1">
+                      개인정보 수집, 이용, 제공에 대한 동의입니다.
+                    </p>
+                  </div>
+                </div>
+                {errors.agreeToPrivacy && (
+                  <p className="text-sm text-red-500 ml-6">{errors.agreeToPrivacy}</p>
+                )}
+
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="agreeToMarketing"
+                    checked={formData.agreeToMarketing}
+                    onCheckedChange={(checked) => handleInputChange('agreeToMarketing', checked)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="agreeToMarketing" className="text-sm font-medium cursor-pointer">
+                      마케팅 정보 수신 동의 (선택)
+                    </label>
+                    <p className="text-xs text-gray-600 mt-1">
+                      신규 서비스 및 이벤트 정보를 이메일로 받아보실 수 있습니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 생성된 회사 코드 표시 */}
+          {generatedCompanyCode && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>회사 코드가 생성되었습니다: {generatedCompanyCode}</strong>
+                <br />
+                이 코드는 직원들이 회사에 참여할 때 사용됩니다.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* 제출 버튼 */}
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/company-signup-selection')}
+              className="flex-1"
+            >
+              취소
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  등록 중...
+                </>
+              ) : (
+                '회사 등록 완료'
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+} 
