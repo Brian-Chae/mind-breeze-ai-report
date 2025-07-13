@@ -9,12 +9,14 @@ import { auth } from '../../services/firebase';
 import { FirebaseService } from '../../services/FirebaseService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthProvider';
+import CompanySignupSelectionPage from './CompanySignupSelectionPage';
 
 interface SignupPageProps {
   onNavigate: (page: string) => void;
 }
 
 export function SignupPage({ onNavigate }: SignupPageProps) {
+  const [signupMode, setSignupMode] = useState<'selection' | 'company-registration' | 'member-registration'>('selection');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -151,16 +153,34 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
     });
   };
 
+  // 선택 화면 핸들러
+  const handleModeNavigate = (mode: string) => {
+    if (mode === 'home') {
+      onNavigate('home');
+    } else if (mode === 'login') {
+      onNavigate('login');
+    } else if (mode === 'company-registration') {
+      setSignupMode('company-registration');
+    } else if (mode === 'member-registration') {
+      setSignupMode('member-registration');
+    }
+  };
+
+  // 선택 화면 표시
+  if (signupMode === 'selection') {
+    return <CompanySignupSelectionPage onNavigate={handleModeNavigate} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back Button */}
         <button
-          onClick={() => step === 1 ? onNavigate('home') : setStep(1)}
+          onClick={() => step === 1 ? setSignupMode('selection') : setStep(1)}
           className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>{step === 1 ? '홈으로 돌아가기' : '이전 단계'}</span>
+          <span>{step === 1 ? '선택 화면으로 돌아가기' : '이전 단계'}</span>
         </button>
 
         {/* Signup Card */}
@@ -174,11 +194,17 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
               <span className="text-2xl font-bold text-gray-900">MIND BREEZE - AI Report</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {step === 1 ? '기업 회원가입' : '약관 동의'}
+              {step === 1 
+                ? (signupMode === 'company-registration' ? '신규 기업 등록' : '기존 기업 합류') 
+                : '약관 동의'
+              }
             </h1>
             <p className="text-gray-600">
               {step === 1 
-                ? '기업을 위한 AI 헬스케어 솔루션 가입을 환영합니다' 
+                ? (signupMode === 'company-registration' 
+                    ? '새로운 기업 정보를 등록하고 6자리 기업 코드를 받아보세요' 
+                    : '기업 코드를 입력하여 기존 기업에 합류하세요'
+                  )
                 : '서비스 이용을 위한 약관에 동의해주세요'
               }
             </p>
