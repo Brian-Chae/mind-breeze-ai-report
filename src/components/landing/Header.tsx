@@ -97,14 +97,14 @@ export function Header({ onNavigate }: HeaderProps) {
               className="text-black hover:text-black"
               onClick={() => onNavigate('login')}
             >
-              {t.nav.login}
+              기업 로그인
             </Button>
             <Button 
               size="sm" 
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => onNavigate('signup')}
             >
-              {t.nav.signup}
+              기업 회원가입
             </Button>
           </div>
 
@@ -196,7 +196,7 @@ export function Header({ onNavigate }: HeaderProps) {
                     onNavigate('login');
                   }}
                 >
-                  {t.nav.login}
+                  기업 로그인
                 </Button>
                 <Button 
                   size="sm" 
@@ -206,7 +206,7 @@ export function Header({ onNavigate }: HeaderProps) {
                     onNavigate('signup');
                   }}
                 >
-                  {t.nav.signup}
+                  기업 회원가입
                 </Button>
               </div>
             </nav>

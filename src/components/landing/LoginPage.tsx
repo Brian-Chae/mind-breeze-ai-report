@@ -147,8 +147,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
               </div>
               <span className="text-2xl font-bold text-gray-900">MIND BREEZE - AI Report</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">로그인</h1>
-            <p className="text-gray-600">뇌 건강 모니터링 서비스에 오신 것을 환영합니다</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">기업 로그인</h1>
+            <p className="text-gray-600">기업을 위한 AI 헬스케어 솔루션에 오신 것을 환영합니다</p>
           </div>
 
 
@@ -277,7 +277,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                   <span>로그인 중...</span>
                 </div>
               ) : (
-                '로그인'
+                '기업 로그인'
               )}
             </Button>
           </form>
@@ -290,7 +290,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                 onClick={() => onNavigate('signup')}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                회원가입
+                기업 회원가입
               </button>
             </p>
           </div>

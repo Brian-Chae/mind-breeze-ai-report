@@ -174,11 +174,11 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
               <span className="text-2xl font-bold text-gray-900">MIND BREEZE - AI Report</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {step === 1 ? '회원가입' : '약관 동의'}
+              {step === 1 ? '기업 회원가입' : '약관 동의'}
             </h1>
             <p className="text-gray-600">
               {step === 1 
-                ? '뇌 건강 모니터링 서비스 가입을 환영합니다' 
+                ? '기업을 위한 AI 헬스케어 솔루션 가입을 환영합니다' 
                 : '서비스 이용을 위한 약관에 동의해주세요'
               }
             </p>
@@ -454,7 +454,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                     <span>가입 처리 중...</span>
                   </div>
                 ) : (
-                  '회원가입 완료'
+                  '기업 회원가입 완료'
                 )}
               </Button>
             </form>
@@ -468,7 +468,7 @@ export function SignupPage({ onNavigate }: SignupPageProps) {
                 onClick={() => onNavigate('login')}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                로그인
+                기업 로그인
               </button>
             </p>
           </div>
