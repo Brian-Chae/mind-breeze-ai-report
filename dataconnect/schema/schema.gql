@@ -8,6 +8,8 @@ type User @table {
   # B2B/B2C 확장 필드
   employeeId: String           # 조직 구성원용 직원 ID
   organizationId: UUID         # 조직 참조 (조직 사용자만)
+  companyId: UUID              # 기업 참조 (기업 사용자만)
+  companyCode: String          # 6자리 기업 코드
   userType: UserType!          # 사용자 유형
   department: String           # 부서 (조직 사용자만)
   position: String             # 직책 (조직 사용자만)
@@ -26,6 +28,7 @@ enum UserType {
   ORGANIZATION_ADMIN  
   ORGANIZATION_MEMBER
   INDIVIDUAL_USER
+  MEASUREMENT_SUBJECT
 }
 
 enum VolumeDiscountTier {
@@ -48,6 +51,13 @@ enum OrganizationStatus {
   TERMINATED
 }
 
+enum CompanyPaymentStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
 enum ServicePackageType {
   BASIC
   PREMIUM
@@ -62,6 +72,99 @@ enum CreditTransactionType {
   CONSULTATION_USAGE
   REFUND
   EXPIRY
+}
+
+# === B2B 기업 시스템 (새로운 6자리 코드 기반) ===
+
+type Company @table {
+  id: UUID! @default(expr: "uuidV4()")
+  companyCode: String!         # 6자리 고유 코드 (MB2401, MB2402...)
+  companyName: String!
+  businessRegistrationNumber: String!
+  address: String!
+  employeeCount: Int!
+  industry: String
+  contactPhone: String!
+  contactEmail: String!
+  
+  # 결제 관리
+  paymentStatus: CompanyPaymentStatus!
+  creditBalance: Int!
+  
+  # 계약 정보
+  contractStartDate: Date
+  contractEndDate: Date
+  servicePackage: ServicePackageType!
+  
+  # 관리자 정보
+  adminUserId: UUID!           # 기업 관리자 사용자 ID
+  
+  # 설정 (JSON으로 저장)
+  settings: String             # JSON settings object
+  
+  # 메타데이터
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type CompanyMember @table {
+  id: UUID! @default(expr: "uuidV4()")
+  user: User!
+  company: Company!
+  employeeId: String
+  department: String
+  position: String
+  joinedAt: Timestamp!
+  isActive: Boolean!
+  
+  # 사용 통계
+  reportsGenerated: Int!
+  consultationsUsed: Int!
+  lastActivityAt: Timestamp
+}
+
+type MeasurementSession @table {
+  id: UUID! @default(expr: "uuidV4()")
+  subjectName: String!         # 측정 대상자 이름
+  subjectBirthDate: Date!      # 측정 대상자 생년월일
+  subjectPhone: String!        # 측정 대상자 전화번호
+  
+  company: Company!            # 측정을 실시한 기업
+  measuredBy: User!            # 측정을 실시한 사용자 (ORGANIZATION_MEMBER)
+  
+  sessionDate: Date!
+  sessionTime: Timestamp!
+  duration: Int!               # 초 단위
+  
+  # 측정 데이터
+  rawDataUri: String
+  processedDataUri: String
+  
+  # 결과
+  overallScore: Int
+  stressLevel: Float
+  focusLevel: Float
+  reportGenerated: Boolean!
+  
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type ConsentRecord @table {
+  id: UUID! @default(expr: "uuidV4()")
+  subjectName: String!
+  subjectBirthDate: Date!
+  subjectPhone: String!
+  
+  company: Company!
+  consentGivenAt: Timestamp!
+  consentType: String!         # 'MEASUREMENT' | 'DATA_PROCESSING' | 'REPORT_GENERATION'
+  
+  # 동의 내용
+  consentText: String!
+  isActive: Boolean!
+  
+  createdAt: Timestamp!
 }
 
 type Device @table {
@@ -169,6 +272,7 @@ type OrganizationMember @table {
 type CreditTransaction @table {
   id: UUID! @default(expr: "uuidV4()")
   organization: Organization    # 조직 크레딧인 경우
+  company: Company             # 기업 크레딧인 경우
   user: User                   # 개인 크레딧인 경우
   
   amount: Int!                 # 양수: 충전, 음수: 사용
