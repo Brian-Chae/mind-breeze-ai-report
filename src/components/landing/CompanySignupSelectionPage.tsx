@@ -7,21 +7,20 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, Users, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
-interface CompanySignupSelectionPageProps {
-  onNavigate: (page: string) => void;
-}
+export default function CompanySignupSelectionPage() {
+  const navigate = useNavigate();
 
-export function CompanySignupSelectionPage({ onNavigate }: CompanySignupSelectionPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Back Button */}
         <button
-          onClick={() => onNavigate('home')}
+          onClick={() => navigate('/')}
           className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -88,7 +87,7 @@ export function CompanySignupSelectionPage({ onNavigate }: CompanySignupSelectio
               </div>
 
               <Button
-                onClick={() => onNavigate('company-registration')}
+                onClick={() => navigate('/company-registration')}
                 className="w-full bg-blue-600 hover:bg-blue-700 py-4 text-lg font-semibold"
               >
                 신규 기업 등록하기
@@ -139,7 +138,7 @@ export function CompanySignupSelectionPage({ onNavigate }: CompanySignupSelectio
               </div>
 
               <Button
-                onClick={() => onNavigate('member-registration')}
+                onClick={() => navigate('/company-join')}
                 className="w-full bg-green-600 hover:bg-green-700 py-4 text-lg font-semibold"
               >
                 기존 기업 합류하기
@@ -148,67 +147,33 @@ export function CompanySignupSelectionPage({ onNavigate }: CompanySignupSelectio
           </Card>
         </div>
 
-        {/* Additional Info */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Mind Breeze AI 서비스 특징
+        {/* 추가 정보 섹션 */}
+        <div className="bg-gray-50 rounded-xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            MIND BREEZE AI가 처음이신가요?
           </h2>
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-            <div className="space-y-3">
-              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl mx-auto">
-                <Building2 className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">기업 중심 관리</h3>
-              <p className="text-gray-600">
-                6자리 기업 코드로 모든 구성원을 체계적으로 관리할 수 있습니다.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl mx-auto">
-                <Users className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">역할별 권한</h3>
-              <p className="text-gray-600">
-                관리자와 현장 담당자의 역할을 명확히 구분하여 보안을 강화합니다.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl mx-auto">
-                <CheckCircle className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">간편한 측정</h3>
-              <p className="text-gray-600">
-                측정 대상자는 간단한 정보만으로 빠르게 측정에 참여할 수 있습니다.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            이미 계정이 있으신가요?{' '}
-            <button
-              onClick={() => onNavigate('login')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              기업 로그인
-            </button>
+          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+            AI 기반 헬스케어 솔루션으로 직원의 건강 관리부터 조직의 웰빙까지 
+            체계적으로 관리할 수 있는 통합 플랫폼입니다.
           </p>
-          <div className="text-sm text-gray-500">
-            <p>MIND BREEZE AI - 기업을 위한 AI 헬스케어 솔루션</p>
-            <p className="mt-2">
-              <a href="#" className="hover:text-blue-600">개인정보처리방침</a>
-              {' · '}
-              <a href="#" className="hover:text-blue-600">이용약관</a>
-              {' · '}
-              <a href="#" className="hover:text-blue-600">고객지원</a>
-            </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/demo')}
+              className="px-6 py-3 text-lg"
+            >
+              데모 체험하기
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/contact')}
+              className="px-6 py-3 text-lg"
+            >
+              문의하기
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-export default CompanySignupSelectionPage; 
+} 

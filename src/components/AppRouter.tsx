@@ -13,6 +13,9 @@ import { ContactSection } from './landing/ContactSection';
 import { Footer } from './landing/Footer';
 import { LoginPage } from './landing/LoginPage';
 import { SignupPage } from './landing/SignupPage';
+import CompanySignupSelectionPage from './landing/CompanySignupSelectionPage';
+import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
+import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import Dashboard from './Dashboard/Dashboard';
 import { DeviceManager } from './DeviceManager';
 import { DataCenter } from './DataCenter';
@@ -33,6 +36,8 @@ const LandingHome = () => {
       navigate('/login');
     } else if (page === 'signup') {
       navigate('/signup');
+    } else if (page === 'company-signup') {
+      navigate('/company-signup-selection');
     } else if (page === 'home') {
       navigate('/');
     }
@@ -63,10 +68,10 @@ const LoginPageWrapper = () => {
   const handleNavigate = (page: string) => {
     if (page === 'app') {
       navigate('/app/dashboard');
-    } else if (page === 'login') {
-      navigate('/login');
     } else if (page === 'signup') {
       navigate('/signup');
+    } else if (page === 'company-signup') {
+      navigate('/company-signup-selection');
     } else if (page === 'home') {
       navigate('/');
     }
@@ -80,12 +85,10 @@ const SignupPageWrapper = () => {
   const navigate = useNavigate();
   
   const handleNavigate = (page: string) => {
-    if (page === 'app') {
-      navigate('/app/dashboard');
-    } else if (page === 'login') {
+    if (page === 'login') {
       navigate('/login');
-    } else if (page === 'signup') {
-      navigate('/signup');
+    } else if (page === 'company-signup') {
+      navigate('/company-signup-selection');
     } else if (page === 'home') {
       navigate('/');
     }
@@ -101,6 +104,11 @@ export const AppRouter = () => {
       <Route path="/" element={<LandingHome />} />
       <Route path="/login" element={<LoginPageWrapper />} />
       <Route path="/signup" element={<SignupPageWrapper />} />
+      
+      {/* 회사 등록 관련 라우트 */}
+      <Route path="/company-signup-selection" element={<CompanySignupSelectionPage />} />
+      <Route path="/company-registration" element={<CompanyRegistrationForm />} />
+      <Route path="/company-registration-success" element={<CompanyRegistrationSuccess />} />
       
       {/* 앱 라우트 */}
       <Route path="/app" element={
