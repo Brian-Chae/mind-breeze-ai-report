@@ -16,6 +16,7 @@ import { SignupPage } from './landing/SignupPage';
 import CompanySignupSelectionPage from './landing/CompanySignupSelectionPage';
 import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
 import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
+import CompanyJoinForm from './landing/CompanyJoinForm';
 import Dashboard from './Dashboard/Dashboard';
 import { DeviceManager } from './DeviceManager';
 import { DataCenter } from './DataCenter';
@@ -109,6 +110,7 @@ export const AppRouter = () => {
       <Route path="/company-signup-selection" element={<CompanySignupSelectionPage />} />
       <Route path="/company-registration" element={<CompanyRegistrationForm />} />
       <Route path="/company-registration-success" element={<CompanyRegistrationSuccess />} />
+      <Route path="/company-join" element={<CompanyJoinForm />} />
       
       {/* 앱 라우트 */}
       <Route path="/app" element={
