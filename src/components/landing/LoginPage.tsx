@@ -3,7 +3,7 @@ import { Brain, Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { FirebaseService } from '../../services/FirebaseService';
 import { useNavigate } from 'react-router-dom';
@@ -33,23 +33,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     }
   }, [user, loading, navigate]);
 
-  // 리다이렉트 결과 확인 (Google 로그인)
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          console.log('Google 리다이렉트 로그인 성공:', result.user);
-          // useEffect에서 자동으로 리다이렉션됨
-        }
-      } catch (error: any) {
-        console.error('리다이렉트 결과 처리 오류:', error);
-        setError(getErrorMessage(error.code));
-      }
-    };
 
-    checkRedirectResult();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,83 +76,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError('');
 
-    console.log('🔵 Google 로그인 시도 시작');
-    console.log('🔍 현재 환경:', {
-      hostname: window.location.hostname,
-      port: window.location.port,
-      protocol: window.location.protocol,
-      href: window.location.href
-    });
-    
-    const isDevelopment = window.location.hostname === 'localhost';
-    console.log('🔍 환경 감지 결과:', { isDevelopment });
-    
-    console.log('🔵 Firebase Auth 인스턴스:', auth);
-    console.log('🔵 Firebase Config:', {
-      authDomain: auth.config.authDomain,
-      apiKey: auth.config.apiKey ? '***' : 'NOT_SET'
-    });
-
-    const provider = new GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
-    
-    // 추가 파라미터 설정
-    provider.setCustomParameters({
-      'prompt': 'select_account'
-    });
-
-    console.log('🔍 Google Auth Provider 생성 완료. 팝업 방식으로 시도합니다.');
-
-    try {
-      // 팝업 방식으로 시도 (페이지 이동 없음)
-      console.log('🔍 signInWithPopup 호출 시작');
-      const result = await signInWithPopup(auth, provider);
-      console.log('✅ Google 팝업 로그인 성공:', {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName
-      });
-      
-      // Firebase Firestore에 사용자 프로필 생성/업데이트
-      try {
-        await FirebaseService.createUserProfile(result.user);
-        console.log('✅ 사용자 프로필 처리 완료');
-      } catch (profileError) {
-        console.warn('⚠️ 사용자 프로필 처리 실패 (로그인은 성공):', profileError);
-      }
-      
-      console.log('✅ 로그인 프로세스 완료, 인증 상태 변화 대기 중...');
-      // useEffect에서 자동으로 리다이렉션됨
-    } catch (error: any) {
-      console.error('❌ Google 팝업 로그인 실패:', {
-        code: error.code,
-        message: error.message,
-        details: error,
-        authDomain: auth.config.authDomain
-      });
-      
-      // 더 자세한 오류 정보 출력
-      if (error.code === 'auth/unauthorized-domain') {
-        console.error('❌ 승인되지 않은 도메인 오류. Firebase Console에서 승인된 도메인을 확인하세요.');
-        console.error('❌ 현재 도메인:', window.location.hostname);
-      } else if (error.code === 'auth/popup-blocked') {
-        console.error('❌ 팝업이 차단되었습니다. 브라우저 팝업 차단을 해제해주세요.');
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        console.log('ℹ️ 사용자가 팝업을 닫았습니다.');
-        setError(''); // 사용자가 취소한 경우 에러 메시지 표시하지 않음
-        setIsLoading(false);
-        return;
-      }
-      
-      setError(getErrorMessage(error.code));
-      setIsLoading(false);
-    }
-  };
 
   const getErrorMessage = (errorCode: string) => {
     console.log('인증 오류 코드:', errorCode);
@@ -242,56 +150,12 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             <p className="text-gray-600">뇌 건강 모니터링 서비스에 오신 것을 환영합니다</p>
           </div>
 
-          {/* Social Login */}
-          <div className="space-y-3 mb-6">
-            <Button 
-              variant="outline" 
-              className="w-full py-3 border-2 text-gray-900 hover:text-gray-900" 
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔴 Google 로그인 버튼 클릭됨!');
-                handleGoogleLogin();
-              }}
-              disabled={isLoading}
-            >
-              <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5 mr-3" />
-              Google로 로그인
-            </Button>
-          </div>
 
-          <div className="relative mb-6">
-            <Separator />
-            <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-sm text-gray-500">
-              또는
-            </span>
-          </div>
 
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
-              <p className="text-red-600 text-sm font-medium">{error}</p>
-              
-              {/* Firebase Console 설정 안내 */}
-              {(error.includes('승인되지 않은') || error.includes('unauthorized-domain') || error.includes('타임아웃')) && (
-                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                  <p className="text-xs font-medium text-yellow-800 mb-2">🔧 즉시 해결 방법:</p>
-                  <ol className="text-xs text-yellow-700 space-y-1 ml-4">
-                    <li>1. <a 
-                      href="https://console.firebase.google.com/project/mind-breeze-ai-report-47942/authentication/settings" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="underline text-blue-600 hover:text-blue-800"
-                    >
-                      Firebase Console 열기
-                    </a></li>
-                    <li>2. "Authorized domains" → "Add domain"</li>
-                    <li>3. <code className="bg-gray-100 px-1 rounded">localhost</code> 추가</li>
-                    <li>4. 페이지 새로고침 후 다시 시도</li>
-                  </ol>
-                </div>
-              )}
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
