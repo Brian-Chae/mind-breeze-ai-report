@@ -1,25 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   BarChart3, 
-  Building2, 
   Users, 
-  UserPlus, 
+  Settings, 
+  CreditCard, 
   Brain, 
-  Smartphone,
-  CreditCard,
-  Search,
-  Bell,
-  Settings,
-  LogOut,
+  Building, 
+  Bell, 
+  Search, 
+  LogOut, 
+  Shield, 
+  Plus, 
+  Monitor,
+  FileText,
+  Calendar,
+  TrendingUp,
+  CheckSquare,
+  Target,
+  Zap,
+  AlertCircle,
+  ChevronDown,
+  Menu,
+  X,
   User,
-  ChevronRight,
-  Shield,
   Activity,
   Eye,
-  Plus,
-  MoreHorizontal,
   DollarSign,
-  Calendar
+  ChevronRight,
+  MoreHorizontal
 } from 'lucide-react'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
@@ -27,6 +35,7 @@ import { Input } from '../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Badge } from '../ui/badge'
 import enterpriseAuthService from '../../services/EnterpriseAuthService'
+import FirebaseService from '../../services/FirebaseService'
 
 // 섹션별 컴포넌트 import
 import DashboardSection from './Dashboard/DashboardSection'
@@ -51,6 +60,20 @@ export default function OrganizationAdminApp() {
   const [currentSubSection, setCurrentSubSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
 
+  useEffect(() => {
+    // 현재 사용자 권한 정보 디버깅
+    const currentContext = enterpriseAuthService.getCurrentContext()
+    console.log('=== 현재 사용자 권한 정보 ===')
+    console.log('사용자:', currentContext.user)
+    console.log('조직:', currentContext.organization)
+    console.log('권한 배열:', currentContext.permissions)
+    console.log('사용자 타입:', currentContext.user?.userType)
+    console.log('조직 ID:', currentContext.user?.organizationId)
+    console.log('measurement_users.view.all 권한:', enterpriseAuthService.hasPermission('measurement_users.view.all'))
+    console.log('measurement_users.view.own 권한:', enterpriseAuthService.hasPermission('measurement_users.view.own'))
+    console.log('==========================')
+  }, [])
+
   // 로그아웃 기능
   const handleLogout = async () => {
     try {
@@ -59,6 +82,52 @@ export default function OrganizationAdminApp() {
       window.location.href = '/'
     } catch (error) {
       console.error('로그아웃 실패:', error)
+    }
+  }
+
+  // 권한 재설정 유틸리티 함수
+  const resetUserPermissions = async () => {
+    try {
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user) {
+        console.error('현재 사용자가 없습니다.')
+        return
+      }
+
+      console.log('🔄 사용자 권한 재설정 중...')
+      
+      // 조직 관리자 권한 재설정
+      const adminPermissions = [
+        'organization.manage',
+        'organization.structure.edit',
+        'members.manage',
+        'credits.view',
+        'credits.manage',
+        'measurement_users.create',
+        'measurement_users.view.all',
+        'measurement_users.edit.all',
+        'measurement_users.delete.all',
+        'measurement_users.measure.all',
+        'reports.view.all',
+        'reports.generate.all',
+        'reports.send.all',
+        'metrics.view.all',
+        'analytics.organization'
+      ]
+
+      // Firebase에서 사용자 권한 업데이트
+      await FirebaseService.updateDocument('users', currentContext.user.id, {
+        permissions: JSON.stringify(adminPermissions),
+        userType: 'ORGANIZATION_ADMIN',
+        updatedAt: new Date()
+      })
+
+      console.log('✅ 사용자 권한 재설정 완료')
+      alert('권한이 재설정되었습니다. 페이지를 새로고침해주세요.')
+      
+    } catch (error) {
+      console.error('❌ 권한 재설정 실패:', error)
+      alert('권한 재설정에 실패했습니다.')
     }
   }
 
@@ -73,10 +142,10 @@ export default function OrganizationAdminApp() {
     {
       id: 'organization',
       title: '기업 관리',
-      icon: Building2,
+      icon: Building,
       path: '/admin/organization',
       children: [
-        { id: 'company-info', title: '기업 정보', icon: Building2, path: '/admin/organization/company-info' },
+        { id: 'company-info', title: '기업 정보', icon: Building, path: '/admin/organization/company-info' },
         { id: 'departments', title: '조직 관리', icon: Users, path: '/admin/organization/departments' },
         { id: 'structure', title: '조직 구조', icon: Shield, path: '/admin/organization/structure' }
       ]
@@ -88,7 +157,7 @@ export default function OrganizationAdminApp() {
       path: '/admin/members',
       children: [
         { id: 'member-list', title: '운영자 목록', icon: Users, path: '/admin/members/list' },
-        { id: 'member-invite', title: '초대 관리', icon: UserPlus, path: '/admin/members/invite' },
+        { id: 'member-invite', title: '초대 관리', icon: Plus, path: '/admin/members/invite' },
         { id: 'member-permissions', title: '권한 설정', icon: Shield, path: '/admin/members/permissions' }
       ]
     },
@@ -117,10 +186,10 @@ export default function OrganizationAdminApp() {
     {
       id: 'devices',
       title: '디바이스 관리',
-      icon: Smartphone,
+      icon: Monitor,
       path: '/admin/devices',
       children: [
-        { id: 'device-inventory', title: '디바이스 현황', icon: Smartphone, path: '/admin/devices/inventory' },
+        { id: 'device-inventory', title: '디바이스 현황', icon: Monitor, path: '/admin/devices/inventory' },
         { id: 'device-assignment', title: '디바이스 배치', icon: Users, path: '/admin/devices/assignment' },
         { id: 'device-monitoring', title: '디바이스 모니터링', icon: Activity, path: '/admin/devices/monitoring' }
       ]
@@ -257,6 +326,10 @@ export default function OrganizationAdminApp() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={resetUserPermissions}>
+                  <Shield className="w-4 h-4 mr-2" />
+                  권한 재설정
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="w-4 h-4 mr-2" />
                   설정
