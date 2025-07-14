@@ -86,7 +86,7 @@ export function PricingSection() {
             기업 고객 전용 가격 안내
           </h2>
           <p className="text-xl text-gray-600">
-            직원 건강 관리를 위한 AI 리포트 & AI 상담 서비스와 링크밴드 디바이스 대여/구매 옵션을 제공합니다.
+            직원 수와 디바이스 수량에 따른 맞춤형 가격을 확인해보세요
           </p>
         </div>
 

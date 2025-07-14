@@ -103,7 +103,7 @@ export function ReviewsSection() {
             검증된 성능으로 신뢰받는 MIND BREEZE AI
           </h2>
           <p className="text-xl text-gray-600">
-            임상급 정확도와 개인 맞춤형 분석으로 베타 테스터들의 높은 만족도를 얻고 있습니다.
+            다양한 삶의 방식을 가진 사람들이 MIND BREEZE AI를 통해 건강을 관리하고 있습니다.
           </p>
         </div>
 
