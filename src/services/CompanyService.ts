@@ -495,6 +495,66 @@ export class CompanyService {
       return [];
     }
   }
+
+  /**
+   * 테스트용 회사 데이터 추가 (개발용)
+   * @returns Promise<CompanyRegistrationResult>
+   */
+  static async createTestCompany(): Promise<CompanyRegistrationResult> {
+    const testCompanyData: CompanyRegistrationData = {
+      companyName: '테스트 회사',
+      businessRegistrationNumber: '123-45-67890',
+      address: '서울시 강남구 테헤란로 123',
+      employeeCount: 100,
+      industry: 'IT',
+      contactPhone: '02-1234-5678',
+      contactEmail: 'admin@testcompany.com',
+      adminUserData: {
+        name: '관리자',
+        email: 'admin@testcompany.com',
+        password: 'test123!',
+        position: '대표',
+        phone: '010-1234-5678',
+        address: '서울시 강남구 테헤란로 123'
+      }
+    };
+
+    return await this.registerCompany(testCompanyData);
+  }
+
+  /**
+   * 테스트용 회사 데이터를 직접 Firebase에 추가 (빠른 테스트용)
+   * @returns Promise<string> 회사 코드
+   */
+  static async addTestCompanyDirectly(): Promise<string> {
+    try {
+      const companiesRef = collection(db, 'companies');
+      const companyCode = 'COMPANY123';
+      
+      const companyDoc = await addDoc(companiesRef, {
+        companyCode,
+        companyName: '테스트 회사',
+        businessRegistrationNumber: '123-45-67890',
+        address: '서울시 강남구 테헤란로 123',
+        employeeCount: 100,
+        industry: 'IT',
+        contactPhone: '02-1234-5678',
+        contactEmail: 'admin@testcompany.com',
+        paymentStatus: 'ACTIVE',
+        creditBalance: 1000,
+        servicePackage: 'BASIC',
+        adminUserId: 'test-admin-id',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+
+      console.log('✅ 테스트 회사 데이터 생성 완료:', companyCode);
+      return companyCode;
+    } catch (error) {
+      console.error('❌ 테스트 회사 데이터 생성 실패:', error);
+      throw error;
+    }
+  }
 }
 
 export default CompanyService; 
