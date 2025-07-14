@@ -1860,7 +1860,8 @@ export const landingTexts = {
         }
       },
       copyright: '© 2024 Mind Breeze AI Report. All rights reserved.',
-      madeWith: '❤️ を込めて東京で開発'
+      madeWith: 'Made with ❤️ in Tokyo'
     }
   }
 };
+
