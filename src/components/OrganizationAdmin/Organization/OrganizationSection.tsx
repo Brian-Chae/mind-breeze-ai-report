@@ -568,47 +568,114 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
   const renderOrganizationStructure = () => {
     const renderOrgNode = (node: OrganizationNode, level: number = 0) => {
       const colors = {
-        company: 'bg-blue-100 text-blue-600',
-        department: 'bg-green-100 text-green-600',
-        team: 'bg-purple-100 text-purple-600'
+        company: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-blue-700',
+        department: 'bg-gradient-to-br from-green-50 to-green-100 border-green-200 text-green-700',
+        team: 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 text-purple-700'
+      }
+
+      const iconColors = {
+        company: 'bg-blue-500 text-white',
+        department: 'bg-green-500 text-white',
+        team: 'bg-purple-500 text-white'
       }
 
       return (
-        <div key={node.id} className={`${level > 0 ? 'ml-8' : ''} mb-4`}>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${colors[node.type]}`}>
-                  {node.type === 'company' && <Building2 className="w-5 h-5" />}
-                  {node.type === 'department' && <Users className="w-5 h-5" />}
-                  {node.type === 'team' && <User className="w-5 h-5" />}
+        <div key={node.id} className="relative">
+          {/* 연결선 (부모-자식 관계 표시) */}
+          {level > 0 && (
+            <div className="absolute left-0 top-0 w-6 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-lg -ml-6"></div>
+          )}
+          
+          <div className={`${level > 0 ? 'ml-12' : ''} mb-8`}>
+            <Card className={`p-6 border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${colors[node.type]}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  {/* 아이콘 */}
+                  <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-md ${iconColors[node.type]}`}>
+                    {node.type === 'company' && <Building2 className="w-6 h-6" />}
+                    {node.type === 'department' && <Users className="w-6 h-6" />}
+                    {node.type === 'team' && <User className="w-6 h-6" />}
+                  </div>
+                  
+                  {/* 정보 */}
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{node.name}</h3>
+                    <div className="flex items-center space-x-4 mt-2">
+                      <div className="flex items-center space-x-1">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{node.manager}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Users className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{node.memberCount}명</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{node.name}</h3>
-                  <p className="text-sm text-gray-600">{node.manager} • {node.memberCount}명</p>
+                
+                {/* 타입 배지 */}
+                <Badge 
+                  variant="outline" 
+                  className={`font-semibold ${
+                    node.type === 'company' ? 'bg-blue-50 text-blue-700 border-blue-300' :
+                    node.type === 'department' ? 'bg-green-50 text-green-700 border-green-300' :
+                    'bg-purple-50 text-purple-700 border-purple-300'
+                  }`}
+                >
+                  {node.type === 'company' ? '회사' : node.type === 'department' ? '부서' : '팀'}
+                </Badge>
+              </div>
+            </Card>
+            
+            {/* 하위 노드들 */}
+            {node.children && node.children.length > 0 && (
+              <div className="relative mt-6">
+                {/* 수직 연결선 */}
+                {level === 0 && (
+                  <div className="absolute left-6 top-0 w-0.5 h-full bg-gray-300"></div>
+                )}
+                
+                <div className="space-y-6">
+                  {node.children.map((child, index) => (
+                    <div key={child.id} className="relative">
+                      {/* 수평 연결선 */}
+                      {level === 0 && (
+                        <div className="absolute left-6 top-6 w-6 h-0.5 bg-gray-300"></div>
+                      )}
+                      {renderOrgNode(child, level + 1)}
+                    </div>
+                  ))}
                 </div>
               </div>
-              <Badge variant="outline">{node.type === 'company' ? '회사' : node.type === 'department' ? '부서' : '팀'}</Badge>
-            </div>
-          </Card>
-          
-          {node.children && node.children.map(child => renderOrgNode(child, level + 1))}
+            )}
+          </div>
         </div>
       )
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">조직 구조</h2>
-          <Button variant="outline">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            구조도 보기
-          </Button>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">조직 구조</h2>
+            <p className="text-gray-600 mt-2">조직의 전체 구조를 시각적으로 확인하세요</p>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" className="flex items-center space-x-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>구조도 보기</span>
+            </Button>
+            <Button variant="outline" className="flex items-center space-x-2">
+              <Plus className="w-4 h-4" />
+              <span>노드 추가</span>
+            </Button>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg p-6">
-          {renderOrgNode(getOrganizationStructure())}
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
+          <div className="overflow-x-auto">
+            {renderOrgNode(getOrganizationStructure())}
+          </div>
         </div>
       </div>
     )
