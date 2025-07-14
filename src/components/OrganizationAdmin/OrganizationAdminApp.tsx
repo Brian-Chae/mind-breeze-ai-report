@@ -19,12 +19,26 @@ import {
   Plus,
   MoreHorizontal,
   DollarSign,
-  Calendar
+  Calendar,
+  CheckCircle,
+  TrendingUp,
+  AlertCircle,
+  Clock,
+  Database,
+  Mail,
+  FileText,
+  Monitor,
+  CreditCard as CreditIcon,
+  Download,
+  Upload,
+  Filter,
+  RefreshCw
 } from 'lucide-react'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Badge } from '../ui/badge'
 
 // 섹션별 컴포넌트 import - 임시 주석 처리
 // import DashboardSection from './Dashboard/DashboardSection'
@@ -35,14 +49,658 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 // import DevicesSection from './Devices/DevicesSection'
 // import CreditsSection from './Credits/CreditsSection'
 
-// 임시 Placeholder 컴포넌트들
-const DashboardSection = () => <div className="p-6"><h2 className="text-2xl font-bold">대시보드</h2><p>대시보드 내용이 여기에 표시됩니다.</p></div>
-const OrganizationSection = ({ subSection }: { subSection: string }) => <div className="p-6"><h2 className="text-2xl font-bold">기업 관리</h2><p>서브섹션: {subSection}</p></div>
-const MembersSection = ({ subSection }: { subSection: string }) => <div className="p-6"><h2 className="text-2xl font-bold">운영자 관리</h2><p>서브섹션: {subSection}</p></div>
-const UsersSection = ({ subSection }: { subSection: string }) => <div className="p-6"><h2 className="text-2xl font-bold">사용자 관리</h2><p>서브섹션: {subSection}</p></div>
-const AIReportSection = ({ subSection }: { subSection: string }) => <div className="p-6"><h2 className="text-2xl font-bold">AI Report</h2><p>서브섹션: {subSection}</p></div>
-const DevicesSection = ({ subSection }: { subSection: string }) => <div className="p-6"><h2 className="text-2xl font-bold">디바이스 관리</h2><p>서브섹션: {subSection}</p></div>
-const CreditsSection = ({ subSection }: { subSection: string }) => <div className="p-6"><h2 className="text-2xl font-bold">크레딧 관리</h2><p>서브섹션: {subSection}</p></div>
+// 임시 Placeholder 컴포넌트들 - 서브섹션별로 다른 내용 표시
+const DashboardSection = () => (
+  <div className="p-6">
+    <h2 className="text-2xl font-bold mb-4">대시보드</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600">전체 사용자</p>
+            <p className="text-2xl font-bold">1,234</p>
+          </div>
+          <Users className="w-8 h-8 text-blue-500" />
+        </div>
+      </Card>
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600">활성 디바이스</p>
+            <p className="text-2xl font-bold">86</p>
+          </div>
+          <Smartphone className="w-8 h-8 text-green-500" />
+        </div>
+      </Card>
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600">이번달 리포트</p>
+            <p className="text-2xl font-bold">2,891</p>
+          </div>
+          <Brain className="w-8 h-8 text-purple-500" />
+        </div>
+      </Card>
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600">잔여 크레딧</p>
+            <p className="text-2xl font-bold">15,420</p>
+          </div>
+          <CreditCard className="w-8 h-8 text-orange-500" />
+        </div>
+      </Card>
+    </div>
+  </div>
+)
+
+const OrganizationSection = ({ subSection }: { subSection: string }) => {
+  const getContent = () => {
+    switch (subSection) {
+      case 'org-info':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">기업 정보</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Building2 className="w-6 h-6 text-blue-500" />
+                  <div>
+                    <p className="font-medium">회사명</p>
+                    <p className="text-gray-600">테크놀로지 주식회사</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Mail className="w-6 h-6 text-blue-500" />
+                  <div>
+                    <p className="font-medium">대표 이메일</p>
+                    <p className="text-gray-600">contact@company.com</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Users className="w-6 h-6 text-blue-500" />
+                  <div>
+                    <p className="font-medium">전체 직원 수</p>
+                    <p className="text-gray-600">1,234명</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      case 'org-departments':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">조직 관리</h3>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">연구개발부</p>
+                    <p className="text-sm text-gray-600">85명</p>
+                  </div>
+                  <Badge>활성</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">인사부</p>
+                    <p className="text-sm text-gray-600">12명</p>
+                  </div>
+                  <Badge>활성</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">영업부</p>
+                    <p className="text-sm text-gray-600">35명</p>
+                  </div>
+                  <Badge>활성</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'org-structure':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">조직 구조</h3>
+            <Card className="p-6">
+              <div className="text-center">
+                <BarChart3 className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                <p className="text-gray-600">조직 구조도가 여기에 표시됩니다.</p>
+              </div>
+            </Card>
+          </div>
+        )
+      default:
+        return <p>기업 관리 메뉴를 선택하세요.</p>
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">기업 관리</h2>
+      {getContent()}
+    </div>
+  )
+}
+
+const MembersSection = ({ subSection }: { subSection: string }) => {
+  const getContent = () => {
+    switch (subSection) {
+      case 'member-list':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">운영자 목록</h3>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">김철수</p>
+                      <p className="text-sm text-gray-600">시스템 관리자</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">활성</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">이영희</p>
+                      <p className="text-sm text-gray-600">데이터 관리자</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">활성</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'member-invite':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">초대 관리</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Input placeholder="이메일 주소" />
+                  <Button>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    초대
+                  </Button>
+                </div>
+                <div className="text-center py-8">
+                  <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">초대 내역이 여기에 표시됩니다.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      case 'member-permissions':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">권한 설정</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="w-5 h-5 text-blue-500" />
+                    <span>시스템 관리자</span>
+                  </div>
+                  <Badge>전체 권한</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Eye className="w-5 h-5 text-green-500" />
+                    <span>데이터 관리자</span>
+                  </div>
+                  <Badge variant="secondary">읽기 전용</Badge>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      default:
+        return <p>운영자 관리 메뉴를 선택하세요.</p>
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">운영자 관리</h2>
+      {getContent()}
+    </div>
+  )
+}
+
+const UsersSection = ({ subSection }: { subSection: string }) => {
+  const getContent = () => {
+    switch (subSection) {
+      case 'user-list':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">사용자 목록</h3>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">박민수</p>
+                      <p className="text-sm text-gray-600">연구원</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">측정 완료</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">정지영</p>
+                      <p className="text-sm text-gray-600">개발자</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">측정 대기</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'user-history':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">측정 이력</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">2024-01-15 09:30</p>
+                    <p className="text-sm text-gray-600">박민수 - 뇌파 측정 완료</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">2024-01-15 14:20</p>
+                    <p className="text-sm text-gray-600">정지영 - 뇌파 측정 완료</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      case 'user-reports':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">리포트 관리</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <p className="font-medium">박민수 - 건강 리포트</p>
+                      <p className="text-sm text-gray-600">2024-01-15</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    다운로드
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <p className="font-medium">정지영 - 건강 리포트</p>
+                      <p className="text-sm text-gray-600">2024-01-15</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    다운로드
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      default:
+        return <p>사용자 관리 메뉴를 선택하세요.</p>
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">사용자 관리</h2>
+      {getContent()}
+    </div>
+  )
+}
+
+const AIReportSection = ({ subSection }: { subSection: string }) => {
+  const getContent = () => {
+    switch (subSection) {
+      case 'report-generation':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">리포트 생성</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    새 리포트 생성
+                  </Button>
+                  <Button variant="outline">
+                    <Upload className="w-4 h-4 mr-2" />
+                    데이터 업로드
+                  </Button>
+                </div>
+                <div className="text-center py-8">
+                  <Brain className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+                  <p className="text-gray-600">AI 리포트 생성 기능이 여기에 표시됩니다.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      case 'report-list':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">리포트 목록</h3>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Brain className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <p className="font-medium">종합 건강 리포트</p>
+                      <p className="text-sm text-gray-600">2024-01-15 생성</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">완료</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Brain className="w-5 h-5 text-purple-500" />
+                    <div>
+                      <p className="font-medium">스트레스 분석 리포트</p>
+                      <p className="text-sm text-gray-600">2024-01-14 생성</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">완료</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'report-quality':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">품질 관리</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span>리포트 품질 점수</span>
+                  </div>
+                  <Badge variant="outline">95%</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <TrendingUp className="w-5 h-5 text-blue-500" />
+                    <span>생성 성공률</span>
+                  </div>
+                  <Badge variant="outline">98%</Badge>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      default:
+        return <p>AI Report 메뉴를 선택하세요.</p>
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">AI Report</h2>
+      {getContent()}
+    </div>
+  )
+}
+
+const DevicesSection = ({ subSection }: { subSection: string }) => {
+  const getContent = () => {
+    switch (subSection) {
+      case 'device-inventory':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">디바이스 현황</h3>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Smartphone className="w-5 h-5 text-blue-500" />
+                    <div>
+                      <p className="font-medium">LinkBand Pro #001</p>
+                      <p className="text-sm text-gray-600">배터리: 85%</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">온라인</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Smartphone className="w-5 h-5 text-blue-500" />
+                    <div>
+                      <p className="font-medium">LinkBand Pro #002</p>
+                      <p className="text-sm text-gray-600">배터리: 45%</p>
+                    </div>
+                  </div>
+                  <Badge variant="destructive">오프라인</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'device-assignment':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">디바이스 배치</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="font-medium">연구개발부</p>
+                      <p className="text-sm text-gray-600">15개 디바이스 배치</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">수정</Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="font-medium">영업부</p>
+                      <p className="text-sm text-gray-600">8개 디바이스 배치</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">수정</Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      case 'device-monitoring':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">디바이스 모니터링</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Monitor className="w-5 h-5 text-blue-500" />
+                    <span>실시간 모니터링</span>
+                  </div>
+                  <Badge variant="outline">활성</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    <span>알림 설정</span>
+                  </div>
+                  <Badge variant="outline">활성</Badge>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      default:
+        return <p>디바이스 관리 메뉴를 선택하세요.</p>
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">디바이스 관리</h2>
+      {getContent()}
+    </div>
+  )
+}
+
+const CreditsSection = ({ subSection }: { subSection: string }) => {
+  const getContent = () => {
+    switch (subSection) {
+      case 'credit-dashboard':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">크레딧 현황</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">잔여 크레딧</p>
+                    <p className="text-2xl font-bold">15,420</p>
+                  </div>
+                  <CreditIcon className="w-8 h-8 text-orange-500" />
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">이번달 사용</p>
+                    <p className="text-2xl font-bold">2,580</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-blue-500" />
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">평균 사용량</p>
+                    <p className="text-2xl font-bold">1,890</p>
+                  </div>
+                  <BarChart3 className="w-8 h-8 text-green-500" />
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'credit-history':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">구매 내역</h3>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                    <div>
+                      <p className="font-medium">2024-01-15</p>
+                      <p className="text-sm text-gray-600">10,000 크레딧 구매</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">완료</Badge>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                    <div>
+                      <p className="font-medium">2024-01-01</p>
+                      <p className="text-sm text-gray-600">5,000 크레딧 구매</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">완료</Badge>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )
+      case 'credit-settings':
+        return (
+          <div>
+            <h3 className="text-xl font-semibold mb-4">결제 설정</h3>
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CreditIcon className="w-5 h-5 text-blue-500" />
+                    <span>자동 충전 설정</span>
+                  </div>
+                  <Button variant="outline" size="sm">설정</Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Settings className="w-5 h-5 text-gray-500" />
+                    <span>결제 방법</span>
+                  </div>
+                  <Button variant="outline" size="sm">변경</Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      default:
+        return <p>크레딧 관리 메뉴를 선택하세요.</p>
+    }
+  }
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">크레딧 관리</h2>
+      {getContent()}
+    </div>
+  )
+}
 
 interface SidebarMenuItem {
   id: string;
