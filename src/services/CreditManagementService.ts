@@ -364,29 +364,38 @@ class CreditManagementService {
       let q;
       
       if (organizationId) {
+        // 인덱스 오류 방지를 위해 orderBy를 제거하고 클라이언트 측에서 정렬
         q = query(
           collection(db, 'creditTransactions'),
           where('organizationId', '==', organizationId),
-          orderBy('createdAt', 'desc'),
-          limit(limitCount)
+          limit(limitCount * 2) // 정렬 전이므로 더 많은 데이터를 가져옴
         );
       } else if (userId) {
         q = query(
           collection(db, 'creditTransactions'),
           where('userId', '==', userId),
-          orderBy('createdAt', 'desc'),
-          limit(limitCount)
+          limit(limitCount * 2)
         );
       } else {
         throw new Error('조직ID 또는 사용자ID가 필요합니다.');
       }
 
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      const transactions = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate()
       } as CreditTransaction));
+
+      // 클라이언트 측에서 정렬하고 제한
+      return transactions
+        .sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return b.createdAt.getTime() - a.createdAt.getTime();
+          }
+          return 0;
+        })
+        .slice(0, limitCount);
 
     } catch (error) {
       console.error('❌ 크레딧 히스토리 조회 실패:', error);

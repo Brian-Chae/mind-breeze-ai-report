@@ -130,10 +130,19 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
 
   const loadMeasurementUsers = async () => {
     try {
+      // 권한 체크
+      if (!enterpriseAuthService.hasPermission('measurement_users.view.all') && 
+          !enterpriseAuthService.hasPermission('measurement_users.view.own')) {
+        console.warn('측정 대상자 조회 권한이 없습니다.')
+        setMeasurementUsers([])
+        return
+      }
+
       const users = await measurementService.getMeasurementUsers({})
       setMeasurementUsers(users)
     } catch (error) {
       console.error('측정 사용자 로드 실패:', error)
+      setMeasurementUsers([])
     }
   }
 
