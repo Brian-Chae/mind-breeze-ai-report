@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { 
@@ -13,13 +13,49 @@ import {
   Calendar,
   Clock,
   Users,
+  UserCheck,
   Bluetooth,
   Brain,
   Heart
 } from 'lucide-react';
 import { EnterpriseUser, Organization, OrganizationMember } from '../../types/business';
 import { useUIStore } from '../../stores/uiStore';
+import measurementUserManagementService, { MeasurementUser, MeasurementUserStats } from '../../services/MeasurementUserManagementService';
 import { toast } from 'sonner';
+import { Input } from '../ui/input';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../ui/select';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from '../ui/dropdown-menu';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '../ui/alert-dialog';
+import { 
+  Plus,
+  Eye,
+  FileText,
+  Edit,
+  Trash2,
+  MoreVertical
+} from 'lucide-react';
 
 interface OrganizationMemberDashboardProps {
   user: EnterpriseUser;
@@ -34,6 +70,18 @@ export default function OrganizationMemberDashboard({
 }: OrganizationMemberDashboardProps) {
   
   const { setActiveMenu } = useUIStore();
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // 측정 대상자 관리 상태 (자신이 등록한 것만)
+  const [measurementUsers, setMeasurementUsers] = useState<MeasurementUser[]>([]);
+  const [measurementUserStats, setMeasurementUserStats] = useState<MeasurementUserStats | null>(null);
+  const [isLoadingMeasurementUsers, setIsLoadingMeasurementUsers] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [measurementUserFilter, setMeasurementUserFilter] = useState({
+    status: '',
+    searchTerm: '',
+    isActive: undefined as boolean | undefined
+  });
   
   // 임시 개인 통계 데이터
   const [personalStats, setPersonalStats] = useState({
@@ -92,6 +140,79 @@ export default function OrganizationMemberDashboard({
     toast.info('팀 통계 보기 기능 준비 중입니다.');
   };
 
+  // ========== 측정 대상자 관리 함수들 (자신이 등록한 것만) ==========
+  const loadMeasurementUsers = async () => {
+    setIsLoadingMeasurementUsers(true);
+    try {
+      // ORGANIZATION_MEMBER는 자신이 등록한 것만 조회
+      const users = await measurementUserManagementService.getMeasurementUsers({
+        ...measurementUserFilter,
+        createdByUserId: user.id  // 자신이 등록한 것만
+      });
+      const stats = await measurementUserManagementService.getMeasurementUserStats();
+      setMeasurementUsers(users);
+      setMeasurementUserStats(stats);
+    } catch (error: any) {
+      console.error('측정 대상자 목록 로드 실패:', error);
+      toast.error(error.message || '측정 대상자 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingMeasurementUsers(false);
+    }
+  };
+
+  const handleDeleteMeasurementUser = async (userId: string, userName: string) => {
+    setIsProcessing(true);
+    try {
+      await measurementUserManagementService.deleteMeasurementUser(userId);
+      toast.success(`${userName}님이 측정 대상자에서 삭제되었습니다.`);
+      await loadMeasurementUsers();
+    } catch (error: any) {
+      toast.error(error.message || '측정 대상자 삭제에 실패했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCreateAccessLink = (measurementUser: MeasurementUser) => {
+    if (!measurementUser.accessToken) {
+      toast.error('접속 토큰이 없습니다.');
+      return;
+    }
+    
+    const accessLink = measurementUserManagementService.generateAccessLink(measurementUser.accessToken);
+    navigator.clipboard.writeText(accessLink);
+    toast.success('접속 링크가 클립보드에 복사되었습니다.');
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'REGISTERED':
+        return <Badge variant="secondary">등록됨</Badge>;
+      case 'MEASURING':
+        return <Badge variant="default">측정중</Badge>;
+      case 'COMPLETED':
+        return <Badge variant="default">완료</Badge>;
+      case 'INACTIVE':
+        return <Badge variant="destructive">비활성</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  // 탭 변경 시 데이터 로드
+  useEffect(() => {
+    if (activeTab === 'measurementUsers') {
+      loadMeasurementUsers();
+    }
+  }, [activeTab]);
+
+  // 필터 변경 시 측정 대상자 재로드
+  useEffect(() => {
+    if (activeTab === 'measurementUsers') {
+      loadMeasurementUsers();
+    }
+  }, [measurementUserFilter]);
+
   if (!organization) {
     return (
       <div className="p-6">
@@ -126,7 +247,34 @@ export default function OrganizationMemberDashboard({
         </div>
       </div>
 
-      {/* 개인 현황 요약 */}
+      {/* 탭 네비게이션 */}
+      <div className="flex space-x-4 border-b">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-2 px-1 border-b-2 transition-colors ${
+            activeTab === 'overview' 
+              ? 'border-blue-600 text-blue-600' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          개인 현황
+        </button>
+        <button
+          onClick={() => setActiveTab('measurementUsers')}
+          className={`pb-2 px-1 border-b-2 transition-colors ${
+            activeTab === 'measurementUsers' 
+              ? 'border-blue-600 text-blue-600' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          내 측정 대상자
+        </button>
+      </div>
+
+      {/* 탭 컨텐츠 */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* 개인 현황 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 이번 달 측정 횟수 */}
         <Card className="p-4">
@@ -429,6 +577,222 @@ export default function OrganizationMemberDashboard({
           </div>
         </Card>
       </div>
+      )}
+
+      {activeTab === 'measurementUsers' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold">내 측정 대상자</h2>
+              <p className="text-sm text-gray-600">내가 등록한 측정 대상자들을 관리할 수 있습니다.</p>
+            </div>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              새 대상자 등록
+            </Button>
+          </div>
+
+          {/* 개인 통계 카드 */}
+          {measurementUserStats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">내 대상자</p>
+                      <p className="text-2xl font-bold">{measurementUsers.length}</p>
+                    </div>
+                    <Users className="w-8 h-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">활성 대상자</p>
+                      <p className="text-2xl font-bold">{measurementUsers.filter(u => u.isActive).length}</p>
+                    </div>
+                    <UserCheck className="w-8 h-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">이번 달 측정</p>
+                      <p className="text-2xl font-bold">
+                        {measurementUsers.reduce((sum, u) => {
+                          const thisMonth = new Date();
+                          thisMonth.setDate(1);
+                          return sum + (u.lastMeasurementDate && u.lastMeasurementDate >= thisMonth ? 1 : 0);
+                        }, 0)}
+                      </p>
+                    </div>
+                    <Activity className="w-8 h-8 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* 필터 및 검색 */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <Input
+                    type="text"
+                    placeholder="이름 또는 이메일로 검색..."
+                    value={measurementUserFilter.searchTerm}
+                    onChange={(e) => setMeasurementUserFilter(prev => ({ ...prev, searchTerm: e.target.value }))}
+                  />
+                </div>
+                <Select 
+                  value={measurementUserFilter.status} 
+                  onValueChange={(value) => setMeasurementUserFilter(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="상태 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">모든 상태</SelectItem>
+                    <SelectItem value="REGISTERED">등록됨</SelectItem>
+                    <SelectItem value="MEASURING">측정중</SelectItem>
+                    <SelectItem value="COMPLETED">완료</SelectItem>
+                    <SelectItem value="INACTIVE">비활성</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 측정 대상자 목록 */}
+          <Card>
+            <CardContent className="p-0">
+              {isLoadingMeasurementUsers ? (
+                <div className="p-8 text-center">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">측정 대상자 목록을 불러오는 중...</p>
+                </div>
+              ) : measurementUsers.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">등록된 측정 대상자가 없습니다.</p>
+                  <p className="text-sm text-gray-500 mt-2">첫 번째 측정 대상자를 등록해보세요!</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">대상자 정보</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">측정 횟수</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">마지막 측정</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">액션</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {measurementUsers.map((measurementUser) => (
+                        <tr key={measurementUser.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{measurementUser.displayName}</div>
+                              <div className="text-sm text-gray-500">{measurementUser.email}</div>
+                              {measurementUser.age && (
+                                <div className="text-xs text-gray-400">{measurementUser.age}세 {measurementUser.gender}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(measurementUser.status)}
+                              {measurementUser.isActive ? (
+                                <Badge variant="default">활성</Badge>
+                              ) : (
+                                <Badge variant="destructive">비활성</Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{measurementUser.measurementCount}회</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {measurementUser.lastMeasurementDate 
+                                ? measurementUser.lastMeasurementDate.toLocaleDateString() 
+                                : '-'
+                              }
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCreateAccessLink(measurementUser)}
+                                title="접속 링크 복사"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    정보 수정
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    리포트 보기
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        삭제
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>측정 대상자 삭제</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          {measurementUser.displayName}님을 측정 대상자에서 삭제하시겠습니까? 
+                                          이 작업은 되돌릴 수 없습니다.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>취소</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteMeasurementUser(measurementUser.id, measurementUser.displayName)}
+                                          disabled={isProcessing}
+                                        >
+                                          삭제
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 } 
