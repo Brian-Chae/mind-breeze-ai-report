@@ -319,11 +319,56 @@ export function DeviceManager() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* 사이드바 */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      {/* 사이드바 - 데스크탑 */}
+      <aside className="hidden lg:flex w-56 bg-white shadow-xl border-r border-gray-200 flex-col">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
+              <Brain className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-lg font-bold text-gray-900">MIND BREEZE</span>
+          </div>
+        </div>
+
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {sidebarMenuItems.map((item) => renderSidebarItem(item))}
+        </nav>
+
+        <div className="p-3 border-t border-gray-200">
+          <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
+            <div className="flex items-center justify-center w-6 h-6 bg-gray-200 rounded-full">
+              <User className="w-3 h-3 text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-gray-900">관리자</p>
+              <p className="text-xs text-gray-500">admin@company.com</p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Settings className="w-4 h-4 mr-2" />
+                  설정
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  로그아웃
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </aside>
+
+      {/* 사이드바 - 모바일 */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white shadow-xl border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 lg:static lg:inset-0`}>
+      }`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
             <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
@@ -333,17 +378,17 @@ export function DeviceManager() {
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+            className="p-2 rounded-lg hover:bg-gray-100"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {sidebarMenuItems.map((item) => renderSidebarItem(item))}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200">
+        <div className="p-3 border-t border-gray-200">
           <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
             <div className="flex items-center justify-center w-6 h-6 bg-gray-200 rounded-full">
               <User className="w-3 h-3 text-gray-600" />
@@ -374,7 +419,7 @@ export function DeviceManager() {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <div className="lg:ml-56">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* 헤더 */}
         <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
@@ -413,7 +458,7 @@ export function DeviceManager() {
         </header>
 
         {/* 대시보드 콘텐츠 */}
-        <main className="p-6 text-gray-900">
+        <main className="flex-1 p-6 text-gray-900 overflow-y-auto">
           {/* 통계 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {statsCards.map(renderStatsCard)}
@@ -492,7 +537,7 @@ export function DeviceManager() {
       {/* 모바일 오버레이 */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
