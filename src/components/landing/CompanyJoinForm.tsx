@@ -7,7 +7,7 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ArrowLeft, Building, User, Shield, Mail, Phone, MapPin, IdCard, CheckCircle, AlertCircle, Brain } from 'lucide-react';
-import { CompanyService } from '../../services/CompanyService';
+import { OrganizationService } from '../../services/CompanyService';
 import { enterpriseAuthService } from '../../services/EnterpriseAuthService';
 import { toast } from 'sonner';
 
@@ -131,7 +131,7 @@ export function CompanyJoinForm() {
     setIsLoading(true);
     try {
       // 실제 데이터베이스 조회
-      let company = await CompanyService.getCompanyByCode(formData.companyCode);
+      let company = await OrganizationService.getOrganizationByCode(formData.companyCode);
       
       // 실제 데이터가 없으면 테스트 데이터 사용
       if (!company) {
@@ -168,15 +168,15 @@ export function CompanyJoinForm() {
       if (company) {
         console.log('✅ 실제 회사 발견:', company);
         setCompanyInfo({
-          name: company.companyName,
+          name: company.organizationName,
           address: company.address,
-          employeeCount: company.employeeCount,
+          employeeCount: company.initialMemberCount,
           adminEmail: company.contactEmail
         });
         setIsCompanyVerified(true);
         setCurrentStep(2);
         console.log('✅ 회사 코드 검증 성공 (실제 데이터), 2단계로 진행');
-        toast.success(`${company.companyName}의 회사 코드가 확인되었습니다!`);
+        toast.success(`${company.organizationName}의 회사 코드가 확인되었습니다!`);
       } else {
         console.log('❌ 회사 코드 찾을 수 없음');
         setErrors(prev => ({

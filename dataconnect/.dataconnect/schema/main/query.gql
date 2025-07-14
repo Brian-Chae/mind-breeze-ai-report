@@ -1,0 +1,956 @@
+extend type Query {
+  """
+  ✨ Look up a single `AIReportUsage` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  aIReportUsage(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: AIReportUsage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: AIReportUsage_FirstRow
+  ): AIReportUsage @fdc_generated(from: "AIReportUsage", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `BioSignalSession` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  bioSignalSession(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: BioSignalSession_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: BioSignalSession_FirstRow
+  ): BioSignalSession @fdc_generated(from: "BioSignalSession", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `BusinessMetrics` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  businessMetrics(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: BusinessMetrics_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: BusinessMetrics_FirstRow
+  ): BusinessMetrics @fdc_generated(from: "BusinessMetrics", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Company` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  company(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Company_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Company_FirstRow
+  ): Company @fdc_generated(from: "Company", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `CompanyMember` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  companyMember(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CompanyMember_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CompanyMember_FirstRow
+  ): CompanyMember @fdc_generated(from: "CompanyMember", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `ConsentRecord` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  consentRecord(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ConsentRecord_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ConsentRecord_FirstRow
+  ): ConsentRecord @fdc_generated(from: "ConsentRecord", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `ConsultationUsage` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  consultationUsage(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ConsultationUsage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ConsultationUsage_FirstRow
+  ): ConsultationUsage @fdc_generated(from: "ConsultationUsage", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Contract` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  contract(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Contract_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Contract_FirstRow
+  ): Contract @fdc_generated(from: "Contract", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `CreditPackage` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  creditPackage(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CreditPackage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CreditPackage_FirstRow
+  ): CreditPackage @fdc_generated(from: "CreditPackage", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `CreditTransaction` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  creditTransaction(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CreditTransaction_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CreditTransaction_FirstRow
+  ): CreditTransaction @fdc_generated(from: "CreditTransaction", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Device` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  device(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Device_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Device_FirstRow
+  ): Device @fdc_generated(from: "Device", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `ManualMoodLog` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  manualMoodLog(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ManualMoodLog_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ManualMoodLog_FirstRow
+  ): ManualMoodLog @fdc_generated(from: "ManualMoodLog", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `MeasurementSession` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  measurementSession(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: MeasurementSession_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: MeasurementSession_FirstRow
+  ): MeasurementSession @fdc_generated(from: "MeasurementSession", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `MentalHealthReport` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  mentalHealthReport(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: MentalHealthReport_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: MentalHealthReport_FirstRow
+  ): MentalHealthReport @fdc_generated(from: "MentalHealthReport", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Organization` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  organization(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Organization_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Organization_FirstRow
+  ): Organization @fdc_generated(from: "Organization", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `OrganizationMember` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  organizationMember(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: OrganizationMember_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: OrganizationMember_FirstRow
+  ): OrganizationMember @fdc_generated(from: "OrganizationMember", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `TrialService` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  trialService(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: TrialService_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: TrialService_FirstRow
+  ): TrialService @fdc_generated(from: "TrialService", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `User` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  user(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User @fdc_generated(from: "User", purpose: QUERY_SINGLE)
+  """
+  ✨ List `AIReportUsage` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  aIReportUsages(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: AIReportUsage_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [AIReportUsage_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: AIReportUsage_Having
+  ): [AIReportUsage!]! @fdc_generated(from: "AIReportUsage", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `BioSignalSession` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  bioSignalSessions(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: BioSignalSession_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [BioSignalSession_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: BioSignalSession_Having
+  ): [BioSignalSession!]! @fdc_generated(from: "BioSignalSession", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `BusinessMetrics` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  businessMetricss(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: BusinessMetrics_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [BusinessMetrics_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: BusinessMetrics_Having
+  ): [BusinessMetrics!]! @fdc_generated(from: "BusinessMetrics", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Company` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  companies(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Company_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Company_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Company_Having
+  ): [Company!]! @fdc_generated(from: "Company", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `CompanyMember` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  companyMembers(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: CompanyMember_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [CompanyMember_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: CompanyMember_Having
+  ): [CompanyMember!]! @fdc_generated(from: "CompanyMember", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `ConsentRecord` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  consentRecords(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: ConsentRecord_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [ConsentRecord_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: ConsentRecord_Having
+  ): [ConsentRecord!]! @fdc_generated(from: "ConsentRecord", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `ConsultationUsage` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  consultationUsages(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: ConsultationUsage_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [ConsultationUsage_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: ConsultationUsage_Having
+  ): [ConsultationUsage!]! @fdc_generated(from: "ConsultationUsage", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Contract` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  contracts(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Contract_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Contract_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Contract_Having
+  ): [Contract!]! @fdc_generated(from: "Contract", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `CreditPackage` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  creditPackages(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: CreditPackage_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [CreditPackage_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: CreditPackage_Having
+  ): [CreditPackage!]! @fdc_generated(from: "CreditPackage", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `CreditTransaction` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  creditTransactions(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: CreditTransaction_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [CreditTransaction_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: CreditTransaction_Having
+  ): [CreditTransaction!]! @fdc_generated(from: "CreditTransaction", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Device` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  devices(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Device_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Device_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Device_Having
+  ): [Device!]! @fdc_generated(from: "Device", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `ManualMoodLog` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  manualMoodLogs(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: ManualMoodLog_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [ManualMoodLog_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: ManualMoodLog_Having
+  ): [ManualMoodLog!]! @fdc_generated(from: "ManualMoodLog", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `MeasurementSession` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  measurementSessions(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: MeasurementSession_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [MeasurementSession_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: MeasurementSession_Having
+  ): [MeasurementSession!]! @fdc_generated(from: "MeasurementSession", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `MentalHealthReport` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  mentalHealthReports(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: MentalHealthReport_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [MentalHealthReport_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: MentalHealthReport_Having
+  ): [MentalHealthReport!]! @fdc_generated(from: "MentalHealthReport", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Organization` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  organizations(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Organization_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Organization_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Organization_Having
+  ): [Organization!]! @fdc_generated(from: "Organization", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `OrganizationMember` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  organizationMembers(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: OrganizationMember_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [OrganizationMember_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: OrganizationMember_Having
+  ): [OrganizationMember!]! @fdc_generated(from: "OrganizationMember", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `TrialService` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  trialServices(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: TrialService_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [TrialService_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: TrialService_Having
+  ): [TrialService!]! @fdc_generated(from: "TrialService", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `User` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  users(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: User_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [User_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: User_Having
+  ): [User!]! @fdc_generated(from: "User", purpose: QUERY_MULTIPLE)
+}

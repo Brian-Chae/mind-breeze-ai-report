@@ -1,0 +1,2018 @@
+extend type Mutation {
+  """
+  ✨ Insert a single `AIReportUsage` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  aIReportUsage_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: AIReportUsage_Data!
+  ): AIReportUsage_KeyOutput! @fdc_generated(from: "AIReportUsage", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `BioSignalSession` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  bioSignalSession_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: BioSignalSession_Data!
+  ): BioSignalSession_KeyOutput! @fdc_generated(from: "BioSignalSession", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `BusinessMetrics` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  businessMetrics_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: BusinessMetrics_Data!
+  ): BusinessMetrics_KeyOutput! @fdc_generated(from: "BusinessMetrics", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Company` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  company_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Company_Data!
+  ): Company_KeyOutput! @fdc_generated(from: "Company", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `CompanyMember` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  companyMember_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: CompanyMember_Data!
+  ): CompanyMember_KeyOutput! @fdc_generated(from: "CompanyMember", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `ConsentRecord` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  consentRecord_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: ConsentRecord_Data!
+  ): ConsentRecord_KeyOutput! @fdc_generated(from: "ConsentRecord", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `ConsultationUsage` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  consultationUsage_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: ConsultationUsage_Data!
+  ): ConsultationUsage_KeyOutput! @fdc_generated(from: "ConsultationUsage", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Contract` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  contract_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Contract_Data!
+  ): Contract_KeyOutput! @fdc_generated(from: "Contract", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `CreditPackage` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  creditPackage_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: CreditPackage_Data!
+  ): CreditPackage_KeyOutput! @fdc_generated(from: "CreditPackage", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `CreditTransaction` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  creditTransaction_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: CreditTransaction_Data!
+  ): CreditTransaction_KeyOutput! @fdc_generated(from: "CreditTransaction", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Device` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  device_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Device_Data!
+  ): Device_KeyOutput! @fdc_generated(from: "Device", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `ManualMoodLog` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  manualMoodLog_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: ManualMoodLog_Data!
+  ): ManualMoodLog_KeyOutput! @fdc_generated(from: "ManualMoodLog", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `MeasurementSession` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  measurementSession_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: MeasurementSession_Data!
+  ): MeasurementSession_KeyOutput! @fdc_generated(from: "MeasurementSession", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `MentalHealthReport` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  mentalHealthReport_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: MentalHealthReport_Data!
+  ): MentalHealthReport_KeyOutput! @fdc_generated(from: "MentalHealthReport", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Organization` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  organization_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Organization_Data!
+  ): Organization_KeyOutput! @fdc_generated(from: "Organization", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `OrganizationMember` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  organizationMember_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: OrganizationMember_Data!
+  ): OrganizationMember_KeyOutput! @fdc_generated(from: "OrganizationMember", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `TrialService` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  trialService_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: TrialService_Data!
+  ): TrialService_KeyOutput! @fdc_generated(from: "TrialService", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `User` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert `AIReportUsage` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  aIReportUsage_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [AIReportUsage_Data!]!
+  ): [AIReportUsage_KeyOutput!]! @fdc_generated(from: "AIReportUsage", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `BioSignalSession` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  bioSignalSession_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [BioSignalSession_Data!]!
+  ): [BioSignalSession_KeyOutput!]! @fdc_generated(from: "BioSignalSession", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `BusinessMetrics` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  businessMetrics_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [BusinessMetrics_Data!]!
+  ): [BusinessMetrics_KeyOutput!]! @fdc_generated(from: "BusinessMetrics", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Company` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  company_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Company_Data!]!
+  ): [Company_KeyOutput!]! @fdc_generated(from: "Company", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `CompanyMember` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  companyMember_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [CompanyMember_Data!]!
+  ): [CompanyMember_KeyOutput!]! @fdc_generated(from: "CompanyMember", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `ConsentRecord` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  consentRecord_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [ConsentRecord_Data!]!
+  ): [ConsentRecord_KeyOutput!]! @fdc_generated(from: "ConsentRecord", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `ConsultationUsage` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  consultationUsage_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [ConsultationUsage_Data!]!
+  ): [ConsultationUsage_KeyOutput!]! @fdc_generated(from: "ConsultationUsage", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Contract` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  contract_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Contract_Data!]!
+  ): [Contract_KeyOutput!]! @fdc_generated(from: "Contract", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `CreditPackage` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  creditPackage_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [CreditPackage_Data!]!
+  ): [CreditPackage_KeyOutput!]! @fdc_generated(from: "CreditPackage", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `CreditTransaction` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  creditTransaction_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [CreditTransaction_Data!]!
+  ): [CreditTransaction_KeyOutput!]! @fdc_generated(from: "CreditTransaction", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Device` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  device_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Device_Data!]!
+  ): [Device_KeyOutput!]! @fdc_generated(from: "Device", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `ManualMoodLog` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  manualMoodLog_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [ManualMoodLog_Data!]!
+  ): [ManualMoodLog_KeyOutput!]! @fdc_generated(from: "ManualMoodLog", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `MeasurementSession` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  measurementSession_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [MeasurementSession_Data!]!
+  ): [MeasurementSession_KeyOutput!]! @fdc_generated(from: "MeasurementSession", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `MentalHealthReport` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  mentalHealthReport_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [MentalHealthReport_Data!]!
+  ): [MentalHealthReport_KeyOutput!]! @fdc_generated(from: "MentalHealthReport", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Organization` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  organization_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Organization_Data!]!
+  ): [Organization_KeyOutput!]! @fdc_generated(from: "Organization", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `OrganizationMember` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  organizationMember_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [OrganizationMember_Data!]!
+  ): [OrganizationMember_KeyOutput!]! @fdc_generated(from: "OrganizationMember", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `TrialService` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  trialService_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [TrialService_Data!]!
+  ): [TrialService_KeyOutput!]! @fdc_generated(from: "TrialService", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `User` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert or update a single `AIReportUsage` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `AIReportUsage`.
+  """
+  aIReportUsage_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: AIReportUsage_Data!
+  ): AIReportUsage_KeyOutput! @fdc_generated(from: "AIReportUsage", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `BioSignalSession` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `BioSignalSession`.
+  """
+  bioSignalSession_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: BioSignalSession_Data!
+  ): BioSignalSession_KeyOutput! @fdc_generated(from: "BioSignalSession", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `BusinessMetrics` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `BusinessMetrics`.
+  """
+  businessMetrics_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: BusinessMetrics_Data!
+  ): BusinessMetrics_KeyOutput! @fdc_generated(from: "BusinessMetrics", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Company` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Company`.
+  """
+  company_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Company_Data!
+  ): Company_KeyOutput! @fdc_generated(from: "Company", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `CompanyMember` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `CompanyMember`.
+  """
+  companyMember_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: CompanyMember_Data!
+  ): CompanyMember_KeyOutput! @fdc_generated(from: "CompanyMember", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `ConsentRecord` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `ConsentRecord`.
+  """
+  consentRecord_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: ConsentRecord_Data!
+  ): ConsentRecord_KeyOutput! @fdc_generated(from: "ConsentRecord", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `ConsultationUsage` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `ConsultationUsage`.
+  """
+  consultationUsage_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: ConsultationUsage_Data!
+  ): ConsultationUsage_KeyOutput! @fdc_generated(from: "ConsultationUsage", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Contract` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Contract`.
+  """
+  contract_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Contract_Data!
+  ): Contract_KeyOutput! @fdc_generated(from: "Contract", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `CreditPackage` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `CreditPackage`.
+  """
+  creditPackage_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: CreditPackage_Data!
+  ): CreditPackage_KeyOutput! @fdc_generated(from: "CreditPackage", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `CreditTransaction` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `CreditTransaction`.
+  """
+  creditTransaction_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: CreditTransaction_Data!
+  ): CreditTransaction_KeyOutput! @fdc_generated(from: "CreditTransaction", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Device` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Device`.
+  """
+  device_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Device_Data!
+  ): Device_KeyOutput! @fdc_generated(from: "Device", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `ManualMoodLog` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `ManualMoodLog`.
+  """
+  manualMoodLog_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: ManualMoodLog_Data!
+  ): ManualMoodLog_KeyOutput! @fdc_generated(from: "ManualMoodLog", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `MeasurementSession` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `MeasurementSession`.
+  """
+  measurementSession_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: MeasurementSession_Data!
+  ): MeasurementSession_KeyOutput! @fdc_generated(from: "MeasurementSession", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `MentalHealthReport` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `MentalHealthReport`.
+  """
+  mentalHealthReport_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: MentalHealthReport_Data!
+  ): MentalHealthReport_KeyOutput! @fdc_generated(from: "MentalHealthReport", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Organization` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Organization`.
+  """
+  organization_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Organization_Data!
+  ): Organization_KeyOutput! @fdc_generated(from: "Organization", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `OrganizationMember` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `OrganizationMember`.
+  """
+  organizationMember_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: OrganizationMember_Data!
+  ): OrganizationMember_KeyOutput! @fdc_generated(from: "OrganizationMember", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `TrialService` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `TrialService`.
+  """
+  trialService_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: TrialService_Data!
+  ): TrialService_KeyOutput! @fdc_generated(from: "TrialService", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `User` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update `AIReportUsage` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `AIReportUsage`.
+  """
+  aIReportUsage_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [AIReportUsage_Data!]!
+  ): [AIReportUsage_KeyOutput!]! @fdc_generated(from: "AIReportUsage", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `BioSignalSession` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `BioSignalSession`.
+  """
+  bioSignalSession_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [BioSignalSession_Data!]!
+  ): [BioSignalSession_KeyOutput!]! @fdc_generated(from: "BioSignalSession", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `BusinessMetrics` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `BusinessMetrics`.
+  """
+  businessMetrics_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [BusinessMetrics_Data!]!
+  ): [BusinessMetrics_KeyOutput!]! @fdc_generated(from: "BusinessMetrics", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Company` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Company`.
+  """
+  company_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Company_Data!]!
+  ): [Company_KeyOutput!]! @fdc_generated(from: "Company", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `CompanyMember` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `CompanyMember`.
+  """
+  companyMember_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [CompanyMember_Data!]!
+  ): [CompanyMember_KeyOutput!]! @fdc_generated(from: "CompanyMember", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `ConsentRecord` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `ConsentRecord`.
+  """
+  consentRecord_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [ConsentRecord_Data!]!
+  ): [ConsentRecord_KeyOutput!]! @fdc_generated(from: "ConsentRecord", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `ConsultationUsage` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `ConsultationUsage`.
+  """
+  consultationUsage_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [ConsultationUsage_Data!]!
+  ): [ConsultationUsage_KeyOutput!]! @fdc_generated(from: "ConsultationUsage", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Contract` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Contract`.
+  """
+  contract_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Contract_Data!]!
+  ): [Contract_KeyOutput!]! @fdc_generated(from: "Contract", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `CreditPackage` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `CreditPackage`.
+  """
+  creditPackage_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [CreditPackage_Data!]!
+  ): [CreditPackage_KeyOutput!]! @fdc_generated(from: "CreditPackage", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `CreditTransaction` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `CreditTransaction`.
+  """
+  creditTransaction_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [CreditTransaction_Data!]!
+  ): [CreditTransaction_KeyOutput!]! @fdc_generated(from: "CreditTransaction", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Device` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Device`.
+  """
+  device_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Device_Data!]!
+  ): [Device_KeyOutput!]! @fdc_generated(from: "Device", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `ManualMoodLog` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `ManualMoodLog`.
+  """
+  manualMoodLog_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [ManualMoodLog_Data!]!
+  ): [ManualMoodLog_KeyOutput!]! @fdc_generated(from: "ManualMoodLog", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `MeasurementSession` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `MeasurementSession`.
+  """
+  measurementSession_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [MeasurementSession_Data!]!
+  ): [MeasurementSession_KeyOutput!]! @fdc_generated(from: "MeasurementSession", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `MentalHealthReport` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `MentalHealthReport`.
+  """
+  mentalHealthReport_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [MentalHealthReport_Data!]!
+  ): [MentalHealthReport_KeyOutput!]! @fdc_generated(from: "MentalHealthReport", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Organization` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Organization`.
+  """
+  organization_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Organization_Data!]!
+  ): [Organization_KeyOutput!]! @fdc_generated(from: "Organization", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `OrganizationMember` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `OrganizationMember`.
+  """
+  organizationMember_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [OrganizationMember_Data!]!
+  ): [OrganizationMember_KeyOutput!]! @fdc_generated(from: "OrganizationMember", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `TrialService` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `TrialService`.
+  """
+  trialService_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [TrialService_Data!]!
+  ): [TrialService_KeyOutput!]! @fdc_generated(from: "TrialService", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `User` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Update a single `AIReportUsage` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `AIReportUsage` or `null` if not found.
+  """
+  aIReportUsage_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: AIReportUsage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: AIReportUsage_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: AIReportUsage_Data!
+  ): AIReportUsage_KeyOutput @fdc_generated(from: "AIReportUsage", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `BioSignalSession` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `BioSignalSession` or `null` if not found.
+  """
+  bioSignalSession_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: BioSignalSession_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: BioSignalSession_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: BioSignalSession_Data!
+  ): BioSignalSession_KeyOutput @fdc_generated(from: "BioSignalSession", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `BusinessMetrics` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `BusinessMetrics` or `null` if not found.
+  """
+  businessMetrics_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: BusinessMetrics_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: BusinessMetrics_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: BusinessMetrics_Data!
+  ): BusinessMetrics_KeyOutput @fdc_generated(from: "BusinessMetrics", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Company` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Company` or `null` if not found.
+  """
+  company_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Company_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Company_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Company_Data!
+  ): Company_KeyOutput @fdc_generated(from: "Company", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `CompanyMember` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `CompanyMember` or `null` if not found.
+  """
+  companyMember_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CompanyMember_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CompanyMember_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: CompanyMember_Data!
+  ): CompanyMember_KeyOutput @fdc_generated(from: "CompanyMember", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `ConsentRecord` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `ConsentRecord` or `null` if not found.
+  """
+  consentRecord_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ConsentRecord_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ConsentRecord_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: ConsentRecord_Data!
+  ): ConsentRecord_KeyOutput @fdc_generated(from: "ConsentRecord", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `ConsultationUsage` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `ConsultationUsage` or `null` if not found.
+  """
+  consultationUsage_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ConsultationUsage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ConsultationUsage_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: ConsultationUsage_Data!
+  ): ConsultationUsage_KeyOutput @fdc_generated(from: "ConsultationUsage", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Contract` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Contract` or `null` if not found.
+  """
+  contract_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Contract_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Contract_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Contract_Data!
+  ): Contract_KeyOutput @fdc_generated(from: "Contract", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `CreditPackage` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `CreditPackage` or `null` if not found.
+  """
+  creditPackage_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CreditPackage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CreditPackage_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: CreditPackage_Data!
+  ): CreditPackage_KeyOutput @fdc_generated(from: "CreditPackage", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `CreditTransaction` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `CreditTransaction` or `null` if not found.
+  """
+  creditTransaction_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CreditTransaction_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CreditTransaction_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: CreditTransaction_Data!
+  ): CreditTransaction_KeyOutput @fdc_generated(from: "CreditTransaction", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Device` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Device` or `null` if not found.
+  """
+  device_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Device_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Device_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Device_Data!
+  ): Device_KeyOutput @fdc_generated(from: "Device", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `ManualMoodLog` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `ManualMoodLog` or `null` if not found.
+  """
+  manualMoodLog_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ManualMoodLog_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ManualMoodLog_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: ManualMoodLog_Data!
+  ): ManualMoodLog_KeyOutput @fdc_generated(from: "ManualMoodLog", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `MeasurementSession` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `MeasurementSession` or `null` if not found.
+  """
+  measurementSession_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: MeasurementSession_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: MeasurementSession_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: MeasurementSession_Data!
+  ): MeasurementSession_KeyOutput @fdc_generated(from: "MeasurementSession", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `MentalHealthReport` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `MentalHealthReport` or `null` if not found.
+  """
+  mentalHealthReport_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: MentalHealthReport_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: MentalHealthReport_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: MentalHealthReport_Data!
+  ): MentalHealthReport_KeyOutput @fdc_generated(from: "MentalHealthReport", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Organization` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Organization` or `null` if not found.
+  """
+  organization_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Organization_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Organization_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Organization_Data!
+  ): Organization_KeyOutput @fdc_generated(from: "Organization", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `OrganizationMember` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `OrganizationMember` or `null` if not found.
+  """
+  organizationMember_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: OrganizationMember_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: OrganizationMember_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: OrganizationMember_Data!
+  ): OrganizationMember_KeyOutput @fdc_generated(from: "OrganizationMember", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `TrialService` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `TrialService` or `null` if not found.
+  """
+  trialService_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: TrialService_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: TrialService_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: TrialService_Data!
+  ): TrialService_KeyOutput @fdc_generated(from: "TrialService", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `User` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `User` or `null` if not found.
+  """
+  user_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: User_Data!
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update `AIReportUsage` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  aIReportUsage_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: AIReportUsage_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: AIReportUsage_Data!
+  ): Int! @fdc_generated(from: "AIReportUsage", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `BioSignalSession` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  bioSignalSession_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: BioSignalSession_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: BioSignalSession_Data!
+  ): Int! @fdc_generated(from: "BioSignalSession", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `BusinessMetrics` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  businessMetrics_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: BusinessMetrics_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: BusinessMetrics_Data!
+  ): Int! @fdc_generated(from: "BusinessMetrics", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Company` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  company_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Company_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Company_Data!
+  ): Int! @fdc_generated(from: "Company", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `CompanyMember` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  companyMember_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: CompanyMember_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: CompanyMember_Data!
+  ): Int! @fdc_generated(from: "CompanyMember", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `ConsentRecord` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  consentRecord_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: ConsentRecord_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: ConsentRecord_Data!
+  ): Int! @fdc_generated(from: "ConsentRecord", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `ConsultationUsage` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  consultationUsage_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: ConsultationUsage_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: ConsultationUsage_Data!
+  ): Int! @fdc_generated(from: "ConsultationUsage", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Contract` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  contract_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Contract_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Contract_Data!
+  ): Int! @fdc_generated(from: "Contract", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `CreditPackage` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  creditPackage_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: CreditPackage_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: CreditPackage_Data!
+  ): Int! @fdc_generated(from: "CreditPackage", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `CreditTransaction` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  creditTransaction_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: CreditTransaction_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: CreditTransaction_Data!
+  ): Int! @fdc_generated(from: "CreditTransaction", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Device` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  device_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Device_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Device_Data!
+  ): Int! @fdc_generated(from: "Device", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `ManualMoodLog` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  manualMoodLog_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: ManualMoodLog_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: ManualMoodLog_Data!
+  ): Int! @fdc_generated(from: "ManualMoodLog", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `MeasurementSession` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  measurementSession_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: MeasurementSession_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: MeasurementSession_Data!
+  ): Int! @fdc_generated(from: "MeasurementSession", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `MentalHealthReport` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  mentalHealthReport_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: MentalHealthReport_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: MentalHealthReport_Data!
+  ): Int! @fdc_generated(from: "MentalHealthReport", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Organization` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  organization_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Organization_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Organization_Data!
+  ): Int! @fdc_generated(from: "Organization", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `OrganizationMember` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  organizationMember_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: OrganizationMember_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: OrganizationMember_Data!
+  ): Int! @fdc_generated(from: "OrganizationMember", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `TrialService` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  trialService_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: TrialService_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: TrialService_Data!
+  ): Int! @fdc_generated(from: "TrialService", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `User` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  user_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: User_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: User_Data!
+  ): Int! @fdc_generated(from: "User", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Delete a single `AIReportUsage` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  aIReportUsage_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: AIReportUsage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: AIReportUsage_FirstRow
+  ): AIReportUsage_KeyOutput @fdc_generated(from: "AIReportUsage", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `BioSignalSession` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  bioSignalSession_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: BioSignalSession_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: BioSignalSession_FirstRow
+  ): BioSignalSession_KeyOutput @fdc_generated(from: "BioSignalSession", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `BusinessMetrics` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  businessMetrics_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: BusinessMetrics_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: BusinessMetrics_FirstRow
+  ): BusinessMetrics_KeyOutput @fdc_generated(from: "BusinessMetrics", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Company` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  company_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Company_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Company_FirstRow
+  ): Company_KeyOutput @fdc_generated(from: "Company", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `CompanyMember` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  companyMember_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CompanyMember_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CompanyMember_FirstRow
+  ): CompanyMember_KeyOutput @fdc_generated(from: "CompanyMember", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `ConsentRecord` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  consentRecord_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ConsentRecord_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ConsentRecord_FirstRow
+  ): ConsentRecord_KeyOutput @fdc_generated(from: "ConsentRecord", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `ConsultationUsage` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  consultationUsage_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ConsultationUsage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ConsultationUsage_FirstRow
+  ): ConsultationUsage_KeyOutput @fdc_generated(from: "ConsultationUsage", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Contract` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  contract_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Contract_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Contract_FirstRow
+  ): Contract_KeyOutput @fdc_generated(from: "Contract", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `CreditPackage` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  creditPackage_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CreditPackage_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CreditPackage_FirstRow
+  ): CreditPackage_KeyOutput @fdc_generated(from: "CreditPackage", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `CreditTransaction` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  creditTransaction_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: CreditTransaction_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: CreditTransaction_FirstRow
+  ): CreditTransaction_KeyOutput @fdc_generated(from: "CreditTransaction", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Device` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  device_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Device_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Device_FirstRow
+  ): Device_KeyOutput @fdc_generated(from: "Device", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `ManualMoodLog` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  manualMoodLog_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: ManualMoodLog_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: ManualMoodLog_FirstRow
+  ): ManualMoodLog_KeyOutput @fdc_generated(from: "ManualMoodLog", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `MeasurementSession` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  measurementSession_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: MeasurementSession_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: MeasurementSession_FirstRow
+  ): MeasurementSession_KeyOutput @fdc_generated(from: "MeasurementSession", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `MentalHealthReport` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  mentalHealthReport_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: MentalHealthReport_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: MentalHealthReport_FirstRow
+  ): MentalHealthReport_KeyOutput @fdc_generated(from: "MentalHealthReport", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Organization` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  organization_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Organization_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Organization_FirstRow
+  ): Organization_KeyOutput @fdc_generated(from: "Organization", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `OrganizationMember` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  organizationMember_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: OrganizationMember_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: OrganizationMember_FirstRow
+  ): OrganizationMember_KeyOutput @fdc_generated(from: "OrganizationMember", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `TrialService` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  trialService_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: TrialService_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: TrialService_FirstRow
+  ): TrialService_KeyOutput @fdc_generated(from: "TrialService", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `User` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  user_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete `AIReportUsage` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  aIReportUsage_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: AIReportUsage_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "AIReportUsage", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `BioSignalSession` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  bioSignalSession_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: BioSignalSession_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "BioSignalSession", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `BusinessMetrics` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  businessMetrics_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: BusinessMetrics_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "BusinessMetrics", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Company` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  company_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Company_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Company", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `CompanyMember` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  companyMember_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: CompanyMember_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "CompanyMember", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `ConsentRecord` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  consentRecord_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: ConsentRecord_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "ConsentRecord", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `ConsultationUsage` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  consultationUsage_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: ConsultationUsage_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "ConsultationUsage", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Contract` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  contract_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Contract_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Contract", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `CreditPackage` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  creditPackage_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: CreditPackage_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "CreditPackage", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `CreditTransaction` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  creditTransaction_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: CreditTransaction_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "CreditTransaction", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Device` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  device_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Device_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Device", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `ManualMoodLog` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  manualMoodLog_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: ManualMoodLog_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "ManualMoodLog", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `MeasurementSession` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  measurementSession_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: MeasurementSession_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "MeasurementSession", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `MentalHealthReport` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  mentalHealthReport_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: MentalHealthReport_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "MentalHealthReport", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Organization` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  organization_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Organization_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Organization", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `OrganizationMember` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  organizationMember_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: OrganizationMember_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "OrganizationMember", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `TrialService` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  trialService_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: TrialService_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "TrialService", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `User` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  user_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: User_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "User", purpose: DELETE_MULTIPLE)
+}
