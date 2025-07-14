@@ -1,6 +1,14 @@
 import React from 'react';
 import { Header } from './landing/Header';
+import { HeroSection } from './landing/HeroSection';
+import { LinkBandSection } from './landing/LinkBandSection';
 import { ServiceProcess } from './landing/ServiceProcess';
+import { AIReportSection } from './landing/AIReportSection';
+import { AIConsultationSection } from './landing/AIConsultationSection';
+import { PricingSection } from './landing/PricingSection';
+import { ReviewsSection } from './landing/ReviewsSection';
+import { ContactSection } from './landing/ContactSection';
+import { Footer } from './landing/Footer';
 
 interface LandingPageProps {
   onEnterApp: () => void;
@@ -49,10 +57,18 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
     default:
       return (
         <div className="min-h-screen bg-white">
-          <Header onNavigate={handleNavigate} onEnterApp={onEnterApp} />
+          <Header onNavigate={handleNavigate} />
           <main>
+            <HeroSection />
+            <LinkBandSection />
             <ServiceProcess />
+            <AIReportSection />
+            <AIConsultationSection />
+            <PricingSection />
+            <ReviewsSection />
+            <ContactSection />
           </main>
+          <Footer />
         </div>
       );
   }
