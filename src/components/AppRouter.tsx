@@ -114,6 +114,31 @@ const AppRouter = () => {
           <WelcomeScreen onComplete={() => navigate('/home')} />
         </ProtectedRoute>
       } />
+      <Route path="/home" element={
+        <ProtectedRoute>
+          <HomePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/data-center" element={
+        <ProtectedRoute>
+          <DataCenterPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/visualizer" element={
+        <ProtectedRoute>
+          <VisualizerPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <DocumentsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/linkband" element={
+        <ProtectedRoute>
+          <LinkBandPage />
+        </ProtectedRoute>
+      } />
       
       {/* AppLayout으로 감싸진 메인 애플리케이션 라우트 - 임시 비활성화 */}
       {/* <Route path="/" element={
