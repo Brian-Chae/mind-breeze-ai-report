@@ -315,10 +315,10 @@ export const landingTexts = {
         unitPrice: '1인당 7,900원',
         description: '1회 측정 + AI 상담 서비스',
         tiers: {
-          tier1: { employees: 100, discount: 10 },
-          tier2: { employees: 500, discount: 20 },
-          tier3: { employees: 1000, discount: 25 },
-          tier4: { employees: 5000, discount: 30 }
+          tier1: { employees: '100인 미만', discount: 10 },
+          tier2: { employees: '500인 미만', discount: 20 },
+          tier3: { employees: '1000인 미만', discount: 25 },
+          tier4: { employees: '5000인 미만', discount: 30 }
         },
         discountNote: '직원 수에 따른 할인율 적용'
       },
@@ -900,10 +900,10 @@ export const landingTexts = {
         unitPrice: '$7.90 per person',
         description: '1 measurement + AI consultation service',
         tiers: {
-          tier1: { employees: 100, discount: 10 },
-          tier2: { employees: 500, discount: 20 },
-          tier3: { employees: 1000, discount: 25 },
-          tier4: { employees: 5000, discount: 30 }
+          tier1: { employees: 'Under 100', discount: 10 },
+          tier2: { employees: 'Under 500', discount: 20 },
+          tier3: { employees: 'Under 1000', discount: 25 },
+          tier4: { employees: 'Under 5000', discount: 30 }
         },
         discountNote: 'Volume discount based on number of employees'
       },
@@ -1540,10 +1540,10 @@ export const landingTexts = {
         unitPrice: '1人あたり790円',
         description: '1回測定 + AI相談サービス',
         tiers: {
-          tier1: { employees: 100, discount: 10 },
-          tier2: { employees: 500, discount: 20 },
-          tier3: { employees: 1000, discount: 25 },
-          tier4: { employees: 5000, discount: 30 }
+          tier1: { employees: '100人未満', discount: 10 },
+          tier2: { employees: '500人未満', discount: 20 },
+          tier3: { employees: '1000人未満', discount: 25 },
+          tier4: { employees: '5000人未満', discount: 30 }
         },
         discountNote: '従業員数に応じた割引率適用'
       },
