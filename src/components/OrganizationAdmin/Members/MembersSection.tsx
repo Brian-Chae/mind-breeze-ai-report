@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Users,
   UserPlus,
@@ -19,13 +19,20 @@ import {
   Download,
   Clock,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
 import { Input } from '../../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+
+// Firebase 서비스 import
+import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
+import { UserType } from '../../../types/business'
 
 interface MembersSectionProps {
   subSection: string;
@@ -63,6 +70,8 @@ interface Permission {
 }
 
 export default function MembersSection({ subSection }: MembersSectionProps) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [newInviteEmail, setNewInviteEmail] = useState('')
@@ -70,88 +79,13 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
   const [newInviteDepartment, setNewInviteDepartment] = useState('')
   const [showInviteForm, setShowInviteForm] = useState(false)
 
-  // 운영자 목록 데이터
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: '1',
-      name: '김관리자',
-      email: 'admin@company.com',
-      phone: '010-1234-5678',
-      role: 'admin',
-      department: '경영관리팀',
-      joinDate: '2023-01-15',
-      lastLogin: '2024-01-15 09:30',
-      status: 'active',
-      permissions: ['user_read', 'user_write', 'device_read', 'device_write', 'report_read', 'report_write', 'admin_read', 'admin_write']
-    },
-    {
-      id: '2',
-      name: '이매니저',
-      email: 'manager@company.com',
-      phone: '010-2345-6789',
-      role: 'manager',
-      department: '연구개발팀',
-      joinDate: '2023-02-01',
-      lastLogin: '2024-01-15 08:45',
-      status: 'active',
-      permissions: ['user_read', 'user_write', 'device_read', 'report_read', 'report_write']
-    },
-    {
-      id: '3',
-      name: '박운영자',
-      email: 'member@company.com',
-      phone: '010-3456-7890',
-      role: 'member',
-      department: '고객지원팀',
-      joinDate: '2023-03-15',
-      lastLogin: '2024-01-14 17:20',
-      status: 'active',
-      permissions: ['user_read', 'device_read', 'report_read']
-    },
-    {
-      id: '4',
-      name: '정신입',
-      email: 'newbie@company.com',
-      phone: '010-4567-8901',
-      role: 'member',
-      department: '마케팅팀',
-      joinDate: '2024-01-01',
-      lastLogin: '2024-01-13 16:30',
-      status: 'pending',
-      permissions: ['user_read', 'report_read']
-    }
-  ])
+  // 실제 데이터 상태
+  const [membersData, setMembersData] = useState<MemberManagementData[]>([])
+  const [members, setMembers] = useState<Member[]>([])
+  const [memberManagementService] = useState(new MemberManagementService())
 
-  // 초대 관리 데이터
-  const [invitations, setInvitations] = useState<Invitation[]>([
-    {
-      id: '1',
-      email: 'invite1@company.com',
-      role: 'member',
-      department: '고객지원팀',
-      sentDate: '2024-01-10',
-      status: 'pending',
-      invitedBy: '김관리자'
-    },
-    {
-      id: '2',
-      email: 'invite2@company.com',
-      role: 'manager',
-      department: '마케팅팀',
-      sentDate: '2024-01-12',
-      status: 'accepted',
-      invitedBy: '김관리자'
-    },
-    {
-      id: '3',
-      email: 'invite3@company.com',
-      role: 'member',
-      department: '연구개발팀',
-      sentDate: '2024-01-05',
-      status: 'expired',
-      invitedBy: '이매니저'
-    }
-  ])
+  // 초대 관리 데이터 (임시 - 향후 Firebase 연동 필요)
+  const [invitations, setInvitations] = useState<Invitation[]>([])
 
   // 권한 설정 데이터
   const permissions: Permission[] = [
@@ -167,6 +101,131 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
     { id: 'admin_read', name: '관리자 조회', description: '관리자 정보 조회', category: 'admin', level: 'read' },
     { id: 'admin_write', name: '관리자 관리', description: '관리자 설정 관리', category: 'admin', level: 'write' }
   ]
+
+  // 데이터 로드
+  useEffect(() => {
+    loadMembersData()
+  }, [subSection])
+
+  const loadMembersData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 현재 사용자 정보 가져오기
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      const organizationId = currentContext.user.organizationId
+
+      // 멤버 데이터 로드
+      const membersData = await memberManagementService.getOrganizationMembers(organizationId)
+      setMembersData(membersData)
+
+      // MemberManagementData를 Member 인터페이스로 변환
+      const convertedMembers: Member[] = membersData.map(member => ({
+        id: member.userId,
+        name: member.displayName || member.email || '알 수 없음',
+        email: member.email || '',
+        phone: '', // MemberManagementData에 phone 필드가 없음
+        role: getUserRoleFromType(member.userType),
+        department: member.department || '미지정',
+        joinDate: member.createdAt?.toLocaleDateString() || '',
+        lastLogin: member.lastLoginAt?.toLocaleDateString() || '로그인 기록 없음',
+        status: member.isActive ? 'active' : 'inactive',
+        permissions: getPermissionsByRole(getUserRoleFromType(member.userType))
+      }))
+
+      setMembers(convertedMembers)
+
+    } catch (err) {
+      console.error('멤버 데이터 로드 오류:', err)
+      setError('멤버 데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // UserType을 role로 변환
+  const getUserRoleFromType = (userType: UserType): 'admin' | 'manager' | 'member' => {
+    switch (userType) {
+      case 'ORGANIZATION_ADMIN':
+        return 'admin'
+      case 'ORGANIZATION_MEMBER':
+        return 'member'
+      default:
+        return 'member'
+    }
+  }
+
+  // 역할별 권한 반환
+  const getPermissionsByRole = (role: 'admin' | 'manager' | 'member'): string[] => {
+    switch (role) {
+      case 'admin':
+        return ['user_read', 'user_write', 'device_read', 'device_write', 'report_read', 'report_write', 'admin_read', 'admin_write']
+      case 'manager':
+        return ['user_read', 'user_write', 'device_read', 'report_read', 'report_write']
+      case 'member':
+        return ['user_read', 'device_read', 'report_read']
+      default:
+        return []
+    }
+  }
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-gray-600">멤버 데이터를 불러오는 중...</span>
+      </div>
+    )
+  }
+
+  // 오류 발생 시
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">오류 발생</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={loadMembersData}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 시도
+        </Button>
+      </div>
+    )
+  }
+
+  // 초대 관리 기능들
+  const handleSendInvite = () => {
+    if (newInviteEmail.trim()) {
+      const newInvitation: Invitation = {
+        id: Date.now().toString(),
+        email: newInviteEmail,
+        role: newInviteRole,
+        department: newInviteDepartment,
+        sentDate: new Date().toLocaleDateString(),
+        status: 'pending',
+        invitedBy: '관리자'
+      }
+      setInvitations([...invitations, newInvitation])
+      setNewInviteEmail('')
+      setNewInviteDepartment('')
+      setShowInviteForm(false)
+    }
+  }
+
+  const handleResendInvite = (id: string) => {
+    console.log('초대 재발송:', id)
+  }
+
+  const handleCancelInvite = (id: string) => {
+    setInvitations(invitations.filter((invite: Invitation) => invite.id !== id))
+  }
 
   // 운영자 목록 렌더링
   const renderMemberList = () => {
@@ -352,12 +411,7 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <Button onClick={() => {
-                  // 초대 로직 구현
-                  setShowInviteForm(false)
-                  setNewInviteEmail('')
-                  setNewInviteDepartment('')
-                }}>
+                <Button onClick={handleSendInvite}>
                   <Send className="w-4 h-4 mr-2" />
                   초대 보내기
                 </Button>
@@ -374,24 +428,12 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
 
   // 초대 관리 렌더링
   const renderInviteManagement = () => {
-    const handleResendInvite = (id: string) => {
-      setInvitations(invitations.map(invite => 
-        invite.id === id 
-          ? { ...invite, sentDate: new Date().toISOString().split('T')[0] }
-          : invite
-      ))
-    }
-
-    const handleCancelInvite = (id: string) => {
-      setInvitations(invitations.filter(invite => invite.id !== id))
-    }
-
     const getInviteStatusColor = (status: string) => {
       switch (status) {
-        case 'pending': return 'bg-yellow-100 text-yellow-600'
-        case 'accepted': return 'bg-green-100 text-green-600'
-        case 'expired': return 'bg-red-100 text-red-600'
-        default: return 'bg-gray-100 text-gray-600'
+        case 'pending': return 'bg-yellow-100 text-yellow-800'
+        case 'accepted': return 'bg-green-100 text-green-800'
+        case 'expired': return 'bg-red-100 text-red-800'
+        default: return 'bg-gray-100 text-gray-800'
       }
     }
 
