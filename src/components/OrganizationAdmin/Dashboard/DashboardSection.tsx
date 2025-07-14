@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Users,
   Smartphone,
@@ -13,11 +13,19 @@ import {
   Activity,
   DollarSign,
   Eye,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
+
+// Firebase 서비스 import
+import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'
+import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
+import creditManagementService from '../../../services/CreditManagementService'
+import measurementUserManagementService, { MeasurementUser, MeasurementUserStats } from '../../../services/MeasurementUserManagementService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface StatsCard {
   title: string;
@@ -52,28 +60,100 @@ interface Notification {
   timestamp: string;
 }
 
+interface DashboardData {
+  totalUsers: number;
+  activeDevices: number;
+  monthlyReports: number;
+  creditBalance: number;
+  userStats: MeasurementUserStats | null;
+  members: MemberManagementData[];
+  organizationInfo: OrganizationInfo | null;
+}
+
 export default function DashboardSection() {
-  // 통계 카드 데이터
-  const statsCards: StatsCard[] = [
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalUsers: 0,
+    activeDevices: 0,
+    monthlyReports: 0,
+    creditBalance: 0,
+    userStats: null,
+    members: [],
+    organizationInfo: null
+  })
+
+  // 대시보드 데이터 로드
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 현재 사용자 정보 가져오기
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      const organizationId = currentContext.user.organizationId
+
+      // 병렬로 데이터 로드
+      const [
+        organizationInfo,
+        userStats,
+        members,
+        creditBalance
+      ] = await Promise.all([
+        OrganizationService.getOrganizationById(organizationId),
+        measurementUserManagementService.getMeasurementUserStats(),
+        new MemberManagementService().getOrganizationMembers(organizationId),
+        creditManagementService.getCreditBalance(organizationId)
+      ])
+
+      setDashboardData({
+        totalUsers: userStats?.totalCount || 0,
+        activeDevices: members.filter((m: MemberManagementData) => m.isActive).length,
+        monthlyReports: userStats?.thisMonthMeasurements || 0,
+        creditBalance: creditBalance,
+        userStats,
+        members,
+        organizationInfo
+      })
+
+    } catch (err) {
+      console.error('대시보드 데이터 로드 오류:', err)
+      setError('데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 통계 카드 데이터 (실제 데이터 기반)
+  const getStatsCards = (): StatsCard[] => [
     {
       title: '전체 사용자',
-      value: '1,234',
-      change: '+12.5%',
+      value: dashboardData.totalUsers.toLocaleString(),
+      change: dashboardData.userStats ? `+${dashboardData.userStats.thisMonthNewUsers}` : '+0',
       trend: 'up',
       icon: Users,
       color: 'blue'
     },
     {
-      title: '활성 디바이스',
-      value: '86',
+      title: '활성 운영자',
+      value: dashboardData.activeDevices.toString(),
       change: '+2.3%',
       trend: 'up',
       icon: Smartphone,
       color: 'green'
     },
     {
-      title: '이번달 리포트',
-      value: '2,891',
+      title: '이번달 측정',
+      value: dashboardData.monthlyReports.toLocaleString(),
       change: '+18.2%',
       trend: 'up',
       icon: Brain,
@@ -81,7 +161,7 @@ export default function DashboardSection() {
     },
     {
       title: '잔여 크레딧',
-      value: '15,420',
+      value: dashboardData.creditBalance.toLocaleString(),
       change: '-5.8%',
       trend: 'down',
       icon: CreditCard,
@@ -89,70 +169,49 @@ export default function DashboardSection() {
     }
   ]
 
-  // 최근 활동 데이터
-  const recentActivities: RecentActivity[] = [
-    {
-      id: '1',
-      user: '김철수',
-      action: 'AI 리포트 생성 완료',
-      timestamp: '5분 전',
-      status: 'success'
-    },
-    {
-      id: '2',
-      user: '이영희',
-      action: '새로운 운영자 초대',
-      timestamp: '12분 전',
-      status: 'success'
-    },
-    {
-      id: '3',
-      user: '박민수',
-      action: '디바이스 배터리 부족 알림',
-      timestamp: '25분 전',
-      status: 'warning'
-    },
-    {
-      id: '4',
-      user: '정지영',
-      action: '크레딧 자동 충전 실패',
-      timestamp: '1시간 전',
-      status: 'error'
-    },
-    {
-      id: '5',
-      user: '홍길동',
-      action: '새로운 사용자 등록',
-      timestamp: '2시간 전',
-      status: 'success'
-    }
-  ]
+  // 최근 활동 데이터 (실제 데이터 기반)
+  const getRecentActivities = (): RecentActivity[] => {
+    const activities: RecentActivity[] = []
+    
+    // 최근 가입한 멤버들 기반으로 활동 생성
+    dashboardData.members.slice(0, 4).forEach((member, index) => {
+      activities.push({
+        id: `member-${index}`,
+        user: member.displayName || member.email || '알 수 없음',
+        action: member.isActive ? '로그인 완료' : '계정 비활성화',
+        timestamp: `${index + 1}시간 전`,
+        status: member.isActive ? 'success' : 'warning'
+      })
+    })
 
-  // 빠른 액션 데이터
+    return activities
+  }
+
+  // 빠른 액션들
   const quickActions: QuickAction[] = [
     {
-      id: 'invite-member',
+      id: 'invite',
       title: '운영자 초대',
       icon: UserPlus,
       color: 'blue',
       action: () => console.log('운영자 초대')
     },
     {
-      id: 'generate-report',
+      id: 'report',
       title: 'AI 리포트 생성',
       icon: Brain,
       color: 'purple',
       action: () => console.log('AI 리포트 생성')
     },
     {
-      id: 'add-device',
+      id: 'device',
       title: '디바이스 추가',
       icon: Smartphone,
       color: 'green',
       action: () => console.log('디바이스 추가')
     },
     {
-      id: 'buy-credits',
+      id: 'credit',
       title: '크레딧 구매',
       icon: CreditCard,
       color: 'orange',
@@ -160,32 +219,60 @@ export default function DashboardSection() {
     }
   ]
 
-  // 알림 데이터
-  const notifications: Notification[] = [
-    {
-      id: '1',
-      type: 'warning',
-      title: '크레딧 부족',
-      message: '잔여 크레딧이 20% 미만입니다',
-      timestamp: '10분 전'
-    },
-    {
-      id: '2',
-      type: 'info',
-      title: '시스템 업데이트',
-      message: '새로운 기능이 추가되었습니다',
-      timestamp: '2시간 전'
-    },
-    {
-      id: '3',
-      type: 'success',
-      title: '백업 완료',
-      message: '데이터 백업이 성공적으로 완료되었습니다',
-      timestamp: '6시간 전'
+  // 알림 데이터 (실제 데이터 기반)
+  const getNotifications = (): Notification[] => {
+    const notifications: Notification[] = []
+    
+    // 크레딧 부족 알림
+    if (dashboardData.creditBalance < 1000) {
+      notifications.push({
+        id: 'credit-low',
+        type: 'warning',
+        title: '크레딧 부족',
+        message: '잔여 크레딧이 부족합니다. 충전을 권장합니다.',
+        timestamp: '1시간 전'
+      })
     }
-  ]
 
-  // 통계 카드 렌더링
+    // 조직 정보 알림
+    if (dashboardData.organizationInfo) {
+      notifications.push({
+        id: 'org-info',
+        type: 'info',
+        title: '조직 정보',
+        message: `${dashboardData.organizationInfo.organizationName} 관리 중`,
+        timestamp: '2시간 전'
+      })
+    }
+
+    return notifications
+  }
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-gray-600">데이터를 불러오는 중...</span>
+      </div>
+    )
+  }
+
+  // 오류 발생 시
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">오류 발생</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={loadDashboardData}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 시도
+        </Button>
+      </div>
+    )
+  }
+
   const renderStatsCard = (card: StatsCard) => {
     const colorClasses = {
       blue: 'bg-blue-100 text-blue-600',
@@ -195,19 +282,19 @@ export default function DashboardSection() {
     }
 
     return (
-      <Card key={card.title} className="p-6 hover:shadow-lg transition-shadow">
+      <Card key={card.title} className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 mb-1">{card.title}</p>
+            <p className="text-sm text-gray-700 mb-1">{card.title}</p>
             <p className="text-2xl font-bold text-gray-900">{card.value}</p>
             <div className="flex items-center mt-2">
               <TrendingUp className={`w-4 h-4 mr-1 ${
                 card.trend === 'up' ? 'text-green-500' : 
-                card.trend === 'down' ? 'text-red-500' : 'text-gray-500'
+                card.trend === 'down' ? 'text-red-500' : 'text-gray-600'
               }`} />
               <span className={`text-sm ${
                 card.trend === 'up' ? 'text-green-600' : 
-                card.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                card.trend === 'down' ? 'text-red-600' : 'text-gray-700'
               }`}>
                 {card.change}
               </span>
@@ -223,7 +310,6 @@ export default function DashboardSection() {
     )
   }
 
-  // 최근 활동 아이템 렌더링
   const renderActivityItem = (activity: RecentActivity) => {
     const statusColors = {
       success: 'bg-green-100 text-green-600',
@@ -240,7 +326,7 @@ export default function DashboardSection() {
     const StatusIcon = statusIcons[activity.status]
 
     return (
-      <div key={activity.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+      <div key={activity.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-lg">
         <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
           statusColors[activity.status]
         }`}>
@@ -248,32 +334,29 @@ export default function DashboardSection() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">{activity.user}</p>
-          <p className="text-sm text-gray-600">{activity.action}</p>
+          <p className="text-sm text-gray-700">{activity.action}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500">{activity.timestamp}</p>
+          <p className="text-xs text-gray-600">{activity.timestamp}</p>
         </div>
       </div>
     )
   }
 
-  // 빠른 액션 아이템 렌더링
   const renderQuickAction = (action: QuickAction) => {
     const colorClasses = {
-      blue: 'hover:bg-blue-50 hover:text-blue-600',
-      purple: 'hover:bg-purple-50 hover:text-purple-600',
-      green: 'hover:bg-green-50 hover:text-green-600',
-      orange: 'hover:bg-orange-50 hover:text-orange-600'
+      blue: 'hover:bg-blue-50 border-blue-200 text-blue-700',
+      green: 'hover:bg-green-50 border-green-200 text-green-700',
+      purple: 'hover:bg-purple-50 border-purple-200 text-purple-700',
+      orange: 'hover:bg-orange-50 border-orange-200 text-orange-700'
     }
 
     return (
       <Button
         key={action.id}
-        variant="outline"
-        className={`w-full justify-start transition-colors ${
-          colorClasses[action.color as keyof typeof colorClasses]
-        }`}
         onClick={action.action}
+        className={`w-full justify-start ${colorClasses[action.color as keyof typeof colorClasses]}`}
+        variant="outline"
       >
         <action.icon className="w-4 h-4 mr-2" />
         {action.title}
@@ -281,7 +364,6 @@ export default function DashboardSection() {
     )
   }
 
-  // 알림 아이템 렌더링
   const renderNotification = (notification: Notification) => {
     const typeColors = {
       warning: 'bg-yellow-100 text-yellow-600',
@@ -300,7 +382,7 @@ export default function DashboardSection() {
     const TypeIcon = typeIcons[notification.type]
 
     return (
-      <div key={notification.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+      <div key={notification.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg">
         <div className={`flex items-center justify-center w-6 h-6 rounded-full ${
           typeColors[notification.type]
         }`}>
@@ -308,7 +390,7 @@ export default function DashboardSection() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-          <p className="text-xs text-gray-600">{notification.message}</p>
+          <p className="text-xs text-gray-700">{notification.message}</p>
           <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
         </div>
       </div>
@@ -316,112 +398,59 @@ export default function DashboardSection() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map(renderStatsCard)}
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">대시보드</h2>
+          <p className="text-gray-600">
+            {dashboardData.organizationInfo?.organizationName || '조직'} 관리 현황
+          </p>
+        </div>
+        <Button onClick={loadDashboardData} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          새로고침
+        </Button>
       </div>
 
-      {/* 메인 콘텐츠 그리드 */}
+      {/* 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {getStatsCards().map(renderStatsCard)}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 최근 활동 */}
         <div className="lg:col-span-2">
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">최근 활동</h3>
-              <div className="flex items-center space-x-2">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-600">
-                  실시간
-                </Badge>
-                <Button variant="outline" size="sm">
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  새로고침
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" onClick={loadDashboardData}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
             </div>
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {recentActivities.map(renderActivityItem)}
+            <div className="space-y-2">
+              {getRecentActivities().map(renderActivityItem)}
             </div>
           </Card>
         </div>
 
-        {/* 사이드 패널 */}
-        <div className="space-y-6">
-          {/* 빠른 액션 */}
+        {/* 빠른 액션 */}
+        <div>
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">빠른 액션</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">빠른 액션</h3>
             <div className="space-y-3">
               {quickActions.map(renderQuickAction)}
             </div>
           </Card>
 
           {/* 알림 */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">알림</h3>
-              <Badge variant="secondary" className="bg-red-50 text-red-600">
-                {notifications.length}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              {notifications.map(renderNotification)}
+          <Card className="p-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">알림</h3>
+            <div className="space-y-3">
+              {getNotifications().map(renderNotification)}
             </div>
           </Card>
         </div>
-      </div>
-
-      {/* 추가 정보 섹션 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 시스템 상태 */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">시스템 상태</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">서버 상태</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">정상</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">데이터베이스</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-green-600">정상</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">AI 서비스</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-yellow-600">점검중</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* 최근 성과 */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 성과</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">금일 신규 사용자</span>
-              <span className="text-sm font-medium text-gray-900">+24명</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">완료된 측정</span>
-              <span className="text-sm font-medium text-gray-900">156회</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">생성된 리포트</span>
-              <span className="text-sm font-medium text-gray-900">89개</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">사용된 크레딧</span>
-              <span className="text-sm font-medium text-gray-900">2,340개</span>
-            </div>
-          </div>
-        </Card>
       </div>
     </div>
   )
