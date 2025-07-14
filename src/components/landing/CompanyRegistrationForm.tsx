@@ -62,6 +62,7 @@ export default function CompanyRegistrationForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [generatedCompanyCode, setGeneratedCompanyCode] = useState<string | null>(null);
+  const [agreeToAll, setAgreeToAll] = useState(false);
   
   const [formData, setFormData] = useState<CompanyRegistrationData>({
     companyName: '',
@@ -91,6 +92,33 @@ export default function CompanyRegistrationForm() {
     // 에러 제거
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+    
+    // 약관 동의 상태 변경 시 모든 동의 체크박스 상태 업데이트
+    if (field === 'agreeToTerms' || field === 'agreeToPrivacy' || field === 'agreeToMarketing') {
+      const newFormData = { ...formData, [field]: value };
+      const allAgreed = newFormData.agreeToTerms && newFormData.agreeToPrivacy && newFormData.agreeToMarketing;
+      setAgreeToAll(allAgreed);
+    }
+  };
+
+  // 모든 약관 동의/해제 처리
+  const handleAgreeToAll = (checked: boolean) => {
+    setAgreeToAll(checked);
+    setFormData(prev => ({
+      ...prev,
+      agreeToTerms: checked,
+      agreeToPrivacy: checked,
+      agreeToMarketing: checked
+    }));
+    
+    // 에러 메시지 제거
+    if (checked) {
+      setErrors(prev => ({
+        ...prev,
+        agreeToTerms: undefined,
+        agreeToPrivacy: undefined
+      }));
     }
   };
 
@@ -673,6 +701,27 @@ export default function CompanyRegistrationForm() {
                 <h3 className="text-lg font-semibold text-gray-900">약관 동의</h3>
               </div>
               <div className="space-y-4">
+                {/* 모든 약관 동의 */}
+                <div className="pb-4 border-b border-gray-200">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="agreeToAll"
+                      checked={agreeToAll}
+                      onCheckedChange={handleAgreeToAll}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="agreeToAll" className="text-sm font-bold cursor-pointer text-gray-900">
+                        모든 약관에 동의합니다
+                      </label>
+                      <p className="text-xs text-gray-600 mt-1">
+                        서비스 이용약관, 개인정보처리방침, 마케팅 정보 수신에 모두 동의합니다.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 개별 약관 동의 */}
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="agreeToTerms"
