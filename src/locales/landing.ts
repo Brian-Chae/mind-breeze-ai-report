@@ -1587,8 +1587,7 @@ export const landingTexts = {
         title: 'カスタム企業ソリューション',
         description: '大規模企業向けの特別割引、カスタマイズダッシュボード、専任サポートチームなどの特典をご希望の場合は、直接お問い合わせください。',
         cta: 'カスタムソリューション問い合わせ'
-      }
-    },
+      },
       hardware: {
         title: 'LINK BANDデバイス',
         subtitle: '測定に必要',
@@ -1864,4 +1863,4 @@ export const landingTexts = {
       madeWith: '❤️ を込めて東京で開発'
     }
   }
-}; 
+};
