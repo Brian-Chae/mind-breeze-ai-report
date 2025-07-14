@@ -95,6 +95,104 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
   const [users, setUsers] = useState<MeasurementUser[]>([])
   const [userStats, setUserStats] = useState<MeasurementUserStats | null>(null)
 
+  // 측정 세션 데이터
+  const [sessions, setSessions] = useState<MeasurementSession[]>([
+    {
+      id: '1',
+      userId: '1',
+      userName: '김건강',
+      startTime: '2024-01-15 14:30:00',
+      endTime: '2024-01-15 14:45:00',
+      duration: 15,
+      deviceId: 'LB001',
+      deviceType: 'LinkBand Pro',
+      quality: 'excellent',
+      dataSize: 2.4,
+      notes: '정상적인 측정 완료',
+      status: 'completed'
+    },
+    {
+      id: '2',
+      userId: '2',
+      userName: '이스트레스',
+      startTime: '2024-01-14 10:00:00',
+      endTime: '2024-01-14 10:18:00',
+      duration: 18,
+      deviceId: 'LB002',
+      deviceType: 'LinkBand Pro',
+      quality: 'good',
+      dataSize: 3.1,
+      notes: '일부 신호 불안정',
+      status: 'completed'
+    },
+    {
+      id: '3',
+      userId: '3',
+      userName: '박집중',
+      startTime: '2024-01-12 16:30:00',
+      endTime: '2024-01-12 16:35:00',
+      duration: 5,
+      deviceId: 'LB003',
+      deviceType: 'LinkBand Pro',
+      quality: 'fair',
+      dataSize: 0.8,
+      notes: '측정 중단됨',
+      status: 'failed'
+    }
+  ])
+
+  // 사용자 리포트 데이터
+  const [reports, setReports] = useState<UserReport[]>([
+    {
+      id: '1',
+      userId: '1',
+      userName: '김건강',
+      title: '스트레스 관리 분석 리포트',
+      type: 'stress',
+      createdAt: '2024-01-15 15:00:00',
+      status: 'generated',
+      quality: 92,
+      sentTo: ['kim.health@company.com'],
+      downloadCount: 3
+    },
+    {
+      id: '2',
+      userId: '2',
+      userName: '이스트레스',
+      title: '집중력 향상 분석 리포트',
+      type: 'focus',
+      createdAt: '2024-01-14 10:30:00',
+      status: 'generated',
+      quality: 87,
+      sentTo: ['lee.stress@company.com', 'manager@company.com'],
+      downloadCount: 5
+    },
+    {
+      id: '3',
+      userId: '3',
+      userName: '박집중',
+      title: '종합 웰니스 리포트',
+      type: 'comprehensive',
+      createdAt: '2024-01-12 18:00:00',
+      status: 'generated',
+      quality: 95,
+      sentTo: ['park.focus@company.com'],
+      downloadCount: 2
+    },
+    {
+      id: '4',
+      userId: '4',
+      userName: '정웰니스',
+      title: '웰니스 상태 분석',
+      type: 'wellness',
+      createdAt: '2024-01-10 12:00:00',
+      status: 'processing',
+      quality: 0,
+      sentTo: [],
+      downloadCount: 0
+    }
+  ])
+
   // 데이터 로드
   useEffect(() => {
     loadUsersData()
@@ -197,118 +295,6 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
       </div>
     )
   }
-
-  // 측정 사용자 데이터
-  const [sessions, setSessions] = useState<MeasurementSession[]>([
-    {
-      id: '1',
-      userId: '1',
-      userName: '김건강',
-      startTime: '2024-01-15 14:30:00',
-      endTime: '2024-01-15 14:45:00',
-      duration: 15,
-      deviceId: 'LB001',
-      deviceType: 'LinkBand Pro',
-      quality: 'excellent',
-      dataSize: 2.4,
-      notes: '정상적인 측정 완료',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      userId: '2',
-      userName: '이스트레스',
-      startTime: '2024-01-14 09:15:00',
-      endTime: '2024-01-14 09:30:00',
-      duration: 15,
-      deviceId: 'LB002',
-      deviceType: 'LinkBand Pro',
-      quality: 'good',
-      dataSize: 2.1,
-      notes: '약간의 노이즈 있음',
-      status: 'completed'
-    },
-    {
-      id: '3',
-      userId: '3',
-      userName: '박집중',
-      startTime: '2024-01-12 16:45:00',
-      endTime: '2024-01-12 17:00:00',
-      duration: 15,
-      deviceId: 'LB003',
-      deviceType: 'LinkBand Pro',
-      quality: 'fair',
-      dataSize: 1.8,
-      notes: '연결 불안정',
-      status: 'completed'
-    },
-    {
-      id: '4',
-      userId: '4',
-      userName: '정웰니스',
-      startTime: '2024-01-10 11:20:00',
-      endTime: '2024-01-10 11:35:00',
-      duration: 15,
-      deviceId: 'LB004',
-      deviceType: 'LinkBand Pro',
-      quality: 'poor',
-      dataSize: 1.2,
-      notes: '측정 중 연결 끊김',
-      status: 'failed'
-    }
-  ])
-
-  // 사용자 리포트 데이터
-  const [reports, setReports] = useState<UserReport[]>([
-    {
-      id: '1',
-      userId: '1',
-      userName: '김건강',
-      title: '스트레스 관리 분석 리포트',
-      type: 'stress',
-      createdAt: '2024-01-15 15:00:00',
-      status: 'generated',
-      quality: 92,
-      sentTo: ['kim.health@company.com'],
-      downloadCount: 3
-    },
-    {
-      id: '2',
-      userId: '2',
-      userName: '이스트레스',
-      title: '집중력 향상 분석 리포트',
-      type: 'focus',
-      createdAt: '2024-01-14 10:30:00',
-      status: 'generated',
-      quality: 87,
-      sentTo: ['lee.stress@company.com', 'manager@company.com'],
-      downloadCount: 5
-    },
-    {
-      id: '3',
-      userId: '3',
-      userName: '박집중',
-      title: '종합 웰니스 리포트',
-      type: 'comprehensive',
-      createdAt: '2024-01-12 18:00:00',
-      status: 'generated',
-      quality: 95,
-      sentTo: ['park.focus@company.com'],
-      downloadCount: 2
-    },
-    {
-      id: '4',
-      userId: '4',
-      userName: '정웰니스',
-      title: '웰니스 상태 분석',
-      type: 'wellness',
-      createdAt: '2024-01-10 12:00:00',
-      status: 'processing',
-      quality: 0,
-      sentTo: [],
-      downloadCount: 0
-    }
-  ])
 
   // 사용자 목록 렌더링
   const renderUserList = () => {
