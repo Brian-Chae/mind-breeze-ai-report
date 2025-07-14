@@ -18,6 +18,7 @@ import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
 import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
+import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
   const { user, loading } = useAuth();
@@ -113,36 +114,20 @@ const AppRouter = () => {
           <WelcomeScreen onComplete={() => navigate('/home')} />
         </ProtectedRoute>
       } />
-      <Route path="/home" element={
+      
+      {/* AppLayout으로 감싸진 메인 애플리케이션 라우트 */}
+      <Route path="/" element={
         <ProtectedRoute>
-          <HomePage />
+          <AppLayout />
         </ProtectedRoute>
-      } />
-      <Route path="/data-center" element={
-        <ProtectedRoute>
-          <DataCenterPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/visualizer" element={
-        <ProtectedRoute>
-          <VisualizerPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/documents" element={
-        <ProtectedRoute>
-          <DocumentsPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/linkband" element={
-        <ProtectedRoute>
-          <LinkBandPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/applications" element={
-        <ProtectedRoute>
-          <Applications />
-        </ProtectedRoute>
-      } />
+      }>
+        <Route path="home" element={<HomePage />} />
+        <Route path="data-center" element={<DataCenterPage />} />
+        <Route path="visualizer" element={<VisualizerPage />} />
+        <Route path="documents" element={<DocumentsPage />} />
+        <Route path="linkband" element={<LinkBandPage />} />
+        <Route path="applications" element={<Applications />} />
+      </Route>
     </Routes>
   );
 };
