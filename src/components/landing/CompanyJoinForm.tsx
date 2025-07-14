@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
@@ -7,6 +8,8 @@ import { Checkbox } from '../ui/checkbox';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ArrowLeft, Building, User, Shield, Mail, Phone, MapPin, IdCard, CheckCircle, AlertCircle, Brain } from 'lucide-react';
 import { CompanyService } from '../../services/CompanyService';
+import { enterpriseAuthService } from '../../services/EnterpriseAuthService';
+import { toast } from 'sonner';
 
 // 간단한 validation 함수들
 const validateEmail = (email: string) => {
@@ -51,6 +54,7 @@ interface CompanyInfo {
 }
 
 export function CompanyJoinForm() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CompanyJoinData>({
     companyCode: '',
@@ -115,7 +119,6 @@ export function CompanyJoinForm() {
 
     setIsLoading(true);
     try {
-      // 임시 구현 - 실제로는 CompanyService.getCompanyByCode 사용
       const company = await CompanyService.getCompanyByCode(formData.companyCode);
       
       if (company) {
@@ -208,13 +211,29 @@ export function CompanyJoinForm() {
 
     setIsLoading(true);
     try {
-      // 임시 구현 - 실제로는 사용자 등록 로직 구현 필요
-      console.log('사용자 등록 데이터:', formData);
-      alert('회사 가입이 완료되었습니다!');
-      // 로그인 페이지로 리다이렉트
-    } catch (error) {
-      console.error('회사 가입 실패:', error);
-      alert('회사 가입에 실패했습니다. 다시 시도해주세요.');
+      console.log('🔵 기존 회사 참여 시도 - ORGANIZATION_MEMBER로 등록');
+      
+      // EnterpriseAuthService.signUp 호출 - 무조건 ORGANIZATION_MEMBER로 등록
+      const user = await enterpriseAuthService.signUp({
+        userType: 'ORGANIZATION_MEMBER', // 강제로 ORGANIZATION_MEMBER 설정
+        organizationId: formData.companyCode,
+        email: formData.email,
+        employeeId: formData.employeeId,
+        password: formData.password,
+        displayName: formData.name,
+        department: formData.department,
+        position: formData.position
+      });
+
+      console.log('✅ 기존 회사 참여 성공:', user);
+      toast.success(`${companyInfo?.name}에 성공적으로 참여했습니다!`);
+      
+      // 자동 로그인 처리 후 대시보드로 이동
+      navigate('/app/dashboard', { replace: true });
+      
+    } catch (error: any) {
+      console.error('❌ 회사 가입 실패:', error);
+      toast.error(error.message || '회사 가입에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
