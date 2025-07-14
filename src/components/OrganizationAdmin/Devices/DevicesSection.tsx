@@ -206,57 +206,57 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-700 font-medium">전체 디바이스</p>
-              <p className="text-2xl font-bold text-blue-900">
+              <p className="text-sm text-gray-600 font-medium">전체 디바이스</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.totalDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-200 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
               <Smartphone className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-700 font-medium">활성 디바이스</p>
-              <p className="text-2xl font-bold text-green-900">
+              <p className="text-sm text-gray-600 font-medium">활성 디바이스</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.activeDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-green-200 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl">
               <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-l-4 border-gray-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-700 font-medium">오프라인</p>
+              <p className="text-sm text-gray-600 font-medium">오프라인</p>
               <p className="text-2xl font-bold text-gray-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.offlineDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
               <Power className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-l-4 border-yellow-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-yellow-700 font-medium">점검 필요</p>
-              <p className="text-2xl font-bold text-yellow-900">
+              <p className="text-sm text-gray-600 font-medium">점검 필요</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.maintenanceDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-yellow-200 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-xl">
               <AlertCircle className="w-6 h-6 text-yellow-600" />
             </div>
           </div>
