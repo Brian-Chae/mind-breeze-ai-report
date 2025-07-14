@@ -107,18 +107,42 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
 
       // 현재 사용자 정보 가져오기
       const currentContext = enterpriseAuthService.getCurrentContext()
-      if (!currentContext.user || !currentContext.user.organizationId) {
-        setError('조직 정보를 찾을 수 없습니다.')
+      if (!currentContext.user) {
+        setError('로그인 정보가 없습니다.')
         return
       }
 
       const organizationId = currentContext.user.organizationId
 
-      // 병렬로 데이터 로드
-      const [usersData, statsData] = await Promise.all([
-        measurementUserManagementService.getMeasurementUsers({ organizationId }),
-        measurementUserManagementService.getMeasurementUserStats()
-      ])
+      if (!organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      // 현재 사용자의 권한 정보 확인
+      console.log('현재 사용자 권한:', currentContext.permissions)
+      console.log('사용자 타입:', currentContext.user.userType)
+      console.log('조직 ID:', organizationId)
+
+      // 권한이 있는 경우에만 사용자 데이터 로드
+      let usersData: FirebaseMeasurementUser[] = []
+      let statsData: MeasurementUserStats | null = null
+
+      if (enterpriseAuthService.hasPermission('measurement_users.view.all') || 
+          enterpriseAuthService.hasPermission('measurement_users.view.own')) {
+        try {
+          // 병렬로 데이터 로드
+          [usersData, statsData] = await Promise.all([
+            measurementUserManagementService.getMeasurementUsers({ organizationId }),
+            measurementUserManagementService.getMeasurementUserStats()
+          ])
+        } catch (err) {
+          console.warn('사용자 데이터 로드 실패:', err)
+          // 빈 데이터로 계속 진행
+        }
+      } else {
+        console.warn('측정 대상자 조회 권한이 없습니다.')
+      }
 
       setFirebaseUsers(usersData)
       setUserStats(statsData)

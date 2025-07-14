@@ -73,26 +73,27 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
         throw new Error('인증 정보가 없습니다.')
       }
 
-      // 조직의 모든 건강 리포트 조회
+      // 조직의 모든 건강 리포트 조회 (인덱스 오류 방지를 위해 orderBy 제거)
       const healthReports = await FirebaseService.getDocuments('healthReports', [
-        FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id),
-        FirebaseService.createOrderByFilter('createdAt', 'desc')
+        FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id)
       ])
 
-      // 리포트 데이터 변환
-      const transformedReports = healthReports.map((report: any) => ({
-        id: report.id,
-        userId: report.userId,
-        userName: report.userName || '알 수 없음',
-        reportType: report.reportType || '스트레스 분석',
-        title: report.title || `${report.reportType} 리포트`,
-        status: report.status || 'completed',
-        quality: report.quality || Math.floor(Math.random() * 20) + 80,
-        downloadCount: report.downloadCount || 0,
-        createdAt: report.createdAt?.toDate() || new Date(),
-        updatedAt: report.updatedAt?.toDate() || new Date(),
-        metadata: report.metadata || {}
-      }))
+      // 리포트 데이터 변환 및 클라이언트 측 정렬
+      const transformedReports = healthReports
+        .map((report: any) => ({
+          id: report.id,
+          userId: report.userId,
+          userName: report.userName || '알 수 없음',
+          reportType: report.reportType || '스트레스 분석',
+          title: report.title || `${report.reportType} 리포트`,
+          status: report.status || 'completed',
+          quality: report.quality || Math.floor(Math.random() * 20) + 80,
+          downloadCount: report.downloadCount || 0,
+          createdAt: report.createdAt?.toDate() || new Date(),
+          updatedAt: report.updatedAt?.toDate() || new Date(),
+          metadata: report.metadata || {}
+        }))
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()) // 클라이언트 측에서 정렬
 
       setReports(transformedReports)
 
@@ -129,7 +130,7 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
 
   const loadMeasurementUsers = async () => {
     try {
-      const users = await measurementService.getAllMeasurementUsers()
+      const users = await measurementService.getMeasurementUsers({})
       setMeasurementUsers(users)
     } catch (error) {
       console.error('측정 사용자 로드 실패:', error)
@@ -140,8 +141,11 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
     try {
       setLoading(true)
       
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      const organizationId = currentContext.organization?.id
+      
       // 크레딧 확인
-      const creditBalance = await creditService.getCreditBalance()
+      const creditBalance = await creditService.getCreditBalance(organizationId)
       if (creditBalance < 10) { // 리포트 생성 기본 비용
         throw new Error('크레딧이 부족합니다.')
       }
@@ -152,7 +156,7 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
         reportType,
         title: `${reportType} 리포트`,
         status: 'processing',
-        organizationId: enterpriseAuthService.getCurrentContext().organization?.id,
+        organizationId,
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -160,7 +164,12 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
       const reportId = await FirebaseService.saveHealthReport(userId, reportData)
       
       // 크레딧 차감
-      await creditService.useCreditForReport(reportId, reportType)
+      await creditService.useReportCredits(
+        currentContext.user!.id,
+        organizationId,
+        'BASIC',
+        reportId
+      )
 
       // 데이터 새로고침
       await loadReportData()
