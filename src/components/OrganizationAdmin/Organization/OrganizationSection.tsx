@@ -584,11 +584,11 @@ export default function OrganizationSection({ subSection }: OrganizationSectionP
   // 서브섹션에 따른 렌더링
   const renderContent = () => {
     switch (subSection) {
-      case 'org-info':
+      case 'company-info':
         return renderCompanyInfo()
-      case 'org-departments':
+      case 'departments':
         return renderDepartmentManagement()
-      case 'org-structure':
+      case 'structure':
         return renderOrganizationStructure()
       default:
         return renderCompanyInfo()
