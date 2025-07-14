@@ -37,6 +37,7 @@ import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface OrganizationSectionProps {
   subSection: string;
+  onNavigate: (sectionId: string, subSectionId?: string) => void;
 }
 
 interface CompanyInfo {
@@ -71,7 +72,7 @@ interface OrganizationNode {
   children?: OrganizationNode[];
 }
 
-export default function OrganizationSection({ subSection }: OrganizationSectionProps) {
+export default function OrganizationSection({ subSection, onNavigate }: OrganizationSectionProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingCompany, setEditingCompany] = useState(false)
@@ -138,51 +139,83 @@ export default function OrganizationSection({ subSection }: OrganizationSectionP
 
       const organizationId = currentContext.user.organizationId
 
-      // 병렬로 데이터 로드
-      const [organizationData, membersData] = await Promise.all([
-        OrganizationService.getOrganizationById(organizationId),
-        new MemberManagementService().getOrganizationMembers(organizationId)
-      ])
+      // 서브섹션별로 필요한 데이터만 로드
+      switch (subSection) {
+        case 'company-info':
+          // 기업 정보만 로드
+          const organizationData = await OrganizationService.getOrganizationById(organizationId)
+          if (organizationData) {
+            setOrganizationInfo(organizationData)
+            setCompanyInfo({
+              name: organizationData.organizationName,
+              industry: organizationData.industry,
+              size: `${organizationData.initialMemberCount}명`,
+              address: organizationData.address,
+              phone: organizationData.contactPhone,
+              email: organizationData.contactEmail,
+              website: organizationData.address,
+              establishedDate: organizationData.createdAt?.toDate?.()?.toLocaleDateString() || '',
+              description: `${organizationData.organizationName}의 기업 정보`,
+              license: organizationData.businessNumber
+            })
+          }
+          break
 
-      if (organizationData) {
-        setOrganizationInfo(organizationData)
-        
-        // CompanyInfo 매핑
-        setCompanyInfo({
-          name: organizationData.organizationName,
-          industry: organizationData.industry,
-          size: `${organizationData.initialMemberCount}명`,
-          address: organizationData.address,
-          phone: organizationData.contactPhone,
-          email: organizationData.contactEmail,
-          website: organizationData.address, // 임시로 주소 사용
-          establishedDate: organizationData.createdAt?.toDate?.()?.toLocaleDateString() || '',
-          description: `${organizationData.organizationName}의 기업 정보`,
-          license: organizationData.businessNumber
-        })
+        case 'departments':
+        case 'structure':
+          // 조직 관리 및 구조에 필요한 데이터 로드
+          const [orgData, membersData] = await Promise.all([
+            OrganizationService.getOrganizationById(organizationId),
+            new MemberManagementService().getOrganizationMembers(organizationId)
+          ])
+
+          if (orgData) {
+            setOrganizationInfo(orgData)
+          }
+
+          setMembers(membersData)
+          
+          // 부서별 멤버 수 계산하여 departments 생성
+          const departmentMap = new Map<string, number>()
+          membersData.forEach(member => {
+            if (member.department) {
+              departmentMap.set(member.department, (departmentMap.get(member.department) || 0) + 1)
+            }
+          })
+
+          const departmentList: Department[] = Array.from(departmentMap.entries()).map(([deptName, count], index) => ({
+            id: `dept-${index}`,
+            name: deptName,
+            description: `${deptName} 부서`,
+            manager: '관리자',
+            memberCount: count,
+            createdAt: new Date().toLocaleDateString(),
+            status: 'active' as const
+          }))
+
+          setDepartments(departmentList)
+          break
+
+        default:
+          // 기본값으로 기업 정보 로드
+          const defaultOrgData = await OrganizationService.getOrganizationById(organizationId)
+          if (defaultOrgData) {
+            setOrganizationInfo(defaultOrgData)
+            setCompanyInfo({
+              name: defaultOrgData.organizationName,
+              industry: defaultOrgData.industry,
+              size: `${defaultOrgData.initialMemberCount}명`,
+              address: defaultOrgData.address,
+              phone: defaultOrgData.contactPhone,
+              email: defaultOrgData.contactEmail,
+              website: defaultOrgData.address,
+              establishedDate: defaultOrgData.createdAt?.toDate?.()?.toLocaleDateString() || '',
+              description: `${defaultOrgData.organizationName}의 기업 정보`,
+              license: defaultOrgData.businessNumber
+            })
+          }
+          break
       }
-
-      setMembers(membersData)
-      
-      // 부서별 멤버 수 계산하여 departments 생성
-      const departmentMap = new Map<string, number>()
-      membersData.forEach(member => {
-        if (member.department) {
-          departmentMap.set(member.department, (departmentMap.get(member.department) || 0) + 1)
-        }
-      })
-
-      const departmentList: Department[] = Array.from(departmentMap.entries()).map(([deptName, count], index) => ({
-        id: `dept-${index}`,
-        name: deptName,
-        description: `${deptName} 부서`,
-        manager: '관리자',
-        memberCount: count,
-        createdAt: new Date().toLocaleDateString(),
-        status: 'active' as const
-      }))
-
-      setDepartments(departmentList)
 
     } catch (err) {
       console.error('조직 데이터 로드 오류:', err)
@@ -581,6 +614,34 @@ export default function OrganizationSection({ subSection }: OrganizationSectionP
     )
   }
 
+  // 서브섹션 탭 렌더링
+  const renderSubSectionTabs = () => {
+    const tabs = [
+      { id: 'company-info', label: '기업 정보', icon: Building2 },
+      { id: 'departments', label: '조직 관리', icon: Users },
+      { id: 'structure', label: '조직 구조', icon: Shield }
+    ]
+
+    return (
+      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
+              subSection === tab.id || (!subSection && tab.id === 'company-info')
+                ? 'bg-white shadow-sm text-blue-600 font-medium'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+            onClick={() => onNavigate('organization', tab.id)}
+          >
+            <tab.icon className="w-4 h-4" />
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   // 서브섹션에 따른 렌더링
   const renderContent = () => {
     switch (subSection) {
@@ -597,6 +658,7 @@ export default function OrganizationSection({ subSection }: OrganizationSectionP
 
   return (
     <div>
+      {renderSubSectionTabs()}
       {renderContent()}
     </div>
   )
