@@ -4,7 +4,7 @@ import { Database, FolderOpen, Download, Upload, Trash2, Search, Filter, Calenda
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Layout } from '../../components/Layout';
+import { Layout } from '../components/Layout';
 
 export const DataCenterPage: React.FC = () => {
   const navigate = useNavigate();

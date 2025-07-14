@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, Activity, Brain, BarChart3, LineChart, Settings, Play, Pause, Square, Download } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Layout } from '../../components/Layout';
+import { Layout } from '../components/Layout';
 
 export const VisualizerPage: React.FC = () => {
   const navigate = useNavigate();

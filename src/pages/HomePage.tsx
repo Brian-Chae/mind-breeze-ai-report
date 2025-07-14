@@ -5,7 +5,7 @@ import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { cn } from '../components/ui/utils'
 import { SessionManager } from '../components/SessionManager'
-import { Layout } from '../../components/Layout'
+import { Layout } from '../components/Layout'
 import { 
   Activity, 
   Database, 
