@@ -435,7 +435,7 @@ export const landingTexts = {
           role: '소프트웨어 엔지니어',
           company: '테크 스타트업',
           rating: 5,
-          review: '매일 아침 1분 건강 체크가 루틴이 되었어요. AI 분석이 정말 정확하고 개인화된 조언이 도움이 됩니다. 스트레스 관리가 훨씬 쉬워졌어요.',
+          review: 'MIND BREEZE AI를 사용했더니 AI가 나의 상황에 딱 맞게 스트레스 원인과 전체적인 정신 건강 상황을 분석해주고 어떤 식으로 해결하면 좋을지 상세하게 알려줘서 너무 좋다. 기존에 정형화된 리포트와는 차원이 다르다. 마치 정신 건강 관리 전문 코치를 고용한 느낌이다.',
           verified: true
         },
         {
@@ -443,15 +443,15 @@ export const landingTexts = {
           role: '의료진',
           company: '서울대학교병원',
           rating: 5,
-          review: '의료진으로서 이 기술의 정확성에 감명받았습니다. 환자들에게도 추천하고 있어요. 데이터 품질이 임상급이에요.',
+          review: '의료진으로서 이 AI의 개인 맞춤형 분석 능력에 감명받았습니다. 환자 개개인의 심리상태와 스트레스 패턴을 정확히 파악하고 맞춤형 해결책을 제시하는 것이 인상적입니다. 전문 상담사와 같은 수준의 피드백을 제공합니다.',
           verified: true
         },
         {
           name: '박준호',
-          role: '피트니스 트레이너',
-          company: '프리미엄 헬스클럽',
+          role: '마케팅 매니저',
+          company: '대기업',
           rating: 5,
-          review: '클라이언트들의 운동 강도와 회복 상태를 모니터링하는 데 완벽합니다. 개인 맞춤형 운동 계획을 세우는 데 큰 도움이 됩니다.',
+          review: '직장 스트레스가 극심했는데, AI가 내 업무 패턴을 분석해서 언제 어떤 스트레스 요인이 발생하는지 정확히 알려줘요. 단순한 수치가 아니라 구체적인 개선 방안까지 제시해주니 정말 개인 상담을 받는 느낌입니다.',
           verified: true
         },
         {
@@ -459,7 +459,7 @@ export const landingTexts = {
           role: '직장인',
           company: '금융 회사',
           rating: 4,
-          review: '직장 스트레스를 관리하는 데 정말 유용해요. AI 상담 기능이 특히 좋아요. 밤에 잠들기 전에 체크하는 것이 습관이 되었습니다.',
+          review: '정형화된 건강 리포트는 항상 뻔했는데, 이 AI는 정말 다르네요. 내 성격, 직업, 생활 패턴을 모두 고려해서 맞춤형 조언을 해줍니다. 24시간 전문 상담사가 옆에 있는 것 같아요.',
           verified: true
         },
         {
@@ -467,7 +467,7 @@ export const landingTexts = {
           role: '학생',
           company: '연세대학교',
           rating: 5,
-          review: '시험 기간 스트레스와 수면 패턴을 추적하는 데 도움이 되었어요. 부모님도 제 건강 상태를 확인할 수 있어서 안심하십니다.',
+          review: '시험 스트레스로 고생했는데, AI가 내 상황을 정확히 파악하고 학업 스트레스 관리법을 개인 맞춤형으로 제시해줘요. 친구들도 이 차별화된 피드백에 놀라워합니다. 전문 심리상담사보다 더 자세해요.',
           verified: true
         },
         {
@@ -475,45 +475,10 @@ export const landingTexts = {
           role: '주부',
           company: '가정',
           rating: 4,
-          review: '가족 전체의 건강을 모니터링할 수 있어서 좋아요. 특히 아이들의 건강 상태를 확인할 수 있어서 마음이 놓입니다.',
+          review: '육아 스트레스와 가정 관리 부담을 AI가 정확히 분석해주고, 내 상황에 맞는 해결책을 제시해주니 정말 도움이 됩니다. 개인 상담을 받는 것처럼 구체적이고 실용적인 조언을 받을 수 있어요.',
           verified: true
         }
-      ],
-      useCases: {
-        title: '인기 사용 사례',
-        items: [
-          {
-            title: '바쁜 직장인',
-            description: '회의 사이 빠른 건강 체크',
-            users: '15,000+ 사용자'
-          },
-          {
-            title: '의료진',
-            description: '힘든 근무 중 자가 모니터링',
-            users: '3,500+ 사용자'
-          },
-          {
-            title: '피트니스 애호가',
-            description: '운동 강도와 회복 최적화',
-            users: '8,200+ 사용자'
-          },
-          {
-            title: '만성 질환 관리',
-            description: '건강 상태 일일 모니터링',
-            users: '2,800+ 사용자'
-          }
-        ]
-      },
-      featured: {
-        quote: 'MIND BREEZE AI가 나의 불규칙적인 심박 패턴을 나 자신도 모르게 감지했어요. 즉각적인 AI 분석이 나에게 의료 접근을 권고하여 내 생명을 구할 수 있었습니다.',
-        author: '마리아 고메즈',
-        role: '교사, 48',
-        badge: {
-          title: '조기 검출',
-          subtitle: '잠재적으로 생명을 구하는 경고',
-          verification: '의료 결과 확인'
-        }
-      }
+      ]
     },
     
     // Footer
@@ -1076,7 +1041,7 @@ export const landingTexts = {
           role: 'Software Engineer',
           company: 'Tech Startup',
           rating: 5,
-          review: 'As a busy tech worker, I barely had time for health checkups. MIND BREEZE AI changed everything - just 1 minute and I get comprehensive health insights. The stress monitoring feature helped me identify work patterns affecting my health.',
+          review: 'MIND BREEZE AI analyzed my stress patterns and mental health in ways that perfectly matched my situation. It identified the root causes of my stress and provided detailed solutions. This is completely different from standard reports - it\'s like having a personal mental health coach.',
           verified: true
         },
         {
@@ -1084,15 +1049,15 @@ export const landingTexts = {
           role: 'Cardiologist',
           company: 'City Medical Center',
           rating: 5,
-          review: 'The accuracy of LINK BAND\'s biosignals impressed me. I\'ve been using it alongside traditional monitoring for my patients. The AI recommendations are surprisingly sophisticated and align well with clinical best practices.',
+          review: 'As a medical professional, I\'m impressed by the AI\'s personalized analysis capabilities. It accurately identifies individual psychological states and stress patterns, providing tailored solutions. The feedback quality matches that of professional counselors.',
           verified: true
         },
         {
           name: 'Jennifer Kim',
-          role: 'Fitness Trainer',
-          company: 'Premium Health Club',
+          role: 'Marketing Manager',
+          company: 'Corporate',
           rating: 5,
-          review: 'I use MIND BREEZE AI with all my clients. The 1-minute measurement fits perfectly into our session warm-ups. The real-time feedback helps us adjust workouts immediately based on their current health state.',
+          review: 'The workplace stress was overwhelming, but the AI analyzed my work patterns and pinpointed exactly when and what stress factors occur. Instead of just numbers, it provides specific improvement strategies. It really feels like having personal consultation.',
           verified: true
         },
         {
@@ -1100,7 +1065,7 @@ export const landingTexts = {
           role: 'Business Executive',
           company: 'Financial Services',
           rating: 4,
-          review: 'Managing work stress left no time for health monitoring. The 1-minute check fits into my busy schedule perfectly. The AI consultation feature is like having a health advisor available 24/7.',
+          review: 'Standard health reports were always predictable, but this AI is truly different. It considers my personality, job, and lifestyle patterns to provide personalized advice. It\'s like having a professional consultant available 24/7.',
           verified: true
         },
         {
@@ -1108,7 +1073,7 @@ export const landingTexts = {
           role: 'College Student',
           company: 'University',
           rating: 5,
-          review: 'Tracking exam stress and sleep patterns has been incredibly helpful. My parents can also check my health status, which gives them peace of mind.',
+          review: 'I was struggling with exam stress, but the AI accurately understood my situation and provided personalized academic stress management strategies. My friends are amazed by this differentiated feedback. It\'s more detailed than professional counselors.',
           verified: true
         },
         {
@@ -1116,7 +1081,7 @@ export const landingTexts = {
           role: 'Working Mother',
           company: 'Healthcare',
           rating: 4,
-          review: 'Being able to monitor my family\'s health is wonderful. Especially being able to check my children\'s health status gives me peace of mind.',
+          review: 'The AI accurately analyzes my parenting stress and household management burden, providing solutions tailored to my situation. I can receive specific and practical advice just like having personal consultation.',
           verified: true
         }
       ],
@@ -1716,7 +1681,7 @@ export const landingTexts = {
           role: 'ソフトウェアエンジニア',
           company: 'テクノロジー企業',
           rating: 5,
-          review: '忙しい技術者として、健康診断の時間がほとんどありませんでした。MIND BREEZE AIがすべてを変えました - わずか1分で包括的な健康インサイトを得られます。ストレス監視機能が仕事パターンが健康に与える影響を特定するのに役立ちました。',
+          review: 'MIND BREEZE AIを使用したところ、私の状況に完全に合致したストレス要因と全体的な精神的健康状況を分析し、どのように解決すべきかを詳細に教えてくれました。従来の定型化されたレポートとは次元が異なります。まさに精神的健康管理の専門コーチを雇った気分です。',
           verified: true
         },
         {
@@ -1724,15 +1689,15 @@ export const landingTexts = {
           role: '医師',
           company: '大学病院',
           rating: 5,
-          review: '医療従事者として、LINK BANDのバイオシグナルの精度に感銘を受けました。患者の従来の監視と併用しています。AI推奨事項は驚くほど洗練されており、臨床ベストプラクティスとよく一致しています。',
+          review: '医療従事者として、このAIのパーソナライズされた分析能力に感銘を受けました。個々の患者の心理状態とストレスパターンを正確に把握し、カスタマイズされた解決策を提示することが印象的です。専門カウンセラーと同等レベルのフィードバックを提供します。',
           verified: true
         },
         {
           name: '山田健太',
-          role: 'フィットネストレーナー',
-          company: 'プレミアムヘルスクラブ',
+          role: 'マーケティングマネージャー',
+          company: '大企業',
           rating: 5,
-          review: 'すべてのクライアントでMIND BREEZE AIを使用しています。1分測定はセッションのウォームアップに完璧にフィットします。リアルタイムフィードバックにより、現在の健康状態に基づいてワークアウトをすぐに調整できます。',
+          review: '職場のストレスが深刻でしたが、AIが私の業務パターンを分析し、いつどのようなストレス要因が発生するかを正確に教えてくれます。単純な数値ではなく、具体的な改善策まで提示してくれるので、本当に個人相談を受けているような感覚です。',
           verified: true
         },
         {
@@ -1740,7 +1705,7 @@ export const landingTexts = {
           role: 'ビジネスエグゼクティブ',
           company: '金融サービス',
           rating: 4,
-          review: '仕事のストレス管理で健康監視の時間がありませんでした。1分チェックは忙しいスケジュールに完璧にフィットします。AI相談機能は24時間利用可能な健康アドバイザーのようです。',
+          review: '定型化された健康レポートは常に予測可能でしたが、このAIは本当に異なります。私の性格、職業、生活パターンすべてを考慮してカスタマイズされたアドバイスを提供します。24時間利用可能な専門コンサルタントがいるような感覚です。',
           verified: true
         },
         {
@@ -1748,7 +1713,7 @@ export const landingTexts = {
           role: '大学生',
           company: '大学',
           rating: 5,
-          review: '試験ストレスと睡眠パターンの追跡が非常に役立ちました。両親も私の健康状態を確認できるので安心してもらえます。',
+          review: '試験ストレスで苦労していましたが、AIが私の状況を正確に把握し、学業ストレス管理法をパーソナライズして提示してくれます。友人たちもこの差別化されたフィードバックに驚いています。専門の心理カウンセラーよりも詳細です。',
           verified: true
         },
         {
@@ -1756,7 +1721,7 @@ export const landingTexts = {
           role: 'ワーキングマザー',
           company: 'ヘルスケア',
           rating: 4,
-          review: '家族の健康を監視できるのは素晴らしいことです。特に子供たちの健康状態を確認できるので安心です。',
+          review: '育児ストレスと家事負担をAIが正確に分析し、私の状況に適した解決策を提示してくれるので本当に助かります。パーソナルコンサルテーションを受けているような具体的で実用的なアドバイスを受けられます。',
           verified: true
         }
       ],
