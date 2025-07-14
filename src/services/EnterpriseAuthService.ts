@@ -617,18 +617,48 @@ class EnterpriseAuthService {
         return ['*'];
       case 'ORGANIZATION_ADMIN':
         return [
+          // 조직 전체 관리 (총괄 운영자)
           'organization.manage',
+          'organization.structure.edit',
           'members.manage',
           'credits.view',
-          'reports.view',
-          'metrics.view'
+          'credits.manage',
+          
+          // MEASUREMENT_USER 전체 관리
+          'measurement_users.create',
+          'measurement_users.view.all',      // 모든 측정 대상자 조회
+          'measurement_users.edit.all',      // 모든 측정 대상자 편집
+          'measurement_users.delete.all',    // 모든 측정 대상자 삭제
+          'measurement_users.measure.all',   // 모든 측정 대상자 측정
+          
+          // 리포트 전체 관리
+          'reports.view.all',               // 모든 리포트 조회
+          'reports.generate.all',           // 모든 대상자용 리포트 생성
+          'reports.send.all',               // 모든 리포트 전송
+          
+          // 메트릭스 및 분석
+          'metrics.view.all',
+          'analytics.organization'
         ];
       case 'ORGANIZATION_MEMBER':
         return [
-          'reports.generate',
-          'consultation.use',
+          // MEASUREMENT_USER 개별 관리 (개별 운영자)
+          'measurement_users.create',
+          'measurement_users.view.own',      // 자신이 측정한 대상자만 조회
+          'measurement_users.edit.own',      // 자신이 측정한 대상자만 편집
+          'measurement_users.delete.own',    // 자신이 측정한 대상자만 삭제
+          'measurement_users.measure.own',   // 자신이 측정한 대상자만 측정
+          
+          // 리포트 개별 관리
+          'reports.view.own',               // 자신이 생성한 리포트만 조회
+          'reports.generate.own',           // 자신의 대상자용 리포트만 생성
+          'reports.send.own',               // 자신의 리포트만 전송
+          
+          // 개인 관리
           'profile.view',
-          'profile.edit'
+          'profile.edit',
+          'consultation.use',
+          'metrics.view.own'
         ];
       case 'INDIVIDUAL_USER':
         return [
@@ -637,6 +667,11 @@ class EnterpriseAuthService {
           'profile.view',
           'profile.edit',
           'credits.purchase'
+        ];
+      case 'MEASUREMENT_SUBJECT':
+        return [
+          'reports.view.assigned',          // 자신에게 할당된 리포트만 조회
+          'consultation.receive'            // 상담 받기만 가능
         ];
       default:
         return [];
