@@ -1,6 +1,6 @@
 import type { EEGDevice } from '../types/eeg';
 import { StreamProcessor } from './StreamProcessor';
-import { useSystemStore } from '../stores/systemStore';
+// import { useSystemStore } from '../stores/systemStore';
 
 // LINK BAND EEG 디바이스 블루투스 서비스
 // Python SDK device.py를 참고하여 구현
@@ -657,11 +657,11 @@ class LinkBandBluetoothService implements BluetoothEEGService {
         }
         
         // 최신 샘플의 LeadOff 상태를 systemStore에 업데이트
-        const latestSample = samples[samples.length - 1];
-        useSystemStore.getState().updateSensorContactStatus(
-          latestSample.leadoff_ch1,
-          latestSample.leadoff_ch2
-        );
+        // const latestSample = samples[samples.length - 1];
+        // useSystemStore.getState().updateSensorContactStatus(
+        //   latestSample.leadoff_ch1,
+        //   latestSample.leadoff_ch2
+        // );
       }
 
     } catch (error) {

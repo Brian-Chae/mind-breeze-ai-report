@@ -2,8 +2,8 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthProvider';
 import { LandingPage } from './LandingPage';
-import { LoginPage } from './landing/LoginPage';
-import { SignupPage } from './landing/SignupPage';
+// import { LoginPage } from './landing/LoginPage';
+// import { SignupPage } from './landing/SignupPage';
 import { HomePage } from '../pages/HomePage';
 import { DataCenterPage } from '../pages/DataCenterPage';
 import { VisualizerPage } from '../pages/VisualizerPage';
@@ -12,13 +12,13 @@ import { LinkBandPage } from '../pages/LinkBandPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { HomeScreen } from './HomeScreen';
 import { WelcomeScreen } from './WelcomeScreen';
-import { Applications } from './Applications';
+// import { Applications } from './Applications';
 import CompanySignupSelectionPage from './landing/CompanySignupSelectionPage';
-import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
+// import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
 import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
-import { AppLayout } from './layouts/AppLayout';
+// import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
   const { user, loading } = useAuth();
@@ -95,15 +95,15 @@ const AppRouter = () => {
   return (
     <Routes>
       {/* 공개 라우트 */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/" element={<LandingPage onEnterApp={() => {}} />} />
+      {/* <Route path="/login" element={<LoginPage onNavigate={() => {}} />} />
+      <Route path="/signup" element={<SignupPage onNavigate={() => {}} />} /> */}
       
-      {/* 조직 관련 라우트 */}
-      <Route path="/organization-signup-selection" element={<CompanySignupSelectionPage />} />
+      {/* 조직 관련 라우트 - 임시 비활성화 */}
+      {/* <Route path="/organization-signup-selection" element={<CompanySignupSelectionPage />} />
       <Route path="/organization-registration" element={<CompanyRegistrationForm />} />
       <Route path="/organization-registration-success" element={<CompanyRegistrationSuccess />} />
-      <Route path="/organization-join" element={<CompanyJoinForm />} />
+      <Route path="/organization-join" element={<CompanyJoinForm />} /> */}
       
       {/* MEASUREMENT_SUBJECT 토큰 접속 */}
       <Route path="/measurement-access" element={<MeasurementSubjectAccess />} />
@@ -115,8 +115,8 @@ const AppRouter = () => {
         </ProtectedRoute>
       } />
       
-      {/* AppLayout으로 감싸진 메인 애플리케이션 라우트 */}
-      <Route path="/" element={
+      {/* AppLayout으로 감싸진 메인 애플리케이션 라우트 - 임시 비활성화 */}
+      {/* <Route path="/" element={
         <ProtectedRoute>
           <AppLayout />
         </ProtectedRoute>
@@ -127,7 +127,7 @@ const AppRouter = () => {
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="linkband" element={<LinkBandPage />} />
         <Route path="applications" element={<Applications />} />
-      </Route>
+      </Route> */}
     </Routes>
   );
 };

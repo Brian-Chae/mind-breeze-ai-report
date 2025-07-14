@@ -8,14 +8,14 @@ export type { BluetoothEEGService } from './utils/bluetoothService';
 // 스토어
 export { useDeviceStore } from './stores/deviceStore';
 export { useUIStore } from './stores/uiStore';
-export { 
-  useSystemStatus, 
-  useDeviceStatus, 
-  useStreamingStatus, 
-  useRecordingStatus,
-  useSystemActions,
-  useScanStatus 
-} from './stores/systemStore';
+// export { 
+//   useSystemStatus, 
+//   useDeviceStatus, 
+//   useStreamingStatus, 
+//   useRecordingStatus,
+//   useSystemActions,
+//   useScanStatus 
+// } from './stores/systemStore';
 
 // 훅
 // useBluetoothDevice는 새로운 아키텍처에서 제거됨

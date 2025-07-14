@@ -689,7 +689,7 @@ class EnterpriseAuthService {
       permissions.push('organization.admin');
     }
 
-    return [...new Set(permissions)]; // 중복 제거
+    return Array.from(new Set(permissions)); // 중복 제거
   }
 
   private updateContext(context: AuthContext): void {

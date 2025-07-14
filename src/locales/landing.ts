@@ -394,7 +394,7 @@ export const landingTexts = {
       },
       locations: {
         title: '위치',
-        kr: {
+        local: {
           title: '한국',
           address: '서울특별시 강남구 테헤란로 123\n테크노타워 10층',
           phone: '+82-2-1234-5678'
@@ -1035,7 +1035,7 @@ export const landingTexts = {
       },
       locations: {
         title: 'Our Locations',
-        us: {
+        local: {
           title: 'United States',
           address: '123 Tech Street\nSan Francisco, CA 94105',
           phone: '+1-555-123-4567'
@@ -1675,7 +1675,7 @@ export const landingTexts = {
       },
       locations: {
         title: '拠点情報',
-        jp: {
+        local: {
           title: '日本',
           address: '東京都渋谷区渋谷1-2-3\nテクノロジービル 5F',
           phone: '+81-3-1234-5678'

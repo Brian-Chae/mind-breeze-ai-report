@@ -8,7 +8,7 @@ import type {
   ChartDataPoint,
   FrequencySpectrumData
 } from '../types/eeg';
-import { IntegratedDataService } from '../services/IntegratedDataService';
+// import { IntegratedDataService } from '../services/IntegratedDataService';
 import type { EEGDataPoint, PPGDataPoint, ACCDataPoint } from '../utils/SimpleCircularBuffer';
 
 interface EEGDataStore {
