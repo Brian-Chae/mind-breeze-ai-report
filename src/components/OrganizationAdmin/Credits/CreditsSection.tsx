@@ -254,31 +254,52 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             <Package className="w-5 h-5 mr-2" />
             크레딧 패키지
           </h3>
-          <div className="space-y-4">
-            <div className="border border-green-200 rounded-lg p-4 bg-white">
+          <div className="space-y-3">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-gray-900">베이직 패키지</h4>
-                <Badge className="bg-green-100 text-green-600">현재 플랜</Badge>
+                <h4 className="font-medium text-gray-900">100 크레딧</h4>
+                <Badge className="bg-green-100 text-green-600">10% 할인</Badge>
               </div>
-              <p className="text-sm text-gray-600">월 5,000 크레딧</p>
-              <p className="text-sm font-medium text-green-700">₩ 125,000 / 월</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">기본 가격: ₩ 790,000</p>
+                <p className="text-sm font-medium text-green-700">₩ 711,000</p>
+              </div>
             </div>
             <div className="border border-blue-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-gray-900">프로 패키지</h4>
-                <Badge className="bg-blue-100 text-blue-600">추천</Badge>
+                <h4 className="font-medium text-gray-900">500 크레딧</h4>
+                <Badge className="bg-blue-100 text-blue-600">20% 할인</Badge>
               </div>
-              <p className="text-sm text-gray-600">월 20,000 크레딧</p>
-              <p className="text-sm font-medium text-blue-700">₩ 400,000 / 월</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">기본 가격: ₩ 3,950,000</p>
+                <p className="text-sm font-medium text-blue-700">₩ 3,160,000</p>
+              </div>
             </div>
             <div className="border border-purple-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-gray-900">엔터프라이즈</h4>
-                <Badge className="bg-purple-100 text-purple-600">최고급</Badge>
+                <h4 className="font-medium text-gray-900">1,000 크레딧</h4>
+                <Badge className="bg-purple-100 text-purple-600">25% 할인</Badge>
               </div>
-              <p className="text-sm text-gray-600">무제한 크레딧</p>
-              <p className="text-sm font-medium text-purple-700">₩ 1,000,000 / 월</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">기본 가격: ₩ 7,900,000</p>
+                <p className="text-sm font-medium text-purple-700">₩ 5,925,000</p>
+              </div>
             </div>
+            <div className="border border-orange-200 rounded-lg p-4 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-gray-900">2,000 크레딧</h4>
+                <Badge className="bg-orange-100 text-orange-600">30% 할인</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">기본 가격: ₩ 15,800,000</p>
+                <p className="text-sm font-medium text-orange-700">₩ 11,060,000</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-green-50 rounded-lg">
+            <p className="text-xs text-green-700">
+              <strong>기본 가격:</strong> 1크레딧 = ₩ 7,900
+            </p>
           </div>
         </Card>
         
