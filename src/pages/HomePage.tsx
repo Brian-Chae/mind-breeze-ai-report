@@ -1,9 +1,11 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { cn } from '../components/ui/utils'
 import { SessionManager } from '../components/SessionManager'
+import { Layout } from '../../components/Layout'
 import { 
   Activity, 
   Database, 
@@ -18,6 +20,11 @@ import {
 } from 'lucide-react'
 
 export function HomePage() {
+  const navigate = useNavigate()
+  
+  const handleSectionChange = (section: string) => {
+    navigate(`/${section}`)
+  }
   const stats = [
     {
       title: "Connected Devices",
@@ -62,8 +69,9 @@ export function HomePage() {
   ]
 
   return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <Layout currentSection="dashboard" onSectionChange={handleSectionChange}>
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -199,7 +207,8 @@ export function HomePage() {
             </Button>
           </div>
         </Card>
+        </div>
       </div>
-    </div>
+    </Layout>
   )
 }

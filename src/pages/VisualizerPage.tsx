@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Activity, Brain, BarChart3, LineChart, Settings, Play, Pause, Square, Download } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Layout } from '../../components/Layout';
 
 export const VisualizerPage: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleSectionChange = (section: string) => {
+    navigate(`/${section}`);
+  };
   const [isRecording, setIsRecording] = useState(false);
   const [selectedChannel, setSelectedChannel] = useState('All');
 
@@ -23,7 +30,8 @@ export const VisualizerPage: React.FC = () => {
   };
 
   return (
-    <div className="h-full p-6 w-full">
+    <Layout currentSection="visualizer" onSectionChange={handleSectionChange}>
+      <div className="h-full p-6 w-full">
       <div className="w-full space-y-6">
         {/* Header Section */}
         <div className="mb-8">
@@ -227,6 +235,7 @@ export const VisualizerPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }; 

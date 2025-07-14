@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Database, FolderOpen, Download, Upload, Trash2, Search, Filter, Calendar, BarChart3, FileText, Settings } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Layout } from '../../components/Layout';
 
 export const DataCenterPage: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleSectionChange = (section: string) => {
+    navigate(`/${section}`);
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
@@ -116,7 +123,8 @@ export const DataCenterPage: React.FC = () => {
   };
 
   return (
-    <div className="h-full p-6 w-full">
+    <Layout currentSection="data-center" onSectionChange={handleSectionChange}>
+      <div className="h-full p-6 w-full">
       <div className="w-full space-y-6">
         {/* Header Section */}
         <div className="mb-8">
@@ -367,6 +375,7 @@ export const DataCenterPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }; 

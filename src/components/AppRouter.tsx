@@ -139,20 +139,6 @@ const AppRouter = () => {
           <LinkBandPage />
         </ProtectedRoute>
       } />
-      
-      {/* AppLayout으로 감싸진 메인 애플리케이션 라우트 - 임시 비활성화 */}
-      {/* <Route path="/" element={
-        <ProtectedRoute>
-          <AppLayout />
-        </ProtectedRoute>
-      }>
-        <Route path="home" element={<HomePage />} />
-        <Route path="data-center" element={<DataCenterPage />} />
-        <Route path="visualizer" element={<VisualizerPage />} />
-        <Route path="documents" element={<DocumentsPage />} />
-        <Route path="linkband" element={<LinkBandPage />} />
-        <Route path="applications" element={<Applications />} />
-      </Route> */}
     </Routes>
   );
 };
