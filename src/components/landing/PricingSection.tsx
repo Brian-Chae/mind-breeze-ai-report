@@ -12,15 +12,15 @@ const aiServiceTiers = [
 const linkBandOptions = [
   {
     type: "1개월 렌탈",
-    price: 25000,
+    price: 69000,
     description: "단기 프로젝트에 적합",
     features: ["무료 배송", "기술 지원 포함", "반납 처리 간편"]
   },
   {
     type: "3개월 렌탈",
-    price: 65000,
+    price: 156000,
     description: "중기 프로젝트에 최적",
-    features: ["월 대비 15% 할인", "무료 배송", "기술 지원 포함", "반납 처리 간편"]
+    features: ["월 대비 25% 할인", "무료 배송", "기술 지원 포함", "반납 처리 간편"]
   },
   {
     type: "구매",
@@ -59,10 +59,10 @@ export function PricingSection() {
 
   const getDevicePrice = (option: string) => {
     switch (option) {
-      case 'rental1': return 25000;
-      case 'rental3': return 65000;
+      case 'rental1': return 69000;
+      case 'rental3': return 156000;
       case 'purchase': return 297000;
-      default: return 25000;
+      default: return 69000;
     }
   };
 
