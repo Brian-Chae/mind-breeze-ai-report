@@ -36,6 +36,7 @@ import { UserType } from '../../../types/business'
 
 interface MembersSectionProps {
   subSection: string;
+  onNavigate: (sectionId: string, subSectionId?: string) => void;
 }
 
 interface Member {
@@ -69,7 +70,7 @@ interface Permission {
   level: 'read' | 'write' | 'delete';
 }
 
-export default function MembersSection({ subSection }: MembersSectionProps) {
+export default function MembersSection({ subSection, onNavigate }: MembersSectionProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -249,26 +250,59 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
 
     const getRoleColor = (role: string) => {
       switch (role) {
-        case 'admin': return 'bg-red-100 text-red-600'
-        case 'manager': return 'bg-blue-100 text-blue-600'
-        case 'member': return 'bg-green-100 text-green-600'
-        default: return 'bg-gray-100 text-gray-600'
+        case 'admin': return 'bg-red-50 text-red-700 border-red-200'
+        case 'manager': return 'bg-blue-50 text-blue-700 border-blue-200'
+        case 'member': return 'bg-green-50 text-green-700 border-green-200'
+        default: return 'bg-gray-50 text-gray-700 border-gray-200'
       }
     }
 
     const getStatusColor = (status: string) => {
       switch (status) {
-        case 'active': return 'bg-green-100 text-green-600'
-        case 'inactive': return 'bg-gray-100 text-gray-600'
-        case 'pending': return 'bg-yellow-100 text-yellow-600'
-        default: return 'bg-gray-100 text-gray-600'
+        case 'active': return 'bg-green-50 text-green-700 border-green-200'
+        case 'inactive': return 'bg-gray-50 text-gray-700 border-gray-200'
+        case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+        default: return 'bg-gray-50 text-gray-700 border-gray-200'
       }
     }
 
+    const getRoleIcon = (role: string) => {
+      switch (role) {
+        case 'admin': return 'bg-red-500 text-white'
+        case 'manager': return 'bg-blue-500 text-white'
+        case 'member': return 'bg-green-500 text-white'
+        default: return 'bg-gray-500 text-white'
+      }
+    }
+
+    // 빈 상태 렌더링
+    const renderEmptyState = () => (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-6">
+          <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">등록된 운영자가 없습니다</h3>
+          <p className="text-gray-600 max-w-md">
+            아직 등록된 운영자가 없습니다. 
+            새 운영자를 초대하여 조직 관리를 시작해보세요.
+          </p>
+        </div>
+        <Button 
+          onClick={() => setShowInviteForm(true)}
+          className="flex items-center space-x-2"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>운영자 초대</span>
+        </Button>
+      </div>
+    )
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">운영자 목록</h2>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">운영자 목록</h2>
+            <p className="text-gray-600 mt-2">조직의 운영자들을 관리하고 권한을 설정하세요</p>
+          </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
@@ -299,82 +333,86 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
         </div>
 
         {/* 운영자 목록 */}
-        <div className="grid grid-cols-1 gap-4">
-          {filteredMembers.map((member) => (
-            <Card key={member.id} className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-                    <Users className="w-6 h-6 text-blue-600" />
+        <div className="space-y-4">
+          {filteredMembers.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            filteredMembers.map((member) => (
+              <Card key={member.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-md ${getRoleIcon(member.role)}`}>
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">{member.name}</h3>
+                      <p className="text-sm text-gray-600">{member.email}</p>
+                      <p className="text-sm text-gray-600">{member.department}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
-                    <p className="text-sm text-gray-600">{member.email}</p>
-                    <p className="text-sm text-gray-600">{member.department}</p>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Badge className={`font-semibold ${getRoleColor(member.role)}`}>
+                      {member.role === 'admin' ? '관리자' : member.role === 'manager' ? '매니저' : '운영자'}
+                    </Badge>
+                    <Badge className={`font-semibold ${getStatusColor(member.status)}`}>
+                      {member.status === 'active' ? '활성' : member.status === 'inactive' ? '비활성' : '대기'}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Edit className="w-4 h-4 mr-2" />
+                          수정
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleStatus(member.id)}>
+                          {member.status === 'active' ? (
+                            <>
+                              <EyeOff className="w-4 h-4 mr-2" />
+                              비활성화
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4 mr-2" />
+                              활성화
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteMember(member.id)}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          삭제
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Badge className={getRoleColor(member.role)}>
-                    {member.role === 'admin' ? '관리자' : member.role === 'manager' ? '매니저' : '운영자'}
-                  </Badge>
-                  <Badge className={getStatusColor(member.status)}>
-                    {member.status === 'active' ? '활성' : member.status === 'inactive' ? '비활성' : '대기'}
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="w-4 h-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleToggleStatus(member.id)}>
-                        {member.status === 'active' ? (
-                          <>
-                            <EyeOff className="w-4 h-4 mr-2" />
-                            비활성화
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="w-4 h-4 mr-2" />
-                            활성화
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeleteMember(member.id)}>
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
 
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{member.phone}</span>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">{member.phone || '연락처 없음'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">입사: {member.joinDate}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">최종 로그인: {member.lastLogin}</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">입사: {member.joinDate}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">최종 로그인: {member.lastLogin}</span>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
 
         {/* 초대 폼 */}
         {showInviteForm && (
-          <Card className="p-6">
+          <Card className="p-6 border-2 border-blue-200 bg-blue-50">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">새 운영자 초대</h3>
             <div className="space-y-4">
               <div>
@@ -580,6 +618,34 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
     )
   }
 
+  // 서브섹션 탭 렌더링
+  const renderSubSectionTabs = () => {
+    const tabs = [
+      { id: 'member-list', label: '운영자 목록', icon: Users },
+      { id: 'member-invite', label: '초대 관리', icon: UserPlus },
+      { id: 'member-permissions', label: '권한 설정', icon: Shield }
+    ]
+
+    return (
+      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
+              subSection === tab.id || (!subSection && tab.id === 'member-list')
+                ? 'bg-white shadow-sm text-blue-600 font-medium'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+            onClick={() => onNavigate('members', tab.id)}
+          >
+            <tab.icon className="w-4 h-4" />
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   // 서브섹션에 따른 렌더링
   const renderContent = () => {
     switch (subSection) {
@@ -596,6 +662,7 @@ export default function MembersSection({ subSection }: MembersSectionProps) {
 
   return (
     <div>
+      {renderSubSectionTabs()}
       {renderContent()}
     </div>
   )
