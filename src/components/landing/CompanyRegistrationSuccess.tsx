@@ -250,7 +250,7 @@ export default function CompanyRegistrationSuccess() {
             <Button
               onClick={() => navigate('/')}
               variant="outline"
-              className="flex items-center gap-2 px-8 py-3 text-lg rounded-xl border-2 border-gray-300 hover:bg-gray-50"
+              className="flex items-center gap-2 px-8 py-3 text-lg rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             >
               <Home className="w-5 h-5" />
               홈으로 돌아가기
