@@ -183,7 +183,7 @@ export function PricingSection() {
                   type="number"
                   value={employeeCount}
                   onChange={(e) => setEmployeeCount(parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                   min="1"
                 />
               </div>
@@ -194,7 +194,7 @@ export function PricingSection() {
                   type="number"
                   value={deviceCount}
                   onChange={(e) => setDeviceCount(parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                   min="1"
                 />
               </div>
@@ -204,7 +204,7 @@ export function PricingSection() {
                 <select
                   value={deviceOption}
                   onChange={(e) => setDeviceOption(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                 >
                   <option value="rental1">1개월 렌탈</option>
                   <option value="rental3">3개월 렌탈</option>
