@@ -1,23 +1,165 @@
-import React, { useState } from 'react'
-import { Smartphone, Battery, Wifi, Plus, Search, Filter, MapPin, User, Calendar, Activity, AlertCircle, CheckCircle, Settings, MoreHorizontal, Edit, Trash2, Eye, Download, BarChart3, RefreshCw, Power, Signal } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Smartphone, Battery, Wifi, Plus, Search, Filter, MapPin, User, Calendar, Activity, AlertCircle, CheckCircle, Settings, MoreHorizontal, Edit, Trash2, Eye, Download, BarChart3, RefreshCw, Power, Signal, Loader2 } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
 import { Input } from '../../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+import { FirebaseService } from '../../../services/FirebaseService'
+import { SystemControlService } from '../../../services/SystemControlService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface DevicesSectionProps {
   subSection: string;
 }
 
+interface Device {
+  id: string;
+  serialNumber: string;
+  name: string;
+  model: string;
+  firmwareVersion: string;
+  batteryLevel: number;
+  signalStrength: 'weak' | 'medium' | 'strong';
+  status: 'online' | 'offline' | 'maintenance';
+  assignedUser?: string;
+  assignedUserName?: string;
+  assignedLocation?: string;
+  lastSyncAt?: Date;
+  pairedAt?: Date;
+  isActive: boolean;
+}
+
+interface DeviceStats {
+  totalDevices: number;
+  activeDevices: number;
+  offlineDevices: number;
+  maintenanceDevices: number;
+}
+
 export default function DevicesSection({ subSection }: DevicesSectionProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [devices, setDevices] = useState<Device[]>([])
+  const [deviceStats, setDeviceStats] = useState<DeviceStats>({
+    totalDevices: 0,
+    activeDevices: 0,
+    offlineDevices: 0,
+    maintenanceDevices: 0
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [systemControl] = useState(new SystemControlService())
+
+  useEffect(() => {
+    loadDeviceData()
+  }, [])
+
+  const loadDeviceData = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.organization) {
+        throw new Error('인증 정보가 없습니다.')
+      }
+
+      // 조직의 모든 디바이스 조회
+      const [organizationDevices, userDevices] = await Promise.all([
+        FirebaseService.getDocuments('devices', [
+          FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id)
+        ]),
+        FirebaseService.getDocuments('devices', [
+          FirebaseService.createWhereFilter('userId', '==', currentContext.user.id)
+        ])
+      ])
+
+      // 디바이스 데이터 변환
+      const allDevices = [...organizationDevices, ...userDevices]
+        .filter((device: any, index: number, self: any[]) => 
+          index === self.findIndex((d: any) => d.serialNumber === device.serialNumber)
+        )
+        .map((device: any) => ({
+          id: device.id,
+          serialNumber: device.serialNumber || device.id,
+          name: device.name || `LinkBand ${device.serialNumber || device.id}`,
+          model: device.model || 'LinkBand Pro',
+          firmwareVersion: device.firmwareVersion || 'v2.1.3',
+          batteryLevel: device.batteryLevel || 0,
+          signalStrength: device.signalStrength || 'medium',
+          status: (device.isActive ? 'online' : 'offline') as 'online' | 'offline' | 'maintenance',
+          assignedUser: device.userId,
+          assignedUserName: device.assignedUserName,
+          assignedLocation: device.location,
+          lastSyncAt: device.lastSyncAt?.toDate(),
+          pairedAt: device.pairedAt?.toDate(),
+          isActive: device.isActive || false
+        }))
+
+      setDevices(allDevices)
+
+      // 통계 계산
+      const stats = allDevices.reduce((acc, device) => {
+        acc.totalDevices++
+        if (device.status === 'online') acc.activeDevices++
+        else if (device.status === 'offline') acc.offlineDevices++
+        else if (device.status === 'maintenance') acc.maintenanceDevices++
+        return acc
+      }, {
+        totalDevices: 0,
+        activeDevices: 0,
+        offlineDevices: 0,
+        maintenanceDevices: 0
+      })
+
+      setDeviceStats(stats)
+
+    } catch (error) {
+      console.error('디바이스 데이터 로드 실패:', error)
+      setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeviceConnect = async (deviceId: string) => {
+    try {
+      await systemControl.connectDevice(deviceId)
+      await loadDeviceData() // 데이터 새로고침
+    } catch (error) {
+      console.error('디바이스 연결 실패:', error)
+      setError(error instanceof Error ? error.message : '디바이스 연결에 실패했습니다.')
+    }
+  }
+
+  const handleDeviceUpdate = async (deviceId: string) => {
+    try {
+      // 디바이스 업데이트 로직
+      await FirebaseService.updateDocument('devices', deviceId, {
+        firmwareVersion: 'v2.1.4',
+        updatedAt: new Date()
+      })
+      await loadDeviceData()
+    } catch (error) {
+      console.error('디바이스 업데이트 실패:', error)
+      setError(error instanceof Error ? error.message : '디바이스 업데이트에 실패했습니다.')
+    }
+  }
+
+  const filteredDevices = devices.filter(device =>
+    device.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    device.serialNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const renderDeviceInventory = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">디바이스 현황</h2>
         <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={loadDeviceData}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            새로고침
+          </Button>
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" />
             리포트 다운로드
@@ -28,13 +170,29 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <AlertCircle className="w-5 h-5 text-red-400" />
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+              <Button variant="outline" size="sm" onClick={loadDeviceData} className="mt-2">
+                다시 시도
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">전체 디바이스</p>
-              <p className="text-2xl font-bold text-gray-900">124</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.totalDevices}
+              </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
               <Smartphone className="w-6 h-6 text-blue-600" />
@@ -46,7 +204,9 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">활성 디바이스</p>
-              <p className="text-2xl font-bold text-green-600">96</p>
+              <p className="text-2xl font-bold text-green-600">
+                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.activeDevices}
+              </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl">
               <CheckCircle className="w-6 h-6 text-green-600" />
@@ -58,7 +218,9 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">오프라인</p>
-              <p className="text-2xl font-bold text-gray-600">18</p>
+              <p className="text-2xl font-bold text-gray-600">
+                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.offlineDevices}
+              </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
               <Power className="w-6 h-6 text-gray-600" />
@@ -70,7 +232,9 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">점검 필요</p>
-              <p className="text-2xl font-bold text-yellow-600">10</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.maintenanceDevices}
+              </p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-xl">
               <AlertCircle className="w-6 h-6 text-yellow-600" />
@@ -95,66 +259,96 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-                  <Smartphone className="w-6 h-6 text-blue-600" />
+      {loading ? (
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {filteredDevices.map((device) => (
+            <Card key={device.id} className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
+                    <Smartphone className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{device.name}</h3>
+                    <p className="text-sm text-gray-600">{device.model} • {device.firmwareVersion}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">LinkBand Pro LB00{i}</h3>
-                  <p className="text-sm text-gray-600">LinkBand Pro • 펌웨어 v2.1.3</p>
+                <div className="flex items-center space-x-3">
+                  <Badge className={
+                    device.status === 'online' ? 'bg-green-100 text-green-600' :
+                    device.status === 'offline' ? 'bg-gray-100 text-gray-600' :
+                    'bg-yellow-100 text-yellow-600'
+                  }>
+                    {device.status === 'online' ? '온라인' : 
+                     device.status === 'offline' ? '오프라인' : '점검중'}
+                  </Badge>
+                  <Badge variant="outline">배터리: {device.batteryLevel}%</Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <Eye className="w-4 h-4 mr-2" />
+                        상세 정보
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Settings className="w-4 h-4 mr-2" />
+                        설정
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeviceUpdate(device.id)}>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        업데이트
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeviceConnect(device.id)}>
+                        <Wifi className="w-4 h-4 mr-2" />
+                        연결
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Badge className="bg-green-100 text-green-600">온라인</Badge>
-                <Badge variant="outline">배터리: 85%</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Eye className="w-4 h-4 mr-2" />
-                      상세 정보
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="w-4 h-4 mr-2" />
-                      설정
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      업데이트
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Battery className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">배터리: {device.batteryLevel}%</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Signal className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">신호: {
+                    device.signalStrength === 'strong' ? '강함' :
+                    device.signalStrength === 'medium' ? '보통' : '약함'
+                  }</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <User className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">사용자: {device.assignedUserName || '미할당'}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">
+                    마지막 동기화: {device.lastSyncAt ? 
+                      `${Math.floor((Date.now() - device.lastSyncAt.getTime()) / 60000)}분 전` :
+                      '없음'
+                    }
+                  </span>
+                </div>
               </div>
+            </Card>
+          ))}
+          {filteredDevices.length === 0 && !loading && (
+            <div className="text-center py-8 text-gray-500">
+              검색 결과가 없습니다.
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="flex items-center space-x-2">
-                <Battery className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">배터리: 85%</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Signal className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">신호: 강함</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">사용자: 김건강</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">마지막 동기화: 5분 전</span>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 
