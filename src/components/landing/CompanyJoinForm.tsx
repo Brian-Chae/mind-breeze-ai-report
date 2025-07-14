@@ -593,4 +593,6 @@ export function CompanyJoinForm() {
       </div>
     </div>
   );
-} 
+}
+
+export default CompanyJoinForm;
