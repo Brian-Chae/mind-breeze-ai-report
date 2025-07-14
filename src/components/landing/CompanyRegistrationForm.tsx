@@ -20,7 +20,8 @@ import {
   CheckCircle,
   ArrowLeft,
   Eye,
-  EyeOff
+  EyeOff,
+  Brain
 } from 'lucide-react';
 import { CompanyService } from '../../services/CompanyService';
 import { CompanyCodeService } from '../../services/CompanyCodeService';
@@ -216,310 +217,312 @@ export default function CompanyRegistrationForm() {
   const pricing = getServicePackagePrice(formData.servicePackage, formData.estimatedMemberCount);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/company-signup-selection')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            이전으로
-          </Button>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            신규 회사 등록
-          </h1>
-          <p className="text-gray-600">
-            MIND BREEZE AI 리포트 서비스를 위한 회사 정보를 등록해주세요
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/company-signup-selection')}
+          className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 mb-8 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>이전으로</span>
+        </button>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 회사 정보 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                회사 정보
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-                    회사명 *
-                  </label>
-                  <Input
-                    id="companyName"
-                    value={formData.companyName}
-                    onChange={(e) => handleInputChange('companyName', e.target.value)}
-                    placeholder="주식회사 마인드브리즈"
-                    className={errors.companyName ? 'border-red-500' : ''}
-                  />
-                  {errors.companyName && (
-                    <p className="text-sm text-red-500 mt-1">{errors.companyName}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="businessNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                    사업자등록번호 *
-                  </label>
-                  <Input
-                    id="businessNumber"
-                    value={formData.businessNumber}
-                    onChange={(e) => handleInputChange('businessNumber', e.target.value)}
-                    placeholder="123-45-67890"
-                    className={errors.businessNumber ? 'border-red-500' : ''}
-                  />
-                  {errors.businessNumber && (
-                    <p className="text-sm text-red-500 mt-1">{errors.businessNumber}</p>
-                  )}
-                </div>
+        {/* Main Registration Card */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center space-x-2 mb-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl">
+                <Brain className="w-7 h-7 text-white" />
               </div>
+              <span className="text-2xl font-bold text-gray-900">MIND BREEZE</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              신규 회사 등록
+            </h1>
+            <p className="text-gray-600">
+              AI 헬스케어 솔루션을 위한 회사 정보를 등록해주세요
+            </p>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                    회사 연락처 이메일 *
-                  </label>
-                  <Input
-                    id="contactEmail"
-                    type="email"
-                    value={formData.contactEmail}
-                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                    placeholder="contact@company.com"
-                    className={errors.contactEmail ? 'border-red-500' : ''}
-                  />
-                  {errors.contactEmail && (
-                    <p className="text-sm text-red-500 mt-1">{errors.contactEmail}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-2">
-                    회사 연락처 *
-                  </label>
-                  <Input
-                    id="contactPhone"
-                    value={formData.contactPhone}
-                    onChange={(e) => handleInputChange('contactPhone', e.target.value)}
-                    placeholder="02-1234-5678"
-                    className={errors.contactPhone ? 'border-red-500' : ''}
-                  />
-                  {errors.contactPhone && (
-                    <p className="text-sm text-red-500 mt-1">{errors.contactPhone}</p>
-                  )}
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* 회사 정보 */}
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">회사 정보</h3>
               </div>
-
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                  회사 주소 (선택사항)
-                </label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="서울시 강남구 테헤란로 123, 4층"
-                  rows={2}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 관리자 정보 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                관리자 정보
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-2">
-                    관리자 이름 *
-                  </label>
-                  <Input
-                    id="adminName"
-                    value={formData.adminName}
-                    onChange={(e) => handleInputChange('adminName', e.target.value)}
-                    placeholder="홍길동"
-                    className={errors.adminName ? 'border-red-500' : ''}
-                  />
-                  {errors.adminName && (
-                    <p className="text-sm text-red-500 mt-1">{errors.adminName}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="adminEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                    관리자 이메일 *
-                  </label>
-                  <Input
-                    id="adminEmail"
-                    type="email"
-                    value={formData.adminEmail}
-                    onChange={(e) => handleInputChange('adminEmail', e.target.value)}
-                    placeholder="admin@company.com"
-                    className={errors.adminEmail ? 'border-red-500' : ''}
-                  />
-                  {errors.adminEmail && (
-                    <p className="text-sm text-red-500 mt-1">{errors.adminEmail}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    비밀번호 *
-                  </label>
-                  <div className="relative">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                      회사명 *
+                    </label>
                     <Input
-                      id="adminPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.adminPassword}
-                      onChange={(e) => handleInputChange('adminPassword', e.target.value)}
-                      placeholder="최소 6자 이상"
-                      className={errors.adminPassword ? 'border-red-500' : ''}
+                      id="companyName"
+                      value={formData.companyName}
+                      onChange={(e) => handleInputChange('companyName', e.target.value)}
+                      placeholder="주식회사 마인드브리즈"
+                      className={`${errors.companyName ? 'border-red-500' : ''} rounded-xl`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    {errors.companyName && (
+                      <p className="text-sm text-red-500 mt-1">{errors.companyName}</p>
+                    )}
                   </div>
-                  {errors.adminPassword && (
-                    <p className="text-sm text-red-500 mt-1">{errors.adminPassword}</p>
-                  )}
-                </div>
 
-                <div>
-                  <label htmlFor="adminPasswordConfirm" className="block text-sm font-medium text-gray-700 mb-2">
-                    비밀번호 확인 *
-                  </label>
-                  <div className="relative">
+                  <div>
+                    <label htmlFor="businessNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                      사업자등록번호 *
+                    </label>
                     <Input
-                      id="adminPasswordConfirm"
-                      type={showPasswordConfirm ? 'text' : 'password'}
-                      value={formData.adminPasswordConfirm}
-                      onChange={(e) => handleInputChange('adminPasswordConfirm', e.target.value)}
-                      placeholder="비밀번호 재입력"
-                      className={errors.adminPasswordConfirm ? 'border-red-500' : ''}
+                      id="businessNumber"
+                      value={formData.businessNumber}
+                      onChange={(e) => handleInputChange('businessNumber', e.target.value)}
+                      placeholder="123-45-67890"
+                      className={`${errors.businessNumber ? 'border-red-500' : ''} rounded-xl`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPasswordConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    {errors.businessNumber && (
+                      <p className="text-sm text-red-500 mt-1">{errors.businessNumber}</p>
+                    )}
                   </div>
-                  {errors.adminPasswordConfirm && (
-                    <p className="text-sm text-red-500 mt-1">{errors.adminPasswordConfirm}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 서비스 패키지 선택 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                서비스 패키지
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="servicePackage" className="block text-sm font-medium text-gray-700 mb-2">
-                    패키지 선택
-                  </label>
-                  <Select 
-                    value={formData.servicePackage} 
-                    onValueChange={(value) => handleInputChange('servicePackage', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="패키지를 선택해주세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BASIC">베이직 패키지</SelectItem>
-                      <SelectItem value="PREMIUM">프리미엄 패키지</SelectItem>
-                      <SelectItem value="ENTERPRISE">엔터프라이즈 패키지</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                      회사 연락처 이메일 *
+                    </label>
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      value={formData.contactEmail}
+                      onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                      placeholder="contact@company.com"
+                      className={`${errors.contactEmail ? 'border-red-500' : ''} rounded-xl`}
+                    />
+                    {errors.contactEmail && (
+                      <p className="text-sm text-red-500 mt-1">{errors.contactEmail}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-2">
+                      회사 연락처 *
+                    </label>
+                    <Input
+                      id="contactPhone"
+                      value={formData.contactPhone}
+                      onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                      placeholder="02-1234-5678"
+                      className={`${errors.contactPhone ? 'border-red-500' : ''} rounded-xl`}
+                    />
+                    {errors.contactPhone && (
+                      <p className="text-sm text-red-500 mt-1">{errors.contactPhone}</p>
+                    )}
+                  </div>
+                </div>
+
                 <div>
-                  <label htmlFor="estimatedMemberCount" className="block text-sm font-medium text-gray-700 mb-2">
-                    예상 구성원 수
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                    회사 주소 (선택사항)
                   </label>
-                  <Input
-                    id="estimatedMemberCount"
-                    type="number"
-                    value={formData.estimatedMemberCount}
-                    onChange={(e) => handleInputChange('estimatedMemberCount', parseInt(e.target.value) || 0)}
-                    min="1"
-                    max="10000"
-                    placeholder="10"
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="서울시 강남구 테헤란로 123, 4층"
+                    rows={2}
+                    className="rounded-xl"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* 요금 정보 */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">예상 요금 정보</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>기본 요금 (인당):</span>
-                    <span>{pricing.basePrice.toLocaleString()}원</span>
+            {/* 관리자 정보 */}
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <User className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">관리자 정보</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-2">
+                      관리자 이름 *
+                    </label>
+                    <Input
+                      id="adminName"
+                      value={formData.adminName}
+                      onChange={(e) => handleInputChange('adminName', e.target.value)}
+                      placeholder="홍길동"
+                      className={`${errors.adminName ? 'border-red-500' : ''} rounded-xl`}
+                    />
+                    {errors.adminName && (
+                      <p className="text-sm text-red-500 mt-1">{errors.adminName}</p>
+                    )}
                   </div>
-                  {pricing.discountRate > 0 && (
-                    <>
-                      <div className="flex justify-between text-green-600">
-                        <span>볼륨 할인 ({Math.round(pricing.discountRate * 100)}%):</span>
-                        <span>-{((pricing.basePrice - pricing.discountedPrice) * formData.estimatedMemberCount).toLocaleString()}원</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>할인 적용가 (인당):</span>
-                        <span>{pricing.discountedPrice.toLocaleString()}원</span>
-                      </div>
-                    </>
-                  )}
-                  <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                    <span>월 예상 요금:</span>
-                    <span>{pricing.monthlyTotal.toLocaleString()}원</span>
+
+                  <div>
+                    <label htmlFor="adminEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                      관리자 이메일 *
+                    </label>
+                    <Input
+                      id="adminEmail"
+                      type="email"
+                      value={formData.adminEmail}
+                      onChange={(e) => handleInputChange('adminEmail', e.target.value)}
+                      placeholder="admin@company.com"
+                      className={`${errors.adminEmail ? 'border-red-500' : ''} rounded-xl`}
+                    />
+                    {errors.adminEmail && (
+                      <p className="text-sm text-red-500 mt-1">{errors.adminEmail}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      비밀번호 *
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="adminPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.adminPassword}
+                        onChange={(e) => handleInputChange('adminPassword', e.target.value)}
+                        placeholder="최소 6자 이상"
+                        className={`${errors.adminPassword ? 'border-red-500' : ''} rounded-xl pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.adminPassword && (
+                      <p className="text-sm text-red-500 mt-1">{errors.adminPassword}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="adminPasswordConfirm" className="block text-sm font-medium text-gray-700 mb-2">
+                      비밀번호 확인 *
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="adminPasswordConfirm"
+                        type={showPasswordConfirm ? 'text' : 'password'}
+                        value={formData.adminPasswordConfirm}
+                        onChange={(e) => handleInputChange('adminPasswordConfirm', e.target.value)}
+                        placeholder="비밀번호 재입력"
+                        className={`${errors.adminPasswordConfirm ? 'border-red-500' : ''} rounded-xl pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPasswordConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.adminPasswordConfirm && (
+                      <p className="text-sm text-red-500 mt-1">{errors.adminPasswordConfirm}</p>
+                    )}
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* 약관 동의 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                약관 동의
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
+            {/* 서비스 패키지 선택 */}
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <CreditCard className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">서비스 패키지</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="servicePackage" className="block text-sm font-medium text-gray-700 mb-2">
+                      패키지 선택
+                    </label>
+                    <Select 
+                      value={formData.servicePackage} 
+                      onValueChange={(value) => handleInputChange('servicePackage', value)}
+                    >
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue placeholder="패키지를 선택해주세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BASIC">베이직 패키지</SelectItem>
+                        <SelectItem value="PREMIUM">프리미엄 패키지</SelectItem>
+                        <SelectItem value="ENTERPRISE">엔터프라이즈 패키지</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="estimatedMemberCount" className="block text-sm font-medium text-gray-700 mb-2">
+                      예상 구성원 수
+                    </label>
+                    <Input
+                      id="estimatedMemberCount"
+                      type="number"
+                      value={formData.estimatedMemberCount}
+                      onChange={(e) => handleInputChange('estimatedMemberCount', parseInt(e.target.value) || 0)}
+                      min="1"
+                      max="10000"
+                      placeholder="10"
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                {/* 요금 정보 */}
+                <div className="bg-white p-4 rounded-xl border border-gray-200">
+                  <h4 className="font-semibold mb-2 text-blue-900">예상 요금 정보</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>기본 요금 (인당):</span>
+                      <span>{pricing.basePrice.toLocaleString()}원</span>
+                    </div>
+                    {pricing.discountRate > 0 && (
+                      <>
+                        <div className="flex justify-between text-green-600">
+                          <span>볼륨 할인 ({Math.round(pricing.discountRate * 100)}%):</span>
+                          <span>-{((pricing.basePrice - pricing.discountedPrice) * formData.estimatedMemberCount).toLocaleString()}원</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>할인 적용가 (인당):</span>
+                          <span>{pricing.discountedPrice.toLocaleString()}원</span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                      <span>월 예상 요금:</span>
+                      <span className="text-blue-600">{pricing.monthlyTotal.toLocaleString()}원</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 약관 동의 */}
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">약관 동의</h3>
+              </div>
+              <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <Checkbox
                     id="agreeToTerms"
                     checked={formData.agreeToTerms}
                     onCheckedChange={(checked) => handleInputChange('agreeToTerms', checked)}
+                    className="mt-1"
                   />
                   <div className="flex-1">
                     <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer">
@@ -539,6 +542,7 @@ export default function CompanyRegistrationForm() {
                     id="agreeToPrivacy"
                     checked={formData.agreeToPrivacy}
                     onCheckedChange={(checked) => handleInputChange('agreeToPrivacy', checked)}
+                    className="mt-1"
                   />
                   <div className="flex-1">
                     <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer">
@@ -558,6 +562,7 @@ export default function CompanyRegistrationForm() {
                     id="agreeToMarketing"
                     checked={formData.agreeToMarketing}
                     onCheckedChange={(checked) => handleInputChange('agreeToMarketing', checked)}
+                    className="mt-1"
                   />
                   <div className="flex-1">
                     <label htmlFor="agreeToMarketing" className="text-sm font-medium cursor-pointer">
@@ -569,47 +574,47 @@ export default function CompanyRegistrationForm() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* 생성된 회사 코드 표시 */}
-          {generatedCompanyCode && (
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>회사 코드가 생성되었습니다: {generatedCompanyCode}</strong>
-                <br />
-                이 코드는 직원들이 회사에 참여할 때 사용됩니다.
-              </AlertDescription>
-            </Alert>
-          )}
+            {/* 생성된 회사 코드 표시 */}
+            {generatedCompanyCode && (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  <strong>회사 코드가 생성되었습니다: {generatedCompanyCode}</strong>
+                  <br />
+                  이 코드는 직원들이 회사에 참여할 때 사용됩니다.
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {/* 제출 버튼 */}
-          <div className="flex gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/company-signup-selection')}
-              className="flex-1"
-            >
-              취소
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  등록 중...
-                </>
-              ) : (
-                '회사 등록 완료'
-              )}
-            </Button>
-          </div>
-        </form>
+            {/* 제출 버튼 */}
+            <div className="flex gap-4 pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/company-signup-selection')}
+                className="flex-1 rounded-xl h-12"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    등록 중...
+                  </>
+                ) : (
+                  '회사 등록 완료'
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
