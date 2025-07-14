@@ -626,6 +626,73 @@ export class OrganizationService {
       throw error;
     }
   }
+
+  /**
+   * 조직 데이터 확인 (디버깅용)
+   * @returns Promise<void>
+   */
+  static async debugOrganizationData(): Promise<void> {
+    try {
+      console.log('🔍 조직 데이터 확인 중...');
+      
+      const organizationsRef = collection(db, 'organizations');
+      const querySnapshot = await getDocs(organizationsRef);
+      
+      console.log('📊 전체 조직 수:', querySnapshot.size);
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('🏢 조직 정보:', {
+          id: doc.id,
+          organizationCode: data.organizationCode,
+          organizationName: data.organizationName,
+          adminUserId: data.adminUserId,
+          adminEmail: data.adminEmail,
+          createdAt: data.createdAt?.toDate?.()
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ 조직 데이터 확인 오류:', error);
+    }
+  }
+
+  /**
+   * 사용자 데이터 확인 (디버깅용)
+   * @returns Promise<void>
+   */
+  static async debugUserData(): Promise<void> {
+    try {
+      console.log('🔍 사용자 데이터 확인 중...');
+      
+      const usersRef = collection(db, 'users');
+      const querySnapshot = await getDocs(usersRef);
+      
+      console.log('📊 전체 사용자 수:', querySnapshot.size);
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('👤 사용자 정보:', {
+          id: doc.id,
+          email: data.email,
+          displayName: data.displayName,
+          organizationId: data.organizationId,
+          organizationCode: data.organizationCode,
+          userType: data.userType,
+          createdAt: data.createdAt?.toDate?.()
+        });
+      });
+      
+    } catch (error) {
+      console.error('❌ 사용자 데이터 확인 오류:', error);
+    }
+  }
+}
+
+// 디버깅용으로 window에 OrganizationService 노출
+if (typeof window !== 'undefined') {
+  (window as any).OrganizationService = OrganizationService;
+  console.log('🔧 디버깅용 OrganizationService가 window.OrganizationService로 노출됨');
 }
 
 export default OrganizationService; 

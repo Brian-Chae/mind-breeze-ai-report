@@ -65,6 +65,10 @@ let analytics;
 if (typeof window !== 'undefined') {
   analytics = getAnalytics(app);
   console.log('✅ Firebase Analytics 초기화 완료');
+  
+  // 디버깅용으로 window에 Firebase auth 노출
+  (window as any).firebaseAuth = auth;
+  console.log('🔧 디버깅용 Firebase Auth가 window.firebaseAuth로 노출됨');
 }
 
 export { analytics };
