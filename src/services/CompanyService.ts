@@ -39,6 +39,7 @@ export interface CompanyRegistrationData {
     password: string;
     position: string;
     phone: string;
+    address: string;
   };
 }
 
@@ -160,6 +161,8 @@ export class CompanyService {
         department: null,
         personalCreditBalance: 0,
         isActive: true,
+        phone: registrationData.adminUserData.phone,
+        address: registrationData.adminUserData.address,
         permissions: JSON.stringify(['ADMIN_ALL']),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()

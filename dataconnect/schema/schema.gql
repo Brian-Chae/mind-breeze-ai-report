@@ -17,6 +17,10 @@ type User @table {
   isActive: Boolean!           # 활성 상태
   profileImage: String         # 프로필 이미지 URL
   
+  # 연락처 정보
+  phone: String                # 전화번호
+  address: String              # 주소 (우편물 받아볼 주소)
+  
   # 권한 (JSON 배열로 저장)
   permissions: String          # JSON string array
   
