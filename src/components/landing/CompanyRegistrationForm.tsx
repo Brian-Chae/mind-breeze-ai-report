@@ -42,8 +42,13 @@ interface CompanyRegistrationData {
   adminPasswordConfirm: string;
   
   // 서비스 설정
-  servicePackage: 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
-  estimatedMemberCount: number;
+  totalEmployees: number;
+  testingFrequency: 'ONCE' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY';
+  contractPeriod: number; // 계약 기간 (개월)
+  
+  // 링크 밴드 설정
+  deviceOption: 'RENTAL_1M' | 'RENTAL_3M' | 'PURCHASE';
+  deviceQuantity: number;
   
   // 약관 동의
   agreeToTerms: boolean;
@@ -68,8 +73,11 @@ export default function CompanyRegistrationForm() {
     adminEmail: '',
     adminPassword: '',
     adminPasswordConfirm: '',
-    servicePackage: 'BASIC',
-    estimatedMemberCount: 10,
+    totalEmployees: 10,
+    testingFrequency: 'ONCE',
+    contractPeriod: 12,
+    deviceOption: 'RENTAL_1M',
+    deviceQuantity: 1,
     agreeToTerms: false,
     agreeToPrivacy: false,
     agreeToMarketing: false
@@ -131,6 +139,19 @@ export default function CompanyRegistrationForm() {
       newErrors.adminPasswordConfirm = '비밀번호가 일치하지 않습니다';
     }
 
+    // 서비스 설정 검증
+    if (formData.totalEmployees < 1) {
+      newErrors.totalEmployees = '직원 수는 1명 이상이어야 합니다';
+    }
+    
+    if (formData.contractPeriod < 1) {
+      newErrors.contractPeriod = '계약 기간은 1개월 이상이어야 합니다';
+    }
+    
+    if (formData.deviceQuantity < 1) {
+      newErrors.deviceQuantity = '링크 밴드 수량은 1개 이상이어야 합니다';
+    }
+
     // 약관 동의 검증
     if (!formData.agreeToTerms) {
       newErrors.agreeToTerms = '서비스 이용약관에 동의해주세요';
@@ -160,7 +181,7 @@ export default function CompanyRegistrationForm() {
         companyName: formData.companyName,
         businessRegistrationNumber: formData.businessNumber,
         address: formData.address,
-        employeeCount: formData.estimatedMemberCount,
+        employeeCount: formData.totalEmployees,
         industry: undefined,
         contactPhone: formData.contactPhone,
         contactEmail: formData.contactEmail,
@@ -170,6 +191,14 @@ export default function CompanyRegistrationForm() {
           password: formData.adminPassword,
           position: '관리자',
           phone: formData.contactPhone
+        },
+        // 새로운 서비스 설정 정보
+        serviceConfig: {
+          totalEmployees: formData.totalEmployees,
+          testingFrequency: formData.testingFrequency,
+          contractPeriod: formData.contractPeriod,
+          deviceOption: formData.deviceOption,
+          deviceQuantity: formData.deviceQuantity
         }
       };
 
@@ -200,21 +229,59 @@ export default function CompanyRegistrationForm() {
     }
   };
 
-  const getServicePackagePrice = (packageType: string, memberCount: number) => {
-    const basePrice = 7900;
-    let discountRate = 0;
+  const calculateServicePricing = () => {
+    const basePrice = 7900; // 기본 검사 비용
     
-    if (memberCount >= 1000) discountRate = 0.25;
-    else if (memberCount >= 500) discountRate = 0.20;
-    else if (memberCount >= 100) discountRate = 0.10;
+    // 검사 빈도에 따른 총 검사 횟수 계산
+    const getTestsPerMonth = (frequency: string) => {
+      switch (frequency) {
+        case 'ONCE': return 1 / formData.contractPeriod; // 계약 기간 동안 1회만
+        case 'WEEKLY': return 4; // 주 1회 = 월 4회
+        case 'MONTHLY': return 1; // 월 1회
+        case 'QUARTERLY': return 1 / 3; // 분기 1회 = 월 0.33회
+        default: return 1;
+      }
+    };
+    
+    const testsPerMonth = getTestsPerMonth(formData.testingFrequency);
+    const totalTests = formData.totalEmployees * testsPerMonth * formData.contractPeriod;
+    
+    // 할인율 계산 (총 검사 건수 기준)
+    let discountRate = 0;
+    if (totalTests >= 5000) discountRate = 0.30;
+    else if (totalTests >= 1000) discountRate = 0.25;
+    else if (totalTests >= 500) discountRate = 0.20;
+    else if (totalTests >= 100) discountRate = 0.10;
     
     const discountedPrice = basePrice * (1 - discountRate);
-    const monthlyTotal = discountedPrice * memberCount;
+    const totalTestingCost = totalTests * discountedPrice;
     
-    return { basePrice, discountedPrice, monthlyTotal, discountRate };
+    // 링크 밴드 비용 계산
+    const getDeviceCost = (option: string, quantity: number) => {
+      switch (option) {
+        case 'RENTAL_1M': return 70000 * quantity * formData.contractPeriod; // 월 렌탈 × 계약 기간
+        case 'RENTAL_3M': return 150000 * quantity * Math.ceil(formData.contractPeriod / 3); // 3개월 렌탈 × 필요 주기
+        case 'PURCHASE': return 297000 * quantity; // 구매
+        default: return 0;
+      }
+    };
+    
+    const deviceCost = getDeviceCost(formData.deviceOption, formData.deviceQuantity);
+    const totalCost = totalTestingCost + deviceCost;
+    
+    return {
+      basePrice,
+      discountedPrice,
+      discountRate,
+      totalTests: Math.round(totalTests),
+      testsPerMonth,
+      totalTestingCost,
+      deviceCost,
+      totalCost
+    };
   };
 
-  const pricing = getServicePackagePrice(formData.servicePackage, formData.estimatedMemberCount);
+  const pricing = calculateServicePricing();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
@@ -437,73 +504,162 @@ export default function CompanyRegistrationForm() {
               </div>
             </div>
 
-            {/* 서비스 패키지 선택 */}
+            {/* 서비스 설정 */}
             <div className="bg-gray-50 rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-6">
                 <CreditCard className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">서비스 패키지</h3>
+                <h3 className="text-lg font-semibold text-gray-900">서비스 설정</h3>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* 기본 정보 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="servicePackage" className="block text-sm font-medium text-gray-700 mb-2">
-                      패키지 선택
+                    <label htmlFor="totalEmployees" className="block text-sm font-medium text-gray-700 mb-2">
+                      총 직원 수 *
                     </label>
-                    <Select 
-                      value={formData.servicePackage} 
-                      onValueChange={(value) => handleInputChange('servicePackage', value)}
-                    >
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue placeholder="패키지를 선택해주세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="BASIC">베이직 패키지</SelectItem>
-                        <SelectItem value="PREMIUM">프리미엄 패키지</SelectItem>
-                        <SelectItem value="ENTERPRISE">엔터프라이즈 패키지</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="totalEmployees"
+                      type="number"
+                      value={formData.totalEmployees}
+                      onChange={(e) => handleInputChange('totalEmployees', parseInt(e.target.value) || 0)}
+                      min="1"
+                      max="100000"
+                      placeholder="예: 100"
+                      className="rounded-xl"
+                    />
+                    {errors.totalEmployees && (
+                      <p className="text-sm text-red-500 mt-1">{errors.totalEmployees}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label htmlFor="estimatedMemberCount" className="block text-sm font-medium text-gray-700 mb-2">
-                      예상 구성원 수
+                    <label htmlFor="contractPeriod" className="block text-sm font-medium text-gray-700 mb-2">
+                      계약 기간 (개월) *
                     </label>
                     <Input
-                      id="estimatedMemberCount"
+                      id="contractPeriod"
                       type="number"
-                      value={formData.estimatedMemberCount}
-                      onChange={(e) => handleInputChange('estimatedMemberCount', parseInt(e.target.value) || 0)}
+                      value={formData.contractPeriod}
+                      onChange={(e) => handleInputChange('contractPeriod', parseInt(e.target.value) || 0)}
                       min="1"
-                      max="10000"
-                      placeholder="10"
+                      max="60"
+                      placeholder="예: 12"
                       className="rounded-xl"
                     />
+                    {errors.contractPeriod && (
+                      <p className="text-sm text-red-500 mt-1">{errors.contractPeriod}</p>
+                    )}
                   </div>
                 </div>
 
-                {/* 요금 정보 */}
+                {/* 검사 빈도 */}
+                <div>
+                  <label htmlFor="testingFrequency" className="block text-sm font-medium text-gray-700 mb-2">
+                    검사 빈도 *
+                  </label>
+                  <Select 
+                    value={formData.testingFrequency} 
+                    onValueChange={(value) => handleInputChange('testingFrequency', value)}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue placeholder="검사 빈도를 선택해주세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ONCE">1회성 검사 (계약 기간 동안 1회만)</SelectItem>
+                      <SelectItem value="WEEKLY">주 1회 검사 (월 4회)</SelectItem>
+                      <SelectItem value="MONTHLY">월 1회 검사</SelectItem>
+                      <SelectItem value="QUARTERLY">분기 1회 검사 (3개월마다)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 링크 밴드 설정 */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">링크 밴드 설정</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="deviceOption" className="block text-sm font-medium text-gray-700 mb-2">
+                        링크 밴드 옵션 *
+                      </label>
+                      <Select 
+                        value={formData.deviceOption} 
+                        onValueChange={(value) => handleInputChange('deviceOption', value)}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="링크 밴드 옵션을 선택해주세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="RENTAL_1M">1개월 렌탈 (70,000원/개)</SelectItem>
+                          <SelectItem value="RENTAL_3M">3개월 렌탈 (150,000원/개)</SelectItem>
+                          <SelectItem value="PURCHASE">구매 (297,000원/개)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="deviceQuantity" className="block text-sm font-medium text-gray-700 mb-2">
+                        링크 밴드 수량 *
+                      </label>
+                      <Input
+                        id="deviceQuantity"
+                        type="number"
+                        value={formData.deviceQuantity}
+                        onChange={(e) => handleInputChange('deviceQuantity', parseInt(e.target.value) || 0)}
+                        min="1"
+                        max="1000"
+                        placeholder="예: 5"
+                        className="rounded-xl"
+                      />
+                      {errors.deviceQuantity && (
+                        <p className="text-sm text-red-500 mt-1">{errors.deviceQuantity}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 계약 요약 */}
                 <div className="bg-white p-4 rounded-xl border border-gray-200">
-                  <h4 className="font-semibold mb-2 text-blue-900">예상 요금 정보</h4>
+                  <h4 className="font-semibold mb-3 text-blue-900">계약 요약</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between text-gray-700">
-                      <span>기본 요금 (인당):</span>
-                      <span>{pricing.basePrice.toLocaleString()}원</span>
+                      <span>총 직원 수:</span>
+                      <span>{formData.totalEmployees.toLocaleString()}명</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>계약 기간:</span>
+                      <span>{formData.contractPeriod}개월</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>총 검사 건수:</span>
+                      <span>{pricing.totalTests.toLocaleString()}건</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>기본 단가:</span>
+                      <span>{pricing.basePrice.toLocaleString()}원/건</span>
                     </div>
                     {pricing.discountRate > 0 && (
                       <>
                         <div className="flex justify-between text-green-600">
                           <span>볼륨 할인 ({Math.round(pricing.discountRate * 100)}%):</span>
-                          <span>-{((pricing.basePrice - pricing.discountedPrice) * formData.estimatedMemberCount).toLocaleString()}원</span>
+                          <span>-{((pricing.basePrice - pricing.discountedPrice) * pricing.totalTests).toLocaleString()}원</span>
                         </div>
                         <div className="flex justify-between text-gray-700">
-                          <span>할인 적용가 (인당):</span>
-                          <span>{pricing.discountedPrice.toLocaleString()}원</span>
+                          <span>할인 적용가:</span>
+                          <span>{pricing.discountedPrice.toLocaleString()}원/건</span>
                         </div>
                       </>
                     )}
+                    <div className="flex justify-between text-gray-700">
+                      <span>검사 총 비용:</span>
+                      <span>{pricing.totalTestingCost.toLocaleString()}원</span>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>링크 밴드 비용:</span>
+                      <span>{pricing.deviceCost.toLocaleString()}원</span>
+                    </div>
                     <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                      <span className="text-gray-900">월 예상 요금:</span>
-                      <span className="text-blue-600">{pricing.monthlyTotal.toLocaleString()}원</span>
+                      <span className="text-gray-900">총 계약 금액:</span>
+                      <span className="text-blue-600">{pricing.totalCost.toLocaleString()}원</span>
                     </div>
                   </div>
                 </div>
