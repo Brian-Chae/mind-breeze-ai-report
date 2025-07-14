@@ -110,7 +110,7 @@ const AppRouter = () => {
       {/* 보호된 라우트 */}
       <Route path="/welcome" element={
         <ProtectedRoute>
-          <WelcomeScreen />
+          <WelcomeScreen onComplete={() => navigate('/home')} />
         </ProtectedRoute>
       } />
       <Route path="/home" element={
