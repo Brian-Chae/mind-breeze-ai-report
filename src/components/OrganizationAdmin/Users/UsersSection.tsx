@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   User,
   Users,
@@ -22,13 +22,19 @@ import {
   CheckCircle,
   AlertCircle,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
 import { Input } from '../../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+
+// Firebase 서비스 import
+import measurementUserManagementService, { MeasurementUser as FirebaseMeasurementUser, MeasurementUserStats } from '../../../services/MeasurementUserManagementService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface UsersSectionProps {
   subSection: string;
@@ -78,71 +84,97 @@ interface UserReport {
 }
 
 export default function UsersSection({ subSection }: UsersSectionProps) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [selectedDateRange, setSelectedDateRange] = useState('7d')
 
-  // 측정 사용자 데이터
-  const [users, setUsers] = useState<MeasurementUser[]>([
-    {
-      id: '1',
-      name: '김건강',
-      email: 'kim.health@company.com',
-      phone: '010-1111-2222',
-      age: 32,
-      gender: 'male',
-      department: '마케팅팀',
-      joinDate: '2023-06-15',
-      lastMeasurement: '2024-01-15 14:30',
-      measurementCount: 45,
-      reportCount: 12,
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: '이스트레스',
-      email: 'lee.stress@company.com',
-      phone: '010-3333-4444',
-      age: 28,
-      gender: 'female',
-      department: '개발팀',
-      joinDate: '2023-08-20',
-      lastMeasurement: '2024-01-14 09:15',
-      measurementCount: 38,
-      reportCount: 8,
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: '박집중',
-      email: 'park.focus@company.com',
-      phone: '010-5555-6666',
-      age: 35,
-      gender: 'male',
-      department: '연구팀',
-      joinDate: '2023-04-10',
-      lastMeasurement: '2024-01-12 16:45',
-      measurementCount: 52,
-      reportCount: 15,
-      status: 'active'
-    },
-    {
-      id: '4',
-      name: '정웰니스',
-      email: 'jung.wellness@company.com',
-      phone: '010-7777-8888',
-      age: 29,
-      gender: 'female',
-      department: '디자인팀',
-      joinDate: '2023-09-01',
-      lastMeasurement: '2024-01-10 11:20',
-      measurementCount: 26,
-      reportCount: 5,
-      status: 'inactive'
-    }
-  ])
+  // 실제 데이터 상태
+  const [firebaseUsers, setFirebaseUsers] = useState<FirebaseMeasurementUser[]>([])
+  const [users, setUsers] = useState<MeasurementUser[]>([])
+  const [userStats, setUserStats] = useState<MeasurementUserStats | null>(null)
 
-  // 측정 세션 데이터
+  // 데이터 로드
+  useEffect(() => {
+    loadUsersData()
+  }, [subSection])
+
+  const loadUsersData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 현재 사용자 정보 가져오기
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      const organizationId = currentContext.user.organizationId
+
+      // 병렬로 데이터 로드
+      const [usersData, statsData] = await Promise.all([
+        measurementUserManagementService.getMeasurementUsers({ organizationId }),
+        measurementUserManagementService.getMeasurementUserStats()
+      ])
+
+      setFirebaseUsers(usersData)
+      setUserStats(statsData)
+
+      // Firebase 데이터를 UI 인터페이스로 변환
+      const convertedUsers: MeasurementUser[] = usersData.map(user => ({
+        id: user.id,
+        name: user.displayName,
+        email: user.email,
+        phone: user.phone || '',
+        age: user.age || 0,
+        gender: user.gender === 'MALE' ? 'male' : user.gender === 'FEMALE' ? 'female' : 'male',
+        department: '미지정', // Firebase 데이터에 부서 정보 없음
+        joinDate: user.createdAt?.toLocaleDateString() || '',
+        lastMeasurement: user.lastMeasurementDate?.toLocaleDateString() || '측정 기록 없음',
+        measurementCount: user.measurementCount,
+        reportCount: user.reportIds?.length || 0,
+        status: user.isActive ? 'active' : 'inactive'
+      }))
+
+      setUsers(convertedUsers)
+
+    } catch (err) {
+      console.error('사용자 데이터 로드 오류:', err)
+      setError('사용자 데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-gray-600">사용자 데이터를 불러오는 중...</span>
+      </div>
+    )
+  }
+
+  // 오류 발생 시
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">오류 발생</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={loadUsersData}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 시도
+        </Button>
+      </div>
+    )
+  }
+
+  // 측정 사용자 데이터
   const [sessions, setSessions] = useState<MeasurementSession[]>([
     {
       id: '1',
