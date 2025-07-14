@@ -26,7 +26,7 @@ const AppRouter = () => {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (loading) return;
 
     const currentPath = location.pathname;
     
@@ -58,7 +58,7 @@ const AppRouter = () => {
         navigate('/');
       }
     }
-  }, [user, isLoading, navigate, location]);
+  }, [user, loading, navigate, location]);
 
   const getRedirectPath = (userType: string) => {
     switch (userType) {
@@ -84,7 +84,7 @@ const AppRouter = () => {
     }
   }, [user, location, navigate]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
