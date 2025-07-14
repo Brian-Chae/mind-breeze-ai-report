@@ -34,6 +34,7 @@ interface CompanyJoinData {
   password: string;
   passwordConfirm: string;
   phone: string;
+  address: string;
   
   // 직원 정보
   employeeId: string;
@@ -63,6 +64,7 @@ export function CompanyJoinForm() {
     password: '',
     passwordConfirm: '',
     phone: '',
+    address: '',
     employeeId: '',
     department: '',
     position: '',
@@ -178,6 +180,12 @@ export function CompanyJoinForm() {
       newErrors.phone = '올바른 전화번호 형식을 입력해주세요.';
     }
     
+    if (!formData.address.trim()) {
+      newErrors.address = '주소를 입력해주세요.';
+    } else if (formData.address.length < 5) {
+      newErrors.address = '주소를 정확히 입력해주세요.';
+    }
+    
     if (!formData.employeeId.trim()) {
       newErrors.employeeId = '사원번호를 입력해주세요.';
     }
@@ -221,6 +229,8 @@ export function CompanyJoinForm() {
         employeeId: formData.employeeId,
         password: formData.password,
         displayName: formData.name,
+        phone: formData.phone,
+        address: formData.address,
         department: formData.department,
         position: formData.position
       });
@@ -437,6 +447,22 @@ export function CompanyJoinForm() {
                           />
                           {errors.phone && (
                             <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                            주소 *
+                          </label>
+                          <Input
+                            id="address"
+                            value={formData.address}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            placeholder="서울시 강남구 테헤란로 123"
+                            className={`rounded-xl text-gray-900 ${errors.address ? 'border-red-500' : ''}`}
+                          />
+                          {errors.address && (
+                            <p className="text-sm text-red-500 mt-1">{errors.address}</p>
                           )}
                         </div>
                       </div>

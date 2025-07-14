@@ -112,6 +112,10 @@ export interface EnterpriseUser {
   displayName: string;
   profileImage?: string;
   
+  // 개인 연락처 정보
+  phone?: string;           // 전화번호
+  address?: string;         // 주소
+  
   // 조직 관련 정보 (조직 사용자만)
   department?: string;
   position?: string;

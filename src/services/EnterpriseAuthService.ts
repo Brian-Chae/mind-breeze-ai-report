@@ -45,6 +45,10 @@ export interface RegistrationData {
   displayName: string;
   password: string;
   
+  // 개인 정보
+  phone?: string;           // 전화번호
+  address?: string;         // 주소
+  
   // 조직 관련 (조직 사용자만)
   department?: string;
   position?: string;
@@ -387,6 +391,8 @@ class EnterpriseAuthService {
       organizationId: data.organizationId,
       userType: data.userType,
       displayName: data.displayName,
+      phone: data.phone,
+      address: data.address,
       department: data.department,
       position: data.position,
       personalCreditBalance: data.userType === 'INDIVIDUAL_USER' ? 0 : undefined,
