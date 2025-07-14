@@ -40,6 +40,8 @@ interface CompanyRegistrationData {
   adminEmail: string;
   adminPassword: string;
   adminPasswordConfirm: string;
+  adminPhone: string;
+  adminAddress: string;
   
   // 서비스 설정
   totalEmployees: number;
@@ -74,6 +76,8 @@ export default function CompanyRegistrationForm() {
     adminEmail: '',
     adminPassword: '',
     adminPasswordConfirm: '',
+    adminPhone: '',
+    adminAddress: '',
     totalEmployees: 10,
     testingFrequency: 'ONCE',
     contractPeriod: 12,
@@ -167,6 +171,16 @@ export default function CompanyRegistrationForm() {
       newErrors.adminPasswordConfirm = '비밀번호가 일치하지 않습니다';
     }
 
+    if (!formData.adminPhone.trim()) {
+      newErrors.adminPhone = '관리자 전화번호를 입력해주세요';
+    } else if (!/^[0-9-]+$/.test(formData.adminPhone)) {
+      newErrors.adminPhone = '올바른 전화번호 형식을 입력해주세요';
+    }
+
+    if (!formData.adminAddress.trim()) {
+      newErrors.adminAddress = '관리자 주소를 입력해주세요';
+    }
+
     // 서비스 설정 검증
     if (formData.totalEmployees < 1) {
       newErrors.totalEmployees = '직원 수는 1명 이상이어야 합니다';
@@ -218,7 +232,8 @@ export default function CompanyRegistrationForm() {
           email: formData.adminEmail,
           password: formData.adminPassword,
           position: '관리자',
-          phone: formData.contactPhone
+          phone: formData.adminPhone,
+          address: formData.adminAddress
         },
         // 새로운 서비스 설정 정보
         serviceConfig: {
@@ -526,6 +541,41 @@ export default function CompanyRegistrationForm() {
                     </div>
                     {errors.adminPasswordConfirm && (
                       <p className="text-sm text-red-500 mt-1">{errors.adminPasswordConfirm}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="adminPhone" className="block text-sm font-medium text-gray-700 mb-2">
+                      관리자 전화번호 *
+                    </label>
+                    <Input
+                      id="adminPhone"
+                      type="tel"
+                      value={formData.adminPhone}
+                      onChange={(e) => handleInputChange('adminPhone', e.target.value)}
+                      placeholder="010-1234-5678"
+                      className={`${errors.adminPhone ? 'border-red-500' : ''} rounded-xl`}
+                    />
+                    {errors.adminPhone && (
+                      <p className="text-sm text-red-500 mt-1">{errors.adminPhone}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="adminAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                      우편물 받아볼 주소 *
+                    </label>
+                    <Input
+                      id="adminAddress"
+                      value={formData.adminAddress}
+                      onChange={(e) => handleInputChange('adminAddress', e.target.value)}
+                      placeholder="서울시 강남구 테헤란로 123"
+                      className={`${errors.adminAddress ? 'border-red-500' : ''} rounded-xl`}
+                    />
+                    {errors.adminAddress && (
+                      <p className="text-sm text-red-500 mt-1">{errors.adminAddress}</p>
                     )}
                   </div>
                 </div>
