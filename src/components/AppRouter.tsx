@@ -19,7 +19,7 @@ import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
 import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
-import { DeviceManager } from '../../components/DeviceManager';
+import OrganizationAdminApp from './OrganizationAdmin/OrganizationAdminApp';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
@@ -196,12 +196,12 @@ const AppRouter = () => {
       } />
       <Route path="/admin" element={
         <ProtectedRoute>
-          <DeviceManager />
+          <OrganizationAdminApp />
         </ProtectedRoute>
       } />
       <Route path="/admin/*" element={
         <ProtectedRoute>
-          <DeviceManager />
+          <OrganizationAdminApp />
         </ProtectedRoute>
       } />
     </Routes>
