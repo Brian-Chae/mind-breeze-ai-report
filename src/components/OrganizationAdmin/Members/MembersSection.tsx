@@ -21,7 +21,9 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Monitor,
+  FileText
 } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
@@ -468,76 +470,170 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
   const renderInviteManagement = () => {
     const getInviteStatusColor = (status: string) => {
       switch (status) {
-        case 'pending': return 'bg-yellow-100 text-yellow-800'
-        case 'accepted': return 'bg-green-100 text-green-800'
-        case 'expired': return 'bg-red-100 text-red-800'
-        default: return 'bg-gray-100 text-gray-800'
+        case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+        case 'accepted': return 'bg-green-50 text-green-700 border-green-200'
+        case 'expired': return 'bg-red-50 text-red-700 border-red-200'
+        default: return 'bg-gray-50 text-gray-700 border-gray-200'
       }
     }
 
+    const getInviteIcon = (status: string) => {
+      switch (status) {
+        case 'pending': return 'bg-yellow-500 text-white'
+        case 'accepted': return 'bg-green-500 text-white'
+        case 'expired': return 'bg-red-500 text-white'
+        default: return 'bg-gray-500 text-white'
+      }
+    }
+
+    // 빈 상태 렌더링
+    const renderEmptyInviteState = () => (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-6">
+          <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">보낸 초대가 없습니다</h3>
+          <p className="text-gray-600 max-w-md">
+            아직 보낸 초대가 없습니다. 
+            새 운영자를 초대하여 조직에 참여시켜보세요.
+          </p>
+        </div>
+        <Button 
+          onClick={() => setShowInviteForm(true)}
+          className="flex items-center space-x-2"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>새 초대</span>
+        </Button>
+      </div>
+    )
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">초대 관리</h2>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">초대 관리</h2>
+            <p className="text-gray-600 mt-2">운영자 초대를 관리하고 상태를 확인하세요</p>
+          </div>
           <Button onClick={() => setShowInviteForm(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
             새 초대
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {invitations.map((invitation) => (
-            <Card key={invitation.id} className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl">
-                    <Mail className="w-6 h-6 text-purple-600" />
+        <div className="space-y-4">
+          {invitations.length === 0 ? (
+            renderEmptyInviteState()
+          ) : (
+            invitations.map((invitation) => (
+              <Card key={invitation.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-purple-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-md ${getInviteIcon(invitation.status)}`}>
+                      <Mail className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">{invitation.email}</h3>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-sm text-gray-600">{invitation.department}</span>
+                        <span className="text-sm text-gray-400">•</span>
+                        <span className="text-sm text-gray-600">
+                          {invitation.role === 'admin' ? '관리자' : invitation.role === 'manager' ? '매니저' : '운영자'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{invitation.invitedBy}님이 초대</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{invitation.email}</h3>
-                    <p className="text-sm text-gray-600">{invitation.department} • {invitation.role === 'admin' ? '관리자' : invitation.role === 'manager' ? '매니저' : '운영자'}</p>
-                    <p className="text-sm text-gray-600">{invitation.invitedBy}님이 초대</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Badge className={getInviteStatusColor(invitation.status)}>
-                    {invitation.status === 'pending' ? '대기중' : invitation.status === 'accepted' ? '수락' : '만료'}
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {invitation.status === 'pending' && (
-                        <DropdownMenuItem onClick={() => handleResendInvite(invitation.id)}>
-                          <Send className="w-4 h-4 mr-2" />
-                          재전송
+                  
+                  <div className="flex items-center space-x-3">
+                    <Badge className={`font-semibold ${getInviteStatusColor(invitation.status)}`}>
+                      {invitation.status === 'pending' ? '대기중' : invitation.status === 'accepted' ? '수락' : '만료'}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {invitation.status === 'pending' && (
+                          <DropdownMenuItem onClick={() => handleResendInvite(invitation.id)}>
+                            <Send className="w-4 h-4 mr-2" />
+                            재전송
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => handleCancelInvite(invitation.id)}>
+                          <X className="w-4 h-4 mr-2" />
+                          취소
                         </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => handleCancelInvite(invitation.id)}>
-                        <X className="w-4 h-4 mr-2" />
-                        취소
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
-              </div>
 
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">초대일: {invitation.sentDate}</span>
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">초대일: {invitation.sentDate}</span>
+                  </div>
+                  {invitation.status === 'pending' && (
+                    <span className="text-sm text-yellow-600 font-medium">7일 후 만료</span>
+                  )}
                 </div>
-                {invitation.status === 'pending' && (
-                  <span className="text-sm text-yellow-600">7일 후 만료</span>
-                )}
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
+
+        {/* 초대 폼 */}
+        {showInviteForm && (
+          <Card className="p-6 border-2 border-purple-200 bg-purple-50">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">새 운영자 초대</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">이메일</label>
+                <Input
+                  type="email"
+                  value={newInviteEmail}
+                  onChange={(e) => setNewInviteEmail(e.target.value)}
+                  placeholder="초대할 이메일을 입력하세요"
+                  className="mt-1"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">역할</label>
+                  <select
+                    value={newInviteRole}
+                    onChange={(e) => setNewInviteRole(e.target.value as 'admin' | 'manager' | 'member')}
+                    className="mt-1 w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="member">운영자</option>
+                    <option value="manager">매니저</option>
+                    <option value="admin">관리자</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">부서</label>
+                  <Input
+                    value={newInviteDepartment}
+                    onChange={(e) => setNewInviteDepartment(e.target.value)}
+                    placeholder="부서를 입력하세요"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={handleSendInvite}>
+                  <Send className="w-4 h-4 mr-2" />
+                  초대 보내기
+                </Button>
+                <Button variant="outline" onClick={() => setShowInviteForm(false)}>
+                  취소
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     )
   }
@@ -559,61 +655,138 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
       admin: '관리자 설정'
     }
 
+    const categoryIcons = {
+      user: Users,
+      device: Monitor,
+      report: FileText,
+      admin: Shield
+    }
+
+    const categoryColors = {
+      user: 'bg-blue-50 border-blue-200',
+      device: 'bg-green-50 border-green-200',
+      report: 'bg-purple-50 border-purple-200',
+      admin: 'bg-red-50 border-red-200'
+    }
+
     const levelColors = {
-      read: 'bg-blue-100 text-blue-600',
-      write: 'bg-green-100 text-green-600',
-      delete: 'bg-red-100 text-red-600'
+      read: 'bg-blue-50 text-blue-700 border-blue-200',
+      write: 'bg-green-50 text-green-700 border-green-200',
+      delete: 'bg-red-50 text-red-700 border-red-200'
+    }
+
+    const getPermissionIcon = (category: string) => {
+      const colors = {
+        user: 'bg-blue-500 text-white',
+        device: 'bg-green-500 text-white',
+        report: 'bg-purple-500 text-white',
+        admin: 'bg-red-500 text-white'
+      }
+      return colors[category as keyof typeof colors] || 'bg-gray-500 text-white'
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">권한 설정</h2>
-          <Button variant="outline">
-            <Shield className="w-4 h-4 mr-2" />
-            권한 템플릿
-          </Button>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">권한 설정</h2>
+            <p className="text-gray-600 mt-2">역할별 권한을 설정하고 관리하세요</p>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline">
+              <Shield className="w-4 h-4 mr-2" />
+              권한 템플릿
+            </Button>
+            <Button variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              권한 내보내기
+            </Button>
+          </div>
         </div>
 
-        {Object.entries(groupedPermissions).map(([category, perms]) => (
-          <Card key={category} className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {categoryNames[category as keyof typeof categoryNames]}
-            </h3>
-            <div className="space-y-4">
-              {perms.map((permission) => (
-                <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-                      <Shield className="w-4 h-4 text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{permission.name}</p>
-                      <p className="text-sm text-gray-600">{permission.description}</p>
-                    </div>
+        <div className="space-y-6">
+          {Object.entries(groupedPermissions).map(([category, perms]) => {
+            const IconComponent = categoryIcons[category as keyof typeof categoryIcons]
+            return (
+              <Card key={category} className={`p-6 border-2 ${categoryColors[category as keyof typeof categoryColors]}`}>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-xl shadow-md ${getPermissionIcon(category)}`}>
+                    <IconComponent className="w-5 h-5" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={levelColors[permission.level]}>
-                      {permission.level === 'read' ? '읽기' : permission.level === 'write' ? '쓰기' : '삭제'}
-                    </Badge>
-                    <div className="flex items-center space-x-1">
-                      <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
-                      <span className="text-sm text-gray-600">관리자</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
-                      <span className="text-sm text-gray-600">매니저</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
-                      <span className="text-sm text-gray-600">운영자</span>
-                    </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {categoryNames[category as keyof typeof categoryNames]}
+                    </h3>
+                    <p className="text-sm text-gray-600">{perms.length}개 권한</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
-        ))}
+                
+                <div className="space-y-3">
+                  {perms.map((permission) => (
+                    <div key={permission.id} className="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-gray-300 transition-all">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                          <Shield className="w-4 h-4 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{permission.name}</p>
+                          <p className="text-sm text-gray-600">{permission.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4">
+                        <Badge className={`font-semibold ${levelColors[permission.level]}`}>
+                          {permission.level === 'read' ? '읽기' : permission.level === 'write' ? '쓰기' : '삭제'}
+                        </Badge>
+                        
+                        <div className="flex items-center space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                              defaultChecked={permission.level === 'read' || permission.level === 'write' || permission.level === 'delete'}
+                            />
+                            <span className="text-sm font-medium text-red-600">관리자</span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              defaultChecked={permission.level === 'read' || permission.level === 'write'}
+                            />
+                            <span className="text-sm font-medium text-blue-600">매니저</span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                              defaultChecked={permission.level === 'read'}
+                            />
+                            <span className="text-sm font-medium text-green-600">운영자</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* 저장 버튼 */}
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            초기화
+          </Button>
+          <Button>
+            <CheckCircle className="w-4 h-4 mr-2" />
+            권한 저장
+          </Button>
+        </div>
       </div>
     )
   }
