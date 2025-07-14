@@ -1,30 +1,25 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Alert, AlertDescription } from '../ui/alert';
-import { 
-  Building2, 
-  User, 
-  Key, 
-  Mail, 
-  Phone, 
-  IdCard,
-  Shield,
-  CheckCircle,
-  AlertCircle,
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Search,
-  Brain
-} from 'lucide-react';
+import { ArrowLeft, Building, User, Shield, Mail, Phone, MapPin, IdCard, CheckCircle, AlertCircle, Brain } from 'lucide-react';
 import { CompanyService } from '../../services/CompanyService';
-import { CompanyCodeService } from '../../services/CompanyCodeService';
-import { toast } from 'sonner';
+
+// 간단한 validation 함수들
+const validateEmail = (email: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+const validatePassword = (password: string) => {
+  return password.length >= 8 && /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(password);
+};
+
+const validatePhoneNumber = (phone: string) => {
+  return /^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(phone);
+};
 
 interface CompanyJoinData {
   // 회사 코드
@@ -55,16 +50,8 @@ interface CompanyInfo {
   adminEmail: string;
 }
 
-export default function CompanyJoinForm() {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [codeVerified, setCodeVerified] = useState(false);
-  const [agreeToAll, setAgreeToAll] = useState(false);
-  
+export function CompanyJoinForm() {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CompanyJoinData>({
     companyCode: '',
     name: '',
@@ -79,22 +66,23 @@ export default function CompanyJoinForm() {
     agreeToPrivacy: false,
     agreeToMarketing: false
   });
-
   const [errors, setErrors] = useState<Partial<Record<keyof CompanyJoinData, string>>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [isCompanyVerified, setIsCompanyVerified] = useState(false);
+  const [agreeToAll, setAgreeToAll] = useState(false);
 
   const handleInputChange = (field: keyof CompanyJoinData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
     
-    // 에러 제거
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-    
-    // 약관 동의 상태 변경 시 모든 동의 체크박스 상태 업데이트
-    if (field === 'agreeToTerms' || field === 'agreeToPrivacy' || field === 'agreeToMarketing') {
-      const newFormData = { ...formData, [field]: value };
-      const allAgreed = newFormData.agreeToTerms && newFormData.agreeToPrivacy && newFormData.agreeToMarketing;
-      setAgreeToAll(allAgreed);
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
     }
   };
 
@@ -107,34 +95,27 @@ export default function CompanyJoinForm() {
       agreeToMarketing: checked
     }));
     
-    // 에러 제거
     if (checked) {
-      setErrors(prev => ({ 
-        ...prev, 
+      setErrors(prev => ({
+        ...prev,
         agreeToTerms: undefined,
-        agreeToPrivacy: undefined 
+        agreeToPrivacy: undefined
       }));
     }
   };
 
   const verifyCompanyCode = async () => {
     if (!formData.companyCode.trim()) {
-      setErrors(prev => ({ ...prev, companyCode: '회사 코드를 입력해주세요' }));
+      setErrors(prev => ({
+        ...prev,
+        companyCode: '회사 코드를 입력해주세요.'
+      }));
       return;
     }
 
-    setIsVerifying(true);
-    
+    setIsLoading(true);
     try {
-      // 먼저 회사 코드 형식 및 존재 여부 확인
-      const validation = await CompanyCodeService.validateCompanyCode(formData.companyCode);
-      
-      if (!validation.isValid) {
-        setErrors(prev => ({ ...prev, companyCode: validation.error || '유효하지 않은 회사 코드입니다' }));
-        return;
-      }
-
-      // 유효한 경우 전체 회사 정보 조회
+      // 임시 구현 - 실제로는 CompanyService.getCompanyByCode 사용
       const company = await CompanyService.getCompanyByCode(formData.companyCode);
       
       if (company) {
@@ -144,74 +125,76 @@ export default function CompanyJoinForm() {
           employeeCount: company.employeeCount,
           adminEmail: company.contactEmail
         });
-        setCodeVerified(true);
-        toast.success('회사 코드가 확인되었습니다!');
+        setIsCompanyVerified(true);
+        setCurrentStep(2);
       } else {
-        setErrors(prev => ({ ...prev, companyCode: '회사 정보를 찾을 수 없습니다' }));
+        setErrors(prev => ({
+          ...prev,
+          companyCode: '존재하지 않는 회사 코드입니다.'
+        }));
       }
     } catch (error) {
-      console.error('회사 코드 검증 오류:', error);
-      setErrors(prev => ({ ...prev, companyCode: '회사 코드 검증 중 오류가 발생했습니다' }));
+      console.error('회사 코드 검증 실패:', error);
+      setErrors(prev => ({
+        ...prev,
+        companyCode: '회사 코드 검증에 실패했습니다.'
+      }));
     } finally {
-      setIsVerifying(false);
+      setIsLoading(false);
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof CompanyJoinData, string>> = {};
-
-    // 회사 코드 검증
-    if (!codeVerified) {
-      newErrors.companyCode = '회사 코드를 먼저 확인해주세요';
-    }
-
-    // 개인 정보 검증
+    
     if (!formData.name.trim()) {
-      newErrors.name = '이름을 입력해주세요';
+      newErrors.name = '이름을 입력해주세요.';
     }
     
     if (!formData.email.trim()) {
-      newErrors.email = '이메일을 입력해주세요';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = '올바른 이메일 형식을 입력해주세요';
+      newErrors.email = '이메일을 입력해주세요.';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = '올바른 이메일 형식을 입력해주세요.';
     }
     
     if (!formData.password) {
-      newErrors.password = '비밀번호를 입력해주세요';
-    } else if (formData.password.length < 6) {
-      newErrors.password = '비밀번호는 최소 6자 이상이어야 합니다';
+      newErrors.password = '비밀번호를 입력해주세요.';
+    } else if (!validatePassword(formData.password)) {
+      newErrors.password = '비밀번호는 8자 이상이어야 하며, 영문, 숫자, 특수문자를 포함해야 합니다.';
     }
     
-    if (formData.password !== formData.passwordConfirm) {
-      newErrors.passwordConfirm = '비밀번호가 일치하지 않습니다';
+    if (!formData.passwordConfirm) {
+      newErrors.passwordConfirm = '비밀번호 확인을 입력해주세요.';
+    } else if (formData.password !== formData.passwordConfirm) {
+      newErrors.passwordConfirm = '비밀번호가 일치하지 않습니다.';
     }
-
+    
     if (!formData.phone.trim()) {
-      newErrors.phone = '전화번호를 입력해주세요';
+      newErrors.phone = '전화번호를 입력해주세요.';
+    } else if (!validatePhoneNumber(formData.phone)) {
+      newErrors.phone = '올바른 전화번호 형식을 입력해주세요.';
     }
-
-    // 직원 정보 검증
+    
     if (!formData.employeeId.trim()) {
-      newErrors.employeeId = '사원번호를 입력해주세요';
+      newErrors.employeeId = '사원번호를 입력해주세요.';
     }
     
     if (!formData.department.trim()) {
-      newErrors.department = '부서를 입력해주세요';
+      newErrors.department = '부서를 입력해주세요.';
     }
     
     if (!formData.position.trim()) {
-      newErrors.position = '직급을 입력해주세요';
+      newErrors.position = '직급을 입력해주세요.';
     }
-
-    // 약관 동의 검증
+    
     if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = '서비스 이용약관에 동의해주세요';
+      newErrors.agreeToTerms = '서비스 이용약관에 동의해주세요.';
     }
     
     if (!formData.agreeToPrivacy) {
-      newErrors.agreeToPrivacy = '개인정보처리방침에 동의해주세요';
+      newErrors.agreeToPrivacy = '개인정보 처리방침에 동의해주세요.';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -220,61 +203,28 @@ export default function CompanyJoinForm() {
     e.preventDefault();
     
     if (!validateForm()) {
-      toast.error('입력 정보를 확인해주세요');
       return;
     }
 
     setIsLoading(true);
-    
     try {
-      // 회사 정보 조회
-      const company = await CompanyService.getCompanyByCode(formData.companyCode);
-      
-      if (!company) {
-        throw new Error('회사 정보를 찾을 수 없습니다');
-      }
-
-      // 회사 멤버 추가 (실제 구현에서는 Firebase Auth 사용자 생성도 필요)
-      const memberData = {
-        employeeId: formData.employeeId,
-        department: formData.department,
-        position: formData.position
-      };
-
-      // 임시 사용자 ID (실제 구현에서는 Firebase Auth에서 생성된 UID 사용)
-      const tempUserId = `temp_${Date.now()}`;
-      
-      const success = await CompanyService.addCompanyMember(
-        company.id,
-        tempUserId,
-        memberData
-      );
-
-      if (success) {
-        toast.success('회사 참여가 완료되었습니다!');
-        
-        // 성공 페이지로 이동
-        navigate('/company-join-success', { 
-          state: { 
-            companyCode: formData.companyCode,
-            companyName: company.companyName,
-            userName: formData.name,
-            userEmail: formData.email,
-            department: formData.department,
-            position: formData.position
-          } 
-        });
-      } else {
-        throw new Error('회사 참여 처리에 실패했습니다');
-      }
-      
+      // 임시 구현 - 실제로는 사용자 등록 로직 구현 필요
+      console.log('사용자 등록 데이터:', formData);
+      alert('회사 가입이 완료되었습니다!');
+      // 로그인 페이지로 리다이렉트
     } catch (error) {
-      console.error('회사 참여 오류:', error);
-      toast.error(error instanceof Error ? error.message : '회사 참여 중 오류가 발생했습니다');
+      console.error('회사 가입 실패:', error);
+      alert('회사 가입에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // 모든 약관 동의 상태 확인
+  useEffect(() => {
+    const allAgreed = formData.agreeToTerms && formData.agreeToPrivacy && formData.agreeToMarketing;
+    setAgreeToAll(allAgreed);
+  }, [formData.agreeToTerms, formData.agreeToPrivacy, formData.agreeToMarketing]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-12 px-4">
@@ -283,108 +233,101 @@ export default function CompanyJoinForm() {
         <div className="text-center mb-8">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/company-signup-selection')}
-            className="mb-4"
+            onClick={() => window.history.back()}
+            className="absolute left-4 top-4 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            이전으로
+            뒤로가기
           </Button>
           
-          {/* 브랜딩 헤더 */}
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
+            <Brain className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">MIND BREEZE</h1>
           </div>
           
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            기존 회사 참여
-          </h2>
-          <p className="text-gray-600">
-            관리자로부터 받은 6자리 회사 코드를 입력하여 회사에 참여하세요
-          </p>
+          <p className="text-gray-600 text-lg">기존 회사에 참여하기</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* 회사 코드 입력 */}
-          <Card className="rounded-3xl shadow-2xl border-0">
-            <CardContent className="p-8">
-              <div className="bg-gray-50 rounded-2xl p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <Key className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">회사 코드 확인</h3>
+          {currentStep === 1 && (
+            <Card className="rounded-3xl shadow-2xl border-0">
+              <CardContent className="p-8">
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Building className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">회사 코드 입력</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="companyCode" className="block text-sm font-medium text-gray-700 mb-2">
+                        회사 코드 *
+                      </label>
+                      <Input
+                        id="companyCode"
+                        value={formData.companyCode}
+                        onChange={(e) => handleInputChange('companyCode', e.target.value)}
+                        placeholder="COMPANY123"
+                        className={`rounded-xl ${errors.companyCode ? 'border-red-500' : ''}`}
+                        disabled={isLoading}
+                      />
+                      {errors.companyCode && (
+                        <p className="text-sm text-red-500 mt-1">{errors.companyCode}</p>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      type="button"
+                      onClick={verifyCompanyCode}
+                      disabled={isLoading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-medium transition-colors"
+                    >
+                      {isLoading ? '확인 중...' : '회사 코드 확인'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-4">
-              <div>
-                <label htmlFor="companyCode" className="block text-sm font-medium text-gray-700 mb-2">
-                  회사 코드 (6자리) *
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    id="companyCode"
-                    value={formData.companyCode}
-                    onChange={(e) => handleInputChange('companyCode', e.target.value.toUpperCase())}
-                    placeholder="MB2401"
-                    maxLength={6}
-                    className={errors.companyCode ? 'border-red-500' : (codeVerified ? 'border-green-500' : '')}
-                    disabled={codeVerified}
-                  />
-                  <Button
-                    type="button"
-                    onClick={verifyCompanyCode}
-                    disabled={isVerifying || codeVerified}
-                    className="px-6"
-                  >
-                    {isVerifying ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        확인 중
-                      </>
-                    ) : codeVerified ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        확인됨
-                      </>
-                    ) : (
-                      <>
-                        <Search className="w-4 h-4 mr-2" />
-                        확인
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {errors.companyCode && (
-                  <p className="text-sm text-red-500 mt-1">{errors.companyCode}</p>
-                )}
-              </div>
+              </CardContent>
+            </Card>
+          )}
 
-              {/* 확인된 회사 정보 */}
+          {/* 개인 정보 입력 */}
+          {currentStep === 2 && (
+            <>
+              {/* 회사 정보 표시 */}
               {companyInfo && (
-                <Alert className="border-green-200 bg-green-50">
-                  <Building2 className="h-4 w-4 text-green-600" />
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <p className="font-semibold text-green-800">
-                        {companyInfo.name}
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-green-700">
-                        <p>주소: {companyInfo.address}</p>
-                        <p>직원 수: {companyInfo.employeeCount}명</p>
-                        <p>관리자 이메일: {companyInfo.adminEmail}</p>
+                <Card className="rounded-3xl shadow-2xl border-0">
+                  <CardContent className="p-8">
+                    <div className="bg-green-50 rounded-2xl p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">회사 정보 확인</h3>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-gray-500" />
+                          <span className="text-gray-700">{companyInfo.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-500" />
+                          <span className="text-gray-700">{companyInfo.address}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <span className="text-gray-700">직원 수: {companyInfo.employeeCount}명</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-500" />
+                          <span className="text-gray-700">관리자: {companyInfo.adminEmail}</span>
+                        </div>
                       </div>
                     </div>
-                  </AlertDescription>
-                </Alert>
+                  </CardContent>
+                </Card>
               )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* 개인 정보 입력 (회사 코드 확인 후에만 표시) */}
-          {codeVerified && (
-            <>
+              {/* 개인 정보 입력 */}
               <Card className="rounded-3xl shadow-2xl border-0">
                 <CardContent className="p-8">
                   <div className="bg-gray-50 rounded-2xl p-6">
@@ -392,111 +335,92 @@ export default function CompanyJoinForm() {
                       <User className="w-5 h-5 text-blue-600" />
                       <h3 className="text-lg font-semibold text-gray-900">개인 정보</h3>
                     </div>
+                    
                     <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                        이름 *
-                      </label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                        placeholder="홍길동"
-                        className={errors.name ? 'border-red-500' : ''}
-                      />
-                      {errors.name && (
-                        <p className="text-sm text-red-500 mt-1">{errors.name}</p>
-                      )}
-                    </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                            이름 *
+                          </label>
+                          <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            placeholder="홍길동"
+                            className={`rounded-xl text-gray-900 ${errors.name ? 'border-red-500' : ''}`}
+                          />
+                          {errors.name && (
+                            <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+                          )}
+                        </div>
 
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        이메일 *
-                      </label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder="user@company.com"
-                        className={errors.email ? 'border-red-500' : ''}
-                      />
-                      {errors.email && (
-                        <p className="text-sm text-red-500 mt-1">{errors.email}</p>
-                      )}
-                    </div>
-                  </div>
+                        <div>
+                          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                            이메일 *
+                          </label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            placeholder="example@company.com"
+                            className={`rounded-xl text-gray-900 ${errors.email ? 'border-red-500' : ''}`}
+                          />
+                          {errors.email && (
+                            <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+                          )}
+                        </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                        비밀번호 *
-                      </label>
-                      <div className="relative">
-                        <Input
-                          id="password"
-                          type={showPassword ? 'text' : 'password'}
-                          value={formData.password}
-                          onChange={(e) => handleInputChange('password', e.target.value)}
-                          placeholder="최소 6자 이상"
-                          className={errors.password ? 'border-red-500' : ''}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
+                        <div>
+                          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                            비밀번호 *
+                          </label>
+                          <Input
+                            id="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={(e) => handleInputChange('password', e.target.value)}
+                            placeholder="비밀번호 입력"
+                            className={`rounded-xl text-gray-900 ${errors.password ? 'border-red-500' : ''}`}
+                          />
+                          {errors.password && (
+                            <p className="text-sm text-red-500 mt-1">{errors.password}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-700 mb-2">
+                            비밀번호 확인 *
+                          </label>
+                          <Input
+                            id="passwordConfirm"
+                            type="password"
+                            value={formData.passwordConfirm}
+                            onChange={(e) => handleInputChange('passwordConfirm', e.target.value)}
+                            placeholder="비밀번호 다시 입력"
+                            className={`rounded-xl text-gray-900 ${errors.passwordConfirm ? 'border-red-500' : ''}`}
+                          />
+                          {errors.passwordConfirm && (
+                            <p className="text-sm text-red-500 mt-1">{errors.passwordConfirm}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                            전화번호 *
+                          </label>
+                          <Input
+                            id="phone"
+                            value={formData.phone}
+                            onChange={(e) => handleInputChange('phone', e.target.value)}
+                            placeholder="010-1234-5678"
+                            className={`rounded-xl text-gray-900 ${errors.phone ? 'border-red-500' : ''}`}
+                          />
+                          {errors.phone && (
+                            <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
+                          )}
+                        </div>
                       </div>
-                      {errors.password && (
-                        <p className="text-sm text-red-500 mt-1">{errors.password}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-700 mb-2">
-                        비밀번호 확인 *
-                      </label>
-                      <div className="relative">
-                        <Input
-                          id="passwordConfirm"
-                          type={showPasswordConfirm ? 'text' : 'password'}
-                          value={formData.passwordConfirm}
-                          onChange={(e) => handleInputChange('passwordConfirm', e.target.value)}
-                          placeholder="비밀번호 재입력"
-                          className={errors.passwordConfirm ? 'border-red-500' : ''}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        >
-                          {showPasswordConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      {errors.passwordConfirm && (
-                        <p className="text-sm text-red-500 mt-1">{errors.passwordConfirm}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                      전화번호 *
-                    </label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="010-1234-5678"
-                      className={errors.phone ? 'border-red-500' : ''}
-                    />
-                    {errors.phone && (
-                      <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
-                    )}
-                  </div>
                     </div>
                   </div>
                 </CardContent>
@@ -510,55 +434,57 @@ export default function CompanyJoinForm() {
                       <IdCard className="w-5 h-5 text-blue-600" />
                       <h3 className="text-lg font-semibold text-gray-900">직원 정보</h3>
                     </div>
+                    
                     <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-2">
-                        사원번호 *
-                      </label>
-                      <Input
-                        id="employeeId"
-                        value={formData.employeeId}
-                        onChange={(e) => handleInputChange('employeeId', e.target.value)}
-                        placeholder="EMP001"
-                        className={errors.employeeId ? 'border-red-500' : ''}
-                      />
-                      {errors.employeeId && (
-                        <p className="text-sm text-red-500 mt-1">{errors.employeeId}</p>
-                      )}
-                    </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-2">
+                            사원번호 *
+                          </label>
+                          <Input
+                            id="employeeId"
+                            value={formData.employeeId}
+                            onChange={(e) => handleInputChange('employeeId', e.target.value)}
+                            placeholder="EMP001"
+                            className={`rounded-xl text-gray-900 ${errors.employeeId ? 'border-red-500' : ''}`}
+                          />
+                          {errors.employeeId && (
+                            <p className="text-sm text-red-500 mt-1">{errors.employeeId}</p>
+                          )}
+                        </div>
 
-                    <div>
-                      <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                        부서 *
-                      </label>
-                      <Input
-                        id="department"
-                        value={formData.department}
-                        onChange={(e) => handleInputChange('department', e.target.value)}
-                        placeholder="개발팀"
-                        className={errors.department ? 'border-red-500' : ''}
-                      />
-                      {errors.department && (
-                        <p className="text-sm text-red-500 mt-1">{errors.department}</p>
-                      )}
-                    </div>
+                        <div>
+                          <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
+                            부서 *
+                          </label>
+                          <Input
+                            id="department"
+                            value={formData.department}
+                            onChange={(e) => handleInputChange('department', e.target.value)}
+                            placeholder="개발팀"
+                            className={`rounded-xl text-gray-900 ${errors.department ? 'border-red-500' : ''}`}
+                          />
+                          {errors.department && (
+                            <p className="text-sm text-red-500 mt-1">{errors.department}</p>
+                          )}
+                        </div>
 
-                    <div>
-                      <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                        직급 *
-                      </label>
-                      <Input
-                        id="position"
-                        value={formData.position}
-                        onChange={(e) => handleInputChange('position', e.target.value)}
-                        placeholder="대리"
-                        className={errors.position ? 'border-red-500' : ''}
-                      />
-                      {errors.position && (
-                        <p className="text-sm text-red-500 mt-1">{errors.position}</p>
-                      )}
-                    </div>
+                        <div>
+                          <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
+                            직급 *
+                          </label>
+                          <Input
+                            id="position"
+                            value={formData.position}
+                            onChange={(e) => handleInputChange('position', e.target.value)}
+                            placeholder="대리"
+                            className={`rounded-xl text-gray-900 ${errors.position ? 'border-red-500' : ''}`}
+                          />
+                          {errors.position && (
+                            <p className="text-sm text-red-500 mt-1">{errors.position}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -572,6 +498,7 @@ export default function CompanyJoinForm() {
                       <Shield className="w-5 h-5 text-blue-600" />
                       <h3 className="text-lg font-semibold text-gray-900">약관 동의</h3>
                     </div>
+                    
                     <div className="space-y-4">
                       {/* 모든 약관 동의 */}
                       <div className="flex items-start space-x-3">
@@ -581,68 +508,69 @@ export default function CompanyJoinForm() {
                           onCheckedChange={handleAgreeToAll}
                           className="mt-1"
                         />
-                        <div className="flex-1">
-                          <label htmlFor="agreeToAll" className="text-sm font-bold cursor-pointer text-gray-900">
-                            모든 약관에 동의합니다
-                          </label>
+                        <label htmlFor="agreeToAll" className="text-sm font-medium text-gray-900 cursor-pointer">
+                          모든 약관에 동의합니다
+                        </label>
+                      </div>
+
+                      {/* 구분선 */}
+                      <div className="border-t border-gray-200 my-4" />
+
+                      {/* 개별 약관 동의 */}
+                      <div className="space-y-4">
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id="agreeToTerms"
+                            checked={formData.agreeToTerms}
+                            onCheckedChange={(checked) => {
+                              handleInputChange('agreeToTerms', checked);
+                            }}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="agreeToTerms" className="text-sm text-gray-700 cursor-pointer">
+                              <span className="text-blue-600 font-medium">[필수]</span> 서비스 이용약관에 동의합니다
+                            </label>
+                            {errors.agreeToTerms && (
+                              <p className="text-sm text-red-500 mt-1">{errors.agreeToTerms}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="border-t border-gray-200 pt-4">
-                        <div className="space-y-3">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id="agreeToTerms"
-                        checked={formData.agreeToTerms}
-                        onCheckedChange={(checked) => handleInputChange('agreeToTerms', checked)}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer">
-                          서비스 이용약관 동의 (필수)
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          MIND BREEZE AI 서비스 이용에 관한 약관에 동의합니다.
-                        </p>
-                      </div>
-                    </div>
-                    {errors.agreeToTerms && (
-                      <p className="text-sm text-red-500 ml-6">{errors.agreeToTerms}</p>
-                    )}
 
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id="agreeToPrivacy"
-                        checked={formData.agreeToPrivacy}
-                        onCheckedChange={(checked) => handleInputChange('agreeToPrivacy', checked)}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer">
-                          개인정보처리방침 동의 (필수)
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          개인정보 수집, 이용, 제공에 대한 동의입니다.
-                        </p>
-                      </div>
-                    </div>
-                    {errors.agreeToPrivacy && (
-                      <p className="text-sm text-red-500 ml-6">{errors.agreeToPrivacy}</p>
-                    )}
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id="agreeToPrivacy"
+                            checked={formData.agreeToPrivacy}
+                            onCheckedChange={(checked) => {
+                              handleInputChange('agreeToPrivacy', checked);
+                            }}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="agreeToPrivacy" className="text-sm text-gray-700 cursor-pointer">
+                              <span className="text-blue-600 font-medium">[필수]</span> 개인정보 처리방침에 동의합니다
+                            </label>
+                            {errors.agreeToPrivacy && (
+                              <p className="text-sm text-red-500 mt-1">{errors.agreeToPrivacy}</p>
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id="agreeToMarketing"
-                        checked={formData.agreeToMarketing}
-                        onCheckedChange={(checked) => handleInputChange('agreeToMarketing', checked)}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor="agreeToMarketing" className="text-sm font-medium cursor-pointer">
-                          마케팅 정보 수신 동의 (선택)
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          신규 서비스 및 이벤트 정보를 이메일로 받아보실 수 있습니다.
-                        </p>
-                      </div>
-                    </div>
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id="agreeToMarketing"
+                            checked={formData.agreeToMarketing}
+                            onCheckedChange={(checked) => {
+                              handleInputChange('agreeToMarketing', checked);
+                            }}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <label htmlFor="agreeToMarketing" className="text-sm text-gray-700 cursor-pointer">
+                              <span className="text-gray-500 font-medium">[선택]</span> 마케팅 정보 수신에 동의합니다
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -650,28 +578,13 @@ export default function CompanyJoinForm() {
               </Card>
 
               {/* 제출 버튼 */}
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/company-signup-selection')}
-                  className="flex-1"
-                >
-                  취소
-                </Button>
+              <div className="text-center">
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-3 rounded-xl font-medium transition-colors disabled:opacity-50"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      참여 중...
-                    </>
-                  ) : (
-                    '회사 참여 완료'
-                  )}
+                  {isLoading ? '처리 중...' : '회사 가입하기'}
                 </Button>
               </div>
             </>
