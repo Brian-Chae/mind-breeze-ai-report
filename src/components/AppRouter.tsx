@@ -33,8 +33,7 @@ const AppRouter = () => {
     if (user) {
       // 로그인된 사용자의 라우팅
       if (['/login', '/signup', '/'].includes(currentPath)) {
-        const redirectPath = getRedirectPath(user.userType);
-        navigate(redirectPath);
+        navigate('/welcome');
       }
     } else {
       // 로그인되지 않은 사용자는 토큰 접속 허용
