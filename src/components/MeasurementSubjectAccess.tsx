@@ -5,13 +5,13 @@ import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, FileText, MessageCircle, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import enterpriseAuthService, { MeasurementSubjectAccess } from '../services/EnterpriseAuthService';
+import enterpriseAuthService, { MeasurementSubjectAccess as MeasurementSubjectAccessType } from '../services/EnterpriseAuthService';
 
 const MeasurementSubjectAccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [accessInfo, setAccessInfo] = useState<MeasurementSubjectAccess | null>(null);
+  const [accessInfo, setAccessInfo] = useState<MeasurementSubjectAccessType | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

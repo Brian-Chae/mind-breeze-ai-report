@@ -1,26 +1,26 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthProvider';
-import LandingPage from './LandingPage';
-import LoginPage from './landing/LoginPage';
-import SignupPage from './landing/SignupPage';
-import HomePage from '../pages/HomePage';
-import DataCenterPage from '../pages/DataCenterPage';
-import VisualizerPage from '../pages/VisualizerPage';
-import DocumentsPage from '../pages/DocumentsPage';
-import LinkBandPage from '../pages/LinkBandPage';
-import ProtectedRoute from './ProtectedRoute';
-import HomeScreen from './HomeScreen';
-import WelcomeScreen from './WelcomeScreen';
-import Applications from './Applications';
-import OrganizationSignupSelectionPage from './landing/OrganizationSignupSelectionPage';
-import OrganizationRegistrationForm from './landing/OrganizationRegistrationForm';
-import OrganizationRegistrationSuccess from './landing/OrganizationRegistrationSuccess';
-import OrganizationJoinForm from './landing/OrganizationJoinForm';
+import { LandingPage } from './LandingPage';
+import { LoginPage } from './landing/LoginPage';
+import { SignupPage } from './landing/SignupPage';
+import { HomePage } from '../pages/HomePage';
+import { DataCenterPage } from '../pages/DataCenterPage';
+import { VisualizerPage } from '../pages/VisualizerPage';
+import { DocumentsPage } from '../pages/DocumentsPage';
+import { LinkBandPage } from '../pages/LinkBandPage';
+import { ProtectedRoute } from './ProtectedRoute';
+import { HomeScreen } from './HomeScreen';
+import { WelcomeScreen } from './WelcomeScreen';
+import { Applications } from './Applications';
+import CompanySignupSelectionPage from './landing/CompanySignupSelectionPage';
+import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
+import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
+import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
 
 const AppRouter = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showWelcome, setShowWelcome] = useState(false);
@@ -100,10 +100,10 @@ const AppRouter = () => {
       <Route path="/signup" element={<SignupPage />} />
       
       {/* 조직 관련 라우트 */}
-      <Route path="/organization-signup-selection" element={<OrganizationSignupSelectionPage />} />
-      <Route path="/organization-registration" element={<OrganizationRegistrationForm />} />
-      <Route path="/organization-registration-success" element={<OrganizationRegistrationSuccess />} />
-      <Route path="/organization-join" element={<OrganizationJoinForm />} />
+      <Route path="/organization-signup-selection" element={<CompanySignupSelectionPage />} />
+      <Route path="/organization-registration" element={<CompanyRegistrationForm />} />
+      <Route path="/organization-registration-success" element={<CompanyRegistrationSuccess />} />
+      <Route path="/organization-join" element={<CompanyJoinForm />} />
       
       {/* MEASUREMENT_SUBJECT 토큰 접속 */}
       <Route path="/measurement-access" element={<MeasurementSubjectAccess />} />
