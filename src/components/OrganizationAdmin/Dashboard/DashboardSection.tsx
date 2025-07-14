@@ -92,28 +92,50 @@ export default function DashboardSection() {
     try {
       setLoading(true)
       setError(null)
-
-      // 현재 사용자 정보 가져오기
+      
       const currentContext = enterpriseAuthService.getCurrentContext()
-      if (!currentContext.user || !currentContext.user.organizationId) {
-        setError('조직 정보를 찾을 수 없습니다.')
+      
+      if (!currentContext.user) {
+        setError('로그인 정보가 없습니다.')
         return
       }
 
       const organizationId = currentContext.user.organizationId
 
+      if (!organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      // 현재 사용자의 권한 정보 확인
+      console.log('현재 사용자 권한:', currentContext.permissions)
+      console.log('사용자 타입:', currentContext.user.userType)
+      console.log('조직 ID:', organizationId)
+
       // 병렬로 데이터 로드
       const [
         organizationInfo,
-        userStats,
         members,
         creditBalance
       ] = await Promise.all([
         OrganizationService.getOrganizationById(organizationId),
-        measurementUserManagementService.getMeasurementUserStats(),
         new MemberManagementService().getOrganizationMembers(organizationId),
         creditManagementService.getCreditBalance(organizationId)
       ])
+
+      // 권한이 있는 경우에만 사용자 통계 로드
+      let userStats = null
+      if (enterpriseAuthService.hasPermission('measurement_users.view.all') || 
+          enterpriseAuthService.hasPermission('measurement_users.view.own')) {
+        try {
+          userStats = await measurementUserManagementService.getMeasurementUserStats()
+        } catch (err) {
+          console.warn('사용자 통계 로드 실패:', err)
+          // 통계 데이터 없이 계속 진행
+        }
+      } else {
+        console.warn('측정 대상자 조회 권한이 없습니다.')
+      }
 
       setDashboardData({
         totalUsers: userStats?.totalCount || 0,
