@@ -308,118 +308,60 @@ export const landingTexts = {
     
     // Pricing
     pricing: {
-      title: '요금제',
-      subtitle: '당신에게 맞는 플랜을 선택하세요',
-      banner: {
-        title: '런칭 특별 할인',
-        description: '유료 플랜 첫 달 50% 할인'
-      },
-      monthly: '월간',
-      yearly: '연간',
-      yearlyDiscount: '20% 절약',
-      plans: {
-        free: {
-          title: '무료 체험',
-          price: '무료',
-          period: '14일',
-          features: [
-            '3회 측정 및 리포트',
-            '기본 AI 상담',
-            '모바일 앱 사용',
-            '이메일 지원'
-          ],
-          cta: '무료 체험 시작',
-          popular: false
+      title: '기업 고객 전용 가격 안내',
+      subtitle: '직원 수와 디바이스 수량에 따른 맞춤형 가격을 확인해보세요',
+      aiService: {
+        title: 'AI 리포트 & AI 상담 서비스',
+        unitPrice: '1인당 7,900원',
+        description: '1회 측정 + AI 상담 서비스',
+        tiers: {
+          tier1: { employees: 100, discount: 10 },
+          tier2: { employees: 500, discount: 20 },
+          tier3: { employees: 1000, discount: 25 },
+          tier4: { employees: 5000, discount: 30 }
         },
-        basic: {
-          title: '베이직 플랜',
-          price: '₩29,900',
-          originalPrice: '₩39,900',
-          period: '월',
-          features: [
-            '월 30회 측정',
-            '상세 AI 건강 리포트',
-            'AI 상담 무제한',
-            '데이터 히스토리 및 트렌드',
-            'PDF 리포트 다운로드',
-            '우선 이메일 지원'
-          ],
-          cta: '시작하기',
-          popular: false
-        },
-        premium: {
-          title: '프리미엄 플랜',
-          price: '₩49,900',
-          originalPrice: '₩69,900',
-          period: '월',
-          features: [
-            '무제한 측정',
-            '고급 AI 분석',
-            '개인 맞춤 추천',
-            '실시간 건강 모니터링',
-            '우선 고객 지원',
-            '독점 건강 인사이트',
-            '가족 공유 (최대 4명)'
-          ],
-          cta: '시작하기',
-          popular: true
-        }
+        discountNote: '직원 수에 따른 할인율 적용'
       },
-      hardware: {
+      linkBand: {
         title: 'LINK BAND 디바이스',
-        subtitle: '측정에 필요',
-        device: {
-          title: 'LINK BAND 2.0',
-          price: '₩297,000',
-          originalPrice: '₩399,000',
-          features: [
-            '전문가급 2채널 EEG 센서',
-            '초경량 디자인 (50g)',
-            '무선 블루투스 연결',
-            '6시간 배터리 지속',
-            '의료급 정확도',
-            '간편한 원터치 설정'
-          ],
-          cta: '지금 주문',
-          shipping: '전 세계 무료 배송',
-          warranty: '2년 보증 포함'
+        options: {
+          rental1: { name: '1개월 렌탈', price: 69000 },
+          rental3: { name: '3개월 렌탈', price: 156000, discount: 25 },
+          purchase: { name: '구매', price: 297000 }
         },
-        additional: {
-          title: '추가 LINK BAND',
-          price: '₩249,000',
-          originalPrice: '₩329,000',
-          description: '가족용으로 완벽',
-          cta: '장바구니에 추가'
-        }
+        discounts: {
+          tier1: { quantity: 10, discount: 10 },
+          tier2: { quantity: 50, discount: 20 },
+          tier3: { quantity: 100, discount: 25 },
+          tier4: { quantity: 500, discount: 30 }
+        },
+        discountNote: '대량 구매 할인 적용'
       },
-      faq: {
-        title: '자주 묻는 질문',
-        items: [
-          {
-            question: '무료 체험에는 무엇이 포함되나요?',
-            answer: '무료 체험에는 3회 측정, 기본 AI 리포트, 14일간 AI 상담 기능 이용이 포함됩니다.'
-          },
-          {
-            question: 'LINK BAND 디바이스를 구매해야 하나요?',
-            answer: '네, EEG 측정을 위해서는 LINK BAND 디바이스가 필요합니다. 모든 플랜에서 사용할 수 있는 일회성 구매입니다.'
-          },
-          {
-            question: '언제든지 구독을 취소할 수 있나요?',
-            answer: '네, 언제든지 구독을 취소할 수 있습니다. 현재 결제 기간이 끝날 때까지 계속 이용하실 수 있습니다.'
-          },
-          {
-            question: '디바이스에 보증이 있나요?',
-            answer: '네, 모든 LINK BAND 디바이스에는 제조 결함을 보장하는 2년 보증이 포함되어 있습니다.'
-          },
-          {
-            question: '측정의 정확도는 어느 정도인가요?',
-            answer: '저희 디바이스는 의료급 센서를 사용하며, 15가지 EEG와 13가지 PPG 지표를 분석하는 임상급 정확도를 제공합니다.'
-          }
-        ]
+      calculator: {
+        title: '서비스 비용 예상 계산기',
+        employeeCount: '직원 수',
+        serviceCountPerPerson: '인당 서비스 횟수',
+        deviceCount: '디바이스 수량',
+        deviceOption: '디바이스 옵션',
+        estimatedCost: '예상 비용',
+        aiService: 'AI 서비스',
+        aiServiceTarget: 'AI 리포트 및 상담 제공 대상자',
+        aiServicePerPerson: '인당 AI 리포트 및 상담 제공 횟수',
+        aiServiceTotal: '총 AI 리포트 및 상담 제공 회수',
+        totalServiceCost: '총 서비스 비용',
+        deviceCost: '디바이스 비용',
+        totalEstimatedCost: '총 예상 비용',
+        discountApplied: '할인 적용',
+        rental1Month: '1개월 렌탈',
+        rental3Month: '3개월 렌탈',
+        purchase: '구매',
+        requestQuote: '정확한 견적 문의하기',
+        customSolution: '맞춤형 기업 솔루션'
       },
-      guarantee: {
-        title: '30일 환불 보장',
-        description: 'Mind Breeze를 위험 부담 없이 체험해보세요. 만족하지 않으시면 30일 내에 전액 환불해드립니다.'
+      enterprise: {
+        title: '맞춤형 기업 솔루션',
+        description: '대규모 기업을 위한 특별 할인, 맞춤형 대시보드, 전담 지원팀 등 더 많은 혜택을 원하시면 직접 문의해주세요.',
+        cta: '맞춤 솔루션 문의하기'
       }
     },
     
@@ -467,7 +409,7 @@ export const landingTexts = {
     
     // Reviews Section
     reviews: {
-      title: '사용자가 신뢰하는 MIND BREEZE AI',
+      title: '검증된 성능으로 신뢰받는 MIND BREEZE AI',
       subtitle: '다양한 삶의 방식을 가진 사람들이 MIND BREEZE AI를 통해 건강을 관리하고 있습니다.',
       stats: {
         users: {
@@ -950,63 +892,62 @@ export const landingTexts = {
     
     // Pricing
     pricing: {
-      title: 'Pricing Plans',
-      subtitle: 'Choose the plan that suits you',
-      banner: {
-        title: 'Special Launch Offer',
-        description: 'Get 50% off your first month with any paid plan'
-      },
-      monthly: 'Monthly',
-      yearly: 'Yearly',
-      yearlyDiscount: 'Save 20%',
-      plans: {
-        free: {
-          title: 'Free Trial',
-          price: 'Free',
-          period: '14 days',
-          features: [
-            '3 measurements & reports',
-            'Basic AI consultation',
-            'Mobile app access',
-            'Email support'
-          ],
-          cta: 'Start Free Trial',
-          popular: false
+      title: 'Enterprise Pricing Guide',
+      subtitle: 'Discover customized pricing based on your workforce size and device requirements',
+      aiService: {
+        title: 'AI Report & AI Consultation Service',
+        unitPrice: '$7.90 per person',
+        description: '1 measurement + AI consultation service',
+        tiers: {
+          tier1: { employees: 100, discount: 10 },
+          tier2: { employees: 500, discount: 20 },
+          tier3: { employees: 1000, discount: 25 },
+          tier4: { employees: 5000, discount: 30 }
         },
-        basic: {
-          title: 'Basic Plan',
-          price: '$29.99',
-          originalPrice: '$39.99',
-          period: 'month',
-          features: [
-            '30 measurements per month',
-            'Detailed AI health reports',
-            'Unlimited AI consultation',
-            'Data history & trends',
-            'PDF report download',
-            'Priority email support'
-          ],
-          cta: 'Get Started',
-          popular: false
-        },
-        premium: {
-          title: 'Premium Plan',
-          price: '$49.99',
-          originalPrice: '$69.99',
-          period: 'month',
-          features: [
-            'Unlimited measurements',
-            'Advanced AI analysis',
-            'Personalized recommendations',
-            'Real-time health monitoring',
-            'Priority customer support',
-            'Exclusive health insights',
-            'Family sharing (up to 4 members)'
-          ],
-          cta: 'Get Started',
-          popular: true
-        }
+        discountNote: 'Volume discount based on number of employees'
       },
+      linkBand: {
+        title: 'LINK BAND Device',
+        options: {
+          rental1: { name: '1-Month Rental', price: 69 },
+          rental3: { name: '3-Month Rental', price: 156, discount: 25 },
+          purchase: { name: 'Purchase', price: 297 }
+        },
+        discounts: {
+          tier1: { quantity: 10, discount: 10 },
+          tier2: { quantity: 50, discount: 20 },
+          tier3: { quantity: 100, discount: 25 },
+          tier4: { quantity: 500, discount: 30 }
+        },
+        discountNote: 'Volume discount for bulk purchases'
+      },
+      calculator: {
+        title: 'Service Cost Calculator',
+        employeeCount: 'Number of Employees',
+        serviceCountPerPerson: 'Services per Person',
+        deviceCount: 'Device Quantity',
+        deviceOption: 'Device Option',
+        estimatedCost: 'Estimated Cost',
+        aiService: 'AI Service',
+        aiServiceTarget: 'AI Report & Consultation Recipients',
+        aiServicePerPerson: 'AI Report & Consultation per Person',
+        aiServiceTotal: 'Total AI Report & Consultation Sessions',
+        totalServiceCost: 'Total Service Cost',
+        deviceCost: 'Device Cost',
+        totalEstimatedCost: 'Total Estimated Cost',
+        discountApplied: 'Discount Applied',
+        rental1Month: '1-Month Rental',
+        rental3Month: '3-Month Rental',
+        purchase: 'Purchase',
+        requestQuote: 'Request Accurate Quote',
+        customSolution: 'Custom Enterprise Solution'
+      },
+      enterprise: {
+        title: 'Custom Enterprise Solution',
+        description: 'For large-scale enterprises seeking special discounts, customized dashboards, dedicated support teams, and more benefits, please contact us directly.',
+        cta: 'Contact for Custom Solution'
+      }
+    },
       hardware: {
         title: 'LINK BAND Device',
         subtitle: 'Required for measurements',
@@ -1109,7 +1050,7 @@ export const landingTexts = {
     
     // Reviews Section
     reviews: {
-      title: 'Trusted by 50,000+ Users Worldwide',
+      title: 'Trusted for Proven Performance - MIND BREEZE AI',
       subtitle: 'See how MIND BREEZE AI is transforming health monitoring for people from all walks of life.',
       stats: {
         users: {
@@ -1592,63 +1533,62 @@ export const landingTexts = {
     
     // Pricing
     pricing: {
-      title: '料金プラン',
-      subtitle: 'あなたに合ったプランを選択',
-      banner: {
-        title: 'ローンチ特別オファー',
-        description: '有料プランの初月が50%オフ'
-      },
-      monthly: '月額',
-      yearly: '年額',
-      yearlyDiscount: '20%お得',
-      plans: {
-        free: {
-          title: '無料トライアル',
-          price: '無料',
-          period: '14日間',
-          features: [
-            '3回測定・レポート',
-            '基本AI相談',
-            'モバイルアプリ利用',
-            'メールサポート'
-          ],
-          cta: '無料トライアル開始',
-          popular: false
+      title: '企業向け料金案内',
+      subtitle: '従業員数とデバイス数量に応じたカスタマイズ料金をご確認ください',
+      aiService: {
+        title: 'AIレポート&AI相談サービス',
+        unitPrice: '1人あたり790円',
+        description: '1回測定 + AI相談サービス',
+        tiers: {
+          tier1: { employees: 100, discount: 10 },
+          tier2: { employees: 500, discount: 20 },
+          tier3: { employees: 1000, discount: 25 },
+          tier4: { employees: 5000, discount: 30 }
         },
-        basic: {
-          title: 'ベーシックプラン',
-          price: '¥3,600',
-          originalPrice: '¥4,800',
-          period: '月',
-          features: [
-            '月30回測定',
-            '詳細AI健康レポート',
-            'AI相談無制限',
-            'データ履歴・トレンド',
-            'PDFレポートダウンロード',
-            '優先メールサポート'
-          ],
-          cta: '開始する',
-          popular: false
-        },
-        premium: {
-          title: 'プレミアムプラン',
-          price: '¥6,000',
-          originalPrice: '¥8,400',
-          period: '月',
-          features: [
-            '無制限測定',
-            '高度AI分析',
-            '個人向けカスタマイズ推奨',
-            'リアルタイム健康監視',
-            '優先カスタマーサポート',
-            '独占健康インサイト',
-            'ファミリー共有（最大4名）'
-          ],
-          cta: '開始する',
-          popular: true
-        }
+        discountNote: '従業員数に応じた割引率適用'
       },
+      linkBand: {
+        title: 'LINK BANDデバイス',
+        options: {
+          rental1: { name: '1ヶ月レンタル', price: 6900 },
+          rental3: { name: '3ヶ月レンタル', price: 15600, discount: 25 },
+          purchase: { name: '購入', price: 29700 }
+        },
+        discounts: {
+          tier1: { quantity: 10, discount: 10 },
+          tier2: { quantity: 50, discount: 20 },
+          tier3: { quantity: 100, discount: 25 },
+          tier4: { quantity: 500, discount: 30 }
+        },
+        discountNote: '大量購入割引適用'
+      },
+      calculator: {
+        title: 'サービス費用計算機',
+        employeeCount: '従業員数',
+        serviceCountPerPerson: '1人あたりサービス回数',
+        deviceCount: 'デバイス数量',
+        deviceOption: 'デバイスオプション',
+        estimatedCost: '予想費用',
+        aiService: 'AIサービス',
+        aiServiceTarget: 'AIレポート・相談提供対象者',
+        aiServicePerPerson: '1人あたりAIレポート・相談提供回数',
+        aiServiceTotal: '総AIレポート・相談提供回数',
+        totalServiceCost: '総サービス費用',
+        deviceCost: 'デバイス費用',
+        totalEstimatedCost: '総予想費用',
+        discountApplied: '割引適用',
+        rental1Month: '1ヶ月レンタル',
+        rental3Month: '3ヶ月レンタル',
+        purchase: '購入',
+        requestQuote: '正確な見積もり問い合わせ',
+        customSolution: 'カスタム企業ソリューション'
+      },
+      enterprise: {
+        title: 'カスタム企業ソリューション',
+        description: '大規模企業向けの特別割引、カスタマイズダッシュボード、専任サポートチームなどの特典をご希望の場合は、直接お問い合わせください。',
+        cta: 'カスタムソリューション問い合わせ'
+      }
+    },
       hardware: {
         title: 'LINK BANDデバイス',
         subtitle: '測定に必要',
@@ -1751,7 +1691,7 @@ export const landingTexts = {
     
     // Reviews Section
     reviews: {
-      title: '世界中の50,000人以上のユーザーに信頼されています',
+      title: '実証された性能で信頼されるMIND BREEZE AI',
       subtitle: 'さまざまな生活様式を持つ人々がMIND BREEZE AIを通じて健康管理を行っています。',
       stats: {
         users: {
