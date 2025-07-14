@@ -525,7 +525,7 @@ export default function CompanyRegistrationForm() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer">
+                    <label htmlFor="agreeToTerms" className="text-sm font-medium cursor-pointer text-gray-900">
                       서비스 이용약관 동의 (필수)
                     </label>
                     <p className="text-xs text-gray-600 mt-1">
@@ -545,7 +545,7 @@ export default function CompanyRegistrationForm() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer">
+                    <label htmlFor="agreeToPrivacy" className="text-sm font-medium cursor-pointer text-gray-900">
                       개인정보처리방침 동의 (필수)
                     </label>
                     <p className="text-xs text-gray-600 mt-1">
@@ -565,7 +565,7 @@ export default function CompanyRegistrationForm() {
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <label htmlFor="agreeToMarketing" className="text-sm font-medium cursor-pointer">
+                    <label htmlFor="agreeToMarketing" className="text-sm font-medium cursor-pointer text-gray-900">
                       마케팅 정보 수신 동의 (선택)
                     </label>
                     <p className="text-xs text-gray-600 mt-1">
@@ -594,14 +594,14 @@ export default function CompanyRegistrationForm() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate('/company-signup-selection')}
-                className="flex-1 rounded-xl h-12"
+                className="flex-1 rounded-xl h-12 text-gray-700 border-gray-300 hover:bg-gray-50"
               >
                 취소
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700"
+                className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {isLoading ? (
                   <>
