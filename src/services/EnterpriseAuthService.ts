@@ -71,6 +71,15 @@ export interface AuthContext {
   memberInfo: OrganizationMember | null;
   permissions: string[];
   isLoading: boolean;
+  isTokenAccess?: boolean;  // 토큰 기반 접속 여부
+}
+
+export interface MeasurementSubjectAccess {
+  userId: string;
+  organizationId: string;
+  accessToken: string;
+  expiresAt: Date;
+  reportIds: string[];  // 접근 가능한 리포트 ID들
 }
 
 class EnterpriseAuthService {
@@ -754,6 +763,151 @@ class EnterpriseAuthService {
       console.error('❌ 조직 생성 실패:', error);
       throw new Error('조직 생성에 실패했습니다.');
     }
+  }
+
+  // MEASUREMENT_SUBJECT용 토큰 기반 접속
+  async accessWithToken(token: string): Promise<MeasurementSubjectAccess> {
+    try {
+      console.log('[Auth] Accessing with token:', token);
+      
+      const usersCollection = collection(db, 'users');
+      const q = query(
+        usersCollection,
+        where('accessToken', '==', token),
+        where('userType', '==', 'MEASUREMENT_SUBJECT')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        throw new Error('Invalid or expired access token');
+      }
+      
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data() as EnterpriseUser;
+      
+      // 토큰 만료 확인
+      const tokenExpiresAt = userData.tokenExpiresAt?.toDate();
+      if (!tokenExpiresAt || new Date() > tokenExpiresAt) {
+        throw new Error('Access token has expired');
+      }
+      
+      // 접근 가능한 리포트 조회
+      const reportIds = await this.getAccessibleReports(userData.id);
+      
+      const accessInfo: MeasurementSubjectAccess = {
+        userId: userData.id,
+        organizationId: userData.organizationId!,
+        accessToken: token,
+        expiresAt: tokenExpiresAt,
+        reportIds
+      };
+      
+      // 토큰 기반 컨텍스트 설정
+      this.currentContext = {
+        user: userData,
+        organization: await this.loadOrganization(userData.organizationId!),
+        memberInfo: null,
+        permissions: ['report:view', 'consultation:access'],
+        isLoading: false,
+        isTokenAccess: true
+      };
+      
+      this.updateContext(this.currentContext);
+      
+      return accessInfo;
+    } catch (error) {
+      console.error('[Auth] Token access failed:', error);
+      throw error;
+    }
+  }
+
+  // MEASUREMENT_SUBJECT 생성 (ORGANIZATION_ADMIN이 호출)
+  async createMeasurementSubject(data: {
+    email: string;
+    displayName: string;
+    organizationId: string;
+    validityDays: number;
+    reportIds?: string[];
+  }): Promise<MeasurementSubjectAccess> {
+    try {
+      // 권한 확인
+      if (!this.isOrganizationAdmin()) {
+        throw new Error('Only organization administrators can create measurement subjects');
+      }
+      
+      // 고유 토큰 생성
+      const accessToken = this.generateAccessToken();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + data.validityDays);
+      
+      // 사용자 ID 생성
+      const userId = `ms_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const measurementSubject: EnterpriseUser = {
+        id: userId,
+        email: data.email,
+        displayName: data.displayName,
+        userType: 'MEASUREMENT_SUBJECT',
+        organizationId: data.organizationId,
+        permissions: ['report:view', 'consultation:access'],
+        accessToken,
+        tokenExpiresAt: Timestamp.fromDate(expiresAt),
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Firestore에 저장
+      const userRef = doc(db, 'users', userId);
+      await setDoc(userRef, {
+        ...measurementSubject,
+        createdAt: Timestamp.fromDate(measurementSubject.createdAt),
+        updatedAt: Timestamp.fromDate(measurementSubject.updatedAt)
+      });
+      
+      console.log('[Auth] Measurement subject created:', userId);
+      
+      return {
+        userId,
+        organizationId: data.organizationId,
+        accessToken,
+        expiresAt,
+        reportIds: data.reportIds || []
+      };
+    } catch (error) {
+      console.error('[Auth] Failed to create measurement subject:', error);
+      throw error;
+    }
+  }
+
+  // 접근 가능한 리포트 조회
+  private async getAccessibleReports(userId: string): Promise<string[]> {
+    try {
+      // 리포트 컬렉션에서 해당 사용자가 접근 가능한 리포트들 조회
+      const reportsCollection = collection(db, 'reports');
+      const q = query(
+        reportsCollection,
+        where('measurementSubjectId', '==', userId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => doc.id);
+    } catch (error) {
+      console.error('[Auth] Failed to get accessible reports:', error);
+      return [];
+    }
+  }
+
+  // 이메일 링크 생성
+  generateAccessLink(token: string): string {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/measurement-access?token=${token}`;
+  }
+
+  // 토큰 생성
+  private generateAccessToken(): string {
+    return `ms_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
   }
 }
 

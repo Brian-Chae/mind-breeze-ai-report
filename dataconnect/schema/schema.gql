@@ -8,8 +8,7 @@ type User @table {
   # B2B/B2C 확장 필드
   employeeId: String           # 조직 구성원용 직원 ID
   organizationId: UUID         # 조직 참조 (조직 사용자만)
-  companyId: UUID              # 기업 참조 (기업 사용자만)
-  companyCode: String          # 6자리 기업 코드
+  organizationCode: String     # 6자리 조직 코드
   userType: UserType!          # 사용자 유형
   department: String           # 부서 (조직 사용자만)
   position: String             # 직책 (조직 사용자만)
@@ -23,6 +22,10 @@ type User @table {
   
   # 권한 (JSON 배열로 저장)
   permissions: String          # JSON string array
+  
+  # MEASUREMENT_SUBJECT 전용 필드
+  accessToken: String          # 이메일 링크 접속용 토큰
+  tokenExpiresAt: Timestamp    # 토큰 만료 시간
   
   updatedAt: Timestamp
 }

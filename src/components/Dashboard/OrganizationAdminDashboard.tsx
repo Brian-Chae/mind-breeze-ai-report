@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { 
-  Building2, 
+  Building2,
   CreditCard, 
-  Users, 
+  Users,
   Activity, 
   BarChart3,
   Settings,
@@ -377,7 +377,7 @@ export default function OrganizationAdminDashboard({
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* 주요 지표 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-sm">
@@ -403,7 +403,7 @@ export default function OrganizationAdminDashboard({
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">
                   {members.length || mockData.organization.memberCount}
-                </div>
+            </div>
                 <p className="text-xs text-gray-600">활성 멤버 수</p>
               </CardContent>
             </Card>
@@ -418,7 +418,7 @@ export default function OrganizationAdminDashboard({
               <CardContent>
                 <div className="text-2xl font-bold text-purple-600">
                   {mockData.organization.totalMeasurements}
-                </div>
+            </div>
                 <p className="text-xs text-gray-600">누적 측정 수</p>
               </CardContent>
             </Card>
@@ -433,7 +433,7 @@ export default function OrganizationAdminDashboard({
               <CardContent>
                 <div className="text-2xl font-bold text-orange-600">
                   +{getChangePercentage(mockData.analytics.thisMonth.measurements, mockData.analytics.lastMonth.measurements).toFixed(1)}%
-                </div>
+          </div>
                 <p className="text-xs text-gray-600">측정 기준</p>
               </CardContent>
             </Card>
@@ -453,18 +453,18 @@ export default function OrganizationAdminDashboard({
                   <div key={measurement.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <div>
+            <div>
                         <p className="font-medium">{measurement.subject}</p>
                         <p className="text-sm text-gray-600">측정자: {measurement.measuredBy}</p>
                       </div>
-                    </div>
+            </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">{measurement.date}</p>
                       <Badge variant="outline" className="text-xs">
                         {measurement.status}
                       </Badge>
-                    </div>
-                  </div>
+            </div>
+          </div>
                 ))}
               </div>
               <div className="mt-4 pt-4 border-t">
@@ -472,9 +472,9 @@ export default function OrganizationAdminDashboard({
                   <Eye className="w-4 h-4 mr-2" />
                   전체 측정 기록 보기
                 </Button>
-              </div>
+          </div>
             </CardContent>
-          </Card>
+        </Card>
         </div>
       )}
 
@@ -514,8 +514,8 @@ export default function OrganizationAdminDashboard({
                           ) : (
                             <User className="w-5 h-5 text-blue-600" />
                           )}
-                        </div>
-                        <div>
+          </div>
+            <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{member.displayName}</p>
                             {member.userId === user.organizationId && (
@@ -534,16 +534,16 @@ export default function OrganizationAdminDashboard({
                           <p className="text-xs text-gray-500 mt-1">
                             {member.isActive ? '활성' : '비활성'}
                           </p>
-                        </div>
+            </div>
                         <MemberActionMenu member={member} />
-                      </div>
-                    </div>
+            </div>
+          </div>
                   ))}
-                </div>
+          </div>
               )}
             </CardContent>
-          </Card>
-        </div>
+        </Card>
+      </div>
       )}
 
       {activeTab === 'credits' && (
@@ -555,7 +555,7 @@ export default function OrganizationAdminDashboard({
               크레딧 구매
             </Button>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -567,18 +567,18 @@ export default function OrganizationAdminDashboard({
               <CardContent>
                 <div className="text-3xl font-bold text-green-600 mb-2">
                   {mockData.organization.creditBalance.toLocaleString()}
-                </div>
+              </div>
                 <p className="text-sm text-gray-600">사용 가능한 크레딧</p>
                 <div className="mt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>이번 달 사용</span>
                     <span>{mockData.analytics.thisMonth.creditUsed}</span>
-                  </div>
+              </div>
                   <div className="flex justify-between text-sm">
                     <span>지난 달 사용</span>
                     <span>{mockData.analytics.lastMonth.creditUsed}</span>
-                  </div>
-                </div>
+              </div>
+            </div>
               </CardContent>
             </Card>
 
@@ -605,11 +605,11 @@ export default function OrganizationAdminDashboard({
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div className="bg-purple-600 h-2 rounded-full" style={{ width: '20%' }}></div>
                   </div>
-                </div>
+            </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+            </div>
       )}
 
       {activeTab === 'analytics' && (
@@ -621,7 +621,7 @@ export default function OrganizationAdminDashboard({
               리포트 다운로드
             </Button>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -631,7 +631,7 @@ export default function OrganizationAdminDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+          <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span>측정 수</span>
                     <div className="flex items-center gap-2">
@@ -640,7 +640,7 @@ export default function OrganizationAdminDashboard({
                         +{getChangePercentage(mockData.analytics.thisMonth.measurements, mockData.analytics.lastMonth.measurements).toFixed(1)}%
                       </Badge>
                     </div>
-                  </div>
+              </div>
                   <div className="flex justify-between items-center">
                     <span>측정 대상자</span>
                     <div className="flex items-center gap-2">
@@ -648,8 +648,8 @@ export default function OrganizationAdminDashboard({
                       <Badge variant="outline" className="text-xs">
                         +{getChangePercentage(mockData.analytics.thisMonth.subjects, mockData.analytics.lastMonth.subjects).toFixed(1)}%
                       </Badge>
-                    </div>
-                  </div>
+              </div>
+            </div>
                   <div className="flex justify-between items-center">
                     <span>크레딧 사용</span>
                     <div className="flex items-center gap-2">
@@ -657,9 +657,9 @@ export default function OrganizationAdminDashboard({
                       <Badge variant="outline" className="text-xs">
                         +{getChangePercentage(mockData.analytics.thisMonth.creditUsed, mockData.analytics.lastMonth.creditUsed).toFixed(1)}%
                       </Badge>
-                    </div>
-                  </div>
-                </div>
+              </div>
+              </div>
+            </div>
               </CardContent>
             </Card>
 
@@ -671,31 +671,31 @@ export default function OrganizationAdminDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+            <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">이번 달 측정 수 증가</p>
                       <p className="text-xs text-gray-600">전월 대비 16% 증가했습니다.</p>
-                    </div>
-                  </div>
+            </div>
+          </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium">효율적인 크레딧 사용</p>
                       <p className="text-xs text-gray-600">예산 범위 내에서 운영 중입니다.</p>
-                    </div>
-                  </div>
+      </div>
+          </div>
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
-                    <div>
+                  <div>
                       <p className="text-sm font-medium">멤버 활동 모니터링</p>
                       <p className="text-xs text-gray-600">신규 멤버 {members.length}명이 활동 중입니다.</p>
                     </div>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+        </Card>
           </div>
         </div>
       )}

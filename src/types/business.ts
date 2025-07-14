@@ -5,7 +5,8 @@ export type UserType =
   | 'SYSTEM_ADMIN'           // 시스템 관리자
   | 'ORGANIZATION_ADMIN'     // 조직 관리자 
   | 'ORGANIZATION_MEMBER'    // 조직 구성원
-  | 'INDIVIDUAL_USER';       // 개인 사용자
+  | 'INDIVIDUAL_USER'        // 개인 사용자
+  | 'MEASUREMENT_SUBJECT';   // 측정 대상자 (이메일 링크 접속)
 
 export type VolumeDiscountTier = 
   | 'TIER_0'    // 1-99명 (할인 없음)
@@ -125,6 +126,10 @@ export interface EnterpriseUser {
   
   // 권한
   permissions: string[];
+  
+  // MEASUREMENT_SUBJECT 전용 필드
+  accessToken?: string;     // 이메일 링크 접속용 토큰
+  tokenExpiresAt?: any;     // 토큰 만료 시간 (Timestamp)
   
   // 메타데이터
   createdAt: Date;

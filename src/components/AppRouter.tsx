@@ -1,135 +1,151 @@
-import React from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { AppLayout } from './layouts/AppLayout';
-import { Header } from './landing/Header';
-import { HeroSection } from './landing/HeroSection';
-import { ServiceProcess } from './landing/ServiceProcess';
-import { LinkBandSection } from './landing/LinkBandSection';
-import { AIReportSection } from './landing/AIReportSection';
-import { AIConsultationSection } from './landing/AIConsultationSection';
-import { ReviewsSection } from './landing/ReviewsSection';
-import { PricingSection } from './landing/PricingSection';
-import { ContactSection } from './landing/ContactSection';
-import { Footer } from './landing/Footer';
-import { LoginPage } from './landing/LoginPage';
-import { SignupPage } from './landing/SignupPage';
-import CompanySignupSelectionPage from './landing/CompanySignupSelectionPage';
-import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
-import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
-import CompanyJoinForm from './landing/CompanyJoinForm';
-import Dashboard from './Dashboard/Dashboard';
-import { DeviceManager } from './DeviceManager';
-import { DataCenter } from './DataCenter';
-import { Visualizer } from './Visualizer';
-import Documents from './Documents';
-import { Applications } from './Applications';
-import { Settings } from './Settings';
-import { ProtectedRoute } from './ProtectedRoute';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useAuth } from './AuthProvider';
+import LandingPage from './LandingPage';
+import LoginPage from './landing/LoginPage';
+import SignupPage from './landing/SignupPage';
+import HomePage from '../pages/HomePage';
+import DataCenterPage from '../pages/DataCenterPage';
+import VisualizerPage from '../pages/VisualizerPage';
+import DocumentsPage from '../pages/DocumentsPage';
+import LinkBandPage from '../pages/LinkBandPage';
+import ProtectedRoute from './ProtectedRoute';
+import HomeScreen from './HomeScreen';
+import WelcomeScreen from './WelcomeScreen';
+import Applications from './Applications';
+import OrganizationSignupSelectionPage from './landing/OrganizationSignupSelectionPage';
+import OrganizationRegistrationForm from './landing/OrganizationRegistrationForm';
+import OrganizationRegistrationSuccess from './landing/OrganizationRegistrationSuccess';
+import OrganizationJoinForm from './landing/OrganizationJoinForm';
+import MeasurementSubjectAccess from './MeasurementSubjectAccess';
 
-// 랜딩 페이지 홈 컴포넌트
-const LandingHome = () => {
+const AppRouter = () => {
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  
-  const handleNavigate = (page: string) => {
-    if (page === 'app') {
-      navigate('/app/dashboard');
-    } else if (page === 'login') {
-      navigate('/login');
-    } else if (page === 'signup') {
-      navigate('/signup');
-    } else if (page === 'company-signup') {
-      navigate('/company-signup-selection');
-    } else if (page === 'home') {
-      navigate('/');
+  const location = useLocation();
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const currentPath = location.pathname;
+    
+    if (user) {
+      // 로그인된 사용자의 라우팅
+      if (['/login', '/signup', '/'].includes(currentPath)) {
+        const redirectPath = getRedirectPath(user.userType);
+        navigate(redirectPath);
+      }
+    } else {
+      // 로그인되지 않은 사용자는 토큰 접속 허용
+      if (currentPath.startsWith('/measurement-access')) {
+        return; // 토큰 접속 페이지는 허용
+      }
+      
+      // 로그인되지 않은 사용자의 라우팅
+      if (currentPath === '/signup') {
+        const urlParams = new URLSearchParams(location.search);
+        const page = urlParams.get('page');
+        
+        if (page === 'organization-signup') {
+          navigate('/organization-signup-selection');
+        } else {
+          // 기본 회원가입 페이지로 이동
+          navigate('/signup');
+        }
+      } else if (['/welcome', '/home', '/data-center', '/visualizer', '/documents', '/linkband', '/applications'].includes(currentPath)) {
+        // 보호된 페이지들은 랜딩 페이지로 리다이렉트
+        navigate('/');
+      }
+    }
+  }, [user, isLoading, navigate, location]);
+
+  const getRedirectPath = (userType: string) => {
+    switch (userType) {
+      case 'SYSTEM_ADMIN':
+      case 'ORGANIZATION_ADMIN':
+      case 'ORGANIZATION_MEMBER':
+      case 'INDIVIDUAL_USER':
+        return '/welcome';
+      default:
+        return '/';
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white">
-      <Header onNavigate={handleNavigate} />
-      <main>
-        <HeroSection />
-        <ServiceProcess />
-        <LinkBandSection />
-        <AIReportSection />
-        <AIConsultationSection />
-        <ReviewsSection />
-        <PricingSection />
-        <ContactSection />
-      </main>
-      <Footer />
-    </div>
-  );
-};
-
-// 로그인 페이지 래퍼
-const LoginPageWrapper = () => {
-  const navigate = useNavigate();
-  
-  const handleNavigate = (page: string) => {
-    if (page === 'app') {
-      navigate('/app/dashboard');
-    } else if (page === 'signup') {
-      navigate('/signup');
-    } else if (page === 'company-signup') {
-      navigate('/company-signup-selection');
-    } else if (page === 'home') {
-      navigate('/');
+  useEffect(() => {
+    if (user && ['/welcome', '/home'].includes(location.pathname)) {
+      const page = new URLSearchParams(location.search).get('page');
+      
+      if (page === 'organization-signup') {
+        navigate('/organization-signup-selection');
+      } else if (page === 'signup') {
+        navigate('/signup');
+      }
     }
-  };
+  }, [user, location, navigate]);
 
-  return <LoginPage onNavigate={handleNavigate} />;
-};
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-// 회원가입 페이지 래퍼
-const SignupPageWrapper = () => {
-  const navigate = useNavigate();
-  
-  const handleNavigate = (page: string) => {
-    if (page === 'login') {
-      navigate('/login');
-    } else if (page === 'company-signup') {
-      navigate('/company-signup-selection');
-    } else if (page === 'home') {
-      navigate('/');
-    }
-  };
-
-  return <SignupPage onNavigate={handleNavigate} />;
-};
-
-export const AppRouter = () => {
   return (
     <Routes>
-      {/* 랜딩 페이지 라우트 */}
-      <Route path="/" element={<LandingHome />} />
-      <Route path="/login" element={<LoginPageWrapper />} />
-      <Route path="/signup" element={<SignupPageWrapper />} />
+      {/* 공개 라우트 */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       
-      {/* 회사 등록 관련 라우트 */}
-      <Route path="/company-signup-selection" element={<CompanySignupSelectionPage />} />
-      <Route path="/company-registration" element={<CompanyRegistrationForm />} />
-      <Route path="/company-registration-success" element={<CompanyRegistrationSuccess />} />
-      <Route path="/company-join" element={<CompanyJoinForm />} />
+      {/* 조직 관련 라우트 */}
+      <Route path="/organization-signup-selection" element={<OrganizationSignupSelectionPage />} />
+      <Route path="/organization-registration" element={<OrganizationRegistrationForm />} />
+      <Route path="/organization-registration-success" element={<OrganizationRegistrationSuccess />} />
+      <Route path="/organization-join" element={<OrganizationJoinForm />} />
       
-      {/* 앱 라우트 */}
-      <Route path="/app" element={
+      {/* MEASUREMENT_SUBJECT 토큰 접속 */}
+      <Route path="/measurement-access" element={<MeasurementSubjectAccess />} />
+      
+      {/* 보호된 라우트 */}
+      <Route path="/welcome" element={
         <ProtectedRoute>
-          <AppLayout />
+          <WelcomeScreen />
         </ProtectedRoute>
-      }>
-        <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="device" element={<DeviceManager />} />
-        <Route path="visualizer" element={<Visualizer />} />
-        <Route path="datacenter" element={<DataCenter />} />
-        <Route path="documents" element={<Documents />} />
-        <Route path="applications" element={<Applications />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-      
-      {/* 404 페이지 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      } />
+      <Route path="/home" element={
+        <ProtectedRoute>
+          <HomePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/data-center" element={
+        <ProtectedRoute>
+          <DataCenterPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/visualizer" element={
+        <ProtectedRoute>
+          <VisualizerPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <DocumentsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/linkband" element={
+        <ProtectedRoute>
+          <LinkBandPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/applications" element={
+        <ProtectedRoute>
+          <Applications />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
-}; 
+};
+
+export default AppRouter; 

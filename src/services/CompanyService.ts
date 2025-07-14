@@ -9,104 +9,123 @@
  */
 
 import { 
-  collection, 
+  getFirestore, 
   doc, 
-  addDoc, 
   getDoc, 
-  getDocs, 
-  updateDoc, 
+  setDoc, 
+  collection, 
   query, 
   where, 
-  orderBy, 
+  getDocs, 
+  writeBatch,
+  orderBy,
   limit,
   Timestamp,
-  writeBatch
+  addDoc
 } from 'firebase/firestore';
-import { db } from './firebase';
-import { CompanyCodeService } from './CompanyCodeService';
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword,
+  sendEmailVerification 
+} from 'firebase/auth';
+import { db, auth } from './firebase';
+import { Organization, EnterpriseUser, UserType } from '../types/business';
+import OrganizationCodeService from './CompanyCodeService';
 
-export interface CompanyRegistrationData {
-  companyName: string;
-  businessRegistrationNumber: string;
-  address: string;
-  employeeCount: number;
-  industry?: string;
-  contactPhone: string;
+export interface OrganizationRegistrationData {
+  organizationName: string;
+  businessNumber: string;
+  industry: string;
   contactEmail: string;
-  adminUserData: {
-    name: string;
-    email: string;
-    password: string;
-    position: string;
-    phone: string;
-    address: string;
-  };
-}
-
-export interface CompanyInfo {
-  id: string;
-  companyCode: string;
-  companyName: string;
-  businessRegistrationNumber: string;
-  address: string;
-  employeeCount: number;
-  industry?: string;
   contactPhone: string;
-  contactEmail: string;
-  paymentStatus: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
-  creditBalance: number;
+  address: string;
+  
+  // 관리자 정보
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+  adminPhone: string;
+  adminAddress: string;
+  adminEmployeeId: string;
+  adminDepartment: string;
+  adminPosition: string;
+  
+  // 계약 정보
+  initialMemberCount: number;
   servicePackage: 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
-  adminUserId: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-export interface CompanyRegistrationResult {
+export interface OrganizationInfo {
+  id: string;
+  organizationCode: string;
+  organizationName: string;
+  businessNumber: string;
+  industry: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  
+  adminUserId: string;
+  adminEmail: string;
+  
+  initialMemberCount: number;
+  servicePackage: string;
+  
+  isActive: boolean;
+  paymentStatus: 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'TERMINATED';
+  
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface OrganizationRegistrationResult {
   success: boolean;
-  companyId?: string;
-  companyCode?: string;
-  adminUserId?: string;
+  organizationId?: string;
+  organizationCode?: string;
+  message?: string;
   error?: string;
 }
 
-export interface CompanyMemberInfo {
-  id: string;
+export interface OrganizationMemberInfo {
   userId: string;
-  companyId: string;
-  employeeId?: string;
-  department?: string;
-  position?: string;
-  joinedAt: Date;
+  employeeId: string;
+  organizationId: string;
+  
+  displayName: string;
+  email: string;
+  phone: string;
+  address: string;
+  department: string;
+  position: string;
+  
   isActive: boolean;
-  reportsGenerated: number;
-  consultationsUsed: number;
-  lastActivityAt?: Date;
+  joinedAt: any;
 }
 
-export class CompanyService {
+export class OrganizationService {
   /**
-   * 신규 기업 등록
-   * @param registrationData 기업 등록 데이터
-   * @returns Promise<CompanyRegistrationResult>
+   * 새로운 조직 등록
+   * @param registrationData 조직 등록 데이터
+   * @returns Promise<OrganizationRegistrationResult>
    */
-  static async registerCompany(
-    registrationData: CompanyRegistrationData
-  ): Promise<CompanyRegistrationResult> {
+  static async registerOrganization(
+    registrationData: OrganizationRegistrationData
+  ): Promise<OrganizationRegistrationResult> {
     try {
-      // 1. 기업 코드 생성
-      const codeGeneration = await CompanyCodeService.generateCompanyCode();
-      if (!codeGeneration.success || !codeGeneration.companyCode) {
+      // 조직 코드 생성
+      const codeGeneration = await OrganizationCodeService.generateOrganizationCode();
+      if (!codeGeneration.success || !codeGeneration.organizationCode) {
         return {
           success: false,
-          error: codeGeneration.error || '기업 코드 생성에 실패했습니다.'
+          error: codeGeneration.error || '조직 코드 생성에 실패했습니다.'
         };
       }
 
-      const companyCode = codeGeneration.companyCode;
+      const organizationCode = codeGeneration.organizationCode;
 
-      // 2. 사업자 등록번호 중복 확인
+      // 사업자 등록번호 중복 확인
       const isDuplicate = await this.checkBusinessNumberExists(
-        registrationData.businessRegistrationNumber
+        registrationData.businessNumber
       );
       if (isDuplicate) {
         return {
@@ -115,8 +134,8 @@ export class CompanyService {
         };
       }
 
-      // 3. 관리자 이메일 중복 확인
-      const emailExists = await this.checkEmailExists(registrationData.adminUserData.email);
+      // 관리자 이메일 중복 확인
+      const emailExists = await this.checkEmailExists(registrationData.adminEmail);
       if (emailExists) {
         return {
           success: false,
@@ -124,45 +143,43 @@ export class CompanyService {
         };
       }
 
-      // 4. Firestore 배치 작업으로 기업과 관리자 동시 생성
+      // 4. Firestore 배치 작업으로 조직과 관리자 동시 생성
       const batch = writeBatch(db);
       
-      // 기업 문서 생성
-      const companyRef = doc(collection(db, 'companies'));
-      const companyData = {
-        companyCode,
-        companyName: registrationData.companyName,
-        businessRegistrationNumber: registrationData.businessRegistrationNumber,
-        address: registrationData.address,
-        employeeCount: registrationData.employeeCount,
-        industry: registrationData.industry || null,
-        contactPhone: registrationData.contactPhone,
+      // 조직 문서 생성
+      const organizationRef = doc(collection(db, 'organizations'));
+      const organizationData = {
+        organizationCode,
+        organizationName: registrationData.organizationName,
+        businessNumber: registrationData.businessNumber,
+        industry: registrationData.industry,
         contactEmail: registrationData.contactEmail,
-        paymentStatus: 'PENDING',
-        creditBalance: 0,
-        servicePackage: 'BASIC',
+        contactPhone: registrationData.contactPhone,
+        address: registrationData.address,
+        initialMemberCount: registrationData.initialMemberCount,
+        servicePackage: registrationData.servicePackage,
+        paymentStatus: 'TRIAL', // 초기 상태는 TRIAL
         adminUserId: '', // 아래에서 업데이트
-        settings: JSON.stringify({}),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       };
       
-      batch.set(companyRef, companyData);
+      batch.set(organizationRef, organizationData);
 
       // 관리자 사용자 문서 생성
       const adminUserRef = doc(collection(db, 'users'));
       const adminUserData = {
-        email: registrationData.adminUserData.email,
-        displayName: registrationData.adminUserData.name,
-        companyId: companyRef.id,
-        companyCode: companyCode,
+        email: registrationData.adminEmail,
+        displayName: registrationData.adminName,
+        organizationId: organizationRef.id,
+        organizationCode: organizationCode,
         userType: 'ORGANIZATION_ADMIN',
-        position: registrationData.adminUserData.position,
-        department: null,
+        position: registrationData.adminPosition,
+        department: registrationData.adminDepartment,
         personalCreditBalance: 0,
         isActive: true,
-        phone: registrationData.adminUserData.phone,
-        address: registrationData.adminUserData.address,
+        phone: registrationData.adminPhone,
+        address: registrationData.adminAddress,
         permissions: JSON.stringify(['ADMIN_ALL']),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
@@ -170,118 +187,120 @@ export class CompanyService {
       
       batch.set(adminUserRef, adminUserData);
 
-      // 기업 문서의 adminUserId 업데이트
-      batch.update(companyRef, { adminUserId: adminUserRef.id });
+      // 조직 문서의 adminUserId 업데이트
+      batch.update(organizationRef, { adminUserId: adminUserRef.id });
 
       // 배치 실행
       await batch.commit();
 
       return {
         success: true,
-        companyId: companyRef.id,
-        companyCode: companyCode,
-        adminUserId: adminUserRef.id
+        organizationId: organizationRef.id,
+        organizationCode: organizationCode,
+        message: '조직이 성공적으로 등록되었습니다.'
       };
 
     } catch (error) {
-      console.error('기업 등록 오류:', error);
+      console.error('조직 등록 오류:', error);
       return {
         success: false,
-        error: '기업 등록 중 오류가 발생했습니다.'
+        error: '조직 등록 중 오류가 발생했습니다.'
       };
     }
   }
 
   /**
-   * 기업 정보 조회 (코드 기반)
-   * @param companyCode 기업 코드
-   * @returns Promise<CompanyInfo | null>
+   * 조직 정보 조회 (코드 기반)
+   * @param organizationCode 조직 코드
+   * @returns Promise<OrganizationInfo | null>
    */
-  static async getCompanyByCode(companyCode: string): Promise<CompanyInfo | null> {
+  static async getOrganizationByCode(organizationCode: string): Promise<OrganizationInfo | null> {
     try {
-      const companiesRef = collection(db, 'companies');
-      const q = query(companiesRef, where('companyCode', '==', companyCode));
+      const organizationsRef = collection(db, 'organizations');
+      const q = query(organizationsRef, where('organizationCode', '==', organizationCode));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
         return null;
       }
 
-      const companyDoc = querySnapshot.docs[0];
-      const data = companyDoc.data();
+      const organizationDoc = querySnapshot.docs[0];
+      const data = organizationDoc.data();
 
       return {
-        id: companyDoc.id,
-        companyCode: data.companyCode,
-        companyName: data.companyName,
-        businessRegistrationNumber: data.businessRegistrationNumber,
-        address: data.address,
-        employeeCount: data.employeeCount,
+        id: organizationDoc.id,
+        organizationCode: data.organizationCode,
+        organizationName: data.organizationName,
+        businessNumber: data.businessNumber,
         industry: data.industry,
-        contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
-        paymentStatus: data.paymentStatus,
-        creditBalance: data.creditBalance,
-        servicePackage: data.servicePackage,
+        contactPhone: data.contactPhone,
+        address: data.address,
         adminUserId: data.adminUserId,
+        adminEmail: data.adminEmail,
+        initialMemberCount: data.initialMemberCount,
+        servicePackage: data.servicePackage,
+        isActive: data.isActive,
+        paymentStatus: data.paymentStatus,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate()
       };
 
     } catch (error) {
-      console.error('기업 정보 조회 오류:', error);
+      console.error('조직 정보 조회 오류:', error);
       return null;
     }
   }
 
   /**
-   * 기업 정보 조회 (ID 기반)
-   * @param companyId 기업 ID
-   * @returns Promise<CompanyInfo | null>
+   * 조직 정보 조회 (ID 기반)
+   * @param organizationId 조직 ID
+   * @returns Promise<OrganizationInfo | null>
    */
-  static async getCompanyById(companyId: string): Promise<CompanyInfo | null> {
+  static async getOrganizationById(organizationId: string): Promise<OrganizationInfo | null> {
     try {
-      const companyDoc = await getDoc(doc(db, 'companies', companyId));
+      const organizationDoc = await getDoc(doc(db, 'organizations', organizationId));
       
-      if (!companyDoc.exists()) {
+      if (!organizationDoc.exists()) {
         return null;
       }
 
-      const data = companyDoc.data();
+      const data = organizationDoc.data();
       
       return {
-        id: companyDoc.id,
-        companyCode: data.companyCode,
-        companyName: data.companyName,
-        businessRegistrationNumber: data.businessRegistrationNumber,
-        address: data.address,
-        employeeCount: data.employeeCount,
+        id: organizationDoc.id,
+        organizationCode: data.organizationCode,
+        organizationName: data.organizationName,
+        businessNumber: data.businessNumber,
         industry: data.industry,
-        contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
-        paymentStatus: data.paymentStatus,
-        creditBalance: data.creditBalance,
-        servicePackage: data.servicePackage,
+        contactPhone: data.contactPhone,
+        address: data.address,
         adminUserId: data.adminUserId,
+        adminEmail: data.adminEmail,
+        initialMemberCount: data.initialMemberCount,
+        servicePackage: data.servicePackage,
+        isActive: data.isActive,
+        paymentStatus: data.paymentStatus,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate()
       };
 
     } catch (error) {
-      console.error('기업 정보 조회 오류:', error);
+      console.error('조직 정보 조회 오류:', error);
       return null;
     }
   }
 
   /**
-   * 기업 멤버 추가
-   * @param companyId 기업 ID
+   * 조직 멤버 추가
+   * @param organizationId 조직 ID
    * @param userId 사용자 ID
    * @param memberData 멤버 데이터
    * @returns Promise<boolean>
    */
-  static async addCompanyMember(
-    companyId: string,
+  static async addOrganizationMember(
+    organizationId: string,
     userId: string,
     memberData: {
       employeeId?: string;
@@ -290,11 +309,11 @@ export class CompanyService {
     }
   ): Promise<boolean> {
     try {
-      const companyMemberRef = collection(db, 'companyMembers');
+      const organizationMemberRef = collection(db, 'organizationMembers');
       
-      await addDoc(companyMemberRef, {
+      await addDoc(organizationMemberRef, {
         userId,
-        companyId,
+        organizationId,
         employeeId: memberData.employeeId || null,
         department: memberData.department || null,
         position: memberData.position || null,
@@ -308,22 +327,22 @@ export class CompanyService {
       return true;
 
     } catch (error) {
-      console.error('기업 멤버 추가 오류:', error);
+      console.error('조직 멤버 추가 오류:', error);
       return false;
     }
   }
 
   /**
-   * 기업 멤버 목록 조회
-   * @param companyId 기업 ID
-   * @returns Promise<CompanyMemberInfo[]>
+   * 조직 멤버 목록 조회
+   * @param organizationId 조직 ID
+   * @returns Promise<OrganizationMemberInfo[]>
    */
-  static async getCompanyMembers(companyId: string): Promise<CompanyMemberInfo[]> {
+  static async getOrganizationMembers(organizationId: string): Promise<OrganizationMemberInfo[]> {
     try {
-      const membersRef = collection(db, 'companyMembers');
+      const membersRef = collection(db, 'organizationMembers');
       const q = query(
         membersRef,
-        where('companyId', '==', companyId),
+        where('organizationId', '==', organizationId),
         where('isActive', '==', true),
         orderBy('joinedAt', 'desc')
       );
@@ -333,81 +352,81 @@ export class CompanyService {
       return querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          id: doc.id,
           userId: data.userId,
-          companyId: data.companyId,
           employeeId: data.employeeId,
+          organizationId: data.organizationId,
+          displayName: data.displayName,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
           department: data.department,
           position: data.position,
-          joinedAt: data.joinedAt.toDate(),
           isActive: data.isActive,
-          reportsGenerated: data.reportsGenerated,
-          consultationsUsed: data.consultationsUsed,
-          lastActivityAt: data.lastActivityAt?.toDate()
+          joinedAt: data.joinedAt.toDate()
         };
       });
 
     } catch (error) {
-      console.error('기업 멤버 목록 조회 오류:', error);
+      console.error('조직 멤버 목록 조회 오류:', error);
       return [];
     }
   }
 
   /**
-   * 기업 상태 업데이트
-   * @param companyId 기업 ID
+   * 조직 상태 업데이트
+   * @param organizationId 조직 ID
    * @param status 새로운 상태
    * @returns Promise<boolean>
    */
-  static async updateCompanyStatus(
-    companyId: string,
-    status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED'
+  static async updateOrganizationStatus(
+    organizationId: string,
+    status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'TERMINATED'
   ): Promise<boolean> {
     try {
-      const companyRef = doc(db, 'companies', companyId);
-      await updateDoc(companyRef, {
+      const organizationRef = doc(db, 'organizations', organizationId);
+      await setDoc(organizationRef, {
         paymentStatus: status,
         updatedAt: Timestamp.now()
-      });
+      }, { merge: true });
 
       return true;
 
     } catch (error) {
-      console.error('기업 상태 업데이트 오류:', error);
+      console.error('조직 상태 업데이트 오류:', error);
       return false;
     }
   }
 
   /**
-   * 기업 크레딧 업데이트
-   * @param companyId 기업 ID
+   * 조직 크레딧 업데이트
+   * @param organizationId 조직 ID
    * @param creditAmount 크레딧 변경량 (음수 가능)
    * @returns Promise<boolean>
    */
-  static async updateCompanyCredit(
-    companyId: string,
+  static async updateOrganizationCredit(
+    organizationId: string,
     creditAmount: number
   ): Promise<boolean> {
     try {
-      const companyRef = doc(db, 'companies', companyId);
-      const companyDoc = await getDoc(companyRef);
+      const organizationRef = doc(db, 'organizations', organizationId);
+      const organizationDoc = await getDoc(organizationRef);
       
-      if (!companyDoc.exists()) {
+      if (!organizationDoc.exists()) {
         return false;
       }
 
-      const currentBalance = companyDoc.data().creditBalance || 0;
+      const currentBalance = organizationDoc.data().creditBalance || 0;
       const newBalance = Math.max(0, currentBalance + creditAmount);
 
-      await updateDoc(companyRef, {
+      await setDoc(organizationRef, {
         creditBalance: newBalance,
         updatedAt: Timestamp.now()
-      });
+      }, { merge: true });
 
       return true;
 
     } catch (error) {
-      console.error('기업 크레딧 업데이트 오류:', error);
+      console.error('조직 크레딧 업데이트 오류:', error);
       return false;
     }
   }
@@ -419,10 +438,10 @@ export class CompanyService {
    */
   private static async checkBusinessNumberExists(businessNumber: string): Promise<boolean> {
     try {
-      const companiesRef = collection(db, 'companies');
+      const organizationsRef = collection(db, 'organizations');
       const q = query(
-        companiesRef,
-        where('businessRegistrationNumber', '==', businessNumber)
+        organizationsRef,
+        where('businessNumber', '==', businessNumber)
       );
       const querySnapshot = await getDocs(q);
       
@@ -454,15 +473,15 @@ export class CompanyService {
   }
 
   /**
-   * 최근 등록된 기업 목록 조회
+   * 최근 등록된 조직 목록 조회
    * @param limitCount 조회할 개수
-   * @returns Promise<CompanyInfo[]>
+   * @returns Promise<OrganizationInfo[]>
    */
-  static async getRecentCompanies(limitCount: number = 10): Promise<CompanyInfo[]> {
+  static async getRecentOrganizations(limitCount: number = 10): Promise<OrganizationInfo[]> {
     try {
-      const companiesRef = collection(db, 'companies');
+      const organizationsRef = collection(db, 'organizations');
       const q = query(
-        companiesRef,
+        organizationsRef,
         orderBy('createdAt', 'desc'),
         limit(limitCount)
       );
@@ -473,88 +492,89 @@ export class CompanyService {
         const data = doc.data();
         return {
           id: doc.id,
-          companyCode: data.companyCode,
-          companyName: data.companyName,
-          businessRegistrationNumber: data.businessRegistrationNumber,
-          address: data.address,
-          employeeCount: data.employeeCount,
+          organizationCode: data.organizationCode,
+          organizationName: data.organizationName,
+          businessNumber: data.businessNumber,
           industry: data.industry,
-          contactPhone: data.contactPhone,
           contactEmail: data.contactEmail,
-          paymentStatus: data.paymentStatus,
-          creditBalance: data.creditBalance,
-          servicePackage: data.servicePackage,
+          contactPhone: data.contactPhone,
+          address: data.address,
           adminUserId: data.adminUserId,
+          adminEmail: data.adminEmail,
+          initialMemberCount: data.initialMemberCount,
+          servicePackage: data.servicePackage,
+          isActive: data.isActive,
+          paymentStatus: data.paymentStatus,
           createdAt: data.createdAt.toDate(),
           updatedAt: data.updatedAt.toDate()
         };
       });
 
     } catch (error) {
-      console.error('최근 기업 목록 조회 오류:', error);
+      console.error('최근 조직 목록 조회 오류:', error);
       return [];
     }
   }
 
   /**
-   * 테스트용 회사 데이터 추가 (개발용)
-   * @returns Promise<CompanyRegistrationResult>
+   * 테스트용 조직 데이터 추가 (개발용)
+   * @returns Promise<OrganizationRegistrationResult>
    */
-  static async createTestCompany(): Promise<CompanyRegistrationResult> {
-    const testCompanyData: CompanyRegistrationData = {
-      companyName: '테스트 회사',
-      businessRegistrationNumber: '123-45-67890',
-      address: '서울시 강남구 테헤란로 123',
-      employeeCount: 100,
+  static async createTestOrganization(): Promise<OrganizationRegistrationResult> {
+    const testOrganizationData: OrganizationRegistrationData = {
+      organizationName: '테스트 조직',
+      businessNumber: '123-45-67890',
       industry: 'IT',
+      contactEmail: 'admin@testorganization.com',
       contactPhone: '02-1234-5678',
-      contactEmail: 'admin@testcompany.com',
-      adminUserData: {
-        name: '관리자',
-        email: 'admin@testcompany.com',
-        password: 'test123!',
-        position: '대표',
-        phone: '010-1234-5678',
-        address: '서울시 강남구 테헤란로 123'
-      }
+      address: '서울시 강남구 테헤란로 123',
+      adminName: '관리자',
+      adminEmail: 'admin@testorganization.com',
+      adminPassword: 'test123!',
+      adminPhone: '010-1234-5678',
+      adminAddress: '서울시 강남구 테헤란로 123',
+      adminEmployeeId: 'EMP001',
+      adminDepartment: 'IT',
+      adminPosition: '대표',
+      initialMemberCount: 10,
+      servicePackage: 'BASIC'
     };
 
-    return await this.registerCompany(testCompanyData);
+    return await this.registerOrganization(testOrganizationData);
   }
 
   /**
-   * 테스트용 회사 데이터를 직접 Firebase에 추가 (빠른 테스트용)
-   * @returns Promise<string> 회사 코드
+   * 테스트용 조직 데이터를 직접 Firebase에 추가 (빠른 테스트용)
+   * @returns Promise<string> 조직 코드
    */
-  static async addTestCompanyDirectly(): Promise<string> {
+  static async addTestOrganizationDirectly(): Promise<string> {
     try {
-      const companiesRef = collection(db, 'companies');
-      const companyCode = 'COMPANY123';
+      const organizationsRef = collection(db, 'organizations');
+      const organizationCode = 'ORG123';
       
-      const companyDoc = await addDoc(companiesRef, {
-        companyCode,
-        companyName: '테스트 회사',
-        businessRegistrationNumber: '123-45-67890',
-        address: '서울시 강남구 테헤란로 123',
-        employeeCount: 100,
+      const organizationDoc = await addDoc(organizationsRef, {
+        organizationCode,
+        organizationName: '테스트 조직',
+        businessNumber: '123-45-67890',
         industry: 'IT',
+        contactEmail: 'admin@testorganization.com',
         contactPhone: '02-1234-5678',
-        contactEmail: 'admin@testcompany.com',
-        paymentStatus: 'ACTIVE',
-        creditBalance: 1000,
+        address: '서울시 강남구 테헤란로 123',
+        initialMemberCount: 10,
         servicePackage: 'BASIC',
+        paymentStatus: 'ACTIVE',
         adminUserId: 'test-admin-id',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
 
-      console.log('✅ 테스트 회사 데이터 생성 완료:', companyCode);
-      return companyCode;
+      console.log('✅ 테스트 조직 데이터 생성 완료:', organizationCode);
+      return organizationCode;
     } catch (error) {
-      console.error('❌ 테스트 회사 데이터 생성 실패:', error);
+      console.error('❌ 테스트 조직 데이터 생성 실패:', error);
       throw error;
     }
   }
 }
 
-export default CompanyService; 
+export default OrganizationService; 
