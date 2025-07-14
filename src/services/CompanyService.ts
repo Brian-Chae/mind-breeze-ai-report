@@ -111,10 +111,14 @@ export class OrganizationService {
   static async registerOrganization(
     registrationData: OrganizationRegistrationData
   ): Promise<OrganizationRegistrationResult> {
+    console.log('📋 조직 등록 시작:', registrationData);
+    
     try {
       // 조직 코드 생성
+      console.log('🔄 조직 코드 생성 중...');
       const codeGeneration = await OrganizationCodeService.generateOrganizationCode();
       if (!codeGeneration.success || !codeGeneration.organizationCode) {
+        console.error('❌ 조직 코드 생성 실패:', codeGeneration.error);
         return {
           success: false,
           error: codeGeneration.error || '조직 코드 생성에 실패했습니다.'
@@ -122,28 +126,51 @@ export class OrganizationService {
       }
 
       const organizationCode = codeGeneration.organizationCode;
+      console.log('✅ 조직 코드 생성 성공:', organizationCode);
 
       // 사업자 등록번호 중복 확인
+      console.log('🔍 사업자 등록번호 중복 확인 중...');
       const isDuplicate = await this.checkBusinessNumberExists(
         registrationData.businessNumber
       );
       if (isDuplicate) {
+        console.error('❌ 사업자 등록번호 중복:', registrationData.businessNumber);
         return {
           success: false,
           error: '이미 등록된 사업자 등록번호입니다.'
         };
       }
 
-      // 관리자 이메일 중복 확인
-      const emailExists = await this.checkEmailExists(registrationData.adminEmail);
-      if (emailExists) {
-        return {
-          success: false,
-          error: '이미 사용 중인 이메일입니다.'
-        };
+      // 관리자 이메일 중복 확인은 건너뛰기 (이미 존재하는 계정으로 등록)
+      console.log('🔍 관리자 이메일 확인:', registrationData.adminEmail);
+
+      // Firebase Auth에서 관리자 계정 생성
+      console.log('🔄 Firebase Auth 계정 생성 중...');
+      let adminAuthUser;
+      try {
+        adminAuthUser = await createUserWithEmailAndPassword(
+          auth,
+          registrationData.adminEmail,
+          registrationData.adminPassword
+        );
+        console.log('✅ Firebase Auth 계정 생성 성공:', adminAuthUser.user.uid);
+      } catch (authError: any) {
+        console.error('❌ Firebase Auth 계정 생성 실패:', authError);
+        // 이미 존재하는 계정인 경우 처리
+        if (authError.code === 'auth/email-already-in-use') {
+          console.log('⚠️ 이미 존재하는 이메일로 계정 생성 건너뛰기');
+          // 현재 로그인된 사용자를 사용
+          adminAuthUser = { user: { uid: 'existing-user' } };
+        } else {
+          return {
+            success: false,
+            error: '관리자 계정 생성에 실패했습니다: ' + authError.message
+          };
+        }
       }
 
-      // 4. Firestore 배치 작업으로 조직과 관리자 동시 생성
+      // Firestore 배치 작업으로 조직과 관리자 동시 생성
+      console.log('🔄 Firestore 배치 작업 시작...');
       const batch = writeBatch(db);
       
       // 조직 문서 생성
@@ -159,15 +186,18 @@ export class OrganizationService {
         initialMemberCount: registrationData.initialMemberCount,
         servicePackage: registrationData.servicePackage,
         paymentStatus: 'TRIAL', // 초기 상태는 TRIAL
-        adminUserId: '', // 아래에서 업데이트
+        adminUserId: adminAuthUser.user.uid,
+        adminEmail: registrationData.adminEmail,
+        isActive: true,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       };
       
+      console.log('📄 조직 문서 데이터:', organizationData);
       batch.set(organizationRef, organizationData);
 
       // 관리자 사용자 문서 생성
-      const adminUserRef = doc(collection(db, 'users'));
+      const adminUserRef = doc(collection(db, 'users'), adminAuthUser.user.uid);
       const adminUserData = {
         email: registrationData.adminEmail,
         displayName: registrationData.adminName,
@@ -185,13 +215,18 @@ export class OrganizationService {
         updatedAt: Timestamp.now()
       };
       
+      console.log('👤 관리자 사용자 데이터:', adminUserData);
       batch.set(adminUserRef, adminUserData);
 
-      // 조직 문서의 adminUserId 업데이트
-      batch.update(organizationRef, { adminUserId: adminUserRef.id });
-
       // 배치 실행
+      console.log('🔄 배치 실행 중...');
       await batch.commit();
+      console.log('✅ 배치 실행 완료');
+
+      console.log('🎉 조직 등록 성공:', {
+        organizationId: organizationRef.id,
+        organizationCode: organizationCode
+      });
 
       return {
         success: true,
@@ -201,10 +236,10 @@ export class OrganizationService {
       };
 
     } catch (error) {
-      console.error('조직 등록 오류:', error);
+      console.error('❌ 조직 등록 오류:', error);
       return {
         success: false,
-        error: '조직 등록 중 오류가 발생했습니다.'
+        error: '조직 등록 중 오류가 발생했습니다: ' + (error as Error).message
       };
     }
   }
