@@ -33,6 +33,12 @@ const AppRouter = () => {
 
     const currentPath = location.pathname;
     
+    console.log('🔄 라우팅 체크:', {
+      user: user ? { email: user.email, uid: user.uid } : null,
+      currentPath,
+      loading
+    });
+    
     if (user) {
       // 로그인된 사용자의 라우팅
       const userType = getUserType(user);
@@ -42,19 +48,18 @@ const AppRouter = () => {
         email: user.email,
         userType,
         redirectPath,
-        currentPath
+        currentPath,
+        shouldRedirect: ['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath)
       });
       
-      if (['/login', '/signup', '/'].includes(currentPath)) {
+      // 임시로 모든 경로에서 /admin으로 리디렉션 (테스트용)
+      if (['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath)) {
+        console.log('🔄 리디렉션 실행:', currentPath, '→', redirectPath);
         navigate(redirectPath);
-      } else if (currentPath === '/welcome' && userType === 'ORGANIZATION_ADMIN') {
-        // 기업 관리자는 /welcome 대신 /admin으로 리디렉션
-        navigate('/admin');
-      } else if (currentPath === '/home' && userType === 'ORGANIZATION_ADMIN') {
-        // 기업 관리자는 /home 대신 /admin으로 리디렉션
-        navigate('/admin');
       }
     } else {
+      console.log('🔄 로그인되지 않은 사용자:', currentPath);
+      
       // 로그인되지 않은 사용자는 토큰 접속 허용
       if (currentPath.startsWith('/measurement-access')) {
         return; // 토큰 접속 페이지는 허용
@@ -79,6 +84,10 @@ const AppRouter = () => {
   }, [user, loading, navigate, location]);
 
   const getRedirectPath = (userType: string) => {
+    // 임시로 모든 사용자를 /admin으로 리디렉션
+    return '/admin';
+    
+    /* 원래 로직 - 나중에 복원
     switch (userType) {
       case 'SYSTEM_ADMIN':
         return '/admin';
@@ -91,6 +100,7 @@ const AppRouter = () => {
       default:
         return '/';
     }
+    */
   };
 
   // 임시로 이메일 패턴으로 사용자 타입 확인
