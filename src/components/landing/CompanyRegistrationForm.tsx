@@ -23,8 +23,8 @@ import {
   EyeOff,
   Brain
 } from 'lucide-react';
-import { CompanyService } from '../../services/CompanyService';
-import { CompanyCodeService } from '../../services/CompanyCodeService';
+import { OrganizationService } from '../../services/CompanyService';
+import { OrganizationCodeService } from '../../services/CompanyCodeService';
 import { toast } from 'sonner';
 
 interface CompanyRegistrationData {
@@ -245,17 +245,17 @@ export default function CompanyRegistrationForm() {
         }
       };
 
-      // 회사 등록 (CompanyService가 내부적으로 회사 코드 생성)
-      const registrationResult = await CompanyService.registerCompany(registrationData);
+      // 회사 등록 (OrganizationService가 내부적으로 회사 코드 생성)
+      const registrationResult = await OrganizationService.registerOrganization(registrationData);
 
       if (registrationResult.success) {
-        setGeneratedCompanyCode(registrationResult.companyCode || null);
+        setGeneratedCompanyCode(registrationResult.organizationCode || null);
         toast.success('회사 등록이 완료되었습니다!');
         
         // 성공 페이지로 이동
         navigate('/company-registration-success', { 
           state: { 
-            companyCode: registrationResult.companyCode,
+            companyCode: registrationResult.organizationCode,
             companyName: formData.companyName,
             adminEmail: formData.adminEmail
           } 

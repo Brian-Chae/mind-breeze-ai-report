@@ -7,8 +7,8 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { FirebaseService } from '../../services/FirebaseService';
 import { enterpriseAuthService } from '../../services/EnterpriseAuthService';
-import { CompanyService } from '../../services/CompanyService';
-import { CompanyCodeService } from '../../services/CompanyCodeService';
+import { OrganizationService } from '../../services/CompanyService';
+import { OrganizationCodeService } from '../../services/CompanyCodeService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthProvider';
 import { toast } from 'sonner';
@@ -62,7 +62,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setError('');
     
     try {
-      const validation = await CompanyCodeService.validateCompanyCode(formData.companyCode);
+      const validation = await OrganizationCodeService.validateOrganizationCode(formData.companyCode);
       
       if (!validation.isValid) {
         setError(validation.error || '유효하지 않은 회사 코드입니다');
@@ -70,7 +70,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         return;
       }
 
-      const company = await CompanyService.getCompanyByCode(formData.companyCode);
+      const company = await OrganizationService.getOrganizationByCode(formData.companyCode);
       
       if (company) {
         setCompanyInfo({
