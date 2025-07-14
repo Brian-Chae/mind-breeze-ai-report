@@ -16,7 +16,8 @@ import {
   CircuitBoard,
   Heart,
   Brain,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-react'
 
 export function HomePage() {
@@ -204,6 +205,10 @@ export function HomePage() {
             <Button variant="outline">
               <FileText className="w-4 h-4 mr-2" />
               View Documentation
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/admin')}>
+              <Settings className="w-4 h-4 mr-2" />
+              관리자 페이지
             </Button>
           </div>
         </Card>
