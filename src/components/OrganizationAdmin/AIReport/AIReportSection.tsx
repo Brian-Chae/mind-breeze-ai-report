@@ -12,6 +12,7 @@ import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface AIReportSectionProps {
   subSection: string;
+  onNavigate: (section: string, subSection?: string) => void;
 }
 
 interface HealthReport {
@@ -41,7 +42,7 @@ interface ReportStats {
   successRate: number;
 }
 
-export default function AIReportSection({ subSection }: AIReportSectionProps) {
+export default function AIReportSection({ subSection, onNavigate }: AIReportSectionProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [reports, setReports] = useState<HealthReport[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({
@@ -214,36 +215,48 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
   )
 
   const renderReportGeneration = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">AI 리포트 생성</h2>
-        <Button onClick={() => handleGenerateReport('default', '스트레스 분석')}>
+        <Button 
+          onClick={() => handleGenerateReport('default', '스트레스 분석')}
+          className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+        >
           <Plus className="w-4 h-4 mr-2" />
           새 리포트 생성
         </Button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-              <Button variant="outline" size="sm" onClick={loadReportData} className="mt-2">
+        <Card className="p-6 bg-red-50 border border-red-200">
+          <div className="flex items-start space-x-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-xl">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-900 mb-1">오류 발생</h3>
+              <p className="text-sm text-red-700 mb-3">{error}</p>
+              <Button variant="outline" size="sm" onClick={loadReportData} className="border-red-300 text-red-700 hover:bg-red-50">
+                <RefreshCw className="w-4 h-4 mr-2" />
                 다시 시도
               </Button>
             </div>
           </div>
-        </div>
+        </Card>
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">리포트 생성 설정</h3>
-          <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="p-6 bg-gradient-to-br from-white to-purple-50 hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl">
+              <Brain className="w-5 h-5 text-purple-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">리포트 생성 설정</h3>
+          </div>
+          <div className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-gray-700">리포트 유형</label>
-              <select className="mt-1 w-full p-2 border border-gray-300 rounded-md">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">리포트 유형</label>
+              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
                 <option>스트레스 분석</option>
                 <option>집중력 분석</option>
                 <option>웰니스 종합</option>
@@ -251,8 +264,8 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">대상 사용자</label>
-              <select className="mt-1 w-full p-2 border border-gray-300 rounded-md">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">대상 사용자</label>
+              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
                 <option value="">사용자 선택</option>
                 {measurementUsers.map(user => (
                   <option key={user.id} value={user.id}>{user.displayName}</option>
@@ -260,36 +273,53 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">기간</label>
-              <div className="flex space-x-2">
-                <Input type="date" />
-                <Input type="date" />
+              <label className="text-sm font-medium text-gray-700 mb-2 block">분석 기간</label>
+              <div className="grid grid-cols-2 gap-3">
+                <Input type="date" className="focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                <Input type="date" className="focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
               </div>
             </div>
-            <Button className="w-full" disabled={loading}>
+            <Button 
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-12"
+              disabled={loading}
+            >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
               리포트 생성 시작
             </Button>
           </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">생성 현황</h3>
+        <Card className="p-6 bg-gradient-to-br from-white to-blue-50 hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">생성 현황</h3>
+          </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">진행 중인 작업</span>
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <span className="text-sm text-gray-600">진행 중인 작업</span>
+              </div>
               <Badge className="bg-yellow-100 text-yellow-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reportStats.pendingReports}
               </Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">완료된 작업</span>
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <span className="text-sm text-gray-600">완료된 작업</span>
+              </div>
               <Badge className="bg-green-100 text-green-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reportStats.completedReports}
               </Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">실패한 작업</span>
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                <span className="text-sm text-gray-600">실패한 작업</span>
+              </div>
               <Badge className="bg-red-100 text-red-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reportStats.failedReports}
               </Badge>
@@ -301,7 +331,7 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
   )
 
   const renderReportList = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">리포트 목록</h2>
         <div className="flex items-center space-x-2">
@@ -313,7 +343,10 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
             <Download className="w-4 h-4 mr-2" />
             일괄 다운로드
           </Button>
-          <Button onClick={() => handleGenerateReport('default', '스트레스 분석')}>
+          <Button 
+            onClick={() => handleGenerateReport('default', '스트레스 분석')}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+          >
             <Plus className="w-4 h-4 mr-2" />
             새 리포트
           </Button>
@@ -330,93 +363,121 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
             className="pl-10"
           />
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="w-4 h-4 mr-2" />
-          필터
-        </Button>
+        <select className="px-3 py-2 border border-gray-300 rounded-md">
+          <option value="all">전체 상태</option>
+          <option value="completed">완료</option>
+          <option value="processing">처리중</option>
+          <option value="failed">실패</option>
+        </select>
+        <select className="px-3 py-2 border border-gray-300 rounded-md">
+          <option value="all">전체 유형</option>
+          <option value="stress">스트레스 분석</option>
+          <option value="focus">집중력 분석</option>
+          <option value="wellness">웰니스 종합</option>
+        </select>
       </div>
       
       {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredReports.map((report) => (
-            <Card key={report.id} className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl">
-                    <FileText className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
-                    <p className="text-sm text-gray-600">{report.userName} • {report.createdAt.toLocaleDateString()}</p>
-                  </div>
+        <>
+          {filteredReports.length === 0 ? (
+            <Card className="p-8">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl">
+                  <FileText className="w-8 h-8 text-purple-600" />
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Badge className={
-                    report.status === 'completed' ? 'bg-green-100 text-green-600' :
-                    report.status === 'processing' ? 'bg-yellow-100 text-yellow-600' :
-                    report.status === 'failed' ? 'bg-red-100 text-red-600' :
-                    'bg-gray-100 text-gray-600'
-                  }>
-                    {report.status === 'completed' ? '완료' :
-                     report.status === 'processing' ? '처리중' :
-                     report.status === 'failed' ? '실패' : '대기'}
-                  </Badge>
-                  <Badge variant="outline">품질: {report.quality}%</Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="w-4 h-4 mr-2" />
-                        미리보기
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownloadReport(report.id)}>
-                        <Download className="w-4 h-4 mr-2" />
-                        다운로드
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Send className="w-4 h-4 mr-2" />
-                        메일 발송
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">생성일: {report.createdAt.toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Download className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">다운로드: {report.downloadCount}회</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">품질 점수: {report.quality}%</span>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">리포트가 없습니다</h3>
+                  <p className="text-gray-600 mb-4">
+                    {searchQuery ? '검색 조건에 맞는 리포트가 없습니다.' : '아직 생성된 리포트가 없습니다.'}
+                  </p>
+                  <Button 
+                    onClick={() => handleGenerateReport('default', '스트레스 분석')}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    첫 리포트 생성하기
+                  </Button>
                 </div>
               </div>
             </Card>
-          ))}
-          {filteredReports.length === 0 && !loading && (
-            <div className="text-center py-8 text-gray-500">
-              검색 결과가 없습니다.
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {filteredReports.map((report) => (
+                <Card key={report.id} className="p-6 bg-gradient-to-r from-white to-purple-50 hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl">
+                        <FileText className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
+                        <p className="text-sm text-gray-600">{report.userName} • {report.createdAt.toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge className={
+                        report.status === 'completed' ? 'bg-green-100 text-green-600' :
+                        report.status === 'processing' ? 'bg-yellow-100 text-yellow-600' :
+                        report.status === 'failed' ? 'bg-red-100 text-red-600' :
+                        'bg-gray-100 text-gray-600'
+                      }>
+                        {report.status === 'completed' ? '완료' :
+                         report.status === 'processing' ? '처리중' :
+                         report.status === 'failed' ? '실패' : '대기'}
+                      </Badge>
+                      <Badge variant="outline">품질: {report.quality}%</Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="hover:bg-purple-50">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="w-4 h-4 mr-2" />
+                            미리보기
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadReport(report.id)}>
+                            <Download className="w-4 h-4 mr-2" />
+                            다운로드
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Send className="w-4 h-4 mr-2" />
+                            메일 발송
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">생성일: {report.createdAt.toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                      <Download className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">다운로드: {report.downloadCount}회</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                      <TrendingUp className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">품질 점수: {report.quality}%</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   )
 
   const renderQualityManagement = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">품질 관리</h2>
         <Button variant="outline" onClick={loadReportData}>
@@ -425,23 +486,28 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">품질 지표</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="p-6 bg-gradient-to-br from-white to-green-50 hover:shadow-lg transition-all duration-300 border-l-4 border-green-500">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-green-100 to-blue-100 rounded-xl">
+              <BarChart3 className="w-5 h-5 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">품질 지표</h3>
+          </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <span className="text-sm text-gray-600">평균 품질 점수</span>
               <span className="text-sm font-semibold text-green-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${reportStats.averageQuality.toFixed(1)}%`}
               </span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <span className="text-sm text-gray-600">생성 성공률</span>
               <span className="text-sm font-semibold text-green-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${reportStats.successRate.toFixed(1)}%`}
               </span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <span className="text-sm text-gray-600">실패율</span>
               <span className="text-sm font-semibold text-red-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${(100 - reportStats.successRate).toFixed(1)}%`}
@@ -450,42 +516,97 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
           </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">품질 개선 제안</h3>
-          <div className="space-y-3">
-            <div className="flex items-start space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-              <span className="text-sm text-gray-600">데이터 품질 향상</span>
+        <Card className="p-6 bg-gradient-to-br from-white to-yellow-50 hover:shadow-lg transition-all duration-300 border-l-4 border-yellow-500">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl">
+              <Star className="w-5 h-5 text-yellow-600" />
             </div>
-            <div className="flex items-start space-x-2">
-              <AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5" />
-              <span className="text-sm text-gray-600">알고리즘 최적화</span>
+            <h3 className="text-lg font-semibold text-gray-900">품질 개선 제안</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3 p-3 bg-white rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">데이터 품질 향상</p>
+                <p className="text-xs text-gray-600">신호 품질 검증 강화</p>
+              </div>
             </div>
-            <div className="flex items-start space-x-2">
-              <Clock className="w-4 h-4 text-blue-500 mt-0.5" />
-              <span className="text-sm text-gray-600">처리 시간 단축</span>
+            <div className="flex items-start space-x-3 p-3 bg-white rounded-lg">
+              <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">알고리즘 최적화</p>
+                <p className="text-xs text-gray-600">AI 모델 정확도 개선</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3 p-3 bg-white rounded-lg">
+              <Clock className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">처리 시간 단축</p>
+                <p className="text-xs text-gray-600">리포트 생성 속도 향상</p>
+              </div>
             </div>
           </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">시스템 상태</h3>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">AI 엔진 정상</span>
+        <Card className="p-6 bg-gradient-to-br from-white to-blue-50 hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
+              <Brain className="w-5 h-5 text-blue-600" />
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">데이터 파이프라인 정상</span>
+            <h3 className="text-lg font-semibold text-gray-900">시스템 상태</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
+              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">AI 엔진 정상</p>
+                <p className="text-xs text-gray-600">모든 서비스 가용</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">리포트 생성 지연</span>
+            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
+              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">데이터 파이프라인 정상</p>
+                <p className="text-xs text-gray-600">실시간 처리 중</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">리포트 생성 지연</p>
+                <p className="text-xs text-gray-600">일시적 부하 증가</p>
+              </div>
             </div>
           </div>
         </Card>
       </div>
+    </div>
+  )
+
+  // 탭 정의
+  const tabs = [
+    { id: 'report-generation', label: '리포트 생성', icon: Plus },
+    { id: 'report-list', label: '리포트 목록', icon: Eye },
+    { id: 'report-quality', label: '품질 관리', icon: BarChart3 }
+  ]
+
+  // 탭 렌더링
+  const renderTabs = () => (
+    <div className="flex space-x-1 mb-8">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onNavigate('ai-report', tab.id)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            subSection === tab.id
+              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+        >
+          <tab.icon className="w-4 h-4" />
+          {tab.label}
+        </button>
+      ))}
     </div>
   )
 
@@ -502,5 +623,10 @@ export default function AIReportSection({ subSection }: AIReportSectionProps) {
     }
   }
 
-  return <div>{renderContent()}</div>
+  return (
+    <div>
+      {renderTabs()}
+      {renderContent()}
+    </div>
+  )
 } 
