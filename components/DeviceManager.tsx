@@ -223,15 +223,15 @@ export function DeviceManager() {
       <div key={item.id} className={`${level > 0 ? 'ml-4' : ''}`}>
         <button
           onClick={() => setCurrentPage(item.id)}
-          className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
+          className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${
             isActive
               ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
               : 'text-gray-700 hover:bg-gray-50'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
-            <span className="font-medium">{item.title}</span>
+          <div className="flex items-center space-x-2">
+            <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+            <span className="font-medium text-sm">{item.title}</span>
           </div>
           {hasChildren && (
             <ChevronRight className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90' : ''}`} />
@@ -321,15 +321,15 @@ export function DeviceManager() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* 사이드바 */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 lg:static lg:inset-0`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-xl">
-              <Brain className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
+              <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">MIND BREEZE</span>
+            <span className="text-lg font-bold text-gray-900">MIND BREEZE</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -339,17 +339,17 @@ export function DeviceManager() {
           </button>
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="p-3 space-y-1">
           {sidebarMenuItems.map((item) => renderSidebarItem(item))}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50">
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full">
-              <User className="w-4 h-4 text-gray-600" />
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200">
+          <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
+            <div className="flex items-center justify-center w-6 h-6 bg-gray-200 rounded-full">
+              <User className="w-3 h-3 text-gray-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">관리자</p>
+              <p className="text-xs font-medium text-gray-900">관리자</p>
               <p className="text-xs text-gray-500">admin@company.com</p>
             </div>
             <DropdownMenu>
@@ -374,7 +374,7 @@ export function DeviceManager() {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <div className="lg:ml-80">
+      <div className="lg:ml-56">
         {/* 헤더 */}
         <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
