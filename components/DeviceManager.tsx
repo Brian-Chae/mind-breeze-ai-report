@@ -7,8 +7,6 @@ import {
   Brain, 
   Smartphone,
   CreditCard,
-  Menu,
-  X,
   Search,
   Bell,
   Settings,
@@ -66,7 +64,6 @@ interface RecentActivity {
 }
 
 export function DeviceManager() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -321,7 +318,7 @@ export function DeviceManager() {
   return (
     <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* 사이드바 - 데스크탑 */}
-      <aside className="hidden lg:flex w-56 bg-white shadow-xl border-r border-gray-200 flex-col">
+      <aside className="w-56 bg-white shadow-xl border-r border-gray-200 flex flex-col">
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
             <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
@@ -365,58 +362,7 @@ export function DeviceManager() {
         </div>
       </aside>
 
-      {/* 사이드바 - 모바일 */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-white shadow-xl border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
-              <Brain className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900">MIND BREEZE</span>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="p-2 rounded-lg hover:bg-gray-100"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {sidebarMenuItems.map((item) => renderSidebarItem(item))}
-        </nav>
-
-        <div className="p-3 border-t border-gray-200">
-          <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
-            <div className="flex items-center justify-center w-6 h-6 bg-gray-200 rounded-full">
-              <User className="w-3 h-3 text-gray-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-gray-900">관리자</p>
-              <p className="text-xs text-gray-500">admin@company.com</p>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Settings className="w-4 h-4 mr-2" />
-                  설정
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  로그아웃
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </aside>
 
       {/* 메인 콘텐츠 */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -424,12 +370,6 @@ export function DeviceManager() {
         <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
-              >
-                <Menu className="w-5 h-5 text-gray-700" />
-              </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">기업 관리 대시보드</h1>
                 <p className="text-sm text-gray-700">MIND BREEZE AI 관리자 포털</p>
@@ -534,13 +474,7 @@ export function DeviceManager() {
         </main>
       </div>
 
-      {/* 모바일 오버레이 */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+
     </div>
   )
 }
