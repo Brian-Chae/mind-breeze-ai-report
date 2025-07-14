@@ -1,17 +1,132 @@
-import React, { useState } from 'react'
-import { CreditCard, DollarSign, ShoppingCart, Plus, Calendar, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Settings, MoreHorizontal, Download, Eye, Search, Filter, Clock, Receipt, Star, Award, Package } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { CreditCard, DollarSign, ShoppingCart, Plus, Calendar, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Settings, MoreHorizontal, Download, Eye, Search, Filter, Clock, Receipt, Star, Award, Package, Loader2, RefreshCw } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
 import { Input } from '../../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
 
+// Firebase 서비스 import
+import creditManagementService from '../../../services/CreditManagementService'
+import { OrganizationService } from '../../../services/CompanyService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
+import { CreditTransaction } from '../../../types/business'
+
 interface CreditsSectionProps {
   subSection: string;
 }
 
+interface CreditData {
+  balance: number;
+  monthlyUsage: number;
+  dailyAverage: number;
+  totalSpent: number;
+  history: CreditTransaction[];
+}
+
 export default function CreditsSection({ subSection }: CreditsSectionProps) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [creditData, setCreditData] = useState<CreditData>({
+    balance: 0,
+    monthlyUsage: 0,
+    dailyAverage: 0,
+    totalSpent: 0,
+    history: []
+  })
+
+  // 데이터 로드
+  useEffect(() => {
+    loadCreditData()
+  }, [subSection])
+
+  const loadCreditData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 현재 사용자 정보 가져오기
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      const organizationId = currentContext.user.organizationId
+
+      // 병렬로 데이터 로드
+      const [balance, history] = await Promise.all([
+        creditManagementService.getCreditBalance(organizationId),
+        creditManagementService.getCreditHistory(organizationId, undefined, 50)
+      ])
+
+      // 이번달 사용량 계산
+      const thisMonth = new Date()
+      thisMonth.setDate(1)
+      const monthlyUsage = history
+        .filter(transaction => 
+          (transaction.type === 'REPORT_USAGE' || transaction.type === 'CONSULTATION_USAGE') && 
+          transaction.createdAt >= thisMonth
+        )
+        .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0)
+
+      // 일일 평균 계산 (최근 30일)
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const recentUsage = history
+        .filter(transaction => 
+          (transaction.type === 'REPORT_USAGE' || transaction.type === 'CONSULTATION_USAGE') && 
+          transaction.createdAt >= thirtyDaysAgo
+        )
+        .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0)
+      const dailyAverage = Math.round(recentUsage / 30)
+
+      // 총 지출 계산
+      const totalSpent = history
+        .filter(transaction => transaction.type === 'PURCHASE')
+        .reduce((sum, transaction) => sum + transaction.amount, 0)
+
+      setCreditData({
+        balance,
+        monthlyUsage,
+        dailyAverage,
+        totalSpent,
+        history
+      })
+
+    } catch (err) {
+      console.error('크레딧 데이터 로드 오류:', err)
+      setError('크레딧 데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-gray-600">크레딧 데이터를 불러오는 중...</span>
+      </div>
+    )
+  }
+
+  // 오류 발생 시
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">오류 발생</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={loadCreditData}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 시도
+        </Button>
+      </div>
+    )
+  }
 
   const renderCreditDashboard = () => (
     <div className="space-y-6">
@@ -34,8 +149,8 @@ export default function CreditsSection({ subSection }: CreditsSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">잔여 크레딧</p>
-              <p className="text-2xl font-bold text-green-600">15,420</p>
-              <p className="text-sm text-gray-600">₩ 385,500 상당</p>
+              <p className="text-2xl font-bold text-green-600">{creditData.balance.toLocaleString()}</p>
+              <p className="text-sm text-gray-600">₩ {(creditData.balance * 25).toLocaleString()} 상당</p>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl">
               <DollarSign className="w-6 h-6 text-green-600" />
@@ -47,10 +162,10 @@ export default function CreditsSection({ subSection }: CreditsSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">이번달 사용량</p>
-              <p className="text-2xl font-bold text-blue-600">2,850</p>
+              <p className="text-2xl font-bold text-blue-600">{creditData.monthlyUsage.toLocaleString()}</p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+15%</span>
+                <span className="text-sm text-green-600">이번달</span>
               </div>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
@@ -63,10 +178,10 @@ export default function CreditsSection({ subSection }: CreditsSectionProps) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">평균 일일 사용량</p>
-              <p className="text-2xl font-bold text-purple-600">95</p>
+              <p className="text-2xl font-bold text-purple-600">{creditData.dailyAverage.toLocaleString()}</p>
               <div className="flex items-center mt-1">
-                <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                <span className="text-sm text-red-600">-5%</span>
+                <TrendingDown className="w-4 h-4 text-gray-500 mr-1" />
+                <span className="text-sm text-gray-600">최근 30일</span>
               </div>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl">
@@ -78,12 +193,15 @@ export default function CreditsSection({ subSection }: CreditsSectionProps) {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">예상 소진일</p>
-              <p className="text-2xl font-bold text-orange-600">162일</p>
-              <p className="text-sm text-gray-600">2024-07-25</p>
+              <p className="text-sm text-gray-600">총 구매액</p>
+              <p className="text-2xl font-bold text-orange-600">{creditData.totalSpent.toLocaleString()}</p>
+              <div className="flex items-center mt-1">
+                <Package className="w-4 h-4 text-orange-500 mr-1" />
+                <span className="text-sm text-orange-600">누적</span>
+              </div>
             </div>
             <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-xl">
-              <Clock className="w-6 h-6 text-orange-600" />
+              <ShoppingCart className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </Card>
@@ -151,20 +269,20 @@ export default function CreditsSection({ subSection }: CreditsSectionProps) {
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 사용 내역</h3>
         <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+          {creditData.history.map((transaction, index) => (
+            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
                   <Receipt className="w-4 h-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">AI 리포트 생성</p>
-                  <p className="text-xs text-gray-600">2024-01-15 14:30</p>
+                  <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
+                  <p className="text-xs text-gray-600">{transaction.createdAt.toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">-25 크레딧</p>
-                <p className="text-xs text-gray-600">김건강</p>
+                <p className="text-sm font-medium text-gray-900">{transaction.amount > 0 ? '+' : ''}{transaction.amount.toLocaleString()} 크레딧</p>
+                <p className="text-xs text-gray-600">{transaction.type === 'PURCHASE' ? '구매' : '사용'}</p>
               </div>
             </div>
           ))}
