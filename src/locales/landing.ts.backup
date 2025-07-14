@@ -590,7 +590,6 @@ export const landingTexts = {
       getStarted: 'Get Started',
       language: 'Language'
     },
-
     nav: {
       home: 'Home',
       features: 'Features',
@@ -947,7 +946,8 @@ export const landingTexts = {
         title: 'Custom Enterprise Solution',
         description: 'For large-scale enterprises seeking special discounts, customized dashboards, dedicated support teams, and more benefits, please contact us directly.',
         cta: 'Contact for Custom Solution'
-      },
+      }
+    },
       hardware: {
         title: 'LINK BAND Device',
         subtitle: 'Required for measurements',
@@ -1860,8 +1860,7 @@ export const landingTexts = {
         }
       },
       copyright: '© 2024 Mind Breeze AI Report. All rights reserved.',
-      madeWith: 'Made with ❤️ in Tokyo'
+      madeWith: '❤️ を込めて東京で開発'
     }
   }
 };
-

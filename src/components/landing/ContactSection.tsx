@@ -3,6 +3,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { useState } from 'react';
+import { landingTexts } from '../../locales/landing';
+import { useLanguageStore } from '../../stores/languageStore';
 
 const contactInfo = [
   {
@@ -32,6 +34,9 @@ const contactInfo = [
 ];
 
 export function ContactSection() {
+  const { currentLanguage } = useLanguageStore();
+  const texts = landingTexts[currentLanguage as keyof typeof landingTexts];
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -59,10 +64,10 @@ export function ContactSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-            연락처
+            {texts.contact.title}
           </h2>
           <p className="text-xl text-gray-600">
-            마인드브리즈 AI에 대해 궁금하신 점이 있으신가요? 개인화된 건강 모니터링을 시작하는 데 도움을 드리겠습니다.
+            {texts.contact.subtitle}
           </p>
         </div>
 

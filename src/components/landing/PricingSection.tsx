@@ -1,6 +1,8 @@
 import { Check, Calculator, Users, Brain, Zap, Crown } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useState } from 'react';
+import { landingTexts } from '../../locales/landing';
+import { useLanguageStore } from '../../stores/languageStore';
 
 const aiServiceTiers = [
   { range: "100인 미만", discount: 10, price: 7110 },
@@ -38,6 +40,9 @@ const linkBandDiscountTiers = [
 ];
 
 export function PricingSection() {
+  const { currentLanguage } = useLanguageStore();
+  const texts = landingTexts[currentLanguage as keyof typeof landingTexts];
+  
   const [employeeCount, setEmployeeCount] = useState(100);
   const [deviceCount, setDeviceCount] = useState(10);
   const [deviceOption, setDeviceOption] = useState('rental1');
@@ -83,10 +88,10 @@ export function PricingSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-            기업 고객 전용 가격 안내
+            {texts.pricing.title}
           </h2>
           <p className="text-xl text-gray-600">
-            직원 수와 디바이스 수량에 따른 맞춤형 가격을 확인해보세요
+            {texts.pricing.subtitle}
           </p>
         </div>
 

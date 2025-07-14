@@ -1,4 +1,6 @@
 import { Activity, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { landingTexts } from '../../locales/landing';
+import { useLanguageStore } from '../../stores/languageStore';
 
 const footerLinks = {
   product: [
@@ -40,6 +42,9 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { currentLanguage } = useLanguageStore();
+  const texts = landingTexts[currentLanguage as keyof typeof landingTexts];
+  
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -53,8 +58,7 @@ export function Footer() {
               <span className="text-xl font-semibold">MIND BREEZE AI</span>
             </div>
             <p className="text-gray-400 mb-6 leading-relaxed">
-              AI 기반 분석으로 개인 건강 모니터링을 혁신합니다. 
-              의료급 링크밴드 디바이스로 단 60초 만에 종합적인 건강 인사이트를 얻으세요.
+              {texts.footer.description}
             </p>
             
             {/* Contact Info */}

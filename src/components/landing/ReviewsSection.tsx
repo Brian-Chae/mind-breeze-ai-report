@@ -1,5 +1,7 @@
 import { Star, Quote, Check } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { landingTexts } from '../../locales/landing';
+import { useLanguageStore } from '../../stores/languageStore';
 
 const reviews = [
   {
@@ -94,16 +96,19 @@ const useCases = [
 ];
 
 export function ReviewsSection() {
+  const { currentLanguage } = useLanguageStore();
+  const texts = landingTexts[currentLanguage as keyof typeof landingTexts];
+  
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-            검증된 성능으로 신뢰받는 MIND BREEZE AI
+            {texts.reviews.title}
           </h2>
           <p className="text-xl text-gray-600">
-            다양한 삶의 방식을 가진 사람들이 MIND BREEZE AI를 통해 건강을 관리하고 있습니다.
+            {texts.reviews.subtitle}
           </p>
         </div>
 
