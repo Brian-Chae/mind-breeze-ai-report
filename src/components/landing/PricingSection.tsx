@@ -220,7 +220,7 @@ export function PricingSection() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">AI 서비스 ({employeeCount}명)</span>
-                  <span className="font-medium">₩{totalAIService.toLocaleString()}</span>
+                  <span className="font-medium text-gray-900">₩{totalAIService.toLocaleString()}</span>
                 </div>
                 
                 <div className="flex justify-between">
@@ -230,7 +230,7 @@ export function PricingSection() {
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600">디바이스 비용 ({deviceCount}대)</span>
-                  <span className="font-medium">₩{totalDeviceCost.toLocaleString()}</span>
+                  <span className="font-medium text-gray-900">₩{totalDeviceCost.toLocaleString()}</span>
                 </div>
                 
                 {deviceDiscount > 0 && (
@@ -242,7 +242,7 @@ export function PricingSection() {
                 
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
-                    <span>총 예상 비용</span>
+                    <span className="text-gray-900">총 예상 비용</span>
                     <span className="text-blue-600">₩{totalCost.toLocaleString()}</span>
                   </div>
                 </div>
