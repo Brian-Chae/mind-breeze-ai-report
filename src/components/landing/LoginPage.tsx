@@ -101,27 +101,115 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     console.log('🔵 이메일 로그인 시도:', formData.email);
     
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      // 시스템 관리자 계정 확인
+      const isSuperAdmin = formData.email === 'admin@mindbreeze.kr' && formData.password === 'looxidlabs1234!';
       
-      console.log('✅ Firebase 인증 성공:', {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email
-      });
-      
-      // 마지막 로그인 시간 업데이트
-      try {
-        await FirebaseService.updateUserProfile(userCredential.user.uid, {
-          lastLoginAt: new Date()
+      if (isSuperAdmin) {
+        console.log('🔴 시스템 관리자 로그인 감지');
+        
+        // Firebase 인증 시도
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        
+        console.log('✅ 시스템 관리자 Firebase 인증 성공:', {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email
         });
-      } catch (updateError) {
-        console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
+        
+        // 시스템 관리자 프로필 생성/업데이트
+        await FirebaseService.updateUserProfile(userCredential.user.uid, {
+          userType: 'SYSTEM_ADMIN',
+          displayName: 'System Administrator',
+          email: formData.email,
+          permissions: [
+            'system:all',
+            'organization:all',
+            'user:all',
+            'report:all',
+            'credit:all',
+            'analytics:all',
+            'settings:all',
+            'admin:all'
+          ],
+          lastLoginAt: new Date(),
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        console.log('✅ 시스템 관리자 프로필 업데이트 완료');
+        toast.success('시스템 관리자로 로그인되었습니다!');
+        
+      } else {
+        // 일반 사용자 로그인
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        
+        console.log('✅ Firebase 인증 성공:', {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email
+        });
+        
+        // 마지막 로그인 시간 업데이트
+        try {
+          await FirebaseService.updateUserProfile(userCredential.user.uid, {
+            lastLoginAt: new Date()
+          });
+        } catch (updateError) {
+          console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
+        }
+        
+        console.log('✅ 이메일 로그인 완료');
       }
-      
-      console.log('✅ 이메일 로그인 완료');
       
     } catch (error: any) {
       console.error('❌ 이메일 로그인 오류:', error);
-      setError(getErrorMessage(error.code));
+      
+      // 시스템 관리자 계정인데 Firebase 계정이 없는 경우 자동 생성
+      if (formData.email === 'admin@mindbreeze.kr' && formData.password === 'looxidlabs1234!' && 
+          error.code === 'auth/user-not-found') {
+        
+        console.log('🔴 시스템 관리자 계정 생성 중...');
+        
+        try {
+          // Firebase 계정 생성
+          const { createUserWithEmailAndPassword } = await import('firebase/auth');
+          const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+          
+          console.log('✅ 시스템 관리자 계정 생성 완료:', {
+            uid: userCredential.user.uid,
+            email: userCredential.user.email
+          });
+          
+          // 시스템 관리자 프로필 생성
+          await FirebaseService.updateUserProfile(userCredential.user.uid, {
+            userType: 'SYSTEM_ADMIN',
+            displayName: 'System Administrator',
+            email: formData.email,
+            permissions: [
+              'system:all',
+              'organization:all',
+              'user:all',
+              'report:all',
+              'credit:all',
+              'analytics:all',
+              'settings:all',
+              'admin:all'
+            ],
+            lastLoginAt: new Date(),
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          
+          console.log('✅ 시스템 관리자 프로필 생성 완료');
+          toast.success('시스템 관리자 계정이 생성되고 로그인되었습니다!');
+          
+        } catch (createError) {
+          console.error('❌ 시스템 관리자 계정 생성 실패:', createError);
+          setError('시스템 관리자 계정 생성에 실패했습니다.');
+        }
+      } else {
+        setError(getErrorMessage(error.code));
+      }
     } finally {
       setIsLoading(false);
     }

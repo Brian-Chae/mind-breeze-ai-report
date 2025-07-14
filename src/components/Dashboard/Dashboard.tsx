@@ -38,7 +38,7 @@ export default function Dashboard() {
 
   const { userType, displayName, organizationId } = authContext.user;
 
-  // 조직 사용자인데 organizationId가 없는 경우
+  // 조직 사용자인데 organizationId가 없는 경우 (시스템 관리자는 제외)
   if ((userType === 'ORGANIZATION_ADMIN' || userType === 'ORGANIZATION_MEMBER') && !organizationId) {
     return (
       <div className="p-6">
@@ -86,7 +86,7 @@ export default function Dashboard() {
       );
     
     case 'SYSTEM_ADMIN':
-      // 시스템 관리자는 조직 관리자 대시보드 + 추가 권한으로 처리
+      // 시스템 관리자는 조직 관리자 대시보드 + 시스템 관리자 권한으로 처리
       return (
         <OrganizationAdminDashboard 
           user={{
@@ -100,8 +100,15 @@ export default function Dashboard() {
             id: authContext.organization.id,
             creditBalance: authContext.organization.creditBalance,
             memberCount: authContext.organization.totalMemberCount,
-            totalMeasurements: 0 // TODO: 실제 값으로 대체
-          } : undefined}
+            totalMeasurements: 0
+          } : {
+            // 시스템 관리자 전용 기본 정보
+            name: 'System Administration',
+            id: 'system',
+            creditBalance: 0,
+            memberCount: 0,
+            totalMeasurements: 0
+          }}
           permissions={authContext.permissions}
           isSystemAdmin={true}
         />
