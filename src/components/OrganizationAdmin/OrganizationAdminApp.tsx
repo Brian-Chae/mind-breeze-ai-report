@@ -287,7 +287,7 @@ export default function OrganizationAdminApp() {
       case 'devices':
         return <DevicesSection subSection={currentSubSection} onNavigate={handleNavigation} />
       case 'credits':
-        return <CreditsSection subSection={currentSubSection} />
+        return <CreditsSection subSection={currentSubSection} onNavigate={handleNavigation} />
       default:
         return <DashboardSection />
     }
