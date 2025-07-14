@@ -88,7 +88,7 @@ export default function CompanySignupSelectionPage() {
 
               <Button
                 onClick={() => navigate('/company-registration')}
-                className="w-full bg-blue-600 hover:bg-blue-700 py-4 text-lg font-semibold"
+                className="w-full bg-blue-600 hover:bg-blue-700 py-4 text-lg font-semibold text-white"
               >
                 신규 기업 등록하기
               </Button>
@@ -139,7 +139,7 @@ export default function CompanySignupSelectionPage() {
 
               <Button
                 onClick={() => navigate('/company-join')}
-                className="w-full bg-green-600 hover:bg-green-700 py-4 text-lg font-semibold"
+                className="w-full bg-green-600 hover:bg-green-700 py-4 text-lg font-semibold text-white"
               >
                 기존 기업 합류하기
               </Button>
@@ -160,14 +160,14 @@ export default function CompanySignupSelectionPage() {
             <Button
               variant="outline"
               onClick={() => navigate('/demo')}
-              className="px-6 py-3 text-lg"
+              className="px-6 py-3 text-lg text-gray-900 border-gray-300 hover:bg-gray-100"
             >
               데모 체험하기
             </Button>
             <Button
               variant="outline"
               onClick={() => navigate('/contact')}
-              className="px-6 py-3 text-lg"
+              className="px-6 py-3 text-lg text-gray-900 border-gray-300 hover:bg-gray-100"
             >
               문의하기
             </Button>
