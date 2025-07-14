@@ -76,7 +76,7 @@ const AppRouter = () => {
           // 기본 회원가입 페이지로 이동
           navigate('/signup');
         }
-      } else if (['/welcome', '/home', '/data-center', '/visualizer', '/documents', '/linkband', '/applications', '/admin'].includes(currentPath)) {
+      } else if (['/welcome', '/home', '/data-center', '/visualizer', '/documents', '/linkband', '/applications'].includes(currentPath) || currentPath.startsWith('/admin')) {
         // 보호된 페이지들은 랜딩 페이지로 리다이렉트
         navigate('/');
       }
@@ -84,15 +84,15 @@ const AppRouter = () => {
   }, [user, loading, navigate, location]);
 
   const getRedirectPath = (userType: string) => {
-    // 임시로 모든 사용자를 /admin으로 리디렉션
-    return '/admin';
+    // 임시로 모든 사용자를 /admin/dashboard로 리디렉션
+    return '/admin/dashboard';
     
     /* 원래 로직 - 나중에 복원
     switch (userType) {
       case 'SYSTEM_ADMIN':
-        return '/admin';
+        return '/admin/dashboard';
       case 'ORGANIZATION_ADMIN':
-        return '/admin';
+        return '/admin/dashboard';
       case 'ORGANIZATION_MEMBER':
         return '/welcome';
       case 'INDIVIDUAL_USER':
@@ -194,12 +194,74 @@ const AppRouter = () => {
           <SettingsPage />
         </ProtectedRoute>
       } />
+      
+      {/* 관리자 라우트 */}
       <Route path="/admin" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/*" element={
+      <Route path="/admin/dashboard" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organization" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organization/:subSection" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/members" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/members/:subSection" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/:subSection" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-report" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-report/:subSection" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/devices" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/devices/:subSection" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/credits" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/credits/:subSection" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>

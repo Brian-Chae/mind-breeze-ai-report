@@ -95,29 +95,40 @@ export default function DashboardSection() {
       
       const currentContext = enterpriseAuthService.getCurrentContext()
       
-      if (!currentContext.user) {
-        setError('로그인 정보가 없습니다.')
+      console.log('🔍 현재 컨텍스트:', currentContext)
+      
+      // 사용자 정보가 없는 경우 기본값으로 설정
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        console.warn('⚠️ 사용자 정보 또는 조직 ID가 없습니다. 기본 대시보드를 표시합니다.')
+        
+        // 기본 대시보드 데이터 설정
+        setDashboardData({
+          totalUsers: 0,
+          activeDevices: 0,
+          monthlyReports: 0,
+          creditBalance: 0,
+          userStats: null,
+          members: [],
+          organizationInfo: null
+        })
+        
+        setLoading(false)
         return
       }
 
       const organizationId = currentContext.user.organizationId
-
-      if (!organizationId) {
-        setError('조직 정보를 찾을 수 없습니다.')
-        return
-      }
 
       // 현재 사용자의 권한 정보 확인
       console.log('현재 사용자 권한:', currentContext.permissions)
       console.log('사용자 타입:', currentContext.user.userType)
       console.log('조직 ID:', organizationId)
 
-      // 병렬로 데이터 로드
+      // 병렬로 데이터 로드 (각각 에러 처리)
       const [
         organizationInfo,
         members,
         creditBalance
-      ] = await Promise.all([
+      ] = await Promise.allSettled([
         OrganizationService.getOrganizationById(organizationId),
         new MemberManagementService().getOrganizationMembers(organizationId),
         creditManagementService.getCreditBalance(organizationId)
@@ -137,14 +148,19 @@ export default function DashboardSection() {
         console.warn('측정 대상자 조회 권한이 없습니다.')
       }
 
+      // 결과 처리 (에러가 발생한 경우 기본값 사용)
+      const orgInfo = organizationInfo.status === 'fulfilled' ? organizationInfo.value : null
+      const memberList = members.status === 'fulfilled' ? members.value : []
+      const balance = creditBalance.status === 'fulfilled' ? creditBalance.value : 0
+
       setDashboardData({
         totalUsers: userStats?.totalCount || 0,
-        activeDevices: members.filter((m: MemberManagementData) => m.isActive).length,
+        activeDevices: memberList.filter((m: MemberManagementData) => m.isActive).length,
         monthlyReports: userStats?.thisMonthMeasurements || 0,
-        creditBalance: creditBalance,
+        creditBalance: balance,
         userStats,
-        members,
-        organizationInfo
+        members: memberList,
+        organizationInfo: orgInfo
       })
 
     } catch (err) {

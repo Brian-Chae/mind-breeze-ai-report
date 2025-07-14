@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { 
   BarChart3, 
   Users, 
@@ -56,9 +57,37 @@ interface SidebarMenuItem {
 }
 
 export default function OrganizationAdminApp() {
-  const [currentSection, setCurrentSection] = useState('dashboard')
-  const [currentSubSection, setCurrentSubSection] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const params = useParams()
   const [searchQuery, setSearchQuery] = useState('')
+
+  // URL에서 현재 섹션과 서브섹션 추출
+  const getCurrentSectionFromURL = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean)
+    if (pathSegments.length >= 2) {
+      return pathSegments[1] // /admin/dashboard -> dashboard
+    }
+    return 'dashboard'
+  }
+
+  const getCurrentSubSectionFromURL = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean)
+    if (pathSegments.length >= 3) {
+      return pathSegments[2] // /admin/users/list -> list
+    }
+    return params.subSection || ''
+  }
+
+  const currentSection = getCurrentSectionFromURL()
+  const currentSubSection = getCurrentSubSectionFromURL()
+
+  // URL이 /admin으로만 되어있으면 /admin/dashboard로 리디렉션
+  useEffect(() => {
+    if (location.pathname === '/admin') {
+      navigate('/admin/dashboard', { replace: true })
+    }
+  }, [location.pathname, navigate])
 
   useEffect(() => {
     // 현재 사용자 권한 정보 디버깅
@@ -72,6 +101,21 @@ export default function OrganizationAdminApp() {
     console.log('measurement_users.view.all 권한:', enterpriseAuthService.hasPermission('measurement_users.view.all'))
     console.log('measurement_users.view.own 권한:', enterpriseAuthService.hasPermission('measurement_users.view.own'))
     console.log('==========================')
+    
+    // 사용자 정보가 없으면 잠시 후 다시 확인
+    if (!currentContext.user) {
+      console.log('🔄 사용자 정보가 없습니다. 잠시 후 다시 확인합니다...')
+      setTimeout(() => {
+        const updatedContext = enterpriseAuthService.getCurrentContext()
+        if (!updatedContext.user) {
+          console.warn('⚠️ 사용자 정보를 불러올 수 없습니다. 페이지를 새로고침하거나 다시 로그인해주세요.')
+        } else {
+          console.log('✅ 사용자 정보 로드 완료:', updatedContext.user)
+          // 페이지를 새로고침하여 최신 상태 반영
+          window.location.reload()
+        }
+      }, 2000)
+    }
   }, [])
 
   // 로그아웃 기능
@@ -131,7 +175,7 @@ export default function OrganizationAdminApp() {
     }
   }
 
-  // 사이드바 메뉴 항목들 (기존 코드 유지)
+  // 사이드바 메뉴 항목들
   const sidebarMenuItems: SidebarMenuItem[] = [
     {
       id: 'dashboard',
@@ -156,9 +200,9 @@ export default function OrganizationAdminApp() {
       icon: Users,
       path: '/admin/members',
       children: [
-        { id: 'member-list', title: '운영자 목록', icon: Users, path: '/admin/members/list' },
-        { id: 'member-invite', title: '초대 관리', icon: Plus, path: '/admin/members/invite' },
-        { id: 'member-permissions', title: '권한 설정', icon: Shield, path: '/admin/members/permissions' }
+        { id: 'list', title: '운영자 목록', icon: Users, path: '/admin/members/list' },
+        { id: 'invite', title: '초대 관리', icon: Plus, path: '/admin/members/invite' },
+        { id: 'permissions', title: '권한 설정', icon: Shield, path: '/admin/members/permissions' }
       ]
     },
     {
@@ -167,9 +211,9 @@ export default function OrganizationAdminApp() {
       icon: User,
       path: '/admin/users',
       children: [
-        { id: 'user-list', title: '사용자 목록', icon: Users, path: '/admin/users/list' },
-        { id: 'user-history', title: '측정 이력', icon: Activity, path: '/admin/users/history' },
-        { id: 'user-reports', title: '리포트 관리', icon: Eye, path: '/admin/users/reports' }
+        { id: 'list', title: '사용자 목록', icon: Users, path: '/admin/users/list' },
+        { id: 'history', title: '측정 이력', icon: Activity, path: '/admin/users/history' },
+        { id: 'reports', title: '리포트 관리', icon: Eye, path: '/admin/users/reports' }
       ]
     },
     {
@@ -178,9 +222,9 @@ export default function OrganizationAdminApp() {
       icon: Brain,
       path: '/admin/ai-report',
       children: [
-        { id: 'report-generation', title: '리포트 생성', icon: Plus, path: '/admin/ai-report/generation' },
-        { id: 'report-list', title: '리포트 목록', icon: Eye, path: '/admin/ai-report/list' },
-        { id: 'report-quality', title: '품질 관리', icon: Shield, path: '/admin/ai-report/quality' }
+        { id: 'generation', title: '리포트 생성', icon: Plus, path: '/admin/ai-report/generation' },
+        { id: 'list', title: '리포트 목록', icon: Eye, path: '/admin/ai-report/list' },
+        { id: 'quality', title: '품질 관리', icon: Shield, path: '/admin/ai-report/quality' }
       ]
     },
     {
@@ -189,9 +233,9 @@ export default function OrganizationAdminApp() {
       icon: Monitor,
       path: '/admin/devices',
       children: [
-        { id: 'device-inventory', title: '디바이스 현황', icon: Monitor, path: '/admin/devices/inventory' },
-        { id: 'device-assignment', title: '디바이스 배치', icon: Users, path: '/admin/devices/assignment' },
-        { id: 'device-monitoring', title: '디바이스 모니터링', icon: Activity, path: '/admin/devices/monitoring' }
+        { id: 'inventory', title: '디바이스 현황', icon: Monitor, path: '/admin/devices/inventory' },
+        { id: 'assignment', title: '디바이스 배치', icon: Users, path: '/admin/devices/assignment' },
+        { id: 'monitoring', title: '디바이스 모니터링', icon: Activity, path: '/admin/devices/monitoring' }
       ]
     },
     {
@@ -200,16 +244,19 @@ export default function OrganizationAdminApp() {
       icon: CreditCard,
       path: '/admin/credits',
       children: [
-        { id: 'credit-status', title: '크레딧 현황', icon: DollarSign, path: '/admin/credits/status' },
-        { id: 'credit-history', title: '구매 내역', icon: Calendar, path: '/admin/credits/history' },
-        { id: 'credit-settings', title: '결제 설정', icon: Settings, path: '/admin/credits/settings' }
+        { id: 'status', title: '크레딧 현황', icon: DollarSign, path: '/admin/credits/status' },
+        { id: 'history', title: '구매 내역', icon: Calendar, path: '/admin/credits/history' },
+        { id: 'settings', title: '결제 설정', icon: Settings, path: '/admin/credits/settings' }
       ]
     }
   ]
 
   const handleNavigation = (sectionId: string, subSectionId?: string) => {
-    setCurrentSection(sectionId)
-    setCurrentSubSection(subSectionId || '')
+    if (subSectionId) {
+      navigate(`/admin/${sectionId}/${subSectionId}`)
+    } else {
+      navigate(`/admin/${sectionId}`)
+    }
   }
 
   const renderSidebarItem = (item: SidebarMenuItem, level: number = 0) => {
@@ -250,7 +297,7 @@ export default function OrganizationAdminApp() {
                 style={{ paddingLeft: `${24 + level * 16}px` }}
                 onClick={() => handleNavigation(item.id, child.id)}
               >
-                <child.icon className={`w-3 h-3 ${currentSubSection === child.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                <child.icon className={`w-3 h-3 ${currentSubSection === child.id ? 'text-blue-600' : 'text-gray-500'}`} />
                 <span className="text-sm">{child.title}</span>
               </div>
             ))}
@@ -261,15 +308,17 @@ export default function OrganizationAdminApp() {
   }
 
   const getCurrentSectionTitle = () => {
-    const section = sidebarMenuItems.find(item => item.id === currentSection)
-    if (!section) return '대시보드'
+    const activeItem = sidebarMenuItems.find(item => item.id === currentSection)
+    if (!activeItem) return '대시보드'
     
-    if (currentSubSection) {
-      const subSection = section.children?.find(child => child.id === currentSubSection)
-      return subSection ? `${section.title} > ${subSection.title}` : section.title
+    if (currentSubSection && activeItem.children) {
+      const activeChild = activeItem.children.find(child => child.id === currentSubSection)
+      if (activeChild) {
+        return `${activeItem.title} > ${activeChild.title}`
+      }
     }
     
-    return section.title
+    return activeItem.title
   }
 
   const renderCurrentSection = () => {
