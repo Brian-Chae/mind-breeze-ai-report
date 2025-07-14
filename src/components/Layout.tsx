@@ -26,6 +26,7 @@ const navigationItems = [
   { id: 'data-center', label: 'Data Center', icon: Database },
   { id: 'visualizer', label: 'Visualizer', icon: BarChart3 },
   { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
 export function Layout({ children, currentSection, onSectionChange }: LayoutProps) {

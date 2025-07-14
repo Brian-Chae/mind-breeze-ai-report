@@ -9,6 +9,7 @@ import { DataCenterPage } from '../pages/DataCenterPage';
 import { VisualizerPage } from '../pages/VisualizerPage';
 import { DocumentsPage } from '../pages/DocumentsPage';
 import { LinkBandPage } from '../pages/LinkBandPage';
+import { SettingsPage } from '../pages/SettingsPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { HomeScreen } from './HomeScreen';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -137,6 +138,11 @@ const AppRouter = () => {
       <Route path="/linkband" element={
         <ProtectedRoute>
           <LinkBandPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <SettingsPage />
         </ProtectedRoute>
       } />
     </Routes>
