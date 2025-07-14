@@ -485,7 +485,7 @@ export default function CompanyRegistrationForm() {
                 <div className="bg-white p-4 rounded-xl border border-gray-200">
                   <h4 className="font-semibold mb-2 text-blue-900">예상 요금 정보</h4>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-gray-700">
                       <span>기본 요금 (인당):</span>
                       <span>{pricing.basePrice.toLocaleString()}원</span>
                     </div>
@@ -495,14 +495,14 @@ export default function CompanyRegistrationForm() {
                           <span>볼륨 할인 ({Math.round(pricing.discountRate * 100)}%):</span>
                           <span>-{((pricing.basePrice - pricing.discountedPrice) * formData.estimatedMemberCount).toLocaleString()}원</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-gray-700">
                           <span>할인 적용가 (인당):</span>
                           <span>{pricing.discountedPrice.toLocaleString()}원</span>
                         </div>
                       </>
                     )}
                     <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                      <span>월 예상 요금:</span>
+                      <span className="text-gray-900">월 예상 요금:</span>
                       <span className="text-blue-600">{pricing.monthlyTotal.toLocaleString()}원</span>
                     </div>
                   </div>
