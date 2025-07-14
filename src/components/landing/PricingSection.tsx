@@ -230,39 +230,62 @@ export function PricingSection() {
             <div className="bg-gray-50 rounded-2xl p-6">
               <h4 className="text-lg font-bold text-gray-900 mb-4">예상 비용</h4>
               
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">총 서비스 횟수 ({employeeCount}명 × {serviceCountPerPerson}회)</span>
-                  <span className="font-medium text-gray-900">{totalServiceCount.toLocaleString()}회</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600">AI 서비스 비용</span>
-                  <span className="font-medium text-gray-900">₩{totalAIService.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600">할인율 ({aiService.discount}%)</span>
-                  <span className="text-green-600">-₩{(7900 * totalServiceCount - totalAIService).toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600">디바이스 비용 ({deviceCount}대)</span>
-                  <span className="font-medium text-gray-900">₩{totalDeviceCost.toLocaleString()}</span>
-                </div>
-                
-                {deviceDiscount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">디바이스 할인 ({deviceDiscount}%)</span>
-                    <span className="text-green-600">-₩{(devicePrice * deviceCount - totalDeviceCost).toLocaleString()}</span>
+              <div className="space-y-3">
+                {/* AI 서비스 섹션 */}
+                <div className="mb-4">
+                  <div className="text-sm font-medium text-gray-800 mb-2">AI 서비스</div>
+                  <div className="ml-4 space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">AI 리포트 및 상담 제공 대상자</span>
+                      <span className="text-gray-900">({employeeCount}명)</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">인당 AI 리포트 및 상담 제공 횟수</span>
+                      <span className="text-gray-900">({serviceCountPerPerson}회)</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">총 AI 리포트 및 상담 제공 회수</span>
+                      <span className="text-gray-900">({totalServiceCount.toLocaleString()}건)</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-medium">
+                      <span className="text-gray-700">총 서비스 비용</span>
+                      <span className="text-gray-900">
+                        ₩{totalAIService.toLocaleString()} 
+                        <span className="text-green-600 text-xs ml-1">
+                          (할인 {aiService.discount}%, -₩{(7900 * totalServiceCount - totalAIService).toLocaleString()} 적용)
+                        </span>
+                      </span>
+                    </div>
                   </div>
-                )}
-                
-                <div className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span className="text-gray-900">총 예상 비용</span>
-                    <span className="text-blue-600">₩{totalCost.toLocaleString()}</span>
+                </div>
+
+                {/* 디바이스 비용 섹션 */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span className="text-gray-700">디바이스 비용 ({deviceCount}대, {deviceOption === 'rental1' ? '1개월 렌탈' : deviceOption === 'rental3' ? '3개월 렌탈' : '구매'})</span>
+                    <span className="text-gray-900">
+                      ₩{totalDeviceCost.toLocaleString()}
+                      {deviceDiscount > 0 && (
+                        <span className="text-green-600 text-xs ml-1">
+                          (할인 {deviceDiscount}%, -₩{(devicePrice * deviceCount - totalDeviceCost).toLocaleString()} 적용)
+                        </span>
+                      )}
+                    </span>
                   </div>
+                </div>
+                
+                {/* 구분선 */}
+                <div className="border-t border-gray-300 my-4"></div>
+                
+                {/* 총계 */}
+                <div className="flex justify-between text-lg font-bold">
+                  <span className="text-gray-900">총 예상 비용</span>
+                  <span className="text-blue-600">
+                    ₩{totalCost.toLocaleString()}
+                    <span className="text-green-600 text-sm ml-1">
+                      (할인 ₩{((7900 * totalServiceCount + devicePrice * deviceCount) - totalCost).toLocaleString()} 적용)
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
