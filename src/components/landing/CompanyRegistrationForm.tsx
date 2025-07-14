@@ -210,10 +210,43 @@ export default function CompanyRegistrationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      toast.error('입력 정보를 확인해주세요');
+    console.log('폼 제출 시작');
+    console.log('폼 데이터:', formData);
+    
+    const validationResult = validateForm();
+    if (!validationResult) {
+      console.log('폼 유효성 검사 실패');
+      console.log('현재 폼 데이터:', formData);
+      
+      // errors 상태가 업데이트되기 전에 오류를 다시 계산
+      const newErrors: Partial<Record<keyof CompanyRegistrationData, string>> = {};
+      
+      if (!formData.companyName.trim()) newErrors.companyName = '회사명을 입력해주세요';
+      if (!formData.businessNumber.trim()) newErrors.businessNumber = '사업자등록번호를 입력해주세요';
+      if (!formData.contactEmail.trim()) newErrors.contactEmail = '회사 연락처 이메일을 입력해주세요';
+      if (!formData.contactPhone.trim()) newErrors.contactPhone = '회사 연락처를 입력해주세요';
+      if (!formData.address.trim()) newErrors.address = '회사 주소를 입력해주세요';
+      if (!formData.adminName.trim()) newErrors.adminName = '관리자 이름을 입력해주세요';
+      if (!formData.adminEmail.trim()) newErrors.adminEmail = '관리자 이메일을 입력해주세요';
+      if (!formData.adminPassword) newErrors.adminPassword = '비밀번호를 입력해주세요';
+      if (!formData.adminPhone.trim()) newErrors.adminPhone = '관리자 전화번호를 입력해주세요';
+      if (!formData.adminAddress.trim()) newErrors.adminAddress = '관리자 주소를 입력해주세요';
+      if (!formData.agreeToTerms) newErrors.agreeToTerms = '서비스 이용약관에 동의해주세요';
+      if (!formData.agreeToPrivacy) newErrors.agreeToPrivacy = '개인정보처리방침에 동의해주세요';
+      
+      console.log('계산된 오류:', newErrors);
+      
+      // 첫 번째 오류 메시지 표시
+      const firstError = Object.values(newErrors).find(error => error);
+      if (firstError) {
+        toast.error(firstError);
+      } else {
+        toast.error('입력 정보를 확인해주세요');
+      }
       return;
     }
+    
+    console.log('폼 유효성 검사 통과');
 
     setIsLoading(true);
     
@@ -845,7 +878,7 @@ export default function CompanyRegistrationForm() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/company-signup-selection')}
+                onClick={() => navigate('/organization-signup-selection')}
                 className="flex-1 rounded-xl h-12 text-gray-700 border-gray-300 hover:bg-gray-50"
               >
                 취소
@@ -853,6 +886,7 @@ export default function CompanyRegistrationForm() {
               <Button
                 type="submit"
                 disabled={isLoading}
+                onClick={() => console.log('회사 등록 완료 버튼 클릭됨')}
                 className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {isLoading ? (
