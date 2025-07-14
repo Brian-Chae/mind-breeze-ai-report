@@ -91,7 +91,7 @@ export default function CompanySignupSelectionPage({ onNavigate }: CompanySignup
               </div>
 
               <Button
-                onClick={() => navigate('/company-registration')}
+                onClick={() => navigate('/organization-registration')}
                 className="w-full bg-blue-600 hover:bg-blue-700 py-4 text-lg font-semibold text-white"
               >
                 신규 기업 등록하기

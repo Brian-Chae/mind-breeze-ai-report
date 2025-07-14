@@ -250,7 +250,7 @@ export default function CompanyRegistrationForm() {
         toast.success('회사 등록이 완료되었습니다!');
         
         // 성공 페이지로 이동
-        navigate('/company-registration-success', { 
+        navigate('/organization-registration-success', { 
           state: { 
             companyCode: registrationResult.organizationCode,
             companyName: formData.companyName,

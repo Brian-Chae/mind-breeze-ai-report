@@ -100,6 +100,7 @@ const AppRouter = () => {
       {/* 조직 관련 라우트 */}
       <Route path="/organization-signup-selection" element={<CompanySignupSelectionPage />} />
       <Route path="/organization-registration" element={<CompanyRegistrationForm />} />
+      <Route path="/organization-registration-success" element={<CompanyRegistrationSuccess />} />
       <Route path="/organization-join" element={<CompanyJoinForm />} />
       
       {/* MEASUREMENT_SUBJECT 토큰 접속 */}
