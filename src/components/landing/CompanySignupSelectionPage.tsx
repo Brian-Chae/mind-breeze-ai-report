@@ -12,7 +12,11 @@ import { ArrowLeft, Building2, Users, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
-export default function CompanySignupSelectionPage() {
+interface CompanySignupSelectionPageProps {
+  onNavigate?: (mode: string) => void;
+}
+
+export default function CompanySignupSelectionPage({ onNavigate }: CompanySignupSelectionPageProps) {
   const navigate = useNavigate();
 
   return (
