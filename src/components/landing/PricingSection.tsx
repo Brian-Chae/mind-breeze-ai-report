@@ -41,6 +41,7 @@ export function PricingSection() {
   const [employeeCount, setEmployeeCount] = useState(100);
   const [deviceCount, setDeviceCount] = useState(10);
   const [deviceOption, setDeviceOption] = useState('rental1');
+  const [serviceCountPerPerson, setServiceCountPerPerson] = useState(3);
 
   const getAIServicePrice = (count: number) => {
     if (count < 100) return { price: 7110, discount: 10 };
@@ -71,7 +72,8 @@ export function PricingSection() {
   const devicePrice = getDevicePrice(deviceOption);
   const discountedDevicePrice = devicePrice * (1 - deviceDiscount / 100);
 
-  const totalAIService = aiService.price * employeeCount;
+  const totalServiceCount = employeeCount * serviceCountPerPerson;
+  const totalAIService = aiService.price * totalServiceCount;
   const totalDeviceCost = discountedDevicePrice * deviceCount;
   const totalCost = totalAIService + totalDeviceCost;
 
@@ -189,6 +191,17 @@ export function PricingSection() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">인당 서비스 횟수</label>
+                <input
+                  type="number"
+                  value={serviceCountPerPerson}
+                  onChange={(e) => setServiceCountPerPerson(parseInt(e.target.value) || 0)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  min="1"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">디바이스 수량</label>
                 <input
                   type="number"
@@ -219,13 +232,18 @@ export function PricingSection() {
               
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">AI 서비스 ({employeeCount}명)</span>
+                  <span className="text-gray-600">총 서비스 횟수 ({employeeCount}명 × {serviceCountPerPerson}회)</span>
+                  <span className="font-medium text-gray-900">{totalServiceCount.toLocaleString()}회</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-600">AI 서비스 비용</span>
                   <span className="font-medium text-gray-900">₩{totalAIService.toLocaleString()}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600">할인율 ({aiService.discount}%)</span>
-                  <span className="text-green-600">-₩{(7900 * employeeCount - totalAIService).toLocaleString()}</span>
+                  <span className="text-green-600">-₩{(7900 * totalServiceCount - totalAIService).toLocaleString()}</span>
                 </div>
                 
                 <div className="flex justify-between">
@@ -253,7 +271,7 @@ export function PricingSection() {
           <div className="mt-8 text-center">
             <Button 
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium"
-              onClick={() => window.open('mailto:enterprise@mindbreeze.ai?subject=기업고객 견적 문의&body=안녕하세요, 다음과 같은 조건으로 견적을 문의드립니다.\n\n직원 수: ' + employeeCount + '명\n디바이스 수량: ' + deviceCount + '대\n디바이스 옵션: ' + deviceOption + '\n\n감사합니다.', '_blank')}
+              onClick={() => window.open('mailto:enterprise@mindbreeze.ai?subject=기업고객 견적 문의&body=안녕하세요, 다음과 같은 조건으로 견적을 문의드립니다.\n\n직원 수: ' + employeeCount + '명\n인당 서비스 횟수: ' + serviceCountPerPerson + '회\n총 서비스 횟수: ' + totalServiceCount + '회\n디바이스 수량: ' + deviceCount + '대\n디바이스 옵션: ' + deviceOption + '\n\n감사합니다.', '_blank')}
             >
               정확한 견적 문의하기
             </Button>
