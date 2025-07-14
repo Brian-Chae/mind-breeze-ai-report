@@ -443,7 +443,7 @@ export default function CompanyRegistrationForm() {
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     placeholder="서울시 강남구 테헤란로 123, 4층"
                     rows={2}
-                    className="rounded-xl bg-white"
+                    className="rounded-xl bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -572,7 +572,7 @@ export default function CompanyRegistrationForm() {
                       value={formData.adminAddress}
                       onChange={(e) => handleInputChange('adminAddress', e.target.value)}
                       placeholder="서울시 강남구 테헤란로 123"
-                      className={`${errors.adminAddress ? 'border-red-500' : ''} rounded-xl`}
+                      className={`${errors.adminAddress ? 'border-red-500' : ''} rounded-xl text-gray-900`}
                     />
                     {errors.adminAddress && (
                       <p className="text-sm text-red-500 mt-1">{errors.adminAddress}</p>
