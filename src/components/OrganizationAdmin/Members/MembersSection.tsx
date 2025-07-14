@@ -1,0 +1,560 @@
+import React, { useState } from 'react'
+import {
+  Users,
+  UserPlus,
+  Mail,
+  Phone,
+  Calendar,
+  Shield,
+  Edit,
+  Trash2,
+  Send,
+  Check,
+  X,
+  Eye,
+  EyeOff,
+  MoreHorizontal,
+  Search,
+  Filter,
+  Download,
+  Clock,
+  AlertCircle,
+  CheckCircle
+} from 'lucide-react'
+import { Card } from '../../ui/card'
+import { Button } from '../../ui/button'
+import { Badge } from '../../ui/badge'
+import { Input } from '../../ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+
+interface MembersSectionProps {
+  subSection: string;
+}
+
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'admin' | 'manager' | 'member';
+  department: string;
+  joinDate: string;
+  lastLogin: string;
+  status: 'active' | 'inactive' | 'pending';
+  permissions: string[];
+}
+
+interface Invitation {
+  id: string;
+  email: string;
+  role: 'admin' | 'manager' | 'member';
+  department: string;
+  sentDate: string;
+  status: 'pending' | 'accepted' | 'expired';
+  invitedBy: string;
+}
+
+interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  category: 'user' | 'device' | 'report' | 'admin';
+  level: 'read' | 'write' | 'delete';
+}
+
+export default function MembersSection({ subSection }: MembersSectionProps) {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [newInviteEmail, setNewInviteEmail] = useState('')
+  const [newInviteRole, setNewInviteRole] = useState<'admin' | 'manager' | 'member'>('member')
+  const [newInviteDepartment, setNewInviteDepartment] = useState('')
+  const [showInviteForm, setShowInviteForm] = useState(false)
+
+  // 운영자 목록 데이터
+  const [members, setMembers] = useState<Member[]>([
+    {
+      id: '1',
+      name: '김관리자',
+      email: 'admin@company.com',
+      phone: '010-1234-5678',
+      role: 'admin',
+      department: '경영관리팀',
+      joinDate: '2023-01-15',
+      lastLogin: '2024-01-15 09:30',
+      status: 'active',
+      permissions: ['user_read', 'user_write', 'device_read', 'device_write', 'report_read', 'report_write', 'admin_read', 'admin_write']
+    },
+    {
+      id: '2',
+      name: '이매니저',
+      email: 'manager@company.com',
+      phone: '010-2345-6789',
+      role: 'manager',
+      department: '연구개발팀',
+      joinDate: '2023-02-01',
+      lastLogin: '2024-01-15 08:45',
+      status: 'active',
+      permissions: ['user_read', 'user_write', 'device_read', 'report_read', 'report_write']
+    },
+    {
+      id: '3',
+      name: '박운영자',
+      email: 'member@company.com',
+      phone: '010-3456-7890',
+      role: 'member',
+      department: '고객지원팀',
+      joinDate: '2023-03-15',
+      lastLogin: '2024-01-14 17:20',
+      status: 'active',
+      permissions: ['user_read', 'device_read', 'report_read']
+    },
+    {
+      id: '4',
+      name: '정신입',
+      email: 'newbie@company.com',
+      phone: '010-4567-8901',
+      role: 'member',
+      department: '마케팅팀',
+      joinDate: '2024-01-01',
+      lastLogin: '2024-01-13 16:30',
+      status: 'pending',
+      permissions: ['user_read', 'report_read']
+    }
+  ])
+
+  // 초대 관리 데이터
+  const [invitations, setInvitations] = useState<Invitation[]>([
+    {
+      id: '1',
+      email: 'invite1@company.com',
+      role: 'member',
+      department: '고객지원팀',
+      sentDate: '2024-01-10',
+      status: 'pending',
+      invitedBy: '김관리자'
+    },
+    {
+      id: '2',
+      email: 'invite2@company.com',
+      role: 'manager',
+      department: '마케팅팀',
+      sentDate: '2024-01-12',
+      status: 'accepted',
+      invitedBy: '김관리자'
+    },
+    {
+      id: '3',
+      email: 'invite3@company.com',
+      role: 'member',
+      department: '연구개발팀',
+      sentDate: '2024-01-05',
+      status: 'expired',
+      invitedBy: '이매니저'
+    }
+  ])
+
+  // 권한 설정 데이터
+  const permissions: Permission[] = [
+    { id: 'user_read', name: '사용자 조회', description: '사용자 정보 조회', category: 'user', level: 'read' },
+    { id: 'user_write', name: '사용자 관리', description: '사용자 정보 수정', category: 'user', level: 'write' },
+    { id: 'user_delete', name: '사용자 삭제', description: '사용자 정보 삭제', category: 'user', level: 'delete' },
+    { id: 'device_read', name: '디바이스 조회', description: '디바이스 정보 조회', category: 'device', level: 'read' },
+    { id: 'device_write', name: '디바이스 관리', description: '디바이스 설정 관리', category: 'device', level: 'write' },
+    { id: 'device_delete', name: '디바이스 삭제', description: '디바이스 삭제', category: 'device', level: 'delete' },
+    { id: 'report_read', name: '리포트 조회', description: 'AI 리포트 조회', category: 'report', level: 'read' },
+    { id: 'report_write', name: '리포트 생성', description: 'AI 리포트 생성', category: 'report', level: 'write' },
+    { id: 'report_delete', name: '리포트 삭제', description: 'AI 리포트 삭제', category: 'report', level: 'delete' },
+    { id: 'admin_read', name: '관리자 조회', description: '관리자 정보 조회', category: 'admin', level: 'read' },
+    { id: 'admin_write', name: '관리자 관리', description: '관리자 설정 관리', category: 'admin', level: 'write' }
+  ]
+
+  // 운영자 목록 렌더링
+  const renderMemberList = () => {
+    const filteredMembers = members.filter(member => 
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.department.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const handleDeleteMember = (id: string) => {
+      setMembers(members.filter(member => member.id !== id))
+    }
+
+    const handleToggleStatus = (id: string) => {
+      setMembers(members.map(member => 
+        member.id === id 
+          ? { ...member, status: member.status === 'active' ? 'inactive' : 'active' }
+          : member
+      ))
+    }
+
+    const getRoleColor = (role: string) => {
+      switch (role) {
+        case 'admin': return 'bg-red-100 text-red-600'
+        case 'manager': return 'bg-blue-100 text-blue-600'
+        case 'member': return 'bg-green-100 text-green-600'
+        default: return 'bg-gray-100 text-gray-600'
+      }
+    }
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'active': return 'bg-green-100 text-green-600'
+        case 'inactive': return 'bg-gray-100 text-gray-600'
+        case 'pending': return 'bg-yellow-100 text-yellow-600'
+        default: return 'bg-gray-100 text-gray-600'
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">운영자 목록</h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              내보내기
+            </Button>
+            <Button onClick={() => setShowInviteForm(true)}>
+              <UserPlus className="w-4 h-4 mr-2" />
+              운영자 초대
+            </Button>
+          </div>
+        </div>
+
+        {/* 검색 및 필터 */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="이름, 이메일, 부서로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter className="w-4 h-4 mr-2" />
+            필터
+          </Button>
+        </div>
+
+        {/* 운영자 목록 */}
+        <div className="grid grid-cols-1 gap-4">
+          {filteredMembers.map((member) => (
+            <Card key={member.id} className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
+                    <p className="text-sm text-gray-600">{member.email}</p>
+                    <p className="text-sm text-gray-600">{member.department}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Badge className={getRoleColor(member.role)}>
+                    {member.role === 'admin' ? '관리자' : member.role === 'manager' ? '매니저' : '운영자'}
+                  </Badge>
+                  <Badge className={getStatusColor(member.status)}>
+                    {member.status === 'active' ? '활성' : member.status === 'inactive' ? '비활성' : '대기'}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <Edit className="w-4 h-4 mr-2" />
+                        수정
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleStatus(member.id)}>
+                        {member.status === 'active' ? (
+                          <>
+                            <EyeOff className="w-4 h-4 mr-2" />
+                            비활성화
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-4 h-4 mr-2" />
+                            활성화
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeleteMember(member.id)}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        삭제
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">{member.phone}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">입사: {member.joinDate}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">최종 로그인: {member.lastLogin}</span>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* 초대 폼 */}
+        {showInviteForm && (
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">새 운영자 초대</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">이메일</label>
+                <Input
+                  type="email"
+                  value={newInviteEmail}
+                  onChange={(e) => setNewInviteEmail(e.target.value)}
+                  placeholder="초대할 이메일을 입력하세요"
+                  className="mt-1"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">역할</label>
+                  <select
+                    value={newInviteRole}
+                    onChange={(e) => setNewInviteRole(e.target.value as 'admin' | 'manager' | 'member')}
+                    className="mt-1 w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="member">운영자</option>
+                    <option value="manager">매니저</option>
+                    <option value="admin">관리자</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">부서</label>
+                  <Input
+                    value={newInviteDepartment}
+                    onChange={(e) => setNewInviteDepartment(e.target.value)}
+                    placeholder="부서를 입력하세요"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={() => {
+                  // 초대 로직 구현
+                  setShowInviteForm(false)
+                  setNewInviteEmail('')
+                  setNewInviteDepartment('')
+                }}>
+                  <Send className="w-4 h-4 mr-2" />
+                  초대 보내기
+                </Button>
+                <Button variant="outline" onClick={() => setShowInviteForm(false)}>
+                  취소
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
+  // 초대 관리 렌더링
+  const renderInviteManagement = () => {
+    const handleResendInvite = (id: string) => {
+      setInvitations(invitations.map(invite => 
+        invite.id === id 
+          ? { ...invite, sentDate: new Date().toISOString().split('T')[0] }
+          : invite
+      ))
+    }
+
+    const handleCancelInvite = (id: string) => {
+      setInvitations(invitations.filter(invite => invite.id !== id))
+    }
+
+    const getInviteStatusColor = (status: string) => {
+      switch (status) {
+        case 'pending': return 'bg-yellow-100 text-yellow-600'
+        case 'accepted': return 'bg-green-100 text-green-600'
+        case 'expired': return 'bg-red-100 text-red-600'
+        default: return 'bg-gray-100 text-gray-600'
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">초대 관리</h2>
+          <Button onClick={() => setShowInviteForm(true)}>
+            <UserPlus className="w-4 h-4 mr-2" />
+            새 초대
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {invitations.map((invitation) => (
+            <Card key={invitation.id} className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl">
+                    <Mail className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{invitation.email}</h3>
+                    <p className="text-sm text-gray-600">{invitation.department} • {invitation.role === 'admin' ? '관리자' : invitation.role === 'manager' ? '매니저' : '운영자'}</p>
+                    <p className="text-sm text-gray-600">{invitation.invitedBy}님이 초대</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Badge className={getInviteStatusColor(invitation.status)}>
+                    {invitation.status === 'pending' ? '대기중' : invitation.status === 'accepted' ? '수락' : '만료'}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {invitation.status === 'pending' && (
+                        <DropdownMenuItem onClick={() => handleResendInvite(invitation.id)}>
+                          <Send className="w-4 h-4 mr-2" />
+                          재전송
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => handleCancelInvite(invitation.id)}>
+                        <X className="w-4 h-4 mr-2" />
+                        취소
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">초대일: {invitation.sentDate}</span>
+                </div>
+                {invitation.status === 'pending' && (
+                  <span className="text-sm text-yellow-600">7일 후 만료</span>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 권한 설정 렌더링
+  const renderPermissionSettings = () => {
+    const groupedPermissions = permissions.reduce((acc, permission) => {
+      if (!acc[permission.category]) {
+        acc[permission.category] = []
+      }
+      acc[permission.category].push(permission)
+      return acc
+    }, {} as Record<string, Permission[]>)
+
+    const categoryNames = {
+      user: '사용자 관리',
+      device: '디바이스 관리',
+      report: '리포트 관리',
+      admin: '관리자 설정'
+    }
+
+    const levelColors = {
+      read: 'bg-blue-100 text-blue-600',
+      write: 'bg-green-100 text-green-600',
+      delete: 'bg-red-100 text-red-600'
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">권한 설정</h2>
+          <Button variant="outline">
+            <Shield className="w-4 h-4 mr-2" />
+            권한 템플릿
+          </Button>
+        </div>
+
+        {Object.entries(groupedPermissions).map(([category, perms]) => (
+          <Card key={category} className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {categoryNames[category as keyof typeof categoryNames]}
+            </h3>
+            <div className="space-y-4">
+              {perms.map((permission) => (
+                <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                      <Shield className="w-4 h-4 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{permission.name}</p>
+                      <p className="text-sm text-gray-600">{permission.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={levelColors[permission.level]}>
+                      {permission.level === 'read' ? '읽기' : permission.level === 'write' ? '쓰기' : '삭제'}
+                    </Badge>
+                    <div className="flex items-center space-x-1">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                      <span className="text-sm text-gray-600">관리자</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                      <span className="text-sm text-gray-600">매니저</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                      <span className="text-sm text-gray-600">운영자</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  // 서브섹션에 따른 렌더링
+  const renderContent = () => {
+    switch (subSection) {
+      case 'member-list':
+        return renderMemberList()
+      case 'member-invite':
+        return renderInviteManagement()
+      case 'member-permissions':
+        return renderPermissionSettings()
+      default:
+        return renderMemberList()
+    }
+  }
+
+  return (
+    <div>
+      {renderContent()}
+    </div>
+  )
+} 
