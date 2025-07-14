@@ -281,7 +281,7 @@ export default function OrganizationAdminApp() {
       case 'members':
         return <MembersSection subSection={currentSubSection} onNavigate={handleNavigation} />
       case 'users':
-        return <UsersSection subSection={currentSubSection} />
+        return <UsersSection subSection={currentSubSection} onNavigate={handleNavigation} />
       case 'ai-report':
         return <AIReportSection subSection={currentSubSection} />
       case 'devices':

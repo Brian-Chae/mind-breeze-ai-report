@@ -38,6 +38,7 @@ import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface UsersSectionProps {
   subSection: string;
+  onNavigate: (section: string, subSection?: string) => void;
 }
 
 interface MeasurementUser {
@@ -83,7 +84,7 @@ interface UserReport {
   downloadCount: number;
 }
 
-export default function UsersSection({ subSection }: UsersSectionProps) {
+export default function UsersSection({ subSection, onNavigate }: UsersSectionProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -313,8 +314,68 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
       }
     }
 
+    // 로딩 상태
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">사용자 목록</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4 mr-2" />
+                내보내기
+              </Button>
+              <Button disabled>
+                <Plus className="w-4 h-4 mr-2" />
+                사용자 추가
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        </div>
+      )
+    }
+
+    // 에러 상태
+    if (error) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">사용자 목록</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4 mr-2" />
+                내보내기
+              </Button>
+              <Button disabled>
+                <Plus className="w-4 h-4 mr-2" />
+                사용자 추가
+              </Button>
+            </div>
+          </div>
+          <Card className="p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-xl">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">데이터 로드 오류</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <Button onClick={loadUsersData} variant="outline">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  다시 시도
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )
+    }
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">사용자 목록</h2>
           <div className="flex items-center space-x-2">
@@ -322,7 +383,7 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
               <Download className="w-4 h-4 mr-2" />
               내보내기
             </Button>
-            <Button>
+            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
               <Plus className="w-4 h-4 mr-2" />
               사용자 추가
             </Button>
@@ -357,74 +418,94 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
         </div>
 
         {/* 사용자 목록 */}
-        <div className="grid grid-cols-1 gap-4">
-          {filteredUsers.map((user) => (
-            <Card key={user.id} className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-                    <User className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                    <p className="text-sm text-gray-600">{user.department} • {user.age}세 • {user.gender === 'male' ? '남성' : '여성'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Badge className={getStatusColor(user.status)}>
-                    {user.status === 'active' ? '활성' : user.status === 'inactive' ? '비활성' : '대기'}
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="w-4 h-4 mr-2" />
-                        상세 보기
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit className="w-4 h-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Brain className="w-4 h-4 mr-2" />
-                        리포트 생성
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Mail className="w-4 h-4 mr-2" />
-                        메일 발송
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+        {filteredUsers.length === 0 ? (
+          <Card className="p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl">
+                <Users className="w-8 h-8 text-blue-600" />
               </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">사용자가 없습니다</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchQuery ? '검색 조건에 맞는 사용자가 없습니다.' : '등록된 사용자가 없습니다.'}
+                </p>
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  사용자 추가
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {filteredUsers.map((user) => (
+              <Card key={user.id} className="p-6 bg-gradient-to-r from-white to-gray-50 hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
+                      <User className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <p className="text-sm text-gray-600">{user.department} • {user.age}세 • {user.gender === 'male' ? '남성' : '여성'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getStatusColor(user.status)}>
+                      {user.status === 'active' ? '활성' : user.status === 'inactive' ? '비활성' : '대기'}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="hover:bg-blue-50">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="w-4 h-4 mr-2" />
+                          상세 보기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="w-4 h-4 mr-2" />
+                          수정
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Brain className="w-4 h-4 mr-2" />
+                          리포트 생성
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Mail className="w-4 h-4 mr-2" />
+                          메일 발송
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">가입: {user.joinDate}</span>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">가입: {user.joinDate}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">최근 측정: {user.lastMeasurement}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <Activity className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">측정 횟수: {user.measurementCount}회</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">리포트: {user.reportCount}개</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">최근 측정: {user.lastMeasurement}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Activity className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">측정 횟수: {user.measurementCount}회</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FileText className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">리포트: {user.reportCount}개</span>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -450,8 +531,72 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
       }
     }
 
+    const filteredSessions = sessions.filter(session => 
+      session.userName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    // 로딩 상태
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">측정 이력</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4 mr-2" />
+                데이터 내보내기
+              </Button>
+              <Button variant="outline" size="sm" disabled>
+                <BarChart3 className="w-4 h-4 mr-2" />
+                통계 보기
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        </div>
+      )
+    }
+
+    // 에러 상태
+    if (error) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">측정 이력</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4 mr-2" />
+                데이터 내보내기
+              </Button>
+              <Button variant="outline" size="sm" disabled>
+                <BarChart3 className="w-4 h-4 mr-2" />
+                통계 보기
+              </Button>
+            </div>
+          </div>
+          <Card className="p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-xl">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">데이터 로드 오류</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <Button onClick={loadUsersData} variant="outline">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  다시 시도
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )
+    }
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">측정 이력</h2>
           <div className="flex items-center space-x-2">
@@ -459,7 +604,7 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
               <Download className="w-4 h-4 mr-2" />
               데이터 내보내기
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700">
               <BarChart3 className="w-4 h-4 mr-2" />
               통계 보기
             </Button>
@@ -493,76 +638,96 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
         </div>
 
         {/* 측정 세션 목록 */}
-        <div className="grid grid-cols-1 gap-4">
-          {sessions.map((session) => (
-            <Card key={session.id} className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl">
-                    <Activity className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{session.userName}</h3>
-                    <p className="text-sm text-gray-600">{session.deviceType} ({session.deviceId})</p>
-                    <p className="text-sm text-gray-600">{session.startTime} - {session.endTime}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Badge className={getQualityColor(session.quality)}>
-                    {session.quality === 'excellent' ? '우수' : 
-                     session.quality === 'good' ? '양호' : 
-                     session.quality === 'fair' ? '보통' : '불량'}
-                  </Badge>
-                  <Badge className={getStatusColor(session.status)}>
-                    {session.status === 'completed' ? '완료' : 
-                     session.status === 'failed' ? '실패' : '처리중'}
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="w-4 h-4 mr-2" />
-                        상세 보기
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Download className="w-4 h-4 mr-2" />
-                        데이터 다운로드
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Brain className="w-4 h-4 mr-2" />
-                        리포트 생성
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+        {filteredSessions.length === 0 ? (
+          <Card className="p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl">
+                <Activity className="w-8 h-8 text-purple-600" />
               </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">측정 이력이 없습니다</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchQuery ? '검색 조건에 맞는 측정 이력이 없습니다.' : '아직 측정 이력이 없습니다.'}
+                </p>
+                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  측정 시작하기
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {filteredSessions.map((session) => (
+              <Card key={session.id} className="p-6 bg-gradient-to-r from-white to-purple-50 hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
+                      <Activity className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{session.userName}</h3>
+                      <p className="text-sm text-gray-600">{session.deviceType} ({session.deviceId})</p>
+                      <p className="text-sm text-gray-600">{session.startTime} - {session.endTime}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getQualityColor(session.quality)}>
+                      {session.quality === 'excellent' ? '우수' : 
+                       session.quality === 'good' ? '양호' : 
+                       session.quality === 'fair' ? '보통' : '불량'}
+                    </Badge>
+                    <Badge className={getStatusColor(session.status)}>
+                      {session.status === 'completed' ? '완료' : 
+                       session.status === 'failed' ? '실패' : '처리중'}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="hover:bg-purple-50">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="w-4 h-4 mr-2" />
+                          상세 보기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Download className="w-4 h-4 mr-2" />
+                          데이터 다운로드
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Brain className="w-4 h-4 mr-2" />
+                          리포트 생성
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">측정 시간: {session.duration}분</span>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">측정 시간: {session.duration}분</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">데이터 크기: {session.dataSize}MB</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">품질: {session.quality}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">메모: {session.notes}</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <FileText className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">데이터 크기: {session.dataSize}MB</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">품질: {session.quality}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">메모: {session.notes}</span>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -588,8 +753,73 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
       }
     }
 
+    const filteredReports = reports.filter(report => 
+      report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.userName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    // 로딩 상태
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">리포트 관리</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4 mr-2" />
+                일괄 다운로드
+              </Button>
+              <Button disabled>
+                <Plus className="w-4 h-4 mr-2" />
+                리포트 생성
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        </div>
+      )
+    }
+
+    // 에러 상태
+    if (error) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">리포트 관리</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4 mr-2" />
+                일괄 다운로드
+              </Button>
+              <Button disabled>
+                <Plus className="w-4 h-4 mr-2" />
+                리포트 생성
+              </Button>
+            </div>
+          </div>
+          <Card className="p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-xl">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">데이터 로드 오류</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <Button onClick={loadUsersData} variant="outline">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  다시 시도
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )
+    }
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">리포트 관리</h2>
           <div className="flex items-center space-x-2">
@@ -597,92 +827,165 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
               <Download className="w-4 h-4 mr-2" />
               일괄 다운로드
             </Button>
-            <Button>
+            <Button className="bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700">
               <Plus className="w-4 h-4 mr-2" />
               리포트 생성
             </Button>
           </div>
         </div>
 
-        {/* 리포트 목록 */}
-        <div className="grid grid-cols-1 gap-4">
-          {reports.map((report) => (
-            <Card key={report.id} className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-xl">
-                    <FileText className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
-                    <p className="text-sm text-gray-600">{report.userName}</p>
-                    <p className="text-sm text-gray-600">{report.createdAt}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Badge className={getTypeColor(report.type)}>
-                    {report.type === 'stress' ? '스트레스' : 
-                     report.type === 'focus' ? '집중력' : 
-                     report.type === 'wellness' ? '웰니스' : '종합'}
-                  </Badge>
-                  <Badge className={getStatusColor(report.status)}>
-                    {report.status === 'generated' ? '생성완료' : 
-                     report.status === 'processing' ? '처리중' : '실패'}
-                  </Badge>
-                  {report.quality > 0 && (
-                    <Badge variant="outline">
-                      품질: {report.quality}%
-                    </Badge>
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="w-4 h-4 mr-2" />
-                        미리보기
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Download className="w-4 h-4 mr-2" />
-                        다운로드
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Send className="w-4 h-4 mr-2" />
-                        메일 발송
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit className="w-4 h-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">발송: {report.sentTo.length}명</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Download className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">다운로드: {report.downloadCount}회</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">품질 점수: {report.quality}%</span>
-                </div>
-              </div>
-            </Card>
-          ))}
+        {/* 검색 필터 */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="리포트 제목, 사용자명으로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <select className="px-3 py-2 border border-gray-300 rounded-md">
+            <option value="all">전체 유형</option>
+            <option value="stress">스트레스</option>
+            <option value="focus">집중력</option>
+            <option value="wellness">웰니스</option>
+            <option value="comprehensive">종합</option>
+          </select>
+          <select className="px-3 py-2 border border-gray-300 rounded-md">
+            <option value="all">전체 상태</option>
+            <option value="generated">생성완료</option>
+            <option value="processing">처리중</option>
+            <option value="failed">실패</option>
+          </select>
         </div>
+
+        {/* 리포트 목록 */}
+        {filteredReports.length === 0 ? (
+          <Card className="p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-orange-100 rounded-xl">
+                <FileText className="w-8 h-8 text-orange-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">리포트가 없습니다</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchQuery ? '검색 조건에 맞는 리포트가 없습니다.' : '아직 생성된 리포트가 없습니다.'}
+                </p>
+                <Button className="bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  리포트 생성
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {filteredReports.map((report) => (
+              <Card key={report.id} className="p-6 bg-gradient-to-r from-white to-orange-50 hover:shadow-lg transition-all duration-300 border-l-4 border-orange-500">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-orange-100 to-red-100 rounded-xl">
+                      <FileText className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
+                      <p className="text-sm text-gray-600">{report.userName}</p>
+                      <p className="text-sm text-gray-600">{report.createdAt}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getTypeColor(report.type)}>
+                      {report.type === 'stress' ? '스트레스' : 
+                       report.type === 'focus' ? '집중력' : 
+                       report.type === 'wellness' ? '웰니스' : '종합'}
+                    </Badge>
+                    <Badge className={getStatusColor(report.status)}>
+                      {report.status === 'generated' ? '생성완료' : 
+                       report.status === 'processing' ? '처리중' : '실패'}
+                    </Badge>
+                    {report.quality > 0 && (
+                      <Badge variant="outline">
+                        품질: {report.quality}%
+                      </Badge>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="hover:bg-orange-50">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="w-4 h-4 mr-2" />
+                          미리보기
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Download className="w-4 h-4 mr-2" />
+                          다운로드
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Send className="w-4 h-4 mr-2" />
+                          메일 발송
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="w-4 h-4 mr-2" />
+                          수정
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">발송: {report.sentTo.length}명</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <Download className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">다운로드: {report.downloadCount}회</span>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
+                    <TrendingUp className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">품질 점수: {report.quality}%</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
+
+  // 탭 정의
+  const tabs = [
+    { id: 'user-list', label: '사용자 목록', icon: Users },
+    { id: 'user-history', label: '측정 이력', icon: Activity },
+    { id: 'user-reports', label: '리포트 관리', icon: Eye }
+  ]
+
+  // 탭 렌더링
+  const renderTabs = () => (
+    <div className="flex space-x-1 mb-8">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onNavigate('users', tab.id)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            subSection === tab.id
+              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+        >
+          <tab.icon className="w-4 h-4" />
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  )
 
   // 서브섹션에 따른 렌더링
   const renderContent = () => {
@@ -700,6 +1003,7 @@ export default function UsersSection({ subSection }: UsersSectionProps) {
 
   return (
     <div>
+      {renderTabs()}
       {renderContent()}
     </div>
   )
