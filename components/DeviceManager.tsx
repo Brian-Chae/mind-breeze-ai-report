@@ -259,16 +259,16 @@ export function DeviceManager() {
       <Card key={card.title} className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 mb-1">{card.title}</p>
+            <p className="text-sm text-gray-700 mb-1">{card.title}</p>
             <p className="text-2xl font-bold text-gray-900">{card.value}</p>
             <div className="flex items-center mt-2">
               <TrendingUp className={`w-4 h-4 mr-1 ${
                 card.trend === 'up' ? 'text-green-500' : 
-                card.trend === 'down' ? 'text-red-500' : 'text-gray-500'
+                card.trend === 'down' ? 'text-red-500' : 'text-gray-600'
               }`} />
               <span className={`text-sm ${
                 card.trend === 'up' ? 'text-green-600' : 
-                card.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                card.trend === 'down' ? 'text-red-600' : 'text-gray-700'
               }`}>
                 {card.change}
               </span>
@@ -309,10 +309,10 @@ export function DeviceManager() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">{activity.user}</p>
-          <p className="text-sm text-gray-600">{activity.action}</p>
+          <p className="text-sm text-gray-700">{activity.action}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500">{activity.timestamp}</p>
+          <p className="text-xs text-gray-600">{activity.timestamp}</p>
         </div>
       </div>
     )
@@ -321,7 +321,7 @@ export function DeviceManager() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* 사이드바 */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 lg:static lg:inset-0`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
@@ -374,46 +374,46 @@ export function DeviceManager() {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <div className="lg:ml-64">
+      <div className="lg:ml-80">
         {/* 헤더 */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5 text-gray-700" />
               </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">기업 관리 대시보드</h1>
-                <p className="text-sm text-gray-600">MIND BREEZE AI 관리자 포털</p>
+                <p className="text-sm text-gray-700">MIND BREEZE AI 관리자 포털</p>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <Input
                   placeholder="검색..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-64 text-gray-900 placeholder-gray-500"
                 />
               </div>
               <Button variant="ghost" size="sm" className="relative">
-                <Bell className="w-5 h-5" />
+                <Bell className="w-5 h-5 text-gray-700" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
               </Button>
               <Button variant="ghost" size="sm">
-                <Settings className="w-5 h-5" />
+                <Settings className="w-5 h-5 text-gray-700" />
               </Button>
             </div>
           </div>
         </header>
 
         {/* 대시보드 콘텐츠 */}
-        <main className="p-6">
+        <main className="p-6 text-gray-900">
           {/* 통계 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {statsCards.map(renderStatsCard)}
@@ -470,7 +470,7 @@ export function DeviceManager() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">크레딧 부족</p>
-                      <p className="text-xs text-gray-600">잔여 크레딧이 20% 미만입니다</p>
+                      <p className="text-xs text-gray-700">잔여 크레딧이 20% 미만입니다</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -479,7 +479,7 @@ export function DeviceManager() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">시스템 업데이트</p>
-                      <p className="text-xs text-gray-600">새로운 기능이 추가되었습니다</p>
+                      <p className="text-xs text-gray-700">새로운 기능이 추가되었습니다</p>
                     </div>
                   </div>
                 </div>
