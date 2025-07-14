@@ -33,11 +33,11 @@ import {
   Filter,
   RefreshCw
 } from 'lucide-react'
-import { Card } from './ui/card'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { Input } from './ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
+import { Card } from '../src/components/ui/card'
+import { Button } from '../src/components/ui/button'
+import { Badge } from '../src/components/ui/badge'
+import { Input } from '../src/components/ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../src/components/ui/dropdown-menu'
 
 interface SidebarMenuItem {
   id: string;
