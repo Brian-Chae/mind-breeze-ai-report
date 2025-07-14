@@ -200,9 +200,9 @@ export default function OrganizationAdminApp() {
       icon: Users,
       path: '/admin/members',
       children: [
-        { id: 'list', title: '운영자 목록', icon: Users, path: '/admin/members/list' },
-        { id: 'invite', title: '초대 관리', icon: Plus, path: '/admin/members/invite' },
-        { id: 'permissions', title: '권한 설정', icon: Shield, path: '/admin/members/permissions' }
+        { id: 'member-list', title: '운영자 목록', icon: Users, path: '/admin/members/member-list' },
+        { id: 'member-invite', title: '초대 관리', icon: Plus, path: '/admin/members/member-invite' },
+        { id: 'member-permissions', title: '권한 설정', icon: Shield, path: '/admin/members/member-permissions' }
       ]
     },
     {
@@ -211,9 +211,9 @@ export default function OrganizationAdminApp() {
       icon: User,
       path: '/admin/users',
       children: [
-        { id: 'list', title: '사용자 목록', icon: Users, path: '/admin/users/list' },
-        { id: 'history', title: '측정 이력', icon: Activity, path: '/admin/users/history' },
-        { id: 'reports', title: '리포트 관리', icon: Eye, path: '/admin/users/reports' }
+        { id: 'user-list', title: '사용자 목록', icon: Users, path: '/admin/users/user-list' },
+        { id: 'user-history', title: '측정 이력', icon: Activity, path: '/admin/users/user-history' },
+        { id: 'user-reports', title: '리포트 관리', icon: Eye, path: '/admin/users/user-reports' }
       ]
     },
     {
@@ -222,9 +222,9 @@ export default function OrganizationAdminApp() {
       icon: Brain,
       path: '/admin/ai-report',
       children: [
-        { id: 'generation', title: '리포트 생성', icon: Plus, path: '/admin/ai-report/generation' },
-        { id: 'list', title: '리포트 목록', icon: Eye, path: '/admin/ai-report/list' },
-        { id: 'quality', title: '품질 관리', icon: Shield, path: '/admin/ai-report/quality' }
+        { id: 'report-generation', title: '리포트 생성', icon: Plus, path: '/admin/ai-report/report-generation' },
+        { id: 'report-list', title: '리포트 목록', icon: Eye, path: '/admin/ai-report/report-list' },
+        { id: 'report-quality', title: '품질 관리', icon: Shield, path: '/admin/ai-report/report-quality' }
       ]
     },
     {
@@ -233,9 +233,9 @@ export default function OrganizationAdminApp() {
       icon: Monitor,
       path: '/admin/devices',
       children: [
-        { id: 'inventory', title: '디바이스 현황', icon: Monitor, path: '/admin/devices/inventory' },
-        { id: 'assignment', title: '디바이스 배치', icon: Users, path: '/admin/devices/assignment' },
-        { id: 'monitoring', title: '디바이스 모니터링', icon: Activity, path: '/admin/devices/monitoring' }
+        { id: 'device-inventory', title: '디바이스 현황', icon: Monitor, path: '/admin/devices/device-inventory' },
+        { id: 'device-assignment', title: '디바이스 배치', icon: Users, path: '/admin/devices/device-assignment' },
+        { id: 'device-monitoring', title: '디바이스 모니터링', icon: Activity, path: '/admin/devices/device-monitoring' }
       ]
     },
     {
@@ -244,9 +244,9 @@ export default function OrganizationAdminApp() {
       icon: CreditCard,
       path: '/admin/credits',
       children: [
-        { id: 'status', title: '크레딧 현황', icon: DollarSign, path: '/admin/credits/status' },
-        { id: 'history', title: '구매 내역', icon: Calendar, path: '/admin/credits/history' },
-        { id: 'settings', title: '결제 설정', icon: Settings, path: '/admin/credits/settings' }
+        { id: 'credit-dashboard', title: '크레딧 현황', icon: DollarSign, path: '/admin/credits/credit-dashboard' },
+        { id: 'credit-history', title: '구매 내역', icon: Calendar, path: '/admin/credits/credit-history' },
+        { id: 'credit-settings', title: '결제 설정', icon: Settings, path: '/admin/credits/credit-settings' }
       ]
     }
   ]

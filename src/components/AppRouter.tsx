@@ -211,7 +211,17 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/organization/:subSection" element={
+      <Route path="/admin/organization/company-info" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organization/departments" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organization/structure" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
@@ -221,7 +231,17 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/members/:subSection" element={
+      <Route path="/admin/members/member-list" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/members/member-invite" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/members/member-permissions" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
@@ -231,7 +251,17 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/users/:subSection" element={
+      <Route path="/admin/users/user-list" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/user-history" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/user-reports" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
@@ -241,7 +271,17 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/ai-report/:subSection" element={
+      <Route path="/admin/ai-report/report-generation" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-report/report-list" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/ai-report/report-quality" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
@@ -251,7 +291,17 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/devices/:subSection" element={
+      <Route path="/admin/devices/device-inventory" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/devices/device-assignment" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/devices/device-monitoring" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
@@ -261,7 +311,17 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/credits/:subSection" element={
+      <Route path="/admin/credits/credit-dashboard" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/credits/credit-history" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/credits/credit-settings" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>
