@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Building2,
   Edit,
@@ -19,13 +19,21 @@ import {
   User,
   Shield,
   Settings,
-  MoreHorizontal
+  MoreHorizontal,
+  Loader2,
+  X,
+  RefreshCw
 } from 'lucide-react'
 import { Card } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
 import { Input } from '../../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+
+// Firebase 서비스 import
+import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'
+import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface OrganizationSectionProps {
   subSection: string;
@@ -64,134 +72,149 @@ interface OrganizationNode {
 }
 
 export default function OrganizationSection({ subSection }: OrganizationSectionProps) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [editingCompany, setEditingCompany] = useState(false)
   const [editingDepartment, setEditingDepartment] = useState<string | null>(null)
   const [newDepartmentName, setNewDepartmentName] = useState('')
   const [showNewDepartmentForm, setShowNewDepartmentForm] = useState(false)
 
-  // 기업 정보 데이터
+  // 실제 데이터 상태
+  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo | null>(null)
+  const [members, setMembers] = useState<MemberManagementData[]>([])
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
-    name: '스마트헬스케어 주식회사',
-    industry: '헬스케어 & 웰니스',
-    size: '중소기업 (50-200명)',
-    address: '서울특별시 강남구 테헤란로 123 스마트타워 15층',
-    phone: '02-1234-5678',
-    email: 'contact@smarthealthcare.com',
-    website: 'https://smarthealthcare.com',
-    establishedDate: '2018-03-15',
-    description: '첨단 AI 기술을 활용한 정신건강 관리 솔루션을 제공하는 기업입니다.',
-    license: '의료기기 제조업 허가증 제2023-001호'
+    name: '',
+    industry: '',
+    size: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    establishedDate: '',
+    description: '',
+    license: ''
   })
 
-  // 조직 관리 데이터
-  const [departments, setDepartments] = useState<Department[]>([
-    {
-      id: '1',
-      name: '경영관리팀',
-      description: '전략 수립, 인사, 재무 관리',
-      manager: '김대표',
-      memberCount: 8,
-      createdAt: '2023-01-15',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: '연구개발팀',
-      description: 'AI 알고리즘 개발 및 연구',
-      manager: '이CTO',
-      memberCount: 15,
-      createdAt: '2023-02-01',
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: '마케팅팀',
-      description: '제품 마케팅 및 홍보',
-      manager: '박부장',
-      memberCount: 6,
-      createdAt: '2023-03-01',
-      status: 'active'
-    },
-    {
-      id: '4',
-      name: '고객지원팀',
-      description: '고객 서비스 및 기술 지원',
-      manager: '최팀장',
-      memberCount: 12,
-      createdAt: '2023-04-01',
-      status: 'inactive'
-    }
-  ])
+  // 조직 관리 데이터 (실제 데이터 기반)
+  const [departments, setDepartments] = useState<Department[]>([])
 
-  // 조직 구조 데이터
-  const organizationStructure: OrganizationNode = {
-    id: 'root',
-    name: '스마트헬스케어',
-    type: 'company',
-    manager: '김대표',
-    memberCount: 41,
-    children: [
-      {
-        id: 'management',
-        name: '경영관리팀',
-        type: 'department',
-        manager: '김대표',
-        memberCount: 8,
-        children: [
-          {
-            id: 'hr',
-            name: '인사팀',
-            type: 'team',
-            manager: '정과장',
-            memberCount: 3
-          },
-          {
-            id: 'finance',
-            name: '재무팀',
-            type: 'team',
-            manager: '김과장',
-            memberCount: 5
-          }
-        ]
-      },
-      {
-        id: 'rnd',
-        name: '연구개발팀',
-        type: 'department',
-        manager: '이CTO',
-        memberCount: 15,
-        children: [
-          {
-            id: 'ai',
-            name: 'AI 개발팀',
-            type: 'team',
-            manager: '박팀장',
-            memberCount: 8
-          },
-          {
-            id: 'app',
-            name: '앱 개발팀',
-            type: 'team',
-            manager: '최팀장',
-            memberCount: 7
-          }
-        ]
-      },
-      {
-        id: 'marketing',
-        name: '마케팅팀',
-        type: 'department',
-        manager: '박부장',
-        memberCount: 6
-      },
-      {
-        id: 'support',
-        name: '고객지원팀',
-        type: 'department',
-        manager: '최팀장',
-        memberCount: 12
+  // 조직 구조 데이터 생성 (실제 데이터 기반)
+  const getOrganizationStructure = (): OrganizationNode => {
+    const totalMembers = members.length
+    const activeMembers = members.filter(m => m.isActive).length
+    
+    return {
+      id: 'root',
+      name: organizationInfo?.organizationName || '조직',
+      type: 'company',
+      manager: '관리자',
+      memberCount: totalMembers,
+      children: departments.map(dept => ({
+        id: dept.id,
+        name: dept.name,
+        type: 'department' as const,
+        manager: dept.manager,
+        memberCount: dept.memberCount
+      }))
+    }
+  }
+
+  // 데이터 로드
+  useEffect(() => {
+    loadOrganizationData()
+  }, [subSection])
+
+  const loadOrganizationData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 현재 사용자 정보 가져오기
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
       }
-    ]
+
+      const organizationId = currentContext.user.organizationId
+
+      // 병렬로 데이터 로드
+      const [organizationData, membersData] = await Promise.all([
+        OrganizationService.getOrganizationById(organizationId),
+        new MemberManagementService().getOrganizationMembers(organizationId)
+      ])
+
+      if (organizationData) {
+        setOrganizationInfo(organizationData)
+        
+        // CompanyInfo 매핑
+        setCompanyInfo({
+          name: organizationData.organizationName,
+          industry: organizationData.industry,
+          size: `${organizationData.initialMemberCount}명`,
+          address: organizationData.address,
+          phone: organizationData.contactPhone,
+          email: organizationData.contactEmail,
+          website: organizationData.address, // 임시로 주소 사용
+          establishedDate: organizationData.createdAt?.toDate?.()?.toLocaleDateString() || '',
+          description: `${organizationData.organizationName}의 기업 정보`,
+          license: organizationData.businessNumber
+        })
+      }
+
+      setMembers(membersData)
+      
+      // 부서별 멤버 수 계산하여 departments 생성
+      const departmentMap = new Map<string, number>()
+      membersData.forEach(member => {
+        if (member.department) {
+          departmentMap.set(member.department, (departmentMap.get(member.department) || 0) + 1)
+        }
+      })
+
+      const departmentList: Department[] = Array.from(departmentMap.entries()).map(([deptName, count], index) => ({
+        id: `dept-${index}`,
+        name: deptName,
+        description: `${deptName} 부서`,
+        manager: '관리자',
+        memberCount: count,
+        createdAt: new Date().toLocaleDateString(),
+        status: 'active' as const
+      }))
+
+      setDepartments(departmentList)
+
+    } catch (err) {
+      console.error('조직 데이터 로드 오류:', err)
+      setError('조직 데이터를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <span className="ml-2 text-gray-600">조직 데이터를 불러오는 중...</span>
+      </div>
+    )
+  }
+
+  // 오류 발생 시
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">오류 발생</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <Button onClick={loadOrganizationData}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 시도
+        </Button>
+      </div>
+    )
   }
 
   // 기업 정보 렌더링
@@ -552,7 +575,7 @@ export default function OrganizationSection({ subSection }: OrganizationSectionP
         </div>
 
         <div className="bg-white rounded-lg p-6">
-          {renderOrgNode(organizationStructure)}
+          {renderOrgNode(getOrganizationStructure())}
         </div>
       </div>
     )
