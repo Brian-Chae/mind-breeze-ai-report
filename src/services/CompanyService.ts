@@ -144,28 +144,44 @@ export class OrganizationService {
       // 관리자 이메일 중복 확인은 건너뛰기 (이미 존재하는 계정으로 등록)
       console.log('🔍 관리자 이메일 확인:', registrationData.adminEmail);
 
-      // Firebase Auth에서 관리자 계정 생성
-      console.log('🔄 Firebase Auth 계정 생성 중...');
+      // Firebase Auth에서 관리자 계정 생성 또는 기존 계정 사용
+      console.log('🔄 Firebase Auth 계정 확인 중...');
       let adminAuthUser;
-      try {
-        adminAuthUser = await createUserWithEmailAndPassword(
-          auth,
-          registrationData.adminEmail,
-          registrationData.adminPassword
-        );
-        console.log('✅ Firebase Auth 계정 생성 성공:', adminAuthUser.user.uid);
-      } catch (authError: any) {
-        console.error('❌ Firebase Auth 계정 생성 실패:', authError);
-        // 이미 존재하는 계정인 경우 처리
-        if (authError.code === 'auth/email-already-in-use') {
-          console.log('⚠️ 이미 존재하는 이메일로 계정 생성 건너뛰기');
-          // 현재 로그인된 사용자를 사용
-          adminAuthUser = { user: { uid: 'existing-user' } };
-        } else {
-          return {
-            success: false,
-            error: '관리자 계정 생성에 실패했습니다: ' + authError.message
-          };
+      
+      // 먼저 현재 로그인된 사용자 확인
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.email === registrationData.adminEmail) {
+        console.log('✅ 현재 로그인된 사용자 사용:', currentUser.uid);
+        adminAuthUser = { user: currentUser };
+      } else {
+        // 새 계정 생성 시도
+        try {
+          adminAuthUser = await createUserWithEmailAndPassword(
+            auth,
+            registrationData.adminEmail,
+            registrationData.adminPassword
+          );
+          console.log('✅ Firebase Auth 계정 생성 성공:', adminAuthUser.user.uid);
+        } catch (authError: any) {
+          console.error('❌ Firebase Auth 계정 생성 실패:', authError);
+          // 이미 존재하는 계정인 경우 처리
+          if (authError.code === 'auth/email-already-in-use') {
+            console.log('⚠️ 이미 존재하는 이메일 - 현재 로그인된 사용자 확인');
+            if (currentUser) {
+              console.log('✅ 현재 로그인된 사용자 사용:', currentUser.uid);
+              adminAuthUser = { user: currentUser };
+            } else {
+              return {
+                success: false,
+                error: '이미 존재하는 이메일입니다. 해당 계정으로 로그인한 후 다시 시도해주세요.'
+              };
+            }
+          } else {
+            return {
+              success: false,
+              error: '관리자 계정 생성에 실패했습니다: ' + authError.message
+            };
+          }
         }
       }
 
