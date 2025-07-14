@@ -687,6 +687,58 @@ export class OrganizationService {
       console.error('❌ 사용자 데이터 확인 오류:', error);
     }
   }
+
+  /**
+   * 현재 로그인된 사용자에게 조직 정보 연결 (디버깅용)
+   * @returns Promise<void>
+   */
+  static async linkCurrentUserToOrganization(): Promise<void> {
+    try {
+      console.log('🔄 현재 사용자에게 조직 정보 연결 중...');
+      
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.error('❌ 현재 로그인된 사용자가 없습니다.');
+        return;
+      }
+
+      // ORG2595 조직 정보 가져오기
+      const organization = await this.getOrganizationByCode('ORG2595');
+      if (!organization) {
+        console.error('❌ ORG2595 조직을 찾을 수 없습니다.');
+        return;
+      }
+
+      // 현재 사용자 문서 업데이트
+      const userRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userRef, {
+        email: currentUser.email,
+        displayName: currentUser.displayName || '채용욱',
+        organizationId: organization.id,
+        organizationCode: organization.organizationCode,
+        userType: 'ORGANIZATION_ADMIN',
+        position: '관리자',
+        department: '관리부',
+        personalCreditBalance: 0,
+        isActive: true,
+        phone: '01042488180',
+        address: '논현로 75길 10 영창빌딩 2층',
+        permissions: JSON.stringify(['ADMIN_ALL']),
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      }, { merge: true });
+
+      console.log('✅ 사용자 정보 업데이트 완료:', {
+        userId: currentUser.uid,
+        email: currentUser.email,
+        organizationId: organization.id,
+        organizationCode: organization.organizationCode
+      });
+      
+    } catch (error) {
+      console.error('❌ 사용자 조직 연결 오류:', error);
+    }
+  }
 }
 
 // 디버깅용으로 window에 OrganizationService 노출
