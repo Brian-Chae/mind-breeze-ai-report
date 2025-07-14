@@ -19,7 +19,8 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
-  Search
+  Search,
+  Brain
 } from 'lucide-react';
 import { CompanyService } from '../../services/CompanyService';
 import { CompanyCodeService } from '../../services/CompanyCodeService';
@@ -62,6 +63,7 @@ export default function CompanyJoinForm() {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [codeVerified, setCodeVerified] = useState(false);
+  const [agreeToAll, setAgreeToAll] = useState(false);
   
   const [formData, setFormData] = useState<CompanyJoinData>({
     companyCode: '',
@@ -86,6 +88,32 @@ export default function CompanyJoinForm() {
     // 에러 제거
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+    
+    // 약관 동의 상태 변경 시 모든 동의 체크박스 상태 업데이트
+    if (field === 'agreeToTerms' || field === 'agreeToPrivacy' || field === 'agreeToMarketing') {
+      const newFormData = { ...formData, [field]: value };
+      const allAgreed = newFormData.agreeToTerms && newFormData.agreeToPrivacy && newFormData.agreeToMarketing;
+      setAgreeToAll(allAgreed);
+    }
+  };
+
+  const handleAgreeToAll = (checked: boolean) => {
+    setAgreeToAll(checked);
+    setFormData(prev => ({
+      ...prev,
+      agreeToTerms: checked,
+      agreeToPrivacy: checked,
+      agreeToMarketing: checked
+    }));
+    
+    // 에러 제거
+    if (checked) {
+      setErrors(prev => ({ 
+        ...prev, 
+        agreeToTerms: undefined,
+        agreeToPrivacy: undefined 
+      }));
     }
   };
 
@@ -249,7 +277,7 @@ export default function CompanyJoinForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -262,9 +290,17 @@ export default function CompanyJoinForm() {
             이전으로
           </Button>
           
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {/* 브랜딩 헤더 */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+              <Brain className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">MIND BREEZE</h1>
+          </div>
+          
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
             기존 회사 참여
-          </h1>
+          </h2>
           <p className="text-gray-600">
             관리자로부터 받은 6자리 회사 코드를 입력하여 회사에 참여하세요
           </p>
@@ -272,14 +308,14 @@ export default function CompanyJoinForm() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* 회사 코드 입력 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="w-5 h-5" />
-                회사 코드 확인
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <Card className="rounded-3xl shadow-2xl border-0">
+            <CardContent className="p-8">
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <Key className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">회사 코드 확인</h3>
+                </div>
+                <div className="space-y-4">
               <div>
                 <label htmlFor="companyCode" className="block text-sm font-medium text-gray-700 mb-2">
                   회사 코드 (6자리) *
@@ -341,20 +377,22 @@ export default function CompanyJoinForm() {
                   </AlertDescription>
                 </Alert>
               )}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           {/* 개인 정보 입력 (회사 코드 확인 후에만 표시) */}
           {codeVerified && (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    개인 정보
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <Card className="rounded-3xl shadow-2xl border-0">
+                <CardContent className="p-8">
+                  <div className="bg-gray-50 rounded-2xl p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">개인 정보</h3>
+                    </div>
+                    <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -459,18 +497,20 @@ export default function CompanyJoinForm() {
                       <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
                     )}
                   </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* 직원 정보 입력 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <IdCard className="w-5 h-5" />
-                    직원 정보
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <Card className="rounded-3xl shadow-2xl border-0">
+                <CardContent className="p-8">
+                  <div className="bg-gray-50 rounded-2xl p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                      <IdCard className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">직원 정보</h3>
+                    </div>
+                    <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -519,20 +559,37 @@ export default function CompanyJoinForm() {
                         <p className="text-sm text-red-500 mt-1">{errors.position}</p>
                       )}
                     </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* 약관 동의 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    약관 동의
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
+              <Card className="rounded-3xl shadow-2xl border-0">
+                <CardContent className="p-8">
+                  <div className="bg-gray-50 rounded-2xl p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                      <Shield className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">약관 동의</h3>
+                    </div>
+                    <div className="space-y-4">
+                      {/* 모든 약관 동의 */}
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="agreeToAll"
+                          checked={agreeToAll}
+                          onCheckedChange={handleAgreeToAll}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <label htmlFor="agreeToAll" className="text-sm font-bold cursor-pointer text-gray-900">
+                            모든 약관에 동의합니다
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="border-t border-gray-200 pt-4">
+                        <div className="space-y-3">
                     <div className="flex items-start space-x-3">
                       <Checkbox
                         id="agreeToTerms"
@@ -584,6 +641,8 @@ export default function CompanyJoinForm() {
                         <p className="text-xs text-gray-600 mt-1">
                           신규 서비스 및 이벤트 정보를 이메일로 받아보실 수 있습니다.
                         </p>
+                      </div>
+                    </div>
                       </div>
                     </div>
                   </div>
