@@ -285,7 +285,7 @@ export default function OrganizationAdminApp() {
       case 'ai-report':
         return <AIReportSection subSection={currentSubSection} onNavigate={handleNavigation} />
       case 'devices':
-        return <DevicesSection subSection={currentSubSection} />
+        return <DevicesSection subSection={currentSubSection} onNavigate={handleNavigation} />
       case 'credits':
         return <CreditsSection subSection={currentSubSection} />
       default:

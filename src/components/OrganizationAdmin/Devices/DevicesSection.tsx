@@ -11,6 +11,7 @@ import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface DevicesSectionProps {
   subSection: string;
+  onNavigate: (section: string, subSection: string) => void;
 }
 
 interface Device {
@@ -37,7 +38,8 @@ interface DeviceStats {
   maintenanceDevices: number;
 }
 
-export default function DevicesSection({ subSection }: DevicesSectionProps) {
+export default function DevicesSection({ subSection, onNavigate }: DevicesSectionProps) {
+  const [activeTab, setActiveTab] = useState(subSection || 'device-inventory')
   const [searchQuery, setSearchQuery] = useState('')
   const [devices, setDevices] = useState<Device[]>([])
   const [deviceStats, setDeviceStats] = useState<DeviceStats>({
@@ -53,6 +55,10 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
   useEffect(() => {
     loadDeviceData()
   }, [])
+
+  useEffect(() => {
+    setActiveTab(subSection || 'device-inventory')
+  }, [subSection])
 
   const loadDeviceData = async () => {
     setLoading(true)
@@ -151,122 +157,140 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
     device.serialNumber.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    onNavigate('devices', tab)
+  }
+
   const renderDeviceInventory = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">디바이스 현황</h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={loadDeviceData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            새로고침
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            리포트 다운로드
-          </Button>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            디바이스 추가
-          </Button>
+    <div className="space-y-8">
+      <div className="bg-gradient-to-r from-white to-blue-50 rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">디바이스 현황</h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={loadDeviceData} className="hover:bg-blue-50">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              새로고침
+            </Button>
+            <Button variant="outline" size="sm" className="hover:bg-blue-50">
+              <Download className="w-4 h-4 mr-2" />
+              리포트 다운로드
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              디바이스 추가
+            </Button>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-              <Button variant="outline" size="sm" onClick={loadDeviceData} className="mt-2">
-                다시 시도
-              </Button>
+        <Card className="border-red-200 bg-red-50">
+          <div className="p-4">
+            <div className="flex">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+              <div className="ml-3">
+                <p className="text-sm text-red-800">{error}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={loadDeviceData} 
+                  className="mt-2 border-red-300 text-red-700 hover:bg-red-100"
+                >
+                  다시 시도
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6">
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">전체 디바이스</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-blue-700 font-medium">전체 디바이스</p>
+              <p className="text-2xl font-bold text-blue-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.totalDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-200 rounded-xl">
               <Smartphone className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6">
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">활성 디바이스</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-sm text-green-700 font-medium">활성 디바이스</p>
+              <p className="text-2xl font-bold text-green-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.activeDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-green-200 rounded-xl">
               <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6">
+        <Card className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-l-4 border-gray-500 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">오프라인</p>
-              <p className="text-2xl font-bold text-gray-600">
+              <p className="text-sm text-gray-700 font-medium">오프라인</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.offlineDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
               <Power className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6">
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-l-4 border-yellow-500 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">점검 필요</p>
-              <p className="text-2xl font-bold text-yellow-600">
+              <p className="text-sm text-yellow-700 font-medium">점검 필요</p>
+              <p className="text-2xl font-bold text-yellow-900">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.maintenanceDevices}
               </p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-xl">
+            <div className="flex items-center justify-center w-12 h-12 bg-yellow-200 rounded-xl">
               <AlertCircle className="w-6 h-6 text-yellow-600" />
             </div>
           </div>
         </Card>
       </div>
       
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="디바이스 ID나 모델로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <Card className="bg-gradient-to-r from-white to-blue-50 p-6">
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="디바이스 ID나 모델로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 border-blue-200 focus:border-blue-500"
+            />
+          </div>
+          <Button variant="outline" size="sm" className="hover:bg-blue-50">
+            <Filter className="w-4 h-4 mr-2" />
+            필터
+          </Button>
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="w-4 h-4 mr-2" />
-          필터
-        </Button>
-      </div>
+      </Card>
       
       {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
+        <Card className="p-8">
+          <div className="flex justify-center items-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredDevices.map((device) => (
-            <Card key={device.id} className="p-6">
+            <Card key={device.id} className="p-6 bg-gradient-to-r from-white to-blue-50 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
@@ -286,10 +310,12 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
                     {device.status === 'online' ? '온라인' : 
                      device.status === 'offline' ? '오프라인' : '점검중'}
                   </Badge>
-                  <Badge variant="outline">배터리: {device.batteryLevel}%</Badge>
+                  <Badge variant="outline" className="border-blue-200 text-blue-700">
+                    배터리: {device.batteryLevel}%
+                  </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="hover:bg-blue-50">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -316,22 +342,22 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="flex items-center space-x-2">
-                  <Battery className="w-4 h-4 text-gray-400" />
+                  <Battery className="w-4 h-4 text-blue-500" />
                   <span className="text-sm text-gray-600">배터리: {device.batteryLevel}%</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Signal className="w-4 h-4 text-gray-400" />
+                  <Signal className="w-4 h-4 text-blue-500" />
                   <span className="text-sm text-gray-600">신호: {
                     device.signalStrength === 'strong' ? '강함' :
                     device.signalStrength === 'medium' ? '보통' : '약함'
                   }</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-gray-400" />
+                  <User className="w-4 h-4 text-blue-500" />
                   <span className="text-sm text-gray-600">사용자: {device.assignedUserName || '미할당'}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <Calendar className="w-4 h-4 text-blue-500" />
                   <span className="text-sm text-gray-600">
                     마지막 동기화: {device.lastSyncAt ? 
                       `${Math.floor((Date.now() - device.lastSyncAt.getTime()) / 60000)}분 전` :
@@ -343,9 +369,13 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
             </Card>
           ))}
           {filteredDevices.length === 0 && !loading && (
-            <div className="text-center py-8 text-gray-500">
-              검색 결과가 없습니다.
-            </div>
+            <Card className="p-8 text-center bg-gradient-to-r from-white to-blue-50">
+              <div className="text-gray-500">
+                <Smartphone className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium">검색 결과가 없습니다</p>
+                <p className="text-sm mt-2">다른 검색어를 입력해보세요</p>
+              </div>
+            </Card>
           )}
         </div>
       )}
@@ -353,50 +383,70 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
   )
 
   const renderDeviceAssignment = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">디바이스 배치</h2>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          새 배치
-        </Button>
+    <div className="space-y-8">
+      <div className="bg-gradient-to-r from-white to-purple-50 rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">디바이스 배치</h2>
+          <Button className="bg-purple-600 hover:bg-purple-700">
+            <Plus className="w-4 h-4 mr-2" />
+            새 배치
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">배치 설정</h3>
+        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+            <Settings className="w-5 h-5 mr-2" />
+            배치 설정
+          </h3>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700">디바이스 선택</label>
-              <select className="mt-1 w-full p-2 border border-gray-300 rounded-md">
+              <label className="text-sm font-medium text-purple-700">디바이스 선택</label>
+              <select className="mt-1 w-full p-2 border border-purple-200 rounded-md bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200">
                 <option>사용 가능한 디바이스 선택</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">사용자 할당</label>
-              <Input placeholder="사용자 이름 또는 ID" />
+              <label className="text-sm font-medium text-purple-700">사용자 할당</label>
+              <Input placeholder="사용자 이름 또는 ID" className="border-purple-200 focus:border-purple-500" />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">배치 위치</label>
-              <Input placeholder="위치 정보" />
+              <label className="text-sm font-medium text-purple-700">배치 위치</label>
+              <Input placeholder="위치 정보" className="border-purple-200 focus:border-purple-500" />
             </div>
-            <Button className="w-full">배치 완료</Button>
+            <Button className="w-full bg-purple-600 hover:bg-purple-700">
+              <MapPin className="w-4 h-4 mr-2" />
+              배치 완료
+            </Button>
           </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">배치 현황</h3>
+        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+            <Activity className="w-5 h-5 mr-2" />
+            배치 현황
+          </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">배치 대기</span>
+            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-yellow-800 font-medium">배치 대기</span>
+              </div>
               <Badge className="bg-yellow-100 text-yellow-600">8개</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">배치 완료</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-800 font-medium">배치 완료</span>
+              </div>
               <Badge className="bg-green-100 text-green-600">96개</Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">회수 대기</span>
+            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="text-sm text-red-800 font-medium">회수 대기</span>
+              </div>
               <Badge className="bg-red-100 text-red-600">4개</Badge>
             </div>
           </div>
@@ -406,73 +456,93 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
   )
 
   const renderDeviceMonitoring = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">디바이스 모니터링</h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            새로고침
-          </Button>
-          <Button variant="outline" size="sm">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            통계 보기
-          </Button>
+    <div className="space-y-8">
+      <div className="bg-gradient-to-r from-white to-green-50 rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">디바이스 모니터링</h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" className="hover:bg-green-50">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              새로고침
+            </Button>
+            <Button variant="outline" size="sm" className="hover:bg-green-50">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              통계 보기
+            </Button>
+          </div>
         </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">실시간 상태</h3>
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+            <Activity className="w-5 h-5 mr-2" />
+            실시간 상태
+          </h3>
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">정상 작동: 96개</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-800">정상 작동</span>
+              </div>
+              <span className="text-sm font-semibold text-green-600">96개</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">주의 필요: 10개</span>
+            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-yellow-800">주의 필요</span>
+              </div>
+              <span className="text-sm font-semibold text-yellow-600">10개</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">오류 발생: 3개</span>
+            <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span className="text-sm text-red-800">오류 발생</span>
+              </div>
+              <span className="text-sm font-semibold text-red-600">3개</span>
             </div>
           </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">알림</h3>
+        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+            <AlertCircle className="w-5 h-5 mr-2" />
+            알림
+          </h3>
           <div className="space-y-3">
-            <div className="flex items-start space-x-2">
+            <div className="flex items-start space-x-3 p-3 bg-red-50 rounded-lg">
               <AlertCircle className="w-4 h-4 text-red-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-900">배터리 부족</p>
-                <p className="text-xs text-gray-600">LB003 • 15% 남음</p>
+                <p className="text-sm font-medium text-red-900">배터리 부족</p>
+                <p className="text-xs text-red-600">LB003 • 15% 남음</p>
               </div>
             </div>
-            <div className="flex items-start space-x-2">
+            <div className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
               <AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-900">연결 불안정</p>
-                <p className="text-xs text-gray-600">LB007 • 신호 약함</p>
+                <p className="text-sm font-medium text-yellow-900">연결 불안정</p>
+                <p className="text-xs text-yellow-600">LB007 • 신호 약함</p>
               </div>
             </div>
           </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">성능 지표</h3>
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2" />
+            성능 지표
+          </h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">평균 배터리 수명</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <span className="text-sm text-green-800">평균 배터리 수명</span>
               <span className="text-sm font-semibold text-green-600">24시간</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">평균 신호 강도</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <span className="text-sm text-green-800">평균 신호 강도</span>
               <span className="text-sm font-semibold text-green-600">87%</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">데이터 전송 성공률</span>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <span className="text-sm text-green-800">데이터 전송 성공률</span>
               <span className="text-sm font-semibold text-green-600">98.5%</span>
             </div>
           </div>
@@ -482,7 +552,7 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
   )
 
   const renderContent = () => {
-    switch (subSection) {
+    switch (activeTab) {
       case 'device-inventory':
         return renderDeviceInventory()
       case 'device-assignment':
@@ -494,5 +564,50 @@ export default function DevicesSection({ subSection }: DevicesSectionProps) {
     }
   }
 
-  return <div>{renderContent()}</div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* 탭 네비게이션 */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => handleTabChange('device-inventory')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'device-inventory'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              디바이스 현황
+            </button>
+            <button
+              onClick={() => handleTabChange('device-assignment')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'device-assignment'
+                  ? 'border-purple-500 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              디바이스 배치
+            </button>
+            <button
+              onClick={() => handleTabChange('device-monitoring')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'device-monitoring'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              디바이스 모니터링
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 콘텐츠 영역 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderContent()}
+      </div>
+    </div>
+  )
 } 
