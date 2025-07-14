@@ -26,6 +26,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Badge } from '../ui/badge'
+import enterpriseAuthService from '../../services/EnterpriseAuthService'
 
 // 섹션별 컴포넌트 import
 import DashboardSection from './Dashboard/DashboardSection'
@@ -50,7 +51,18 @@ export default function OrganizationAdminApp() {
   const [currentSubSection, setCurrentSubSection] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
 
-  // 사이드바 메뉴 구조
+  // 로그아웃 기능
+  const handleLogout = async () => {
+    try {
+      await enterpriseAuthService.signOut()
+      // 로그아웃 후 랜딩 페이지로 리디렉션
+      window.location.href = '/'
+    } catch (error) {
+      console.error('로그아웃 실패:', error)
+    }
+  }
+
+  // 사이드바 메뉴 항목들 (기존 코드 유지)
   const sidebarMenuItems: SidebarMenuItem[] = [
     {
       id: 'dashboard',
@@ -64,15 +76,15 @@ export default function OrganizationAdminApp() {
       icon: Building2,
       path: '/admin/organization',
       children: [
-        { id: 'org-info', title: '기업 정보', icon: Building2, path: '/admin/organization/info' },
-        { id: 'org-departments', title: '조직 관리', icon: Users, path: '/admin/organization/departments' },
-        { id: 'org-structure', title: '조직 구조', icon: BarChart3, path: '/admin/organization/structure' }
+        { id: 'company-info', title: '기업 정보', icon: Building2, path: '/admin/organization/company-info' },
+        { id: 'departments', title: '조직 관리', icon: Users, path: '/admin/organization/departments' },
+        { id: 'structure', title: '조직 구조', icon: Shield, path: '/admin/organization/structure' }
       ]
     },
     {
       id: 'members',
       title: '운영자 관리',
-      icon: UserPlus,
+      icon: Users,
       path: '/admin/members',
       children: [
         { id: 'member-list', title: '운영자 목록', icon: Users, path: '/admin/members/list' },
@@ -119,59 +131,59 @@ export default function OrganizationAdminApp() {
       icon: CreditCard,
       path: '/admin/credits',
       children: [
-        { id: 'credit-dashboard', title: '크레딧 현황', icon: DollarSign, path: '/admin/credits/dashboard' },
+        { id: 'credit-status', title: '크레딧 현황', icon: DollarSign, path: '/admin/credits/status' },
         { id: 'credit-history', title: '구매 내역', icon: Calendar, path: '/admin/credits/history' },
         { id: 'credit-settings', title: '결제 설정', icon: Settings, path: '/admin/credits/settings' }
       ]
     }
   ]
 
-  // 네비게이션 핸들러
   const handleNavigation = (sectionId: string, subSectionId?: string) => {
     setCurrentSection(sectionId)
     setCurrentSubSection(subSectionId || '')
   }
 
-  // 사이드바 메뉴 아이템 렌더링
   const renderSidebarItem = (item: SidebarMenuItem, level: number = 0) => {
     const isActive = currentSection === item.id
     const hasChildren = item.children && item.children.length > 0
     
     return (
-      <div key={item.id} className={`${level > 0 ? 'ml-4' : ''}`}>
-        <button
-          onClick={() => handleNavigation(item.id)}
-          className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
-            isActive
-              ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
-              : 'text-gray-700 hover:bg-gray-50'
+      <div key={item.id} className="mb-1">
+        <div
+          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+            isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
           }`}
+          style={{ paddingLeft: `${8 + level * 16}px` }}
+          onClick={() => handleNavigation(item.id)}
         >
-          <div className="flex items-center space-x-3">
-            <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
-            <span className="font-medium">{item.title}</span>
+          <div className="flex items-center space-x-2">
+            <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+            <span className="text-sm font-medium">{item.title}</span>
           </div>
           {hasChildren && (
             <ChevronRight className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90' : ''}`} />
           )}
-        </button>
+          {item.badge && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {item.badge}
+            </Badge>
+          )}
+        </div>
+        
         {hasChildren && isActive && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-1 space-y-1">
             {item.children!.map((child) => (
-              <button
+              <div
                 key={child.id}
-                onClick={() => handleNavigation(item.id, child.id)}
-                className={`w-full flex items-center space-x-3 p-2 ml-8 rounded-lg transition-colors text-sm ${
-                  currentSubSection === child.id
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
+                className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                  currentSubSection === child.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
                 }`}
+                style={{ paddingLeft: `${24 + level * 16}px` }}
+                onClick={() => handleNavigation(item.id, child.id)}
               >
-                <child.icon className={`w-4 h-4 ${
-                  currentSubSection === child.id ? 'text-blue-600' : 'text-gray-500'
-                }`} />
-                <span>{child.title}</span>
-              </button>
+                <child.icon className={`w-3 h-3 ${currentSubSection === child.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                <span className="text-sm">{child.title}</span>
+              </div>
             ))}
           </div>
         )}
@@ -179,7 +191,6 @@ export default function OrganizationAdminApp() {
     )
   }
 
-  // 현재 섹션 제목 가져오기
   const getCurrentSectionTitle = () => {
     const section = sidebarMenuItems.find(item => item.id === currentSection)
     if (!section) return '대시보드'
@@ -192,7 +203,6 @@ export default function OrganizationAdminApp() {
     return section.title
   }
 
-  // 현재 섹션 컴포넌트 렌더링
   const renderCurrentSection = () => {
     switch (currentSection) {
       case 'dashboard':
@@ -251,7 +261,7 @@ export default function OrganizationAdminApp() {
                   <Settings className="w-4 h-4 mr-2" />
                   설정
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   로그아웃
                 </DropdownMenuItem>
@@ -289,6 +299,14 @@ export default function OrganizationAdminApp() {
               </Button>
               <Button variant="ghost" size="sm">
                 <Settings className="w-5 h-5 text-gray-700" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="w-5 h-5" />
               </Button>
             </div>
           </div>
