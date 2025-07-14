@@ -333,7 +333,7 @@ export default function CompanyRegistrationForm() {
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     placeholder="서울시 강남구 테헤란로 123, 4층"
                     rows={2}
-                    className="rounded-xl"
+                    className="rounded-xl bg-white"
                   />
                 </div>
               </div>
