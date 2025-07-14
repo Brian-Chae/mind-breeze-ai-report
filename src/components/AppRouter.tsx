@@ -96,6 +96,8 @@ const AppRouter = () => {
     <Routes>
       {/* 공개 라우트 */}
       <Route path="/" element={<LandingPage onEnterApp={() => {}} />} />
+      <Route path="/login" element={<LoginPage onNavigate={(page) => navigate(page === 'home' ? '/welcome' : `/${page}`)} />} />
+      <Route path="/signup" element={<SignupPage onNavigate={(page) => navigate(page === 'home' ? '/welcome' : `/${page}`)} />} />
       
       {/* 조직 관련 라우트 */}
       <Route path="/organization-signup-selection" element={<CompanySignupSelectionPage />} />
