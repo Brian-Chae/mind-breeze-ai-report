@@ -566,6 +566,8 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
 
   // 조직 구조 렌더링
   const renderOrganizationStructure = () => {
+    const organizationStructure = getOrganizationStructure()
+    
     const renderOrgNode = (node: OrganizationNode, level: number = 0) => {
       const colors = {
         company: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-blue-700',
@@ -653,6 +655,38 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
       )
     }
 
+    // 빈 상태 렌더링
+    const renderEmptyState = () => (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-6">
+          <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">조직 구조 데이터가 없습니다</h3>
+          <p className="text-gray-600 max-w-md">
+            아직 조직 구조가 설정되지 않았습니다. 
+            먼저 조직 관리 탭에서 부서를 추가하거나 구성원을 등록해주세요.
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <Button 
+            variant="outline" 
+            onClick={() => onNavigate('organization', 'departments')}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>부서 추가</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => onNavigate('members', 'member-list')}
+            className="flex items-center space-x-2"
+          >
+            <Users className="w-4 h-4" />
+            <span>구성원 관리</span>
+          </Button>
+        </div>
+      </div>
+    )
+
     return (
       <div className="space-y-8">
         <div className="flex items-center justify-between">
@@ -674,7 +708,11 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
 
         <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
           <div className="overflow-x-auto">
-            {renderOrgNode(getOrganizationStructure())}
+            {organizationStructure.children && organizationStructure.children.length > 0 ? (
+              renderOrgNode(organizationStructure)
+            ) : (
+              renderEmptyState()
+            )}
           </div>
         </div>
       </div>
