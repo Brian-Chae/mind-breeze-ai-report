@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import { cn } from '../components/ui/utils'
 import { SessionManager } from '../components/SessionManager'
 import { Layout } from '../components/Layout'
+import { useAuth } from '../components/AuthProvider'
 import { 
   Activity, 
   Database, 
@@ -22,10 +23,33 @@ import {
 
 export function HomePage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   
   const handleSectionChange = (section: string) => {
     navigate(`/${section}`)
   }
+
+  // 사용자 타입 확인 함수
+  const getUserType = (user: any) => {
+    if (!user || !user.email) return 'INDIVIDUAL_USER';
+    
+    const email = user.email.toLowerCase();
+    
+    // 임시로 admin 키워드가 포함된 이메일을 기업 관리자로 간주
+    if (email.includes('admin') || email.includes('manager') || email.includes('org')) {
+      return 'ORGANIZATION_ADMIN';
+    }
+    
+    // 기업 도메인 체크 (예: @company.com)
+    if (email.includes('@company.com') || email.includes('@organization.com')) {
+      return 'ORGANIZATION_MEMBER';
+    }
+    
+    return 'INDIVIDUAL_USER';
+  };
+
+  const userType = getUserType(user);
+  const isAdmin = userType === 'ORGANIZATION_ADMIN';
   const stats = [
     {
       title: "Connected Devices",
@@ -206,10 +230,12 @@ export function HomePage() {
               <FileText className="w-4 h-4 mr-2" />
               View Documentation
             </Button>
-            <Button variant="outline" onClick={() => navigate('/admin')}>
-              <Settings className="w-4 h-4 mr-2" />
-              관리자 페이지
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" onClick={() => navigate('/admin')}>
+                <Settings className="w-4 h-4 mr-2" />
+                관리자 페이지
+              </Button>
+            )}
           </div>
         </Card>
         </div>

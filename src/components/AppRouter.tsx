@@ -35,8 +35,24 @@ const AppRouter = () => {
     
     if (user) {
       // 로그인된 사용자의 라우팅
+      const userType = getUserType(user);
+      const redirectPath = getRedirectPath(userType);
+      
+      console.log('🔄 사용자 타입 확인:', {
+        email: user.email,
+        userType,
+        redirectPath,
+        currentPath
+      });
+      
       if (['/login', '/signup', '/'].includes(currentPath)) {
-        navigate('/welcome');
+        navigate(redirectPath);
+      } else if (currentPath === '/welcome' && userType === 'ORGANIZATION_ADMIN') {
+        // 기업 관리자는 /welcome 대신 /admin으로 리디렉션
+        navigate('/admin');
+      } else if (currentPath === '/home' && userType === 'ORGANIZATION_ADMIN') {
+        // 기업 관리자는 /home 대신 /admin으로 리디렉션
+        navigate('/admin');
       }
     } else {
       // 로그인되지 않은 사용자는 토큰 접속 허용
@@ -55,7 +71,7 @@ const AppRouter = () => {
           // 기본 회원가입 페이지로 이동
           navigate('/signup');
         }
-      } else if (['/welcome', '/home', '/data-center', '/visualizer', '/documents', '/linkband', '/applications'].includes(currentPath)) {
+      } else if (['/welcome', '/home', '/data-center', '/visualizer', '/documents', '/linkband', '/applications', '/admin'].includes(currentPath)) {
         // 보호된 페이지들은 랜딩 페이지로 리다이렉트
         navigate('/');
       }
@@ -65,13 +81,35 @@ const AppRouter = () => {
   const getRedirectPath = (userType: string) => {
     switch (userType) {
       case 'SYSTEM_ADMIN':
+        return '/admin';
       case 'ORGANIZATION_ADMIN':
+        return '/admin';
       case 'ORGANIZATION_MEMBER':
+        return '/welcome';
       case 'INDIVIDUAL_USER':
         return '/welcome';
       default:
         return '/';
     }
+  };
+
+  // 임시로 이메일 패턴으로 사용자 타입 확인
+  const getUserType = (user: any) => {
+    if (!user || !user.email) return 'INDIVIDUAL_USER';
+    
+    const email = user.email.toLowerCase();
+    
+    // 임시로 admin 키워드가 포함된 이메일을 기업 관리자로 간주
+    if (email.includes('admin') || email.includes('manager') || email.includes('org')) {
+      return 'ORGANIZATION_ADMIN';
+    }
+    
+    // 기업 도메인 체크 (예: @company.com)
+    if (email.includes('@company.com') || email.includes('@organization.com')) {
+      return 'ORGANIZATION_MEMBER';
+    }
+    
+    return 'INDIVIDUAL_USER';
   };
 
   useEffect(() => {
