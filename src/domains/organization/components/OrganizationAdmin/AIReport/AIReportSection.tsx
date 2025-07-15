@@ -154,10 +154,15 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       const currentContext = enterpriseAuthService.getCurrentContext()
       const organizationId = currentContext.organization?.id
       
-      // 크레딧 확인
-      const creditBalance = await creditService.getCreditBalance(organizationId)
-      if (creditBalance < 10) { // 리포트 생성 기본 비용
-        throw new Error('크레딧이 부족합니다.')
+      // 크레딧 확인 (개발 모드에서는 바이패스)
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      if (!isDevelopment) {
+        const creditBalance = await creditService.getCreditBalance(organizationId)
+        if (creditBalance < 10) { // 리포트 생성 기본 비용
+          throw new Error('크레딧이 부족합니다.')
+        }
+      } else {
+        console.log('🧪 개발 모드: 크래딧 체크 바이패스')
       }
 
       // 리포트 생성
@@ -173,13 +178,17 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
       const reportId = await FirebaseService.saveHealthReport(userId, reportData)
       
-      // 크레딧 차감
-      await creditService.useReportCredits(
-        currentContext.user!.id,
-        organizationId,
-        'BASIC',
-        reportId
-      )
+      // 크레딧 차감 (개발 모드에서는 바이패스)
+      if (!isDevelopment) {
+        await creditService.useReportCredits(
+          currentContext.user!.id,
+          organizationId,
+          'BASIC',
+          reportId
+        )
+      } else {
+        console.log('🧪 개발 모드: 크래딧 차감 스킵')
+      }
 
       // 데이터 새로고침
       await loadReportData()
