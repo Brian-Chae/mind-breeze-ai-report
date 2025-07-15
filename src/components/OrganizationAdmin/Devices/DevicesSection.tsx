@@ -164,15 +164,15 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
 
   const renderDeviceInventory = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-white to-blue-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">디바이스 현황</h2>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={loadDeviceData} className="hover:bg-blue-50">
+            <Button variant="outline" size="sm" onClick={loadDeviceData} className="hover:bg-gray-50">
               <RefreshCw className="w-4 h-4 mr-2" />
               새로고침
             </Button>
-            <Button variant="outline" size="sm" className="hover:bg-blue-50">
+            <Button variant="outline" size="sm" className="hover:bg-gray-50">
               <Download className="w-4 h-4 mr-2" />
               리포트 다운로드
             </Button>
@@ -263,7 +263,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
         </Card>
       </div>
       
-      <Card className="bg-gradient-to-r from-white to-blue-50 p-6">
+      <Card className="bg-white border border-gray-200 p-6">
         <div className="flex items-center space-x-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -271,10 +271,10 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
               placeholder="디바이스 ID나 모델로 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-blue-200 focus:border-blue-500"
+              className="pl-10 border-gray-200 focus:border-gray-500"
             />
           </div>
-          <Button variant="outline" size="sm" className="hover:bg-blue-50">
+          <Button variant="outline" size="sm" className="hover:bg-gray-50">
             <Filter className="w-4 h-4 mr-2" />
             필터
           </Button>
@@ -290,11 +290,11 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredDevices.map((device) => (
-            <Card key={device.id} className="p-6 bg-gradient-to-r from-white to-blue-50 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+            <Card key={device.id} className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-                    <Smartphone className="w-6 h-6 text-blue-600" />
+                  <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                    <Smartphone className="w-6 h-6 text-gray-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{device.name}</h3>
@@ -310,12 +310,12 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
                     {device.status === 'online' ? '온라인' : 
                      device.status === 'offline' ? '오프라인' : '점검중'}
                   </Badge>
-                  <Badge variant="outline" className="border-blue-200 text-blue-700">
+                  <Badge variant="outline" className="border-gray-200 text-gray-700">
                     배터리: {device.batteryLevel}%
                   </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="hover:bg-blue-50">
+                      <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -342,22 +342,22 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="flex items-center space-x-2">
-                  <Battery className="w-4 h-4 text-blue-500" />
+                  <Battery className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600">배터리: {device.batteryLevel}%</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Signal className="w-4 h-4 text-blue-500" />
+                  <Signal className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600">신호: {
                     device.signalStrength === 'strong' ? '강함' :
                     device.signalStrength === 'medium' ? '보통' : '약함'
                   }</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-blue-500" />
+                  <User className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600">사용자: {device.assignedUserName || '미할당'}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-blue-500" />
+                  <Calendar className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
                     마지막 동기화: {device.lastSyncAt ? 
                       `${Math.floor((Date.now() - device.lastSyncAt.getTime()) / 60000)}분 전` :
@@ -369,7 +369,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
             </Card>
           ))}
           {filteredDevices.length === 0 && !loading && (
-            <Card className="p-8 text-center bg-gradient-to-r from-white to-blue-50">
+            <Card className="p-8 text-center bg-white border border-gray-200">
               <div className="text-gray-500">
                 <Smartphone className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <p className="text-lg font-medium">검색 결과가 없습니다</p>
@@ -384,7 +384,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
 
   const renderDeviceAssignment = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-white to-purple-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">디바이스 배치</h2>
           <Button className="bg-purple-600 hover:bg-purple-700">
@@ -395,25 +395,25 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Settings className="w-5 h-5 mr-2" />
             배치 설정
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-purple-700">디바이스 선택</label>
-              <select className="mt-1 w-full p-2 border border-purple-200 rounded-md bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200">
+              <label className="text-sm font-medium text-gray-700">디바이스 선택</label>
+              <select className="mt-1 w-full p-2 border border-gray-200 rounded-md bg-white focus:border-gray-500 focus:ring-2 focus:ring-gray-200">
                 <option>사용 가능한 디바이스 선택</option>
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-purple-700">사용자 할당</label>
-              <Input placeholder="사용자 이름 또는 ID" className="border-purple-200 focus:border-purple-500" />
+              <label className="text-sm font-medium text-gray-700">사용자 할당</label>
+              <Input placeholder="사용자 이름 또는 ID" className="border-gray-200 focus:border-gray-500" />
             </div>
             <div>
-              <label className="text-sm font-medium text-purple-700">배치 위치</label>
-              <Input placeholder="위치 정보" className="border-purple-200 focus:border-purple-500" />
+              <label className="text-sm font-medium text-gray-700">배치 위치</label>
+              <Input placeholder="위치 정보" className="border-gray-200 focus:border-gray-500" />
             </div>
             <Button className="w-full bg-purple-600 hover:bg-purple-700">
               <MapPin className="w-4 h-4 mr-2" />
@@ -422,8 +422,8 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Activity className="w-5 h-5 mr-2" />
             배치 현황
           </h3>
@@ -457,15 +457,15 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
 
   const renderDeviceMonitoring = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-white to-green-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">디바이스 모니터링</h2>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="hover:bg-green-50">
+            <Button variant="outline" size="sm" className="hover:bg-gray-50">
               <RefreshCw className="w-4 h-4 mr-2" />
               새로고침
             </Button>
-            <Button variant="outline" size="sm" className="hover:bg-green-50">
+            <Button variant="outline" size="sm" className="hover:bg-gray-50">
               <BarChart3 className="w-4 h-4 mr-2" />
               통계 보기
             </Button>
@@ -474,8 +474,8 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Activity className="w-5 h-5 mr-2" />
             실시간 상태
           </h3>
@@ -504,8 +504,8 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <AlertCircle className="w-5 h-5 mr-2" />
             알림
           </h3>
@@ -527,8 +527,8 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <BarChart3 className="w-5 h-5 mr-2" />
             성능 지표
           </h3>
