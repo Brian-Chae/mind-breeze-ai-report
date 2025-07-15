@@ -62,6 +62,7 @@ export default function OrganizationAdminApp() {
   const navigate = useNavigate()
   const params = useParams()
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentContext, setCurrentContext] = useState(() => enterpriseAuthService.getCurrentContext())
 
   // URL에서 현재 섹션과 서브섹션 추출
   const getCurrentSectionFromURL = () => {
@@ -83,6 +84,20 @@ export default function OrganizationAdminApp() {
   const currentSection = getCurrentSectionFromURL()
   const currentSubSection = getCurrentSubSectionFromURL()
 
+  // 사용자 역할을 한국어로 변환하는 함수
+  const getUserRoleName = (userType: string | undefined) => {
+    switch (userType) {
+      case 'ORGANIZATION_ADMIN':
+        return '조직 관리자'
+      case 'ORGANIZATION_MEMBER':
+        return '조직 구성원'
+      case 'INDIVIDUAL_USER':
+        return '개인 사용자'
+      default:
+        return '관리자'
+    }
+  }
+
   // URL이 /admin으로만 되어있으면 /admin/dashboard로 리디렉션
   useEffect(() => {
     if (location.pathname === '/admin') {
@@ -100,19 +115,19 @@ export default function OrganizationAdminApp() {
     console.log('==========================')
     
     // 현재 사용자 권한 정보 디버깅
-    const currentContext = enterpriseAuthService.getCurrentContext()
+    const context = enterpriseAuthService.getCurrentContext()
     console.log('=== 현재 사용자 권한 정보 ===')
-    console.log('사용자:', currentContext.user)
-    console.log('조직:', currentContext.organization)
-    console.log('권한 배열:', currentContext.permissions)
-    console.log('사용자 타입:', currentContext.user?.userType)
-    console.log('조직 ID:', currentContext.user?.organizationId)
+    console.log('사용자:', context.user)
+    console.log('조직:', context.organization)
+    console.log('권한 배열:', context.permissions)
+    console.log('사용자 타입:', context.user?.userType)
+    console.log('조직 ID:', context.user?.organizationId)
     console.log('measurement_users.view.all 권한:', enterpriseAuthService.hasPermission('measurement_users.view.all'))
     console.log('measurement_users.view.own 권한:', enterpriseAuthService.hasPermission('measurement_users.view.own'))
     console.log('==========================')
     
     // 사용자 정보가 없으면 잠시 후 다시 확인
-    if (!currentContext.user) {
+    if (!context.user) {
       console.log('🔄 사용자 정보가 없습니다. 잠시 후 다시 확인합니다...')
       setTimeout(() => {
         const updatedContext = enterpriseAuthService.getCurrentContext()
@@ -120,11 +135,20 @@ export default function OrganizationAdminApp() {
           console.warn('⚠️ 사용자 정보를 불러올 수 없습니다. 페이지를 새로고침하거나 다시 로그인해주세요.')
         } else {
           console.log('✅ 사용자 정보 로드 완료:', updatedContext.user)
-          // 페이지를 새로고침하여 최신 상태 반영
-          window.location.reload()
+          setCurrentContext(updatedContext)
         }
       }, 2000)
     }
+  }, [])
+
+  // 사용자 정보 실시간 업데이트를 위한 useEffect
+  useEffect(() => {
+    const unsubscribe = enterpriseAuthService.onAuthStateChanged((context) => {
+      console.log('🔄 Auth 상태 변경 감지:', context)
+      setCurrentContext(context)
+    })
+    
+    return () => unsubscribe()
   }, [])
 
   // 로그아웃 기능
@@ -374,8 +398,10 @@ export default function OrganizationAdminApp() {
               <User className="w-3 h-3 text-gray-600" />
             </div>
             <div className="flex-1">
-              <p className="text-xs font-medium text-gray-900">관리자</p>
-              <p className="text-xs text-gray-500">admin@company.com</p>
+              <p className="text-xs font-medium text-gray-900">
+                {currentContext.user?.displayName || '사용자'} | {getUserRoleName(currentContext.user?.userType)}
+              </p>
+              <p className="text-xs text-gray-500">{currentContext.user?.email || '이메일 없음'}</p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
