@@ -82,6 +82,18 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
     }
   });
 
+  // 초기 상태
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  
+  // 더미 개인정보 (테스트용)
+  const dummyPersonalInfo: PersonalInfo = {
+    name: '홍길동',
+    gender: 'male',
+    birthDate: '1990-01-01',
+    occupation: '소프트웨어 개발자',
+    workConcerns: '장시간 코딩으로 인한 목과 어깨 통증, 야근으로 인한 수면 부족과 집중력 저하가 주요 고민입니다.'
+  };
+
   const currentStepIndex = STEPS.findIndex(step => step.key === state.currentStep);
   const progressPercentage = ((currentStepIndex + 1) / STEPS.length) * 100;
 

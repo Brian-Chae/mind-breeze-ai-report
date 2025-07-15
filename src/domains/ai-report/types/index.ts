@@ -2,12 +2,10 @@
 
 export interface PersonalInfo {
   name: string;
-  age: number;
   gender: 'male' | 'female' | 'other';
-  height?: number;
-  weight?: number;
-  medicalHistory?: string[];
-  currentMedications?: string[];
+  birthDate: string; // YYYY-MM-DD 형식
+  occupation: string;
+  workConcerns: string; // 직업상 평소 고민이 되는점 (AI Health Report에서 집중적으로 파악하고 싶은 내용)
 }
 
 export interface DeviceConnectionStatus {

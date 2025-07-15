@@ -3,7 +3,7 @@ import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select';
 import { Textarea } from '@ui/textarea';
-import { User, Calendar, Users } from 'lucide-react';
+import { User, Calendar, Briefcase, MessageSquare } from 'lucide-react';
 
 import type { PersonalInfo } from '../types';
 
@@ -16,191 +16,227 @@ interface PersonalInfoScreenProps {
 export function PersonalInfoScreen({ onComplete, onError, initialData }: PersonalInfoScreenProps) {
   const [formData, setFormData] = useState<PersonalInfo>({
     name: initialData?.name || '',
-    age: initialData?.age || 0,
     gender: initialData?.gender || 'male',
-    height: initialData?.height || undefined,
-    weight: initialData?.weight || undefined,
-    medicalHistory: initialData?.medicalHistory || [],
-    currentMedications: initialData?.currentMedications || []
+    birthDate: initialData?.birthDate || '',
+    occupation: initialData?.occupation || '',
+    workConcerns: initialData?.workConcerns || ''
   });
 
-  const [medicalHistoryInput, setMedicalHistoryInput] = useState('');
-  const [medicationsInput, setMedicationsInput] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof PersonalInfo, string>>>({});
+
+  const validateForm = useCallback((): boolean => {
+    const newErrors: Partial<Record<keyof PersonalInfo, string>> = {};
+
+    // 이름 검증
+    if (!formData.name.trim()) {
+      newErrors.name = '이름을 입력해주세요.';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = '이름은 2글자 이상 입력해주세요.';
+    }
+
+    // 생년월일 검증
+    if (!formData.birthDate) {
+      newErrors.birthDate = '생년월일을 선택해주세요.';
+    } else {
+      const birthYear = new Date(formData.birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+      
+      if (age < 10 || age > 120) {
+        newErrors.birthDate = '올바른 생년월일을 입력해주세요.';
+      }
+    }
+
+    // 직업 검증
+    if (!formData.occupation.trim()) {
+      newErrors.occupation = '직업을 입력해주세요.';
+    } else if (formData.occupation.trim().length < 2) {
+      newErrors.occupation = '직업은 2글자 이상 입력해주세요.';
+    }
+
+    // 직업상 고민 검증
+    if (!formData.workConcerns.trim()) {
+      newErrors.workConcerns = '직업상 고민이나 관심사를 입력해주세요.';
+    } else if (formData.workConcerns.trim().length < 10) {
+      newErrors.workConcerns = '좀 더 구체적으로 작성해주세요. (10글자 이상)';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData]);
 
   const handleSubmit = useCallback(() => {
-    // 필수 필드 검증
-    if (!formData.name.trim()) {
-      onError('이름을 입력해주세요.');
+    if (!validateForm()) {
+      onError('입력 정보를 확인해주세요.');
       return;
     }
 
-    if (formData.age < 1 || formData.age > 120) {
-      onError('올바른 나이를 입력해주세요.');
-      return;
+    try {
+      onComplete(formData);
+    } catch (error) {
+      onError('정보 저장 중 오류가 발생했습니다.');
     }
+  }, [formData, validateForm, onComplete, onError]);
 
-    // 의료 기록 및 약물 정보 파싱
-    const finalData: PersonalInfo = {
-      ...formData,
-      medicalHistory: medicalHistoryInput.trim() 
-        ? medicalHistoryInput.split(',').map(item => item.trim()).filter(Boolean)
-        : [],
-      currentMedications: medicationsInput.trim() 
-        ? medicationsInput.split(',').map(item => item.trim()).filter(Boolean)
-        : []
-    };
-
-    onComplete(finalData);
-  }, [formData, medicalHistoryInput, medicationsInput, onComplete, onError]);
+  const updateFormData = useCallback((field: keyof PersonalInfo, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // 해당 필드의 에러 클리어
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+  }, [errors]);
 
   return (
-    <div className="space-y-8 bg-white">
-      <div className="text-center">
-        <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4">
-          <User className="w-8 h-8 text-blue-600" />
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        {/* 헤더 */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <User className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">개인 정보 입력</h2>
+          <p className="text-gray-600">
+            AI Health Report 생성을 위한 기본 정보를 입력해주세요
+          </p>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          사용자 정보 입력
-        </h2>
-        <p className="text-gray-600">
-          정확한 AI 분석을 위해 개인 정보를 입력해주세요.
-        </p>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* 기본 정보 */}
-        <div className="space-y-6">
-          <div>
-            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+        {/* 폼 필드들 */}
+        <div className="space-y-8">
+          {/* 이름 입력 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               이름 *
             </label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="이름을 입력하세요"
-              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="text"
+                value={formData.name}
+                onChange={(e) => updateFormData('name', e.target.value)}
+                placeholder="이름을 입력해주세요"
+                className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                  errors.name ? 'border-red-500' : ''
+                }`}
+              />
+            </div>
+            {errors.name && (
+              <p className="text-sm text-red-600">{errors.name}</p>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="age" className="block text-sm font-semibold text-gray-700 mb-2">
-              나이 *
-            </label>
-            <Input
-              id="age"
-              type="number"
-              min="1"
-              max="120"
-              value={formData.age || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
-              placeholder="나이를 입력하세요"
-              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 mb-2">
+          {/* 성별 선택 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               성별 *
             </label>
-            <Select
-              value={formData.gender}
-              onValueChange={(value: 'male' | 'female' | 'other') => 
-                setFormData(prev => ({ ...prev, gender: value }))
-              }
-            >
-              <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500">
-                <SelectValue placeholder="성별을 선택하세요" />
+            <Select value={formData.gender} onValueChange={(value) => updateFormData('gender', value as PersonalInfo['gender'])}>
+              <SelectTrigger className="h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                <SelectValue placeholder="성별을 선택해주세요" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-gray-300">
+              <SelectContent className="bg-white border border-gray-200 shadow-lg">
                 <SelectItem value="male" className="text-gray-900 hover:bg-gray-50">남성</SelectItem>
                 <SelectItem value="female" className="text-gray-900 hover:bg-gray-50">여성</SelectItem>
                 <SelectItem value="other" className="text-gray-900 hover:bg-gray-50">기타</SelectItem>
               </SelectContent>
             </Select>
+            {errors.gender && (
+              <p className="text-sm text-red-600">{errors.gender}</p>
+            )}
           </div>
-        </div>
 
-        {/* 신체 정보 */}
-        <div className="space-y-6">
-          <div>
-            <label htmlFor="height" className="block text-sm font-semibold text-gray-700 mb-2">
-              키 (cm)
+          {/* 생년월일 입력 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              생년월일 *
             </label>
-            <Input
-              id="height"
-              type="number"
-              min="100"
-              max="250"
-              value={formData.height || ''}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                height: e.target.value ? parseInt(e.target.value) : undefined 
-              }))}
-              placeholder="키를 입력하세요 (선택사항)"
-              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="date"
+                value={formData.birthDate}
+                onChange={(e) => updateFormData('birthDate', e.target.value)}
+                className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                  errors.birthDate ? 'border-red-500' : ''
+                }`}
+                max={new Date().toISOString().split('T')[0]} // 오늘까지만 선택 가능
+              />
+            </div>
+            {errors.birthDate && (
+              <p className="text-sm text-red-600">{errors.birthDate}</p>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="weight" className="block text-sm font-semibold text-gray-700 mb-2">
-              몸무게 (kg)
+          {/* 직업 입력 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              직업 *
             </label>
-            <Input
-              id="weight"
-              type="number"
-              min="30"
-              max="200"
-              value={formData.weight || ''}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                weight: e.target.value ? parseInt(e.target.value) : undefined 
-              }))}
-              placeholder="몸무게를 입력하세요 (선택사항)"
-              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="text"
+                value={formData.occupation}
+                onChange={(e) => updateFormData('occupation', e.target.value)}
+                placeholder="예: 개발자, 디자이너, 학생, 교사 등"
+                className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                  errors.occupation ? 'border-red-500' : ''
+                }`}
+              />
+            </div>
+            {errors.occupation && (
+              <p className="text-sm text-red-600">{errors.occupation}</p>
+            )}
+          </div>
+
+          {/* 직업상 고민 입력 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              직업상 평소 고민이 되는점 *
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              AI Health Report에서 집중적으로 파악하고 싶은 내용을 자세히 적어주세요
+            </p>
+            <div className="relative">
+              <MessageSquare className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <Textarea
+                value={formData.workConcerns}
+                onChange={(e) => updateFormData('workConcerns', e.target.value)}
+                placeholder="예: 업무 스트레스, 집중력 저하, 야근으로 인한 피로, 발표 불안감, 의사결정의 어려움 등 평소 고민이나 개선하고 싶은 점을 구체적으로 작성해주세요."
+                className={`pl-10 pt-3 min-h-[120px] bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none ${
+                  errors.workConcerns ? 'border-red-500' : ''
+                }`}
+                rows={5}
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              {errors.workConcerns && (
+                <p className="text-sm text-red-600">{errors.workConcerns}</p>
+              )}
+              <p className="text-xs text-gray-400 ml-auto">
+                {formData.workConcerns.length}자
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 의료 정보 */}
-      <div className="space-y-6">
-        <div>
-          <label htmlFor="medical-history" className="block text-sm font-semibold text-gray-700 mb-2">
-            과거 병력이 있다면 입력하세요 (쉼표로 구분)
-          </label>
-          <Textarea
-            id="medical-history"
-            value={medicalHistoryInput}
-            onChange={(e) => setMedicalHistoryInput(e.target.value)}
-            placeholder="예: 고혈압, 당뇨병, 심장질환 등"
-            className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            rows={3}
-          />
+        {/* 다음 버튼 */}
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <Button
+            onClick={handleSubmit}
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+          >
+            다음 단계로
+          </Button>
         </div>
-
-        <div>
-          <label htmlFor="medications" className="block text-sm font-semibold text-gray-700 mb-2">
-            현재 복용중인 약물이 있다면 입력하세요 (쉼표로 구분)
-          </label>
-          <Textarea
-            id="medications"
-            value={medicationsInput}
-            onChange={(e) => setMedicationsInput(e.target.value)}
-            placeholder="예: 혈압약, 진통제, 비타민 등"
-            className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-            rows={3}
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end pt-6">
-        <Button 
-          onClick={handleSubmit} 
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
-        >
-          다음 단계로
-        </Button>
       </div>
     </div>
   );
