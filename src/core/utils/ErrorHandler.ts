@@ -147,7 +147,14 @@ export class ValidationError extends ServiceError {
     super(
       ErrorCodes.VALIDATION_FAILED,
       message,
-      { ...context, field, value },
+      { 
+        ...context, 
+        metadata: { 
+          ...context.metadata,
+          field, 
+          value 
+        } 
+      },
       ErrorSeverity.LOW,
       false,
       message
@@ -174,7 +181,14 @@ export class NetworkError extends ServiceError {
     super(
       ErrorCodes.NETWORK_ERROR,
       message,
-      { ...context, statusCode, url },
+      { 
+        ...context, 
+        metadata: { 
+          ...context.metadata,
+          statusCode, 
+          url 
+        } 
+      },
       ErrorSeverity.HIGH,
       true,
       '네트워크 연결을 확인해주세요.'
@@ -200,7 +214,14 @@ export class PermissionError extends ServiceError {
     super(
       ErrorCodes.PERMISSION_DENIED,
       `권한이 부족합니다. 필요 권한: ${requiredPermission}`,
-      { ...context, requiredPermission, currentRole },
+      { 
+        ...context, 
+        metadata: { 
+          ...context.metadata,
+          requiredPermission, 
+          currentRole 
+        } 
+      },
       ErrorSeverity.MEDIUM,
       false,
       '이 작업을 수행할 권한이 없습니다.'
@@ -308,7 +329,13 @@ export class ErrorHandler {
     return new ServiceError(
       serviceErrorCode,
       firebaseError?.message || '알 수 없는 Firebase 오류',
-      { ...context, firebaseCode: errorCode },
+      { 
+        ...context, 
+        metadata: { 
+          ...context.metadata,
+          firebaseCode: errorCode 
+        } 
+      },
       severity,
       this.retryableErrors.has(serviceErrorCode),
       userMessage
