@@ -220,7 +220,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         <h2 className="text-2xl font-bold text-gray-900">AI 리포트 생성</h2>
                   <Button 
             onClick={() => handleGenerateReport('default', '스트레스 분석')}
-            className="bg-gray-600 text-white hover:bg-gray-700"
+            className="bg-purple-600 text-white hover:bg-purple-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             새 리포트 생성
@@ -280,7 +280,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
               </div>
             </div>
             <Button 
-              className="w-full bg-gray-600 text-white hover:bg-gray-700 h-12"
+              className="w-full bg-purple-600 text-white hover:bg-purple-700 h-12"
               disabled={loading}
             >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
@@ -345,7 +345,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           </Button>
           <Button 
             onClick={() => handleGenerateReport('default', '스트레스 분석')}
-            className="bg-gray-600 text-white hover:bg-gray-700"
+            className="bg-purple-600 text-white hover:bg-purple-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             새 리포트
@@ -396,7 +396,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                   </p>
                   <Button 
                     onClick={() => handleGenerateReport('default', '스트레스 분석')}
-                    className="bg-gray-600 text-white hover:bg-gray-700"
+                    className="bg-purple-600 text-white hover:bg-purple-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     첫 리포트 생성하기
