@@ -384,7 +384,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       ) : (
         <>
           {filteredReports.length === 0 ? (
-            <Card className="p-8">
+            <Card className="p-8 bg-white border border-gray-200">
               <div className="flex flex-col items-center space-y-4">
                 <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl">
                   <FileText className="w-8 h-8 text-purple-600" />
