@@ -104,6 +104,11 @@ const AppRouter = () => {
     
     const email = user.email.toLowerCase();
     
+    // 특정 이메일을 ORGANIZATION_ADMIN으로 지정
+    if (email === 'brian.chae@looxidlabs.com') {
+      return 'ORGANIZATION_ADMIN';
+    }
+    
     // 임시로 admin 키워드가 포함된 이메일을 기업 관리자로 간주
     if (email.includes('admin') || email.includes('manager') || email.includes('org')) {
       return 'ORGANIZATION_ADMIN';
