@@ -793,28 +793,40 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
 
   // 서브섹션 탭 렌더링
   const renderSubSectionTabs = () => {
-    const tabs = [
-      { id: 'member-list', label: '운영자 목록', icon: Users },
-      { id: 'member-invite', label: '초대 관리', icon: UserPlus },
-      { id: 'member-permissions', label: '권한 설정', icon: Shield }
-    ]
-
     return (
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-        {tabs.map((tab) => (
+      <div className="bg-white shadow-sm border-b border-gray-200 -mx-6 -mt-6 mb-6">
+        <div className="flex space-x-8">
           <button
-            key={tab.id}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
-              subSection === tab.id || (!subSection && tab.id === 'member-list')
-                ? 'bg-white shadow-sm text-blue-600 font-medium'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            onClick={() => onNavigate('members', 'member-list')}
+            className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm ${
+              subSection === 'member-list' || (!subSection)
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
-            onClick={() => onNavigate('members', tab.id)}
           >
-            <tab.icon className="w-4 h-4" />
-            <span>{tab.label}</span>
+            운영자 목록
           </button>
-        ))}
+          <button
+            onClick={() => onNavigate('members', 'member-invite')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              subSection === 'member-invite'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            초대 관리
+          </button>
+          <button
+            onClick={() => onNavigate('members', 'member-permissions')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              subSection === 'member-permissions'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            권한 설정
+          </button>
+        </div>
       </div>
     )
   }
