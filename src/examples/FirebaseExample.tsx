@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import FirebaseService from '../services/FirebaseService';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { FirebaseService } from '@core/services';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 
 interface UserData {
   id?: string;

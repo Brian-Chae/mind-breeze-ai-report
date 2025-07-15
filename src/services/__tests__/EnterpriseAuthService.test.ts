@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { enterpriseAuthService } from '../EnterpriseAuthService';
-import { UserType, VolumeDiscountTier } from '../../types/business';
+import { UserType, VolumeDiscountTier } from '@core/types/business';
 
 // Firebase 모킹
 vi.mock('firebase/auth', () => ({

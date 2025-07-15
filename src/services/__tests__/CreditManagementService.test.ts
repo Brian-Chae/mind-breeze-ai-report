@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { creditManagementService } from '../CreditManagementService';
-import { VolumeDiscountTier, CreditTransactionType } from '../../types/business';
+import { creditManagementService } from '@domains/organization/services/CreditManagementService';
+import { VolumeDiscountTier, CreditTransactionType } from '@core/types/business';
 
 // Firebase 모킹
 vi.mock('firebase/firestore', () => ({

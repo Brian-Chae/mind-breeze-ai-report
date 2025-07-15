@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { trialManagementService } from '../TrialManagementService';
-import { TrialType, ServicePackageType } from '../../types/business';
+import { TrialType, ServicePackageType } from '@core/types/business';
 
 // Firebase 모킹
 vi.mock('firebase/firestore', () => ({
