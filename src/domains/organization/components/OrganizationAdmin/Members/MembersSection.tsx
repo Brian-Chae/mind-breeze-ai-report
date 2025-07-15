@@ -33,7 +33,6 @@ import { Badge } from '@ui/badge'
 import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ui/dialog'
-import { Label } from '@ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
 
 // Firebase 서비스 import
@@ -89,7 +88,17 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Role 변환 헬퍼 함수
+  // UI 상태 관리
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [showInviteForm, setShowInviteForm] = useState(false)
+  
+  // 초대 폼 상태
+  const [newInviteEmail, setNewInviteEmail] = useState('')
+  const [newInviteRole, setNewInviteRole] = useState<'admin' | 'manager' | 'member'>('member')
+  const [newInviteDepartment, setNewInviteDepartment] = useState('')
+
+  // Role 변환 헬퍼 함수들
   const getMemberRoleDisplayName = (role: string): string => {
     const roleMap: { [key: string]: string } = {
       'ORGANIZATION_ADMIN': '조직 관리자',
@@ -99,6 +108,14 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
       'VIEWER': '뷰어'
     }
     return roleMap[role] || role
+  }
+
+  const convertToMemberRole = (orgRole: string): 'admin' | 'manager' | 'member' => {
+    switch(orgRole) {
+      case 'ORGANIZATION_ADMIN': return 'admin'
+      case 'DEPARTMENT_MANAGER': return 'manager'  
+      default: return 'member'
+    }
   }
 
   // 초대 관리 데이터 (임시 - 향후 Firebase 연동 필요)
@@ -148,12 +165,12 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
         name: member.displayName || member.email || '알 수 없음',
         email: member.email || '',
         phone: member.phoneNumber || '', // phoneNumber 사용
-        role: getMemberRoleDisplayName(member.role),
+        role: convertToMemberRole(member.role),
         department: member.departments?.[0] || '미지정', // departments 배열의 첫 번째 항목
         joinDate: member.joinedAt?.toLocaleDateString() || member.createdAt?.toLocaleDateString() || '',
         lastLogin: member.lastLoginAt?.toLocaleDateString() || '로그인 기록 없음',
         status: member.status === 'ACTIVE' ? 'active' : 'inactive',
-        permissions: member.permissions?.map(p => p.action) || []
+        permissions: member.permissions?.flatMap(p => p.actions) || []
       }))
 
       setMembers(convertedMembers)
