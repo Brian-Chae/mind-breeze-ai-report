@@ -565,10 +565,10 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       {/* 탭 네비게이션 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-6">
           <div className="flex space-x-8">
             <button
               onClick={() => handleTabChange('device-inventory')}
@@ -605,7 +605,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
       </div>
 
       {/* 콘텐츠 영역 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6 bg-gray-50">
         {renderContent()}
       </div>
     </div>
