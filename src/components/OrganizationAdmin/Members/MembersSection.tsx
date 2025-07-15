@@ -663,24 +663,24 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
     }
 
     const categoryColors = {
-      user: 'bg-blue-50 border-blue-200',
-      device: 'bg-green-50 border-green-200',
-      report: 'bg-purple-50 border-purple-200',
-      admin: 'bg-red-50 border-red-200'
+      user: 'bg-gray-50 border-gray-200',
+      device: 'bg-gray-50 border-gray-200',
+      report: 'bg-gray-50 border-gray-200',
+      admin: 'bg-gray-50 border-gray-200'
     }
 
     const levelColors = {
-      read: 'bg-blue-50 text-blue-700 border-blue-200',
-      write: 'bg-green-50 text-green-700 border-green-200',
-      delete: 'bg-red-50 text-red-700 border-red-200'
+      read: 'bg-gray-50 text-gray-700 border-gray-200',
+      write: 'bg-gray-50 text-gray-700 border-gray-200',
+      delete: 'bg-gray-50 text-gray-700 border-gray-200'
     }
 
     const getPermissionIcon = (category: string) => {
       const colors = {
-        user: 'bg-blue-500 text-white',
-        device: 'bg-green-500 text-white',
-        report: 'bg-purple-500 text-white',
-        admin: 'bg-red-500 text-white'
+        user: 'bg-gray-500 text-white',
+        device: 'bg-gray-500 text-white',
+        report: 'bg-gray-500 text-white',
+        admin: 'bg-gray-500 text-white'
       }
       return colors[category as keyof typeof colors] || 'bg-gray-500 text-white'
     }
@@ -743,28 +743,28 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
                           <div className="flex items-center space-x-2">
                             <input 
                               type="checkbox" 
-                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-500"
                               defaultChecked={permission.level === 'read' || permission.level === 'write' || permission.level === 'delete'}
                             />
-                            <span className="text-sm font-medium text-red-600">관리자</span>
+                            <span className="text-sm font-medium text-gray-600">관리자</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <input 
                               type="checkbox" 
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-500"
                               defaultChecked={permission.level === 'read' || permission.level === 'write'}
                             />
-                            <span className="text-sm font-medium text-blue-600">매니저</span>
+                            <span className="text-sm font-medium text-gray-600">매니저</span>
                           </div>
                           
                           <div className="flex items-center space-x-2">
                             <input 
                               type="checkbox" 
-                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-500"
                               defaultChecked={permission.level === 'read'}
                             />
-                            <span className="text-sm font-medium text-green-600">운영자</span>
+                            <span className="text-sm font-medium text-gray-600">운영자</span>
                           </div>
                         </div>
                       </div>
