@@ -22,18 +22,19 @@ import { Badge } from '@ui/badge'
 
 // Firebase 서비스 import
 import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'
-import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
+import { MemberManagementService } from '../../../services/MemberManagementService'
 import creditManagementService from '../../../services/CreditManagementService'
 import measurementUserManagementService, { MeasurementUser, MeasurementUserStats } from '@domains/individual/services/MeasurementUserManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface StatsCard {
-  title: string;
-  value: string;
-  change: string;
-  trend: 'up' | 'down' | 'stable';
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
+  title: string
+  value: string | number
+  change?: string
+  changeType?: 'increase' | 'decrease' | 'neutral'
+  trend?: 'up' | 'down' | 'stable'
+  icon: React.ComponentType<any>
+  color: string
 }
 
 interface RecentActivity {
@@ -66,7 +67,7 @@ interface DashboardData {
   monthlyReports: number;
   creditBalance: number;
   userStats: MeasurementUserStats | null;
-  members: MemberManagementData[];
+  members: any[]; // 임시로 any 타입 사용
   organizationInfo: OrganizationInfo | null;
 }
 
@@ -136,8 +137,19 @@ export default function DashboardSection() {
 
       // 권한이 있는 경우에만 사용자 통계 로드
       let userStats = null
-      if (enterpriseAuthService.hasPermission('measurement_users.view.all') || 
-          enterpriseAuthService.hasPermission('measurement_users.view.own')) {
+      const userPermissions = currentContext.permissions || []
+      
+      console.log('현재 사용자 권한:', userPermissions)
+      console.log('사용자 타입:', currentContext.user?.userType)
+      
+      // ORGANIZATION_ADMIN은 모든 권한을 가져야 함
+      const hasViewPermission = 
+        currentContext.user?.userType === 'ORGANIZATION_ADMIN' ||
+        userPermissions.includes('*') ||
+        userPermissions.includes('measurement_users.view.all') || 
+        userPermissions.includes('measurement_users.view.own')
+      
+      if (hasViewPermission) {
         try {
           userStats = await measurementUserManagementService.getMeasurementUserStats()
         } catch (err) {
@@ -145,7 +157,7 @@ export default function DashboardSection() {
           // 통계 데이터 없이 계속 진행
         }
       } else {
-        console.warn('측정 대상자 조회 권한이 없습니다.')
+        console.warn('측정 대상자 조회 권한이 없습니다. 권한:', userPermissions)
       }
 
       // 결과 처리 (에러가 발생한 경우 기본값 사용)
@@ -153,13 +165,17 @@ export default function DashboardSection() {
       const memberList = members.status === 'fulfilled' ? members.value : []
       const balance = creditBalance.status === 'fulfilled' ? creditBalance.value : 0
 
+      // memberList가 배열인지 확인
+      const safeMemberList = Array.isArray(memberList) ? memberList : []
+      console.log('멤버 리스트 타입:', typeof memberList, '배열 여부:', Array.isArray(memberList), '길이:', safeMemberList.length)
+
       setDashboardData({
         totalUsers: userStats?.totalCount || 0,
-        activeDevices: memberList.filter((m: MemberManagementData) => m.isActive).length,
+        activeDevices: safeMemberList.filter((m: any) => m.isActive).length,
         monthlyReports: userStats?.thisMonthMeasurements || 0,
         creditBalance: balance,
         userStats,
-        members: memberList,
+        members: safeMemberList,
         organizationInfo: orgInfo
       })
 
