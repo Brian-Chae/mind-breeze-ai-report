@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2 } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
@@ -43,6 +44,7 @@ interface ReportStats {
 }
 
 export default function AIReportSection({ subSection, onNavigate }: AIReportSectionProps) {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [reports, setReports] = useState<HealthReport[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({
@@ -192,6 +194,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
       // 데이터 새로고침
       await loadReportData()
+
+      // AI Report 앱으로 이동
+      console.log('✅ 리포트 생성 완료, AI Report 앱으로 이동합니다.')
+      navigate('/ai-report')
 
     } catch (error) {
       console.error('리포트 생성 실패:', error)
