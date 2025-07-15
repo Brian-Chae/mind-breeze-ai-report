@@ -503,43 +503,43 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             </div>
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <span className="text-sm text-gray-600">생성 성공률</span>
-              <span className="text-sm font-semibold text-green-600">
+              <span className="text-sm font-semibold text-gray-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${reportStats.successRate.toFixed(1)}%`}
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <span className="text-sm text-gray-600">실패율</span>
-              <span className="text-sm font-semibold text-red-600">
+              <span className="text-sm font-semibold text-gray-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${(100 - reportStats.successRate).toFixed(1)}%`}
               </span>
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-white to-yellow-50 hover:shadow-lg transition-all duration-300 border-l-4 border-yellow-500">
+        <Card className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl">
-              <Star className="w-5 h-5 text-yellow-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-xl">
+              <Star className="w-5 h-5 text-gray-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">품질 개선 제안</h3>
           </div>
           <div className="space-y-4">
             <div className="flex items-start space-x-3 p-3 bg-white rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-gray-900">데이터 품질 향상</p>
                 <p className="text-xs text-gray-600">신호 품질 검증 강화</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 p-3 bg-white rounded-lg">
-              <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-gray-900">알고리즘 최적화</p>
                 <p className="text-xs text-gray-600">AI 모델 정확도 개선</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 p-3 bg-white rounded-lg">
-              <Clock className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+              <Clock className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-gray-900">처리 시간 단축</p>
                 <p className="text-xs text-gray-600">리포트 생성 속도 향상</p>
@@ -548,30 +548,30 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-white to-blue-50 hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500">
+        <Card className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
-              <Brain className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-xl">
+              <Brain className="w-5 h-5 text-gray-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">시스템 상태</h3>
           </div>
           <div className="space-y-4">
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+              <div className="w-3 h-3 bg-gray-400 rounded-full flex-shrink-0"></div>
               <div>
                 <p className="text-sm font-medium text-gray-900">AI 엔진 정상</p>
                 <p className="text-xs text-gray-600">모든 서비스 가용</p>
               </div>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+              <div className="w-3 h-3 bg-gray-400 rounded-full flex-shrink-0"></div>
               <div>
                 <p className="text-sm font-medium text-gray-900">데이터 파이프라인 정상</p>
                 <p className="text-xs text-gray-600">실시간 처리 중</p>
               </div>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
+              <div className="w-3 h-3 bg-gray-400 rounded-full flex-shrink-0"></div>
               <div>
                 <p className="text-sm font-medium text-gray-900">리포트 생성 지연</p>
                 <p className="text-xs text-gray-600">일시적 부하 증가</p>
