@@ -827,7 +827,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
               <Download className="w-4 h-4 mr-2" />
               일괄 다운로드
             </Button>
-            <Button className="bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700">
+            <Button className="bg-purple-600 text-white hover:bg-purple-700">
               <Plus className="w-4 h-4 mr-2" />
               리포트 생성
             </Button>
@@ -872,7 +872,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                 <p className="text-gray-600 mb-4">
                   {searchQuery ? '검색 조건에 맞는 리포트가 없습니다.' : '아직 생성된 리포트가 없습니다.'}
                 </p>
-                <Button className="bg-gray-600 text-white hover:bg-gray-700">
+                <Button className="bg-purple-600 text-white hover:bg-purple-700">
                   <Plus className="w-4 h-4 mr-2" />
                   리포트 생성
                 </Button>
