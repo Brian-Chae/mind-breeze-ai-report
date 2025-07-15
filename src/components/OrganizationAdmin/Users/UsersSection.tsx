@@ -383,7 +383,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
               <Download className="w-4 h-4 mr-2" />
               내보내기
             </Button>
-            <Button className="bg-gray-600 text-white hover:bg-gray-700">
+            <Button className="bg-blue-600 text-white hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               사용자 추가
             </Button>
@@ -429,7 +429,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                 <p className="text-gray-600 mb-4">
                   {searchQuery ? '검색 조건에 맞는 사용자가 없습니다.' : '등록된 사용자가 없습니다.'}
                 </p>
-                <Button className="bg-gray-600 text-white hover:bg-gray-700">
+                <Button className="bg-blue-600 text-white hover:bg-blue-700">
                   <Plus className="w-4 h-4 mr-2" />
                   사용자 추가
                 </Button>
