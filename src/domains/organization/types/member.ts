@@ -392,6 +392,7 @@ export interface MemberActivityLog {
 export type MemberActivityAction = 
   | 'LOGIN' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'PROFILE_UPDATE'
   | 'MEMBER_INVITE' | 'MEMBER_UPDATE' | 'MEMBER_ACTIVATE' | 'MEMBER_DEACTIVATE'
+  | 'MEMBER_JOIN' | 'MEMBER_REMOVE'
   | 'PERMISSION_GRANT' | 'PERMISSION_REVOKE'
   | 'DEPARTMENT_JOIN' | 'DEPARTMENT_LEAVE'
   | 'MEASUREMENT_CREATE' | 'REPORT_GENERATE' | 'REPORT_VIEW'
@@ -405,7 +406,7 @@ export interface MemberDashboardData {
   stats: MemberStats;
   recentMembers: OrganizationMember[];
   pendingInvitations: Invitation[];
-  recentActivity: MemberActivityLog[];
+  recentActivity: MemberStats['recentActivity'];
   departmentBreakdown: {
     departmentId: string;
     departmentName: string;

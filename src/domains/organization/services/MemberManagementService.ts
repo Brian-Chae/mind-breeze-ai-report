@@ -45,8 +45,8 @@ import {
   PermissionTemplate,
   MemberPreferences
 } from '../types/member';
-import { v4 as uuidv4 } from 'uuid';
 import { ErrorCodes } from '@core/utils/ErrorHandler';
+import { IdGenerator } from '@core/utils/IdGenerator';
 
 /**
  * 고도화된 멤버 관리 서비스
@@ -262,16 +262,22 @@ export class MemberManagementService extends BaseService {
 
         const currentMember = memberDoc.data() as OrganizationMember;
 
-        // 업데이트 데이터 검증
-        if (updateData.email) {
-          this.validateEmail(updateData.email);
-        }
+        // preferences를 별도로 분리
+        const { preferences, ...restUpdateData } = updateData;
 
-        // 업데이트 데이터 준비
+        // 업데이트 데이터 준비 (preferences 제외)
         const updatePayload: Partial<OrganizationMember> = {
-          ...updateData,
+          ...restUpdateData,
           updatedAt: this.toDate(this.now()),
         };
+
+        // preferences가 있는 경우 완전한 객체로 변환하여 추가
+        if (preferences) {
+          updatePayload.preferences = {
+            ...this.getDefaultMemberPreferences(),
+            ...preferences
+          };
+        }
 
         // 업데이트 실행
         transaction.update(memberRef, updatePayload);
@@ -1713,7 +1719,7 @@ export class MemberManagementService extends BaseService {
    * 초대 토큰 생성
    */
   private generateInvitationToken(): string {
-    return `invite_${uuidv4()}_${Date.now()}`;
+    return IdGenerator.generateInvitationToken();
   }
 
   /**

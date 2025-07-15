@@ -81,4 +81,9 @@ export type {
   SchemaDefinition,
   FieldSchema,
   ValidatorFunction
-} from './Validation'; 
+} from './Validation';
+
+// ID 생성 시스템
+export {
+  IdGenerator
+} from './IdGenerator'; 
