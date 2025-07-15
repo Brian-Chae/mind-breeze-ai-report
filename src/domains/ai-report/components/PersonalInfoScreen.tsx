@@ -118,15 +118,15 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                type="text"
-                value={formData.name}
-                onChange={(e) => updateFormData('name', e.target.value)}
-                placeholder="이름을 입력해주세요"
-                className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.name ? 'border-red-500' : ''
-                }`}
-              />
+                             <Input
+                 type="text"
+                 value={formData.name}
+                 onChange={(e) => updateFormData('name', e.target.value)}
+                 placeholder="이름을 입력해주세요"
+                 className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-500 ${
+                   errors.name ? 'border-red-500' : ''
+                 }`}
+               />
             </div>
             {errors.name && (
               <p className="text-sm text-red-600">{errors.name}</p>
@@ -138,16 +138,16 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
             <label className="block text-sm font-medium text-gray-700">
               성별 *
             </label>
-            <Select value={formData.gender} onValueChange={(value) => updateFormData('gender', value as PersonalInfo['gender'])}>
-              <SelectTrigger className="h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                <SelectValue placeholder="성별을 선택해주세요" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                <SelectItem value="male" className="text-gray-900 hover:bg-gray-50">남성</SelectItem>
-                <SelectItem value="female" className="text-gray-900 hover:bg-gray-50">여성</SelectItem>
-                <SelectItem value="other" className="text-gray-900 hover:bg-gray-50">기타</SelectItem>
-              </SelectContent>
-            </Select>
+                         <Select value={formData.gender} onValueChange={(value) => updateFormData('gender', value as PersonalInfo['gender'])}>
+               <SelectTrigger className="h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900">
+                 <SelectValue placeholder="성별을 선택해주세요" className="text-gray-900" />
+               </SelectTrigger>
+               <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                 <SelectItem value="male" className="text-gray-900 hover:bg-gray-50 focus:bg-gray-100 focus:text-gray-900">남성</SelectItem>
+                 <SelectItem value="female" className="text-gray-900 hover:bg-gray-50 focus:bg-gray-100 focus:text-gray-900">여성</SelectItem>
+                 <SelectItem value="other" className="text-gray-900 hover:bg-gray-50 focus:bg-gray-100 focus:text-gray-900">기타</SelectItem>
+               </SelectContent>
+             </Select>
             {errors.gender && (
               <p className="text-sm text-red-600">{errors.gender}</p>
             )}
@@ -160,15 +160,15 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
             </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                type="date"
-                value={formData.birthDate}
-                onChange={(e) => updateFormData('birthDate', e.target.value)}
-                className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.birthDate ? 'border-red-500' : ''
-                }`}
-                max={new Date().toISOString().split('T')[0]} // 오늘까지만 선택 가능
-              />
+                             <Input
+                 type="date"
+                 value={formData.birthDate}
+                 onChange={(e) => updateFormData('birthDate', e.target.value)}
+                 className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900 ${
+                   errors.birthDate ? 'border-red-500' : ''
+                 }`}
+                 max={new Date().toISOString().split('T')[0]} // 오늘까지만 선택 가능
+               />
             </div>
             {errors.birthDate && (
               <p className="text-sm text-red-600">{errors.birthDate}</p>
@@ -182,15 +182,15 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
             </label>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                type="text"
-                value={formData.occupation}
-                onChange={(e) => updateFormData('occupation', e.target.value)}
-                placeholder="예: 개발자, 디자이너, 학생, 교사 등"
-                className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.occupation ? 'border-red-500' : ''
-                }`}
-              />
+                             <Input
+                 type="text"
+                 value={formData.occupation}
+                 onChange={(e) => updateFormData('occupation', e.target.value)}
+                 placeholder="예: 개발자, 디자이너, 학생, 교사 등"
+                 className={`pl-10 h-12 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900 placeholder-gray-500 ${
+                   errors.occupation ? 'border-red-500' : ''
+                 }`}
+               />
             </div>
             {errors.occupation && (
               <p className="text-sm text-red-600">{errors.occupation}</p>
@@ -207,15 +207,15 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
             </p>
             <div className="relative">
               <MessageSquare className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <Textarea
-                value={formData.workConcerns}
-                onChange={(e) => updateFormData('workConcerns', e.target.value)}
-                placeholder="예: 업무 스트레스, 집중력 저하, 야근으로 인한 피로, 발표 불안감, 의사결정의 어려움 등 평소 고민이나 개선하고 싶은 점을 구체적으로 작성해주세요."
-                className={`pl-10 pt-3 min-h-[120px] bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none ${
-                  errors.workConcerns ? 'border-red-500' : ''
-                }`}
-                rows={5}
-              />
+                             <Textarea
+                 value={formData.workConcerns}
+                 onChange={(e) => updateFormData('workConcerns', e.target.value)}
+                 placeholder="예: 업무 스트레스, 집중력 저하, 야근으로 인한 피로, 발표 불안감, 의사결정의 어려움 등 평소 고민이나 개선하고 싶은 점을 구체적으로 작성해주세요."
+                 className={`pl-10 pt-3 min-h-[120px] bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none text-gray-900 placeholder-gray-500 ${
+                   errors.workConcerns ? 'border-red-500' : ''
+                 }`}
+                 rows={5}
+               />
             </div>
             <div className="flex justify-between items-center">
               {errors.workConcerns && (
