@@ -1,4 +1,4 @@
-import { db } from './firebase';
+import { db } from '@core/services/firebase';
 import {
   doc,
   getDoc,
@@ -29,7 +29,7 @@ import {
   PricingCalculation,
   Organization,
   TrialService
-} from '../types/business';
+} from '@core/types/business';
 
 export interface CreditUsageOptions {
   userId: string;

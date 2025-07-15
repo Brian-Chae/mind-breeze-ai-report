@@ -26,7 +26,11 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@domains/*": ["src/domains/*"],
+      "@shared/*": ["src/shared/*"],
+      "@app/*": ["src/app/*"]
     }
   },
   "include": ["src"],

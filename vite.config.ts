@@ -15,6 +15,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@core': resolve(__dirname, 'src/core'),
+      '@domains': resolve(__dirname, 'src/domains'),
+      '@shared': resolve(__dirname, 'src/shared'),
+      '@app': resolve(__dirname, 'src/app'),
     },
   },
   test: {

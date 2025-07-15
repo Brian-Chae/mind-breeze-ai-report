@@ -30,14 +30,14 @@ import {
   ChevronRight,
   MoreHorizontal
 } from 'lucide-react'
-import { Card } from '../ui/card'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
-import { Badge } from '../ui/badge'
-import enterpriseAuthService from '../../services/EnterpriseAuthService'
-import { auth } from '../../services/firebase'
-import FirebaseService from '../../services/FirebaseService'
+import { Card } from '@shared/components/ui/card'
+import { Button } from '@shared/components/ui/button'
+import { Input } from '@shared/components/ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@shared/components/ui/dropdown-menu'
+import { Badge } from '@shared/components/ui/badge'
+import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService'
+import { auth } from '@core/services/firebase'
+import FirebaseService from '@core/services/FirebaseService'
 
 // 섹션별 컴포넌트 import
 import DashboardSection from './Dashboard/DashboardSection'
