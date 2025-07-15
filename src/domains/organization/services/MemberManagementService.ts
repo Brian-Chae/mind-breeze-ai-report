@@ -129,10 +129,10 @@ export class MemberManagementService extends BaseService {
       return this.withCache(
         cacheKey,
         async () => {
+          // 기본 쿼리 (orderBy 제거하여 인덱스 문제 해결)
           let membersQuery = query(
             collection(this.db, 'organizationMembers'),
-            where('organizationId', '==', organizationId),
-            orderBy('createdAt', 'desc')
+            where('organizationId', '==', organizationId)
           );
 
           // 필터 적용
@@ -146,51 +146,49 @@ export class MemberManagementService extends BaseService {
             membersQuery = query(membersQuery, where('departments', 'array-contains-any', filters.departments));
           }
 
-          // 페이지네이션 적용
-          if (offset > 0) {
-            // 이전 페이지의 마지막 문서를 찾아서 startAfter 적용
-            const prevQuery = query(
-              collection(this.db, 'organizationMembers'),
-              where('organizationId', '==', organizationId),
-              orderBy('createdAt', 'desc'),
-              firestoreLimit(offset)
-            );
-            const prevSnapshot = await getDocs(prevQuery);
-            if (prevSnapshot.docs.length > 0) {
-              const lastDoc = prevSnapshot.docs[prevSnapshot.docs.length - 1];
-              membersQuery = query(membersQuery, startAfter(lastDoc));
-            }
-          }
-
-          membersQuery = query(membersQuery, firestoreLimit(validLimit));
-
+          // 전체 데이터 가져오기 (클라이언트 사이드 페이지네이션)
           const querySnapshot = await getDocs(membersQuery);
-          const members: OrganizationMember[] = [];
-
+          
+          // 클라이언트 사이드에서 정렬 및 페이지네이션
+          const allMembers: OrganizationMember[] = [];
           for (const doc of querySnapshot.docs) {
             const member = await this.mapDocumentToMember(doc);
-            if (this.applyClientSideFilters(member, filters)) {
-              members.push(member);
-            }
+            allMembers.push(member);
           }
 
-          // 총 개수 조회 (캐시된 값 사용)
-          const totalCount = await this.getOrganizationMemberCount(organizationId, filters);
+          // 생성일 기준 내림차순 정렬
+          allMembers.sort((a, b) => {
+            const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : 
+                          (a.createdAt as any)?.seconds ? (a.createdAt as any).seconds * 1000 : 0;
+            const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : 
+                          (b.createdAt as any)?.seconds ? (b.createdAt as any).seconds * 1000 : 0;
+            return bTime - aTime;
+          });
+
+          // 페이지네이션 적용
+          const total = allMembers.length;
+          const members = allMembers.slice(offset, offset + validLimit);
+
+          this.log(`조직 멤버 ${members.length}개 조회 성공 (총 ${total}개 중 ${validPage}페이지)`, {
+            organizationId,
+            filters,
+            page: validPage,
+            limit: validLimit,
+            total
+          });
 
           const result: MemberListResponse = {
             members,
-            totalCount,
+            totalCount: total,
             currentPage: validPage,
-            totalPages: Math.ceil(totalCount / validLimit),
-            hasNext: (validPage * validLimit) < totalCount,
+            totalPages: Math.ceil(total / validLimit),
+            hasNext: offset + validLimit < total,
             hasPrevious: validPage > 1
           };
 
-          this.logDatabaseOperation('query', 'organizationMembers', undefined, true);
           return result;
         },
-        MemberManagementService.CACHE_TTL.MEMBER_LIST,
-        [`org:${organizationId}`, 'members']
+        MemberManagementService.CACHE_TTL.MEMBER_LIST
       );
     });
   }
