@@ -95,9 +95,16 @@ class EnterpriseAuthService {
   constructor() {
     // Firebase Auth 상태 변경 감지
     onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('🔄 Firebase Auth 상태 변경:', {
+        hasUser: !!firebaseUser,
+        uid: firebaseUser?.uid,
+        email: firebaseUser?.email
+      });
+      
       if (firebaseUser) {
         await this.loadUserContext(firebaseUser);
       } else {
+        console.log('🔄 사용자 로그아웃 - 컨텍스트 초기화');
         this.updateContext({
           user: null,
           organization: null,
@@ -238,7 +245,15 @@ class EnterpriseAuthService {
 
   private async loadUserContext(firebaseUser: FirebaseUser): Promise<void> {
     try {
+      console.log('🔄 loadUserContext 시작:', {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName
+      });
+      
       const user = await this.loadUserProfile(firebaseUser.uid);
+      console.log('🔄 loadUserProfile 결과:', user);
+      
       if (!user) {
         console.warn('⚠️ 사용자 프로필을 찾을 수 없습니다. 기본 프로필을 생성합니다.');
         
@@ -256,6 +271,8 @@ class EnterpriseAuthService {
           isActive: true
         };
 
+        console.log('🔄 기본 사용자 프로필 생성:', defaultUser);
+
         // Firestore에 기본 프로필 저장
         await setDoc(doc(db, 'users', firebaseUser.uid), {
           ...defaultUser,
@@ -264,6 +281,8 @@ class EnterpriseAuthService {
           updatedAt: Timestamp.now(),
           lastLoginAt: Timestamp.now()
         });
+
+        console.log('✅ 기본 사용자 프로필 Firestore에 저장 완료');
 
         this.updateContext({
           user: defaultUser,
@@ -311,13 +330,19 @@ class EnterpriseAuthService {
 
   private async loadUserProfile(userId: string): Promise<EnterpriseUser | null> {
     try {
+      console.log('🔄 loadUserProfile 시작:', userId);
       const userDoc = await getDoc(doc(db, 'users', userId));
+      console.log('🔄 Firestore 문서 조회 결과:', { exists: userDoc.exists(), id: userDoc.id });
+      
       if (!userDoc.exists()) {
+        console.log('⚠️ 사용자 문서가 존재하지 않습니다.');
         return null;
       }
 
       const data = userDoc.data();
-      return {
+      console.log('🔄 Firestore 문서 데이터:', data);
+      
+      const userProfile = {
         id: userDoc.id,
         email: data.email,
         employeeId: data.employeeId,
@@ -334,6 +359,9 @@ class EnterpriseAuthService {
         lastLoginAt: data.lastLoginAt?.toDate(),
         isActive: data.isActive ?? true
       };
+      
+      console.log('✅ 사용자 프로필 로드 완료:', userProfile);
+      return userProfile;
     } catch (error) {
       console.error('❌ 사용자 프로필 로드 실패:', error);
       return null;
@@ -693,6 +721,14 @@ class EnterpriseAuthService {
   }
 
   private updateContext(context: AuthContext): void {
+    console.log('🔄 EnterpriseAuthService 컨텍스트 업데이트:', {
+      hasUser: !!context.user,
+      user: context.user,
+      hasOrganization: !!context.organization,
+      permissionsCount: context.permissions.length,
+      isLoading: context.isLoading
+    });
+    
     this.currentContext = context;
     this.authStateListeners.forEach(listener => listener(context));
   }

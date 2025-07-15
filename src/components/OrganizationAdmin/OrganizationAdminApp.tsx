@@ -36,6 +36,7 @@ import { Input } from '../ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Badge } from '../ui/badge'
 import enterpriseAuthService from '../../services/EnterpriseAuthService'
+import { auth } from '../../services/firebase'
 import FirebaseService from '../../services/FirebaseService'
 
 // 섹션별 컴포넌트 import
@@ -90,6 +91,14 @@ export default function OrganizationAdminApp() {
   }, [location.pathname, navigate])
 
   useEffect(() => {
+    // Firebase Auth 상태 확인
+    const firebaseUser = auth.currentUser
+    console.log('=== Firebase Auth 상태 ===')
+    console.log('Firebase 사용자:', firebaseUser)
+    console.log('Firebase UID:', firebaseUser?.uid)
+    console.log('Firebase Email:', firebaseUser?.email)
+    console.log('==========================')
+    
     // 현재 사용자 권한 정보 디버깅
     const currentContext = enterpriseAuthService.getCurrentContext()
     console.log('=== 현재 사용자 권한 정보 ===')
