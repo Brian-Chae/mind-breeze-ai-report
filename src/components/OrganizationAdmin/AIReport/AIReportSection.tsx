@@ -624,7 +624,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   }
 
   return (
-    <div>
+    <div className="p-6">
       {renderTabs()}
       {renderContent()}
     </div>

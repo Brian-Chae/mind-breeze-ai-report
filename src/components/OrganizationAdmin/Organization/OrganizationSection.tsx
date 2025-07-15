@@ -762,7 +762,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
   }
 
   return (
-    <div>
+    <div className="p-6">
       {renderSubSectionTabs()}
       {renderContent()}
     </div>

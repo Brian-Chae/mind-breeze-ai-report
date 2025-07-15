@@ -470,7 +470,7 @@ export default function OrganizationAdminApp() {
         </header>
 
         {/* 메인 콘텐츠 영역 */}
-        <main className="flex-1 p-6 text-gray-900 overflow-y-auto">
+        <main className="flex-1 text-gray-900 overflow-y-auto">
           {renderCurrentSection()}
         </main>
       </div>

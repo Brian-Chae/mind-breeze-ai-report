@@ -636,47 +636,45 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       {/* 탭 네비게이션 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => handleTabChange('credit-dashboard')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'credit-dashboard'
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              크레딧 현황
-            </button>
-            <button
-              onClick={() => handleTabChange('credit-history')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'credit-history'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              구매 내역
-            </button>
-            <button
-              onClick={() => handleTabChange('credit-settings')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'credit-settings'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              결제 설정
-            </button>
-          </div>
+        <div className="flex space-x-8">
+          <button
+            onClick={() => handleTabChange('credit-dashboard')}
+            className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm ${
+              activeTab === 'credit-dashboard'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            크레딧 현황
+          </button>
+          <button
+            onClick={() => handleTabChange('credit-history')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'credit-history'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            구매 내역
+          </button>
+          <button
+            onClick={() => handleTabChange('credit-settings')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'credit-settings'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            결제 설정
+          </button>
         </div>
       </div>
 
       {/* 콘텐츠 영역 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="p-6 bg-gray-50">
         {renderContent()}
       </div>
     </div>

@@ -834,7 +834,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
   }
 
   return (
-    <div>
+    <div className="p-6">
       {renderSubSectionTabs()}
       {renderContent()}
     </div>

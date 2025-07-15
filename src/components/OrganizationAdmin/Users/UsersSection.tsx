@@ -1002,7 +1002,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
   }
 
   return (
-    <div>
+    <div className="p-6">
       {renderTabs()}
       {renderContent()}
     </div>
