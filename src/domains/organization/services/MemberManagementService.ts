@@ -1,4 +1,4 @@
-import { db } from './firebase';
+import { db } from '@core/services/firebase';
 import { 
   doc, 
   updateDoc, 
@@ -11,7 +11,7 @@ import {
   Timestamp,
   runTransaction
 } from 'firebase/firestore';
-import { UserType, EnterpriseUser } from '../types/business';
+import { UserType, EnterpriseUser } from '@core/types/business';
 
 export interface MemberManagementData {
   userId: string;

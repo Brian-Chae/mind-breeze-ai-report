@@ -9,7 +9,7 @@
  */
 
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from '@core/services/firebase';
 
 export interface OrganizationCodeValidation {
   isValid: boolean;

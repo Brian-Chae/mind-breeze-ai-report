@@ -1,4 +1,4 @@
-import { db } from './firebase';
+import { db } from '@core/services/firebase';
 import {
   doc,
   getDoc,
@@ -21,7 +21,7 @@ import {
   ServicePackageType,
   TRIAL_CONFIGS,
   VolumeDiscountTier
-} from '../types/business';
+} from '@core/types/business';
 import { creditManagementService } from './CreditManagementService';
 
 export interface TrialApplicationData {

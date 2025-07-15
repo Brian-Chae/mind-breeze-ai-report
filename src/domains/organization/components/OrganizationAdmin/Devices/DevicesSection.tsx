@@ -5,8 +5,8 @@ import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
 import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
-import { FirebaseService } from '../../../services/FirebaseService'
-import { SystemControlService } from '../../../services/SystemControlService'
+import { FirebaseService } from '@core/services/FirebaseService'
+import { SystemControlService } from '@core/services/SystemControlService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface DevicesSectionProps {

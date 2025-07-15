@@ -22,7 +22,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '@core/services/firebase';
-import { enterpriseAuthService } from '@core/services/EnterpriseAuthService';
+import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
 
 export interface MeasurementUser {
   id: string;

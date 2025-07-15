@@ -24,7 +24,7 @@ import { Badge } from '@ui/badge'
 import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'
 import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
 import creditManagementService from '../../../services/CreditManagementService'
-import measurementUserManagementService, { MeasurementUser, MeasurementUserStats } from '../../../services/MeasurementUserManagementService'
+import measurementUserManagementService, { MeasurementUser, MeasurementUserStats } from '@domains/individual/services/MeasurementUserManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface StatsCard {

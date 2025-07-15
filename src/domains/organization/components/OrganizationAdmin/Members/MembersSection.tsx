@@ -34,7 +34,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 // Firebase 서비스 import
 import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
-import { UserType } from '../../../types/business'
+import { UserType } from '@core/types/business'
+import { useAuth } from '@components/AuthProvider'
 
 interface MembersSectionProps {
   subSection: string;

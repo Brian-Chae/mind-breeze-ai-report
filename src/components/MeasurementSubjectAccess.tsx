@@ -5,7 +5,8 @@ import { Button } from '@ui/button';
 import { Alert, AlertDescription } from '@ui/alert';
 import { Loader2, FileText, MessageCircle, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import enterpriseAuthService, { MeasurementSubjectAccess as MeasurementSubjectAccessType } from '../services/EnterpriseAuthService';
+import { useAuth } from './AuthProvider';
+import enterpriseAuthService, { MeasurementSubjectAccess as MeasurementSubjectAccessType } from '@domains/organization/services/EnterpriseAuthService';
 
 const MeasurementSubjectAccess: React.FC = () => {
   const [searchParams] = useSearchParams();

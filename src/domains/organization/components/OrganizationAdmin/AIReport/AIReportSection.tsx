@@ -5,9 +5,9 @@ import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
 import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
-import { FirebaseService } from '../../../services/FirebaseService'
-import creditManagementService from '../../../services/CreditManagementService'
-import measurementUserManagementService from '../../../services/MeasurementUserManagementService'
+import { FirebaseService } from '@core/services/FirebaseService'
+import creditManagementService from '@domains/organization/services/CreditManagementService'
+import measurementUserManagementService from '@domains/individual/services/MeasurementUserManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface AIReportSectionProps {

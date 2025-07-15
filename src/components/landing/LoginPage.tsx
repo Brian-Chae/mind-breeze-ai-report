@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Brain, Eye, EyeOff, Mail, Lock, ArrowLeft, Building2, User, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
+import { Eye, EyeOff, ArrowLeft, Building, Building2, Users, User, CheckCircle, Star, TrendingUp, Shield, Loader2, Brain, Mail, Lock, Search } from 'lucide-react';
+import { useUIStore } from '../../stores/uiStore';
+import { useAuth } from '../AuthProvider';
+import { auth } from '@core/services/firebase';
+import { FirebaseService } from '@core/services/FirebaseService';
+import { enterpriseAuthService } from '@domains/organization/services/EnterpriseAuthService';
+import { OrganizationService } from '@domains/organization/services/CompanyService';
+import { OrganizationCodeService } from '@domains/organization/services/CompanyCodeService';
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { Separator } from '@ui/separator';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@core/services/firebase';
-import { FirebaseService } from '@core/services/FirebaseService';
-import { enterpriseAuthService } from '@core/services/EnterpriseAuthService';
-import { OrganizationService } from '@core/services/CompanyService';
-import { OrganizationCodeService } from '@core/services/CompanyCodeService';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../AuthProvider';
 import { toast } from 'sonner';
 
 interface LoginPageProps {

@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 import { Switch } from '@ui/switch'
 import { Separator } from '@ui/separator'
-import { Settings as SettingsIcon, Bluetooth, Eye, Database, FolderOpen, Clock, Key, Shield, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react'
-import { useStorageStore } from '../stores/storageStore'
-import { useSettingsStore } from '../stores/settingsStore'
+import { Bluetooth, Monitor, Volume2, Settings as SettingsIcon, Wifi, Bell, Shield, Palette, Database, Activity, CircleDot, Loader2 } from 'lucide-react'
+import { useSensorDataStore } from '../stores/sensorDataStore'
+import { useUIStore } from '../stores/uiStore'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Badge } from '@ui/badge'
-import { APIKeyManager, APIKeyMetadata, APIKeyTestResult } from '../services/APIKeyManager'
+import { APIKeyManager, APIKeyMetadata, APIKeyTestResult } from '@core/services/APIKeyManager'
 
 export function Settings() {
-  const { timezone, setTimezone } = useSettingsStore();
+  const { timezone, setTimezone } = useUIStore();
 
   const {
     config,
@@ -20,7 +20,7 @@ export function Settings() {
     isStorageReady,
     storageDirectoryPath,
     changeStorageDirectory,
-  } = useStorageStore();
+  } = useUIStore();
 
   // 자동 등록 설정 상태
   const [autoRegistrationEnabled, setAutoRegistrationEnabled] = useState(() => {
@@ -175,9 +175,9 @@ export function Settings() {
           }`}>
             <div className="flex items-center gap-2">
               {saveMessage.type === 'success' ? (
-                <CheckCircle className="w-5 h-5" />
+                <Shield className="w-5 h-5" />
               ) : (
-                <AlertTriangle className="w-5 h-5" />
+                <Shield className="w-5 h-5" />
               )}
               <span className="text-sm font-medium">{saveMessage.message}</span>
             </div>
@@ -188,7 +188,7 @@ export function Settings() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Key className="w-5 h-5 text-amber-600" />
+              <Shield className="w-5 h-5 text-amber-600" />
               <CardTitle>API Keys Management</CardTitle>
             </div>
             <CardDescription>
@@ -222,7 +222,7 @@ export function Settings() {
                   {apiKeys.map((key) => (
                     <div key={key.id} className="flex items-center justify-between p-3 bg-neutral-700 border border-neutral-600 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Key className="w-4 h-4 text-gray-300" />
+                        <Shield className="w-4 h-4 text-gray-300" />
                         <div>
                           <p className="text-sm font-medium text-white">{key.name}</p>
                           <p className="text-xs text-gray-300">
@@ -274,7 +274,7 @@ export function Settings() {
                     size="sm"
                     onClick={() => setShowGeminiKeyInput(true)}
                   >
-                    <Key className="w-4 h-4 mr-2" />
+                    <Shield className="w-4 h-4 mr-2" />
                     키 추가
                   </Button>
                 )}
@@ -304,7 +304,7 @@ export function Settings() {
                     />
                     {newGeminiKey && !isValidGeminiKey && (
                       <div className="flex items-center gap-2 text-red-400 text-xs">
-                        <AlertTriangle className="w-3 h-3" />
+                        <Shield className="w-3 h-3" />
                         올바른 Gemini API 키 형식이 아닙니다 (AIza로 시작하는 39자리)
                       </div>
                     )}
@@ -322,7 +322,7 @@ export function Settings() {
                     )}
                     {testResult && !testResult.isValid && (
                       <div className="flex items-start gap-2 text-red-400 text-xs">
-                        <AlertTriangle className="w-3 h-3 mt-0.5" />
+                        <Shield className="w-3 h-3 mt-0.5" />
                         <div>
                           <p className="font-medium">테스트 실패</p>
                           <p>{testResult.error}</p>
@@ -439,7 +439,7 @@ export function Settings() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-600" />
+              <Shield className="w-5 h-5 text-orange-600" />
               <CardTitle>Time Zone</CardTitle>
             </div>
             <CardDescription>
@@ -481,7 +481,7 @@ export function Settings() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-purple-600" />
+              <Shield className="w-5 h-5 text-purple-600" />
               <CardTitle>Visualizer</CardTitle>
             </div>
             <CardDescription>
@@ -519,7 +519,7 @@ export function Settings() {
                   placeholder="저장소를 선택해주세요"
                 />
                 <Button variant="outline" onClick={handleStorageDirectorySelect}>
-                  <FolderOpen className="w-4 h-4" />
+                  <Shield className="w-4 h-4" />
                 </Button>
               </div>
               {storageDirectoryPath && (

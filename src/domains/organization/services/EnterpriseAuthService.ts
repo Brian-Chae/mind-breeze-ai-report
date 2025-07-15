@@ -1,4 +1,4 @@
-import { auth, db } from './firebase';
+import { auth, db } from '@core/services/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -28,7 +28,7 @@ import {
   ServicePackageType,
   DEFAULT_BASE_PRICE,
   VOLUME_DISCOUNT_TIERS
-} from '../types/business';
+} from '@core/types/business';
 
 export interface LoginCredentials {
   email?: string;           // 개인 사용자용

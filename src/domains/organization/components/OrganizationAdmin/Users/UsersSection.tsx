@@ -24,7 +24,8 @@ import {
   TrendingUp,
   BarChart3,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
@@ -33,7 +34,7 @@ import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
 
 // Firebase 서비스 import
-import measurementUserManagementService, { MeasurementUser as FirebaseMeasurementUser, MeasurementUserStats } from '../../../services/MeasurementUserManagementService'
+import measurementUserManagementService, { MeasurementUser as FirebaseMeasurementUser, MeasurementUserStats } from '@domains/individual/services/MeasurementUserManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface UsersSectionProps {

@@ -28,8 +28,8 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification 
 } from 'firebase/auth';
-import { db, auth } from './firebase';
-import { Organization, EnterpriseUser, UserType } from '../types/business';
+import { db, auth } from '@core/services/firebase';
+import { Organization, EnterpriseUser, UserType } from '@core/types/business';
 import OrganizationCodeService from './CompanyCodeService';
 
 export interface OrganizationRegistrationData {
