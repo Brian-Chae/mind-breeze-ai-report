@@ -439,7 +439,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredUsers.map((user) => (
-              <Card key={user.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
+              <Card key={user.id} className="p-6 bg-white border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
@@ -659,7 +659,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredSessions.map((session) => (
-              <Card key={session.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
+              <Card key={session.id} className="p-6 bg-white border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
@@ -882,7 +882,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredReports.map((report) => (
-              <Card key={report.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
+              <Card key={report.id} className="p-6 bg-white border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
@@ -969,7 +969,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
 
   // 탭 렌더링
   const renderTabs = () => (
-    <div className="bg-white shadow-sm border-b border-gray-200 -mx-6 -mt-6 mb-6">
+    <div className="bg-white border-b border-gray-200 -mx-6 -mt-6 mb-6">
       <div className="flex space-x-8">
         <button
           onClick={() => onNavigate('users', 'user-list')}
