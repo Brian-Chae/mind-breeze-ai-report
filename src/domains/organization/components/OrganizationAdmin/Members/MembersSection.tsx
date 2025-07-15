@@ -1,38 +1,44 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Fragment } from 'react'
 import {
   Users,
+  Plus,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Edit,
+  Trash2,
   UserPlus,
   Mail,
   Phone,
   Calendar,
   Shield,
-  Edit,
-  Trash2,
-  Send,
-  Check,
-  X,
-  Eye,
-  EyeOff,
-  MoreHorizontal,
-  Search,
-  Filter,
-  Download,
-  Clock,
+  ChevronDown,
   AlertCircle,
   CheckCircle,
+  Clock,
+  X,
   Loader2,
   RefreshCw,
-  Monitor,
-  FileText
+  Download,
+  Upload,
+  Settings,
+  Eye,
+  EyeOff,
+  Send
 } from 'lucide-react'
+
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
 import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@ui/dialog'
+import { Label } from '@ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
 
 // Firebase 서비스 import
-import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
+import { MemberManagementService } from '../../../services/MemberManagementService'
+import { MemberListResponse } from '../../../types/member'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { UserType } from '@core/types/business'
 import { useAuth } from '@components/AuthProvider'
@@ -74,19 +80,26 @@ interface Permission {
 }
 
 export default function MembersSection({ subSection, onNavigate }: MembersSectionProps) {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
-  const [newInviteEmail, setNewInviteEmail] = useState('')
-  const [newInviteRole, setNewInviteRole] = useState<'admin' | 'manager' | 'member'>('member')
-  const [newInviteDepartment, setNewInviteDepartment] = useState('')
-  const [showInviteForm, setShowInviteForm] = useState(false)
-
   // 실제 데이터 상태
-  const [membersData, setMembersData] = useState<MemberManagementData[]>([])
+  const [membersData, setMembersData] = useState<MemberListResponse | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [memberManagementService] = useState(new MemberManagementService())
+
+  // 로딩 및 에러 상태
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Role 변환 헬퍼 함수
+  const getMemberRoleDisplayName = (role: string): string => {
+    const roleMap: { [key: string]: string } = {
+      'ORGANIZATION_ADMIN': '조직 관리자',
+      'ORGANIZATION_MEMBER': '조직 멤버', 
+      'DEPARTMENT_MANAGER': '부서 관리자',
+      'EMPLOYEE': '직원',
+      'VIEWER': '뷰어'
+    }
+    return roleMap[role] || role
+  }
 
   // 초대 관리 데이터 (임시 - 향후 Firebase 연동 필요)
   const [invitations, setInvitations] = useState<Invitation[]>([])
@@ -126,21 +139,21 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
       const organizationId = currentContext.user.organizationId
 
       // 멤버 데이터 로드
-      const membersData = await memberManagementService.getOrganizationMembers(organizationId)
-      setMembersData(membersData)
+      const membersResponse = await memberManagementService.getOrganizationMembers(organizationId)
+      setMembersData(membersResponse)
 
-      // MemberManagementData를 Member 인터페이스로 변환
-      const convertedMembers: Member[] = membersData.map(member => ({
+      // OrganizationMember를 Member 인터페이스로 변환
+      const convertedMembers: Member[] = membersResponse.members.map(member => ({
         id: member.userId,
         name: member.displayName || member.email || '알 수 없음',
         email: member.email || '',
-        phone: '', // MemberManagementData에 phone 필드가 없음
-        role: getUserRoleFromType(member.userType),
-        department: member.department || '미지정',
-        joinDate: member.createdAt?.toLocaleDateString() || '',
+        phone: member.phoneNumber || '', // phoneNumber 사용
+        role: getMemberRoleDisplayName(member.role),
+        department: member.departments?.[0] || '미지정', // departments 배열의 첫 번째 항목
+        joinDate: member.joinedAt?.toLocaleDateString() || member.createdAt?.toLocaleDateString() || '',
         lastLogin: member.lastLoginAt?.toLocaleDateString() || '로그인 기록 없음',
-        status: member.isActive ? 'active' : 'inactive',
-        permissions: getPermissionsByRole(getUserRoleFromType(member.userType))
+        status: member.status === 'ACTIVE' ? 'active' : 'inactive',
+        permissions: member.permissions?.map(p => p.action) || []
       }))
 
       setMembers(convertedMembers)
@@ -658,8 +671,8 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
 
     const categoryIcons = {
       user: Users,
-      device: Monitor,
-      report: FileText,
+      device: Shield, // Changed from Monitor to Shield
+      report: Users, // Changed from FileText to Users
       admin: Shield
     }
 
