@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Button } from '@ui/button';
 import { Progress } from '@ui/progress';
-import { AlertCircle, CheckCircle2, Clock, Activity } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Activity, X } from 'lucide-react';
 
 import { PersonalInfoScreen } from './PersonalInfoScreen';
 import { DeviceConnectionScreen } from './DeviceConnectionScreen';
@@ -206,14 +206,26 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center text-gray-800">
-              AI Health Report 생성
-            </CardTitle>
+        <Card className="mb-6 bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                AI Health Report 생성
+              </CardTitle>
+              {onClose && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={onClose}
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
             <div className="mt-4">
               <div className="flex justify-between text-sm text-gray-600 mb-2">
                 <span>진행률</span>
@@ -225,31 +237,35 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         </Card>
 
         {/* 단계 표시기 */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center">
+        <Card className="mb-6 bg-white border border-gray-200 shadow-sm">
+          <CardContent className="py-6">
+            <div className="flex justify-between items-center overflow-x-auto">
               {STEPS.map((step, index) => {
                 const isActive = step.key === state.currentStep;
                 const isCompleted = index < currentStepIndex;
                 const IconComponent = step.icon;
                 
                 return (
-                  <div key={step.key} className="flex flex-col items-center flex-1">
+                  <div key={step.key} className="flex flex-col items-center flex-1 min-w-[100px]">
                     <div 
                       className={`
-                        w-12 h-12 rounded-full flex items-center justify-center mb-2
-                        ${isActive ? 'bg-blue-500 text-white' : 
-                          isCompleted ? 'bg-green-500 text-white' : 
-                          'bg-gray-200 text-gray-500'}
+                        w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-all duration-300
+                        ${isActive ? 'bg-blue-600 text-white shadow-md' : 
+                          isCompleted ? 'bg-green-500 text-white shadow-md' : 
+                          'bg-gray-100 text-gray-400 border border-gray-200'}
                       `}
                     >
-                      <IconComponent className="w-6 h-6" />
+                      <IconComponent />
                     </div>
                     <div className="text-center">
-                      <div className={`text-sm font-medium ${isActive ? 'text-blue-600' : 'text-gray-600'}`}>
+                      <div className={`text-sm font-semibold mb-1 ${
+                        isActive ? 'text-blue-600' : 
+                        isCompleted ? 'text-green-600' : 
+                        'text-gray-500'
+                      }`}>
                         {step.title}
                       </div>
-                      <div className="text-xs text-gray-500 max-w-20">
+                      <div className="text-xs text-gray-500 leading-tight px-2">
                         {step.description}
                       </div>
                     </div>
@@ -262,31 +278,32 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
 
         {/* 에러 표시 */}
         {state.error && (
-          <Card className="mb-6 border-red-200 bg-red-50">
-            <CardContent className="pt-6">
+          <Card className="mb-6 bg-red-50 border border-red-200 shadow-sm">
+            <CardContent className="py-4">
               <div className="flex items-center text-red-700">
-                <AlertCircle className="w-5 h-5 mr-2" />
-                <span>{state.error}</span>
+                <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span className="font-medium">{state.error}</span>
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* 현재 단계 컴포넌트 */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent className="p-8">
             {renderCurrentStep()}
           </CardContent>
         </Card>
 
         {/* 하단 네비게이션 */}
-        <Card className="mt-6">
-          <CardContent className="pt-6">
+        <Card className="mt-6 bg-white border border-gray-200 shadow-sm">
+          <CardContent className="py-4">
             <div className="flex justify-between">
               <Button
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStepIndex === 0}
+                className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 이전
               </Button>
@@ -294,6 +311,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
               <Button
                 variant="outline"
                 onClick={onClose}
+                className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 취소
               </Button>

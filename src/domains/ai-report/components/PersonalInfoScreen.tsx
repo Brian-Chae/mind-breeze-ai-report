@@ -54,10 +54,12 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
   }, [formData, medicalHistoryInput, medicationsInput, onComplete, onError]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 bg-white">
       <div className="text-center">
-        <User className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+        <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4">
+          <User className="w-8 h-8 text-blue-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           사용자 정보 입력
         </h2>
         <p className="text-gray-600">
@@ -65,22 +67,26 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* 기본 정보 */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="name" className="text-sm font-medium">이름 *</label>
+            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+              이름 *
+            </label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="이름을 입력하세요"
-              className="mt-1"
+              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label htmlFor="age" className="text-sm font-medium">나이 *</label>
+            <label htmlFor="age" className="block text-sm font-semibold text-gray-700 mb-2">
+              나이 *
+            </label>
             <Input
               id="age"
               type="number"
@@ -89,34 +95,38 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
               value={formData.age || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
               placeholder="나이를 입력하세요"
-              className="mt-1"
+              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label htmlFor="gender" className="text-sm font-medium">성별 *</label>
+            <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 mb-2">
+              성별 *
+            </label>
             <Select
               value={formData.gender}
               onValueChange={(value: 'male' | 'female' | 'other') => 
                 setFormData(prev => ({ ...prev, gender: value }))
               }
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500">
                 <SelectValue placeholder="성별을 선택하세요" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">남성</SelectItem>
-                <SelectItem value="female">여성</SelectItem>
-                <SelectItem value="other">기타</SelectItem>
+              <SelectContent className="bg-white border-gray-300">
+                <SelectItem value="male" className="text-gray-900 hover:bg-gray-50">남성</SelectItem>
+                <SelectItem value="female" className="text-gray-900 hover:bg-gray-50">여성</SelectItem>
+                <SelectItem value="other" className="text-gray-900 hover:bg-gray-50">기타</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {/* 신체 정보 */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="height" className="text-sm font-medium">키 (cm)</label>
+            <label htmlFor="height" className="block text-sm font-semibold text-gray-700 mb-2">
+              키 (cm)
+            </label>
             <Input
               id="height"
               type="number"
@@ -128,12 +138,14 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
                 height: e.target.value ? parseInt(e.target.value) : undefined 
               }))}
               placeholder="키를 입력하세요 (선택사항)"
-              className="mt-1"
+              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label htmlFor="weight" className="text-sm font-medium">몸무게 (kg)</label>
+            <label htmlFor="weight" className="block text-sm font-semibold text-gray-700 mb-2">
+              몸무게 (kg)
+            </label>
             <Input
               id="weight"
               type="number"
@@ -145,47 +157,48 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
                 weight: e.target.value ? parseInt(e.target.value) : undefined 
               }))}
               placeholder="몸무게를 입력하세요 (선택사항)"
-              className="mt-1"
+              className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* 의료 정보 */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label htmlFor="medical-history" className="text-sm font-medium">과거 병력 (선택사항)</label>
+          <label htmlFor="medical-history" className="block text-sm font-semibold text-gray-700 mb-2">
+            과거 병력이 있다면 입력하세요 (쉼표로 구분)
+          </label>
           <Textarea
             id="medical-history"
             value={medicalHistoryInput}
             onChange={(e) => setMedicalHistoryInput(e.target.value)}
-            placeholder="과거 병력이 있다면 입력하세요 (쉼표로 구분)"
-            className="mt-1"
+            placeholder="예: 고혈압, 당뇨병, 심장질환 등"
+            className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
             rows={3}
           />
-          <p className="text-sm text-gray-500 mt-1">
-            예: 고혈압, 당뇨병, 심장질환 등
-          </p>
         </div>
 
         <div>
-          <label htmlFor="medications" className="text-sm font-medium">현재 복용 약물 (선택사항)</label>
+          <label htmlFor="medications" className="block text-sm font-semibold text-gray-700 mb-2">
+            현재 복용중인 약물이 있다면 입력하세요 (쉼표로 구분)
+          </label>
           <Textarea
             id="medications"
             value={medicationsInput}
             onChange={(e) => setMedicationsInput(e.target.value)}
-            placeholder="현재 복용중인 약물이 있다면 입력하세요 (쉼표로 구분)"
-            className="mt-1"
+            placeholder="예: 혈압약, 진통제, 비타민 등"
+            className="bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
             rows={3}
           />
-          <p className="text-sm text-gray-500 mt-1">
-            예: 혈압약, 진통제, 비타민 등
-          </p>
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} className="px-8">
+      <div className="flex justify-end pt-6">
+        <Button 
+          onClick={handleSubmit} 
+          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
+        >
           다음 단계로
         </Button>
       </div>
