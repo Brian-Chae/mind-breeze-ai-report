@@ -176,7 +176,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
               <Download className="w-4 h-4 mr-2" />
               리포트 다운로드
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-blue-600 text-white hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               디바이스 추가
             </Button>
