@@ -252,27 +252,27 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
 
     const getRoleColor = (role: string) => {
       switch (role) {
-        case 'admin': return 'bg-red-50 text-red-700 border-red-200'
-        case 'manager': return 'bg-blue-50 text-blue-700 border-blue-200'
-        case 'member': return 'bg-green-50 text-green-700 border-green-200'
+        case 'admin': return 'bg-gray-50 text-gray-700 border-gray-200'
+        case 'manager': return 'bg-gray-50 text-gray-700 border-gray-200'
+        case 'member': return 'bg-gray-50 text-gray-700 border-gray-200'
         default: return 'bg-gray-50 text-gray-700 border-gray-200'
       }
     }
 
     const getStatusColor = (status: string) => {
       switch (status) {
-        case 'active': return 'bg-green-50 text-green-700 border-green-200'
+        case 'active': return 'bg-gray-50 text-gray-700 border-gray-200'
         case 'inactive': return 'bg-gray-50 text-gray-700 border-gray-200'
-        case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+        case 'pending': return 'bg-gray-50 text-gray-700 border-gray-200'
         default: return 'bg-gray-50 text-gray-700 border-gray-200'
       }
     }
 
     const getRoleIcon = (role: string) => {
       switch (role) {
-        case 'admin': return 'bg-red-500 text-white'
-        case 'manager': return 'bg-blue-500 text-white'
-        case 'member': return 'bg-green-500 text-white'
+        case 'admin': return 'bg-gray-500 text-white'
+        case 'manager': return 'bg-gray-500 text-white'
+        case 'member': return 'bg-gray-500 text-white'
         default: return 'bg-gray-500 text-white'
       }
     }
@@ -340,7 +340,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
             renderEmptyState()
           ) : (
             filteredMembers.map((member) => (
-              <Card key={member.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-blue-200">
+              <Card key={member.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-md ${getRoleIcon(member.role)}`}>
@@ -414,7 +414,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
 
         {/* 초대 폼 */}
         {showInviteForm && (
-          <Card className="p-6 border-2 border-blue-200 bg-blue-50">
+          <Card className="p-6 border-2 border-gray-200 bg-gray-50">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">새 운영자 초대</h3>
             <div className="space-y-4">
               <div>
@@ -470,18 +470,18 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
   const renderInviteManagement = () => {
     const getInviteStatusColor = (status: string) => {
       switch (status) {
-        case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-        case 'accepted': return 'bg-green-50 text-green-700 border-green-200'
-        case 'expired': return 'bg-red-50 text-red-700 border-red-200'
+        case 'pending': return 'bg-gray-50 text-gray-700 border-gray-200'
+        case 'accepted': return 'bg-gray-50 text-gray-700 border-gray-200'
+        case 'expired': return 'bg-gray-50 text-gray-700 border-gray-200'
         default: return 'bg-gray-50 text-gray-700 border-gray-200'
       }
     }
 
     const getInviteIcon = (status: string) => {
       switch (status) {
-        case 'pending': return 'bg-yellow-500 text-white'
-        case 'accepted': return 'bg-green-500 text-white'
-        case 'expired': return 'bg-red-500 text-white'
+        case 'pending': return 'bg-gray-500 text-white'
+        case 'accepted': return 'bg-gray-500 text-white'
+        case 'expired': return 'bg-gray-500 text-white'
         default: return 'bg-gray-500 text-white'
       }
     }
@@ -525,7 +525,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
             renderEmptyInviteState()
           ) : (
             invitations.map((invitation) => (
-              <Card key={invitation.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-purple-200">
+              <Card key={invitation.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-md ${getInviteIcon(invitation.status)}`}>
@@ -576,7 +576,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
                     <span className="text-sm text-gray-600">초대일: {invitation.sentDate}</span>
                   </div>
                   {invitation.status === 'pending' && (
-                    <span className="text-sm text-yellow-600 font-medium">7일 후 만료</span>
+                    <span className="text-sm text-gray-600 font-medium">7일 후 만료</span>
                   )}
                 </div>
               </Card>
@@ -586,7 +586,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
 
         {/* 초대 폼 */}
         {showInviteForm && (
-          <Card className="p-6 border-2 border-purple-200 bg-purple-50">
+          <Card className="p-6 border-2 border-gray-200 bg-gray-50">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">새 운영자 초대</h3>
             <div className="space-y-4">
               <div>
