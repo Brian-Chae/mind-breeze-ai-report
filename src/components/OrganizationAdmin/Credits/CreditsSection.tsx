@@ -450,7 +450,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">결제 설정</h2>
-          <Button className="bg-purple-600 hover:bg-purple-700">
+          <Button className="bg-purple-600 text-white hover:bg-purple-700">
             <Plus className="w-4 h-4 mr-2" />
             결제 수단 추가
           </Button>
@@ -575,7 +575,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
               </select>
             </div>
             
-            <Button className="w-full bg-purple-600 hover:bg-purple-700">
+            <Button className="w-full bg-purple-600 text-white hover:bg-purple-700">
               <Settings className="w-4 h-4 mr-2" />
               설정 저장
             </Button>
@@ -614,7 +614,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             <Input placeholder="세금계산서 수신용 이메일" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
         </div>
-        <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+        <Button className="mt-4 bg-purple-600 text-white hover:bg-purple-700">
           <Settings className="w-4 h-4 mr-2" />
           설정 저장
         </Button>
