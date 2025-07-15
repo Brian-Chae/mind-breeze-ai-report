@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { enterpriseAuthService } from '../EnterpriseAuthService';
+import { enterpriseAuthService } from '../../domains/organization/services/EnterpriseAuthService';
 import { UserType, VolumeDiscountTier } from '@core/types/business';
 
 // Firebase 모킹

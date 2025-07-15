@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { enterpriseAuthService } from '../../EnterpriseAuthService';
+import { enterpriseAuthService } from '../../../domains/organization/services/EnterpriseAuthService';
 import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../../firebase'; // 실제 Firebase 인스턴스 사용
+import { auth, db } from '@core/services'; // Firebase 인스턴스 사용
 
 describe('EnterpriseAuthService Integration Tests', () => {
   beforeAll(async () => {

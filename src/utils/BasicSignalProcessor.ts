@@ -1389,6 +1389,12 @@ export class BasicSignalProcessor {
         currentState: 'unknown',
         confidence: 0,
         stateHistory: [],
+        metrics: {
+          arousal: 0,
+          valence: 0,
+          attention: 0,
+          relaxation: 0
+        },
         recommendations: ['신호 품질을 개선해주세요']
       };
     }

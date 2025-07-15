@@ -4,14 +4,15 @@ import { Switch } from '@ui/switch'
 import { Separator } from '@ui/separator'
 import { Bluetooth, Monitor, Volume2, Settings as SettingsIcon, Wifi, Bell, Shield, Palette, Database, Activity, CircleDot, Loader2 } from 'lucide-react'
 import { useSensorDataStore } from '../stores/sensorDataStore'
-import { useUIStore } from '../stores/uiStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { useStorageStore } from '../stores/storageStore'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Badge } from '@ui/badge'
 import { APIKeyManager, APIKeyMetadata, APIKeyTestResult } from '@core/services/APIKeyManager'
 
 export function Settings() {
-  const { timezone, setTimezone } = useUIStore();
+  const { timezone, setTimezone } = useSettingsStore();
 
   const {
     config,
@@ -20,7 +21,7 @@ export function Settings() {
     isStorageReady,
     storageDirectoryPath,
     changeStorageDirectory,
-  } = useUIStore();
+  } = useStorageStore();
 
   // 자동 등록 설정 상태
   const [autoRegistrationEnabled, setAutoRegistrationEnabled] = useState(() => {

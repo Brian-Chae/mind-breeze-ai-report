@@ -1,5 +1,5 @@
 import React from 'react';
-import { useUIStore, Notification } from '../../stores/uiStore';
+import { useUIStore, Notification } from '../../../stores/uiStore';
 import { X, CheckCircle, XCircle, Info, AlertTriangle } from 'lucide-react';
 
 const NotificationItem: React.FC<{ notification: Notification }> = ({ notification }) => {

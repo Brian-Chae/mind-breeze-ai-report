@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { trialManagementService } from '../TrialManagementService';
+import { trialManagementService } from '../../domains/organization/services/TrialManagementService';
 import { TrialType, ServicePackageType } from '@core/types/business';
 
 // Firebase 모킹

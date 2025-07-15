@@ -97,6 +97,7 @@ export interface BrainStateAnalysis {
     attention: number;       // 집중도 (0-1)
     relaxation: number;      // 이완도 (0-1)
   };
+  recommendations?: string[]; // 추천사항 (선택적)
 }
 
 // 연결 상태

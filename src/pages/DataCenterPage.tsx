@@ -5,7 +5,7 @@ import { Badge } from '@ui/badge';
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { Layout } from '../components/Layout';
-import { DataCenter } from '../components/DataCenter/DataCenter';
+import { DataCenter } from '../components/DataCenter';
 
 export const DataCenterPage: React.FC = () => {
   const navigate = useNavigate();

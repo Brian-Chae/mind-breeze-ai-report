@@ -1,4 +1,4 @@
-import { EEGDataPoint, PPGDataPoint, ACCDataPoint } from '../utils/SimpleCircularBuffer';
+import { EEGDataPoint, PPGDataPoint, ACCDataPoint } from '../../../utils/SimpleCircularBuffer';
 import { ProcessedEEGData } from '../types/eeg';
 import { ProcessedPPGData, ProcessedACCData } from './StreamingStorageService';
 

@@ -2,7 +2,7 @@ import type { EEGDataPoint, PPGDataPoint, ACCDataPoint } from './SimpleCircularB
 import type { ProcessedEEGData } from '../types/eeg';
 import JSZip from 'jszip';
 import { createSessionStartTime, type TimezoneType } from './timeUtils';
-import { StreamingStorageService } from '../services/StreamingStorageService';
+import { StreamingStorageService } from '../domains/ai-report/services/StreamingStorageService';
 
 // 처리된 PPG 데이터 타입
 export interface ProcessedPPGData {

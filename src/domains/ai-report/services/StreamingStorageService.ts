@@ -1,4 +1,4 @@
-import { EEGDataPoint, PPGDataPoint, ACCDataPoint } from '../utils/SimpleCircularBuffer';
+import { EEGDataPoint, PPGDataPoint, ACCDataPoint } from '../../../utils/SimpleCircularBuffer';
 import { ProcessedEEGData } from '../types/eeg';
 
 // PPG와 ACC 처리된 데이터 타입 정의 (임시)

@@ -6,7 +6,7 @@ import { ACCSignalProcessor } from './ACCSignalProcessor';
 import { useProcessedDataStore } from '../stores/processedDataStore';
 import { useRawDataStore } from '../stores/rawDataStore';
 import { ProcessedEEGData } from '../types/eeg';
-import { AnalysisMetricsService } from '../services/AnalysisMetricsService';
+import { AnalysisMetricsService } from '../domains/ai-report/services/AnalysisMetricsService';
 
 /**
  * Phase 1.7: 단순화된 스트림 처리기

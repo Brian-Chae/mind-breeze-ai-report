@@ -5,7 +5,7 @@ import {
   StreamingStorageService 
 } from './StreamingStorageService';
 import { ProcessedEEGData } from '../types/eeg';
-import { useProcessedDataStore } from '../stores/processedDataStore';
+import { useProcessedDataStore } from '../../../stores/processedDataStore';
 
 /**
  * 분석 지표 서비스

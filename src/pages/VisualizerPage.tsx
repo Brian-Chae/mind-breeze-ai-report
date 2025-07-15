@@ -4,7 +4,7 @@ import { Eye, Activity, Brain, BarChart3, LineChart, Settings, Play, Pause, Squa
 import { Badge } from '@ui/badge';
 import { Button } from '@ui/button';
 import { Layout } from '../components/Layout';
-import { Visualizer } from '../components/Visualizer/Visualizer';
+import { Visualizer } from '../../components/Visualizer';
 
 export const VisualizerPage: React.FC = () => {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
-import { bluetoothService } from '../utils/bluetoothService';
-import { StreamProcessor } from '../utils/StreamProcessor';
-import { SessionManager } from '../utils/SessionManager';
-import { StreamingStorageService } from './StreamingStorageService';
+import { bluetoothService } from '../../utils/bluetoothService';
+import { StreamProcessor } from '../../utils/StreamProcessor';
+import { SessionManager } from '../../utils/SessionManager';
+import { StreamingStorageService } from '../../domains/ai-report/services/StreamingStorageService';
 
 /**
  * SystemControlService
@@ -93,11 +93,11 @@ export class SystemControlService {
         { useSensorDataStore },
         { useStorageStore }
       ] = await Promise.all([
-        import('../stores/rawDataStore'),
-        import('../stores/processedDataStore'),
-        import('../stores/deviceStore'),
-        import('../stores/sensorDataStore'),
-        import('../stores/storageStore')
+        import('../../stores/rawDataStore'),
+        import('../../stores/processedDataStore'),
+        import('../../stores/deviceStore'),
+        import('../../stores/sensorDataStore'),
+        import('../../stores/storageStore')
       ]);
 
       this.storeRefs = {

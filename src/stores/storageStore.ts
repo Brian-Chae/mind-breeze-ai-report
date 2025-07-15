@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { StreamingStorageService, StreamingSessionMetadata, StreamingSessionConfig } from '../services/StreamingStorageService';
-import { systemControlService } from '../services/SystemControlService';
+import { StreamingStorageService, StreamingSessionMetadata, StreamingSessionConfig } from '../domains/ai-report/services/StreamingStorageService';
+import { systemControlService } from '../core/services/SystemControlService';
 import { 
   saveStorageDirectory, 
   restoreStorageDirectory, 
