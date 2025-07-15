@@ -568,39 +568,37 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
     <div>
       {/* 탭 네비게이션 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => handleTabChange('device-inventory')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'device-inventory'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              디바이스 현황
-            </button>
-            <button
-              onClick={() => handleTabChange('device-assignment')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'device-assignment'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              디바이스 배치
-            </button>
-            <button
-              onClick={() => handleTabChange('device-monitoring')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'device-monitoring'
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              디바이스 모니터링
-            </button>
-          </div>
+        <div className="flex space-x-8">
+          <button
+            onClick={() => handleTabChange('device-inventory')}
+            className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm ${
+              activeTab === 'device-inventory'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            디바이스 현황
+          </button>
+          <button
+            onClick={() => handleTabChange('device-assignment')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'device-assignment'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            디바이스 배치
+          </button>
+          <button
+            onClick={() => handleTabChange('device-monitoring')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'device-monitoring'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            디바이스 모니터링
+          </button>
         </div>
       </div>
 
