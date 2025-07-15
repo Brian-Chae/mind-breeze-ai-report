@@ -290,7 +290,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
         </div>
         <Button 
           onClick={() => setShowInviteForm(true)}
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-2 bg-blue-600 text-white hover:bg-blue-700"
         >
           <UserPlus className="w-4 h-4" />
           <span>운영자 초대</span>
@@ -310,7 +310,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
               <Download className="w-4 h-4 mr-2" />
               내보내기
             </Button>
-            <Button onClick={() => setShowInviteForm(true)}>
+            <Button onClick={() => setShowInviteForm(true)} className="bg-blue-600 text-white hover:bg-blue-700">
               <UserPlus className="w-4 h-4 mr-2" />
               운영자 초대
             </Button>
