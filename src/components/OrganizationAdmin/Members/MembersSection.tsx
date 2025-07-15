@@ -340,7 +340,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
             renderEmptyState()
           ) : (
             filteredMembers.map((member) => (
-              <Card key={member.id} className="p-6 transition-all duration-300 hover:shadow-lg border-2 hover:border-gray-200">
+              <Card key={member.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-md ${getRoleIcon(member.role)}`}>
