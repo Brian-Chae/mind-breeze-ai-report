@@ -51,18 +51,18 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
     <div className="space-y-6">
       <div className="text-center">
         <Activity className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           디바이스 착용 확인
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-700">
           디바이스가 올바르게 착용되었는지 신호 품질을 확인하세요.
         </p>
       </div>
 
       {/* 전체 품질 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center justify-between text-lg font-semibold text-gray-900">
             전체 신호 품질
             <span className={`text-lg font-bold ${isGoodQuality ? 'text-green-600' : 'text-red-600'}`}>
               {Math.round(dataQuality.overallQuality)}%
@@ -74,7 +74,7 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
             value={dataQuality.overallQuality} 
             className="w-full"
           />
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-gray-600 mt-2">
             {isGoodQuality ? '측정 준비 완료' : '디바이스 착용 상태를 확인해주세요'}
           </p>
         </CardContent>
@@ -83,14 +83,14 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
       {/* 센서별 품질 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* EEG 품질 */}
-        <Card>
+        <Card className="border border-gray-200 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">EEG 신호</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-900">EEG 신호</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm">품질</span>
+                <span className="text-sm text-gray-700 font-medium">품질</span>
                 <span className={`text-sm font-medium ${getQualityStatus(dataQuality.eegQuality).color}`}>
                   {Math.round(dataQuality.eegQuality)}%
                 </span>
@@ -100,21 +100,21 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
                 {React.createElement(getQualityStatus(dataQuality.eegQuality).icon, { 
                   className: `w-4 h-4 mr-2 ${getQualityStatus(dataQuality.eegQuality).color}` 
                 })}
-                <span className="text-xs text-gray-500">뇌파 센서</span>
+                <span className="text-xs text-gray-600">뇌파 센서</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* PPG 품질 */}
-        <Card>
+        <Card className="border border-gray-200 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">PPG 신호</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-900">PPG 신호</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm">품질</span>
+                <span className="text-sm text-gray-700 font-medium">품질</span>
                 <span className={`text-sm font-medium ${getQualityStatus(dataQuality.ppgQuality).color}`}>
                   {Math.round(dataQuality.ppgQuality)}%
                 </span>
@@ -124,21 +124,21 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
                 {React.createElement(getQualityStatus(dataQuality.ppgQuality).icon, { 
                   className: `w-4 h-4 mr-2 ${getQualityStatus(dataQuality.ppgQuality).color}` 
                 })}
-                <span className="text-xs text-gray-500">심박 센서</span>
+                <span className="text-xs text-gray-600">심박 센서</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* ACC 품질 */}
-        <Card>
+        <Card className="border border-gray-200 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">ACC 신호</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-900">ACC 신호</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm">품질</span>
+                <span className="text-sm text-gray-700 font-medium">품질</span>
                 <span className={`text-sm font-medium ${getQualityStatus(dataQuality.accQuality).color}`}>
                   {Math.round(dataQuality.accQuality)}%
                 </span>
@@ -148,7 +148,7 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
                 {React.createElement(getQualityStatus(dataQuality.accQuality).icon, { 
                   className: `w-4 h-4 mr-2 ${getQualityStatus(dataQuality.accQuality).color}` 
                 })}
-                <span className="text-xs text-gray-500">가속도 센서</span>
+                <span className="text-xs text-gray-600">가속도 센서</span>
               </div>
             </div>
           </CardContent>
@@ -156,7 +156,7 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
       </div>
 
       {/* 안내 메시지 */}
-      <Card className={`border-2 ${isGoodQuality ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
+      <Card className={`border-2 shadow-sm ${isGoodQuality ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
         <CardContent className="pt-6">
           <div className="flex items-start">
             {isGoodQuality ? (
@@ -183,7 +183,11 @@ export function DataQualityScreen({ onQualityConfirmed, onError, dataQuality }: 
         <Button 
           onClick={handleConfirm}
           disabled={!isGoodQuality}
-          className="px-8"
+          className={`px-8 py-3 font-semibold ${
+            isGoodQuality 
+              ? 'text-white bg-blue-500 hover:bg-blue-600' 
+              : 'text-gray-500 bg-gray-200 cursor-not-allowed'
+          }`}
         >
           {isGoodQuality ? '측정 시작' : '신호 품질 개선 필요'}
         </Button>
