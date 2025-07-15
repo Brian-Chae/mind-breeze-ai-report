@@ -864,15 +864,15 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         {filteredReports.length === 0 ? (
           <Card className="p-8">
             <div className="flex flex-col items-center space-y-4">
-              <div className="flex items-center justify-center w-16 h-16 bg-orange-100 rounded-xl">
-                <FileText className="w-8 h-8 text-orange-600" />
+              <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-xl">
+                <FileText className="w-8 h-8 text-gray-600" />
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">리포트가 없습니다</h3>
                 <p className="text-gray-600 mb-4">
                   {searchQuery ? '검색 조건에 맞는 리포트가 없습니다.' : '아직 생성된 리포트가 없습니다.'}
                 </p>
-                <Button className="bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700">
+                <Button className="bg-gray-600 text-white hover:bg-gray-700">
                   <Plus className="w-4 h-4 mr-2" />
                   리포트 생성
                 </Button>
@@ -882,11 +882,11 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredReports.map((report) => (
-              <Card key={report.id} className="p-6 bg-gradient-to-r from-white to-orange-50 hover:shadow-lg transition-all duration-300 border-l-4 border-orange-500">
+              <Card key={report.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-orange-100 to-red-100 rounded-xl">
-                      <FileText className="w-6 h-6 text-orange-600" />
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                      <FileText className="w-6 h-6 text-gray-600" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
@@ -912,7 +912,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="hover:bg-orange-50">
+                        <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
