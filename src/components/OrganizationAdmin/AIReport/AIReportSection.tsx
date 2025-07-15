@@ -345,7 +345,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           </Button>
           <Button 
             onClick={() => handleGenerateReport('default', '스트레스 분석')}
-            className="bg-purple-600 text-white hover:bg-purple-700"
+            className="bg-blue-600 text-white hover:bg-blue-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             새 리포트
@@ -396,7 +396,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                   </p>
                   <Button 
                     onClick={() => handleGenerateReport('default', '스트레스 분석')}
-                    className="bg-purple-600 text-white hover:bg-purple-700"
+                    className="bg-blue-600 text-white hover:bg-blue-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     첫 리포트 생성하기
