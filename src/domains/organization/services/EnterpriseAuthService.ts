@@ -247,7 +247,7 @@ class EnterpriseAuthService {
           user: defaultUser,
           organization: null,
           memberInfo: null,
-          permissions: this.calculatePermissions(defaultUser, null),
+          permissions: this.parsePermissions(defaultUser.permissions, defaultUser.userType),
           isLoading: false
         });
         return;
@@ -537,6 +537,7 @@ class EnterpriseAuthService {
 
       const data = memberDoc.data();
       return {
+        id: memberId,
         userId: data.userId,
         organizationId: data.organizationId,
         employeeId: data.employeeId,
@@ -583,8 +584,8 @@ class EnterpriseAuthService {
 
   private calculateVolumeTier(memberCount: number): VolumeDiscountTier {
     for (const tier of VOLUME_DISCOUNT_TIERS) {
-      if (memberCount >= tier.minMembers && 
-          (!tier.maxMembers || memberCount <= tier.maxMembers)) {
+      if (memberCount >= tier.min && 
+          (!tier.max || memberCount <= tier.max)) {
         return tier.tier;
       }
     }
@@ -595,7 +596,7 @@ class EnterpriseAuthService {
     const discountConfig = VOLUME_DISCOUNT_TIERS.find(t => t.tier === tier);
     if (!discountConfig) return basePrice;
 
-    return Math.round(basePrice * (100 - discountConfig.discountPercent) / 100);
+    return Math.round(basePrice * (100 - discountConfig.discount) / 100);
   }
 
   private getDefaultPermissions(userType: UserType): string[] {
@@ -817,7 +818,7 @@ class EnterpriseAuthService {
       const userData = userDoc.data() as EnterpriseUser;
       
       // 토큰 만료 확인
-      const tokenExpiresAt = userData.tokenExpiresAt?.toDate();
+      const tokenExpiresAt = userData.tokenExpiresAt;
       if (!tokenExpiresAt || new Date() > tokenExpiresAt) {
         throw new Error('Access token has expired');
       }
@@ -882,7 +883,7 @@ class EnterpriseAuthService {
         organizationId: data.organizationId,
         permissions: ['report:view', 'consultation:access'],
         accessToken,
-        tokenExpiresAt: Timestamp.fromDate(expiresAt),
+        tokenExpiresAt: expiresAt,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -892,8 +893,8 @@ class EnterpriseAuthService {
       const userRef = doc(db, 'users', userId);
       await setDoc(userRef, {
         ...measurementSubject,
-        createdAt: Timestamp.fromDate(measurementSubject.createdAt),
-        updatedAt: Timestamp.fromDate(measurementSubject.updatedAt)
+        createdAt: Timestamp.fromDate(measurementSubject.createdAt || new Date()),
+        updatedAt: Timestamp.fromDate(measurementSubject.updatedAt || new Date())
       });
       
       console.log('[Auth] Measurement subject created:', userId);
@@ -938,6 +939,16 @@ class EnterpriseAuthService {
   // 토큰 생성
   private generateAccessToken(): string {
     return `ms_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
+  }
+
+  private parsePermissions(permissions: string[], userType: UserType): string[] {
+    if (userType === 'SYSTEM_ADMIN') {
+      return ['*'];
+    }
+    if (!permissions || permissions.length === 0) {
+      return this.getDefaultPermissions(userType);
+    }
+    return permissions;
   }
 }
 
