@@ -604,7 +604,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
               <Download className="w-4 h-4 mr-2" />
               데이터 내보내기
             </Button>
-            <Button variant="outline" size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700">
+            <Button variant="outline" size="sm" className="bg-gray-600 text-white hover:bg-gray-700">
               <BarChart3 className="w-4 h-4 mr-2" />
               통계 보기
             </Button>
@@ -641,15 +641,15 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         {filteredSessions.length === 0 ? (
           <Card className="p-8">
             <div className="flex flex-col items-center space-y-4">
-              <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl">
-                <Activity className="w-8 h-8 text-purple-600" />
+              <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-xl">
+                <Activity className="w-8 h-8 text-gray-600" />
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">측정 이력이 없습니다</h3>
                 <p className="text-gray-600 mb-4">
                   {searchQuery ? '검색 조건에 맞는 측정 이력이 없습니다.' : '아직 측정 이력이 없습니다.'}
                 </p>
-                <Button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700">
+                <Button className="bg-gray-600 text-white hover:bg-gray-700">
                   <TrendingUp className="w-4 h-4 mr-2" />
                   측정 시작하기
                 </Button>
@@ -659,11 +659,11 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredSessions.map((session) => (
-              <Card key={session.id} className="p-6 bg-gradient-to-r from-white to-purple-50 hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500">
+              <Card key={session.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
-                      <Activity className="w-6 h-6 text-purple-600" />
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                      <Activity className="w-6 h-6 text-gray-600" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{session.userName}</h3>
@@ -684,7 +684,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                     </Badge>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="hover:bg-purple-50">
+                        <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
