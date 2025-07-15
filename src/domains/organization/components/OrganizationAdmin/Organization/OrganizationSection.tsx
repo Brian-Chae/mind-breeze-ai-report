@@ -32,7 +32,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 // Firebase 서비스 import
 import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'
-import { MemberManagementService, MemberManagementData } from '../../../services/MemberManagementService'
+import { MemberManagementService } from '../../../services/MemberManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface OrganizationSectionProps {
@@ -82,7 +82,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
 
   // 실제 데이터 상태
   const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo | null>(null)
-  const [members, setMembers] = useState<MemberManagementData[]>([])
+  const [members, setMembers] = useState<any[]>([]) // MemberManagementData 대신 any[]로 변경
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     name: '',
     industry: '',
@@ -164,7 +164,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
         case 'departments':
         case 'structure':
           // 조직 관리 및 구조에 필요한 데이터 로드
-          const [orgData, membersData] = await Promise.all([
+          const [orgData, membersResponse] = await Promise.all([
             OrganizationService.getOrganizationById(organizationId),
             new MemberManagementService().getOrganizationMembers(organizationId)
           ])
@@ -173,14 +173,17 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
             setOrganizationInfo(orgData)
           }
 
+          // MemberListResponse에서 members 배열 추출
+          const membersData = membersResponse.members
           setMembers(membersData)
           
           // 부서별 멤버 수 계산하여 departments 생성
           const departmentMap = new Map<string, number>()
           membersData.forEach(member => {
-            if (member.department) {
-              departmentMap.set(member.department, (departmentMap.get(member.department) || 0) + 1)
-            }
+            // OrganizationMember는 departments 배열을 가지므로 각 부서별로 카운트
+            member.departments?.forEach(departmentId => {
+              departmentMap.set(departmentId, (departmentMap.get(departmentId) || 0) + 1)
+            })
           })
 
           const departmentList: Department[] = Array.from(departmentMap.entries()).map(([deptName, count], index) => ({
