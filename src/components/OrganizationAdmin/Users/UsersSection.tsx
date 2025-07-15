@@ -604,7 +604,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
               <Download className="w-4 h-4 mr-2" />
               데이터 내보내기
             </Button>
-            <Button variant="outline" size="sm" className="bg-gray-600 text-white hover:bg-gray-700">
+            <Button variant="outline" size="sm" className="bg-green-600 text-white hover:bg-green-700">
               <BarChart3 className="w-4 h-4 mr-2" />
               통계 보기
             </Button>
