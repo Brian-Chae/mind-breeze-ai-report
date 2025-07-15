@@ -1,171 +1,540 @@
 import { db, auth } from './firebase';
 import { Firestore, Timestamp } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
+import { 
+  errorHandler, 
+  ServiceError, 
+  ValidationError,
+  NetworkError,
+  PermissionError,
+  ErrorCodes,
+  ErrorSeverity,
+  ErrorContext,
+  createServiceError,
+  createValidationError
+} from '../utils/ErrorHandler';
+import { 
+  logger,
+  LogLevel,
+  LogCategory,
+  LogContext
+} from '../utils/Logger';
+import {
+  Cache,
+  cacheManager,
+  CacheStrategy,
+  CacheStorage
+} from '../utils/Cache';
 
 /**
  * 모든 서비스 클래스의 기반이 되는 추상 클래스
  * 공통 기능들을 제공하여 코드 중복을 방지하고 일관성을 유지합니다.
+ * 
+ * v3.0 업데이트:
+ * - 체계적인 ErrorHandler 시스템 통합
+ * - 고급 Logger 시스템 통합
+ * - 고급 Cache 시스템 통합
+ * - 향상된 에러 처리 및 로깅
+ * - Firebase 에러 특화 처리
+ * - 재시도 로직 지원
+ * - 성능 측정 및 사용자 활동 추적
+ * - 지능형 캐싱 전략
  */
 export abstract class BaseService {
   protected db: Firestore;
   protected auth: Auth;
   protected serviceName: string;
+  protected cache: Cache;
 
   constructor() {
     this.db = db;
     this.auth = auth;
     this.serviceName = this.constructor.name;
-  }
-
-  // === 공통 에러 핸들링 ===
-
-  /**
-   * 에러를 처리하고 통일된 형식으로 던집니다
-   * @param error 원본 에러
-   * @param context 에러 발생 컨텍스트
-   * @param data 추가 데이터
-   */
-  protected handleError(error: any, context: string, data?: any): never {
-    const errorMessage = error?.message || '알 수 없는 오류가 발생했습니다.';
-    const fullContext = `${this.serviceName}.${context}`;
     
-    console.error(`❌ [${fullContext}] 오류:`, {
-      error: errorMessage,
-      data,
-      stack: error?.stack
+    // 서비스별 전용 캐시 인스턴스 생성
+    this.cache = cacheManager.getCache(`service_${this.serviceName.toLowerCase()}`, {
+      strategy: CacheStrategy.LRU,
+      storage: CacheStorage.MEMORY,
+      maxSize: 500,
+      defaultTTL: 5 * 60 * 1000, // 5분
+      enableStats: true,
+      autoCleanup: true
     });
     
-    // 사용자 친화적인 에러 메시지로 변환
-    const userMessage = this.getUserFriendlyErrorMessage(error, context);
-    throw new Error(userMessage);
+    // 서비스 초기화 로그
+    this.log('서비스 초기화됨', { 
+      serviceName: this.serviceName,
+      cacheEnabled: true 
+    });
+  }
+
+  // === 향상된 에러 핸들링 ===
+
+  /**
+   * 에러를 체계적으로 처리합니다
+   * @param error 원본 에러
+   * @param context 에러 발생 컨텍스트
+   * @param additionalContext 추가 컨텍스트 정보
+   * @returns 처리된 ServiceError (항상 throw됨)
+   */
+  protected handleError(
+    error: any, 
+    context: string, 
+    additionalContext?: Record<string, any>
+  ): never {
+    const errorContext: ErrorContext = {
+      action: context,
+      metadata: {
+        service: this.serviceName,
+        ...additionalContext
+      },
+      timestamp: new Date()
+    };
+
+    // Firebase 에러인 경우 특별 처리
+    if (error?.code && typeof error.code === 'string' && error.code.includes('/')) {
+      const serviceError = errorHandler.handleFirebaseError(error, errorContext);
+      throw serviceError;
+    }
+
+    // 일반 에러 처리
+    const serviceError = errorHandler.handleError(error, errorContext);
+    throw serviceError;
   }
 
   /**
-   * 사용자 친화적인 에러 메시지로 변환
+   * Firebase 에러를 특별히 처리합니다
+   * @param firebaseError Firebase 에러
+   * @param context 에러 컨텍스트
+   * @param additionalContext 추가 컨텍스트
    */
-  private getUserFriendlyErrorMessage(error: any, context: string): string {
-    const errorCode = error?.code;
-    
-    // Firebase 에러 코드별 메시지 변환
-    switch (errorCode) {
-      case 'permission-denied':
-        return '접근 권한이 없습니다.';
-      case 'not-found':
-        return '요청한 데이터를 찾을 수 없습니다.';
-      case 'already-exists':
-        return '이미 존재하는 데이터입니다.';
-      case 'resource-exhausted':
-        return '서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.';
-      case 'unauthenticated':
-        return '인증이 필요합니다. 다시 로그인해주세요.';
-      default:
-        return `${context}에 실패했습니다: ${error?.message || '알 수 없는 오류'}`;
-    }
+  protected handleFirebaseError(
+    firebaseError: any,
+    context: string,
+    additionalContext?: Record<string, any>
+  ): never {
+    const errorContext: ErrorContext = {
+      action: context,
+      metadata: {
+        service: this.serviceName,
+        ...additionalContext
+      }
+    };
+
+    const serviceError = errorHandler.handleFirebaseError(firebaseError, errorContext);
+    throw serviceError;
   }
 
-  // === 공통 로깅 ===
+  /**
+   * 재시도 가능한 작업을 실행합니다
+   * @param operation 실행할 작업
+   * @param maxRetries 최대 재시도 횟수
+   * @param delayMs 재시도 간격 (ms)
+   * @returns 작업 결과
+   */
+  protected async retryOperation<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    delayMs: number = 1000
+  ): Promise<T> {
+    return errorHandler.retryOperation(operation, maxRetries, delayMs);
+  }
+
+  // === 고급 로깅 시스템 ===
 
   /**
    * 정보 로그를 출력합니다
    * @param message 로그 메시지
-   * @param data 추가 데이터
+   * @param context 로그 컨텍스트
+   * @param category 로그 카테고리
    */
-  protected log(message: string, data?: any): void {
-    console.log(`✅ [${this.serviceName}] ${message}`, data || '');
-  }
-
-  /**
-   * 경고 로그를 출력합니다
-   * @param message 로그 메시지
-   * @param data 추가 데이터
-   */
-  protected warn(message: string, data?: any): void {
-    console.warn(`⚠️ [${this.serviceName}] ${message}`, data || '');
+  protected log(
+    message: string, 
+    context: Record<string, any> = {},
+    category: LogCategory = LogCategory.SYSTEM
+  ): void {
+    const logContext: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        ...context
+      }
+    };
+    
+    logger.info(this.serviceName, message, logContext, category);
   }
 
   /**
    * 디버그 로그를 출력합니다 (개발 환경에서만)
    * @param message 로그 메시지
-   * @param data 추가 데이터
+   * @param context 로그 컨텍스트
    */
-  protected debug(message: string, data?: any): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`🔍 [${this.serviceName}] ${message}`, data || '');
+  protected debug(
+    message: string, 
+    context: Record<string, any> = {}
+  ): void {
+    const logContext: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        ...context
+      }
+    };
+    
+    logger.debug(this.serviceName, message, logContext);
+  }
+
+  /**
+   * 경고 로그를 출력합니다
+   * @param message 로그 메시지
+   * @param context 로그 컨텍스트
+   * @param category 로그 카테고리
+   */
+  protected warn(
+    message: string, 
+    context: Record<string, any> = {},
+    category: LogCategory = LogCategory.SYSTEM
+  ): void {
+    const logContext: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        ...context
+      }
+    };
+    
+    logger.warn(this.serviceName, message, logContext, category);
+  }
+
+  /**
+   * 에러 로그를 출력합니다
+   * @param message 로그 메시지
+   * @param error 에러 객체
+   * @param context 로그 컨텍스트
+   * @param category 로그 카테고리
+   */
+  protected error(
+    message: string, 
+    error?: Error,
+    context: Record<string, any> = {},
+    category: LogCategory = LogCategory.SYSTEM
+  ): void {
+    const logContext: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        ...context
+      }
+    };
+    
+    logger.error(this.serviceName, message, error, logContext, category);
+  }
+
+  /**
+   * 치명적 에러 로그를 출력합니다
+   * @param message 로그 메시지
+   * @param error 에러 객체
+   * @param context 로그 컨텍스트
+   */
+  protected critical(
+    message: string, 
+    error?: Error,
+    context: Record<string, any> = {}
+  ): void {
+    const logContext: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        ...context
+      }
+    };
+    
+    logger.critical(this.serviceName, message, error, logContext);
+  }
+
+  /**
+   * 성능 메트릭을 로깅합니다
+   * @param operation 작업명
+   * @param duration 소요 시간 (ms)
+   * @param success 성공 여부
+   * @param details 추가 정보
+   */
+  protected logPerformance(
+    operation: string,
+    duration: number,
+    success: boolean = true,
+    details?: Record<string, any>
+  ): void {
+    logger.performance(
+      `${this.serviceName}.${operation}`,
+      duration,
+      success,
+      details
+    );
+  }
+
+  /**
+   * 사용자 활동을 로깅합니다
+   * @param userId 사용자 ID
+   * @param action 수행한 작업
+   * @param resource 대상 리소스
+   * @param result 결과
+   * @param organizationId 조직 ID
+   * @param details 추가 정보
+   */
+  protected logUserActivity(
+    userId: string,
+    action: string,
+    resource: string,
+    result: 'success' | 'failure' | 'partial' = 'success',
+    organizationId?: string,
+    details?: Record<string, any>
+  ): void {
+    logger.userActivity(userId, action, resource, result, organizationId, {
+      service: this.serviceName,
+      ...details
+    });
+  }
+
+  /**
+   * 보안 관련 로그를 출력합니다
+   * @param message 로그 메시지
+   * @param context 로그 컨텍스트
+   * @param severity 심각도
+   */
+  protected logSecurity(
+    message: string,
+    context: Record<string, any> = {},
+    severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
+  ): void {
+    const logContext: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        ...context
+      }
+    };
+    
+    logger.security(this.serviceName, message, logContext, severity);
+  }
+
+  /**
+   * 데이터베이스 작업을 로깅합니다
+   * @param operation 작업명
+   * @param collection 컬렉션명
+   * @param documentId 문서 ID
+   * @param success 성공 여부
+   * @param duration 소요 시간
+   */
+  protected logDatabaseOperation(
+    operation: string,
+    collection: string,
+    documentId?: string,
+    success: boolean = true,
+    duration?: number
+  ): void {
+    const context: LogContext = {
+      metadata: {
+        service: this.serviceName,
+        operation,
+        collection,
+        documentId,
+        success,
+        duration
+      }
+    };
+    
+    const level = success ? LogLevel.INFO : LogLevel.ERROR;
+    const message = `Database ${operation} on ${collection}${documentId ? `/${documentId}` : ''} ${success ? 'succeeded' : 'failed'}`;
+    
+    if (level === LogLevel.INFO) {
+      logger.info(this.serviceName, message, context, LogCategory.DATABASE);
+    } else {
+      logger.error(this.serviceName, message, undefined, context, LogCategory.DATABASE);
     }
   }
 
-  // === 공통 유효성 검사 ===
+  /**
+   * 작업 시간을 측정하고 로깅하는 래퍼
+   * @param operation 작업명
+   * @param task 실행할 작업
+   * @returns 작업 결과
+   */
+  protected async measureAndLog<T>(
+    operation: string,
+    task: () => Promise<T>
+  ): Promise<T> {
+    const startTime = Date.now();
+    let success = true;
+    let result: T;
+    
+    try {
+      this.debug(`${operation} 시작`);
+      result = await task();
+      this.debug(`${operation} 완료`);
+      return result;
+    } catch (error) {
+      success = false;
+      this.error(`${operation} 실패`, error as Error);
+      throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      this.logPerformance(operation, duration, success);
+    }
+  }
+
+  // === 향상된 유효성 검사 ===
 
   /**
-   * 필수 값 검증
+   * 필수 값을 검증합니다
    * @param value 검증할 값
    * @param fieldName 필드명
+   * @throws ValidationError 값이 없는 경우
    */
   protected validateRequired(value: any, fieldName: string): void {
     if (value === null || value === undefined || value === '') {
-      throw new Error(`${fieldName}은(는) 필수입니다.`);
+      throw createValidationError(
+        fieldName,
+        value,
+        `${fieldName}은(는) 필수입니다.`,
+        { metadata: { service: this.serviceName } }
+      );
     }
   }
 
   /**
-   * 이메일 형식 검증
-   * @param email 이메일 주소
-   */
-  protected validateEmail(email: string): void {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new Error('올바른 이메일 형식이 아닙니다.');
-    }
-  }
-
-  /**
-   * UUID 형식 검증
-   * @param id UUID 문자열
+   * ID 값을 검증합니다
+   * @param id 검증할 ID
    * @param fieldName 필드명
+   * @throws ValidationError ID가 유효하지 않은 경우
    */
   protected validateId(id: string, fieldName: string = 'ID'): void {
     this.validateRequired(id, fieldName);
-    // UUID v4 형식 검증 (선택적)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (id.length < 10) { // Firebase 자동 생성 ID는 보통 20자 이상
-      throw new Error(`${fieldName} 형식이 올바르지 않습니다.`);
+    if (typeof id !== 'string' || id.trim().length === 0) {
+      throw createValidationError(
+        fieldName,
+        id,
+        `${fieldName}는 유효한 문자열이어야 합니다.`,
+        { metadata: { service: this.serviceName } }
+      );
     }
   }
 
   /**
-   * 전화번호 형식 검증 (한국 형식)
-   * @param phoneNumber 전화번호
+   * 이메일 형식을 검증합니다
+   * @param email 검증할 이메일
+   * @param fieldName 필드명
+   * @throws ValidationError 이메일이 유효하지 않은 경우
    */
-  protected validatePhoneNumber(phoneNumber: string): void {
-    const phoneRegex = /^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/;
-    if (!phoneRegex.test(phoneNumber.replace(/[^0-9]/g, ''))) {
-      throw new Error('올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)');
+  protected validateEmail(email: string, fieldName: string = '이메일'): void {
+    this.validateRequired(email, fieldName);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw createValidationError(
+        fieldName,
+        email,
+        '유효한 이메일 주소를 입력해주세요.',
+        { metadata: { service: this.serviceName } }
+      );
+    }
+  }
+
+  /**
+   * 전화번호 형식을 검증합니다
+   * @param phone 검증할 전화번호
+   * @param fieldName 필드명
+   * @throws ValidationError 전화번호가 유효하지 않은 경우
+   */
+  protected validatePhone(phone: string, fieldName: string = '전화번호'): void {
+    this.validateRequired(phone, fieldName);
+    const phoneRegex = /^[0-9-+().\s]+$/;
+    if (!phoneRegex.test(phone) || phone.length < 10) {
+      throw createValidationError(
+        fieldName,
+        phone,
+        '유효한 전화번호를 입력해주세요.',
+        { metadata: { service: this.serviceName } }
+      );
+    }
+  }
+
+  /**
+   * 날짜 형식을 검증합니다
+   * @param date 검증할 날짜
+   * @param fieldName 필드명
+   * @throws ValidationError 날짜가 유효하지 않은 경우
+   */
+  protected validateDate(date: Date | string | number, fieldName: string = '날짜'): Date {
+    this.validateRequired(date, fieldName);
+    
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      throw createValidationError(
+        fieldName,
+        date,
+        '유효한 날짜를 입력해주세요.',
+        { metadata: { service: this.serviceName } }
+      );
+    }
+    
+    return parsedDate;
+  }
+
+  /**
+   * 숫자 범위를 검증합니다
+   * @param value 검증할 값
+   * @param min 최소값
+   * @param max 최대값
+   * @param fieldName 필드명
+   * @throws ValidationError 값이 범위를 벗어난 경우
+   */
+  protected validateRange(
+    value: number, 
+    min: number, 
+    max: number, 
+    fieldName: string = '값'
+  ): void {
+    this.validateRequired(value, fieldName);
+    if (typeof value !== 'number' || value < min || value > max) {
+      throw createValidationError(
+        fieldName,
+        value,
+        `${fieldName}는 ${min}과 ${max} 사이의 값이어야 합니다.`,
+        { metadata: { service: this.serviceName, min, max } }
+      );
     }
   }
 
   // === 공통 데이터 변환 ===
 
   /**
-   * JavaScript Date를 Firestore Timestamp로 변환
-   * @param date JavaScript Date 객체
-   */
-  protected toTimestamp(date: Date): Timestamp {
-    return Timestamp.fromDate(date);
-  }
-
-  /**
-   * Firestore Timestamp를 JavaScript Date로 변환
-   * @param timestamp Firestore Timestamp
+   * 캐싱이 적용된 데이터 변환 메서드
    */
   protected toDate(timestamp: any): Date {
-    if (timestamp && typeof timestamp.toDate === 'function') {
+    if (!timestamp) return new Date();
+    
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    
+    if (timestamp?.toDate && typeof timestamp.toDate === 'function') {
       return timestamp.toDate();
     }
-    return timestamp instanceof Date ? timestamp : new Date(timestamp);
+    
+    return new Date(timestamp);
   }
 
   /**
-   * 현재 시간의 Timestamp 반환
+   * 캐싱이 적용된 Timestamp 변환 메서드
+   */
+  protected toTimestamp(date: Date | string | number): Timestamp {
+    if (date instanceof Date) {
+      return Timestamp.fromDate(date);
+    }
+    
+    if (typeof date === 'string' || typeof date === 'number') {
+      return Timestamp.fromDate(new Date(date));
+    }
+    
+    return Timestamp.now();
+  }
+
+  /**
+   * 현재 시간 Timestamp 반환
    */
   protected now(): Timestamp {
     return Timestamp.now();
@@ -199,69 +568,173 @@ export abstract class BaseService {
     this.debug('관리자 권한 확인', { userId, organizationId });
   }
 
-  // === 공통 캐시 기능 ===
-
-  private static cache = new Map<string, { data: any; expiry: number }>();
+  // === 고급 캐싱 시스템 ===
 
   /**
-   * 데이터를 캐시에 저장
+   * 캐시에서 값 조회
    * @param key 캐시 키
-   * @param data 저장할 데이터
-   * @param ttl TTL (밀리초, 기본 5분)
+   * @returns 캐시된 값 또는 null
    */
-  protected setCache(key: string, data: any, ttl: number = 300000): void {
-    const cacheKey = `${this.serviceName}:${key}`;
-    BaseService.cache.set(cacheKey, {
-      data,
-      expiry: Date.now() + ttl
-    });
-    this.debug(`캐시 저장: ${cacheKey}`);
-  }
-
-  /**
-   * 캐시에서 데이터 조회
-   * @param key 캐시 키
-   */
-  protected getCache<T>(key: string): T | null {
-    const cacheKey = `${this.serviceName}:${key}`;
-    const cached = BaseService.cache.get(cacheKey);
-    
-    if (!cached || Date.now() > cached.expiry) {
-      BaseService.cache.delete(cacheKey);
-      this.debug(`캐시 만료: ${cacheKey}`);
+  protected async getCache<T>(key: string): Promise<T | null> {
+    try {
+      const cacheKey = this.buildCacheKey(key);
+      const result = await this.cache.get(cacheKey);
+      
+      if (result !== null) {
+        this.debug('캐시 히트', { key: cacheKey });
+      } else {
+        this.debug('캐시 미스', { key: cacheKey });
+      }
+      
+      return result as T | null;
+    } catch (error) {
+      this.warn('캐시 조회 실패', { key, error: (error as Error).message });
       return null;
     }
-    
-    this.debug(`캐시 히트: ${cacheKey}`);
-    return cached.data;
   }
 
   /**
-   * 캐시 삭제
+   * 캐시에 값 저장
+   * @param key 캐시 키
+   * @param value 저장할 값
+   * @param ttl TTL (milliseconds, 선택적)
+   * @param tags 태그 (선택적)
+   */
+  protected async setCache<T>(
+    key: string, 
+    value: T, 
+    ttl?: number, 
+    tags?: string[]
+  ): Promise<void> {
+    try {
+      const cacheKey = this.buildCacheKey(key);
+      await this.cache.set(cacheKey, value, ttl, tags);
+      
+      this.debug('캐시 저장 완료', { 
+        key: cacheKey, 
+        ttl, 
+        tags,
+        size: JSON.stringify(value).length 
+      });
+    } catch (error) {
+      this.warn('캐시 저장 실패', { key, error: (error as Error).message });
+    }
+  }
+
+  /**
+   * 캐시에서 키 삭제
    * @param key 캐시 키
    */
-  protected clearCache(key: string): void {
-    const cacheKey = `${this.serviceName}:${key}`;
-    BaseService.cache.delete(cacheKey);
-    this.debug(`캐시 삭제: ${cacheKey}`);
+  protected async clearCache(key: string): Promise<void> {
+    try {
+      const cacheKey = this.buildCacheKey(key);
+      await this.cache.delete(cacheKey);
+      
+      this.debug('캐시 삭제 완료', { key: cacheKey });
+    } catch (error) {
+      this.warn('캐시 삭제 실패', { key, error: (error as Error).message });
+    }
   }
 
   /**
-   * 특정 패턴의 캐시 모두 삭제
-   * @param pattern 패턴 (startsWith)
+   * 패턴으로 캐시 무효화
+   * @param pattern 정규식 패턴
    */
-  protected clearCachePattern(pattern: string): void {
-    const fullPattern = `${this.serviceName}:${pattern}`;
-    const keysToDelete = [];
-    
-    for (const key of BaseService.cache.keys()) {
-      if (key.startsWith(fullPattern)) {
-        keysToDelete.push(key);
-      }
+  protected async clearCachePattern(pattern: string): Promise<void> {
+    try {
+      const regex = new RegExp(`^${this.serviceName}:${pattern}`);
+      const deletedCount = await this.cache.deleteByPattern(regex);
+      
+      this.debug('패턴 기반 캐시 무효화 완료', { 
+        pattern, 
+        deletedCount 
+      });
+    } catch (error) {
+      this.warn('패턴 기반 캐시 무효화 실패', { 
+        pattern, 
+        error: (error as Error).message 
+      });
     }
+  }
+
+  /**
+   * 태그로 캐시 무효화
+   * @param tag 태그
+   */
+  protected async clearCacheByTag(tag: string): Promise<void> {
+    try {
+      const deletedCount = await this.cache.deleteByTag(tag);
+      
+      this.debug('태그 기반 캐시 무효화 완료', { 
+        tag, 
+        deletedCount 
+      });
+    } catch (error) {
+      this.warn('태그 기반 캐시 무효화 실패', { 
+        tag, 
+        error: (error as Error).message 
+      });
+    }
+  }
+
+  /**
+   * 캐시 기능이 포함된 작업 실행
+   * @param key 캐시 키
+   * @param operation 실행할 작업
+   * @param ttl TTL (선택적)
+   * @param tags 태그 (선택적)
+   * @returns 작업 결과 (캐시에서 또는 새로 실행)
+   */
+  protected async withCache<T>(
+    key: string,
+    operation: () => Promise<T>,
+    ttl?: number,
+    tags?: string[]
+  ): Promise<T> {
+    // 캐시에서 먼저 조회
+    const cachedResult = await this.getCache<T>(key);
+    if (cachedResult !== null) {
+      return cachedResult;
+    }
+
+    // 캐시 미스 시 작업 실행
+    const result = await operation();
     
-    keysToDelete.forEach(key => BaseService.cache.delete(key));
-    this.debug(`패턴 캐시 삭제: ${fullPattern} (${keysToDelete.length}개)`);
+    // 결과를 캐시에 저장
+    await this.setCache(key, result, ttl, tags);
+    
+    return result;
+  }
+
+  /**
+   * 서비스별 캐시 키 생성
+   * @param key 원본 키
+   * @returns 서비스 네임스페이스가 포함된 캐시 키
+   */
+  private buildCacheKey(key: string): string {
+    return `${this.serviceName}:${key}`;
+  }
+
+  /**
+   * 캐시 통계 조회
+   * @returns 캐시 통계
+   */
+  protected getCacheStats() {
+    return this.cache.getStats();
+  }
+
+  /**
+   * 캐시 정리 (만료된 항목 제거)
+   */
+  protected async cleanupCache(): Promise<void> {
+    try {
+      const cleanedCount = await this.cache.cleanup();
+      if (cleanedCount > 0) {
+        this.debug('캐시 정리 완료', { cleanedCount });
+      }
+    } catch (error) {
+      this.warn('캐시 정리 실패', { error: (error as Error).message });
+    }
   }
 
   // === 공통 페이지네이션 ===
@@ -285,33 +758,98 @@ export abstract class BaseService {
 
   // === 공통 배치 처리 ===
 
+
+
   /**
-   * 배열을 청크로 나누어 배치 처리
+   * 배치 작업 수행 (캐시 고려)
    * @param items 처리할 아이템 배열
-   * @param processor 각 청크를 처리할 함수
-   * @param chunkSize 청크 크기 (기본 10)
+   * @param batchSize 배치 크기
+   * @param processor 각 배치를 처리할 함수
+   * @returns 모든 결과
    */
   protected async processBatch<T, R>(
     items: T[],
-    processor: (chunk: T[]) => Promise<R[]>,
-    chunkSize: number = 10
+    batchSize: number,
+    processor: (batch: T[]) => Promise<R[]>
   ): Promise<R[]> {
     const results: R[] = [];
     
-    for (let i = 0; i < items.length; i += chunkSize) {
-      const chunk = items.slice(i, i + chunkSize);
-      this.debug(`배치 처리 중: ${i + 1}-${Math.min(i + chunkSize, items.length)}/${items.length}`);
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      this.debug(`배치 처리 중: ${i + 1}-${Math.min(i + batchSize, items.length)}/${items.length}`);
       
       try {
-        const chunkResults = await processor(chunk);
-        results.push(...chunkResults);
+        const batchResults = await processor(batch);
+        results.push(...batchResults);
+        
+        // 배치 처리 간 성능 로깅
+        this.logPerformance(
+          `processBatch_${Math.floor(i / batchSize) + 1}`,
+          Date.now() - Date.now(), // 실제로는 시작 시간을 추적해야 함
+          true,
+          { batchSize: batch.length, totalProcessed: i + batch.length }
+        );
       } catch (error) {
-        this.handleError(error, 'processBatch', { chunkIndex: Math.floor(i / chunkSize), chunkSize: chunk.length });
+        this.handleError(error, 'processBatch', { 
+          chunkIndex: Math.floor(i / batchSize), 
+          chunkSize: batch.length 
+        });
       }
     }
     
     this.log(`배치 처리 완료: ${results.length}개 결과`);
     return results;
+  }
+
+  /**
+   * 페이지네이션 헬퍼 (캐시 지원)
+   * @param collection 컬렉션 이름
+   * @param page 페이지 번호
+   * @param limit 페이지 크기
+   * @param cacheMinutes 캐시 시간 (분)
+   * @returns 페이지네이션 정보
+   */
+  protected buildPaginationInfo(
+    collection: string,
+    page: number = 1,
+    limit: number = 10,
+    cacheMinutes: number = 5
+  ): {
+    offset: number;
+    limit: number;
+    cacheKey: string;
+    cacheTTL: number;
+  } {
+    return {
+      offset: (page - 1) * limit,
+      limit,
+      cacheKey: `${collection}:page:${page}:limit:${limit}`,
+      cacheTTL: cacheMinutes * 60 * 1000
+    };
+  }
+
+  /**
+   * 서비스 종료 시 정리 작업
+   */
+  protected async cleanup(): Promise<void> {
+    try {
+      // 캐시 정리
+      await this.cleanupCache();
+      
+      // 캐시 통계 로깅
+      const stats = this.getCacheStats();
+      this.log('서비스 종료', {
+        serviceName: this.serviceName,
+        cacheStats: {
+          hitRate: `${(stats.hitRate * 100).toFixed(2)}%`,
+          totalEntries: stats.totalEntries,
+          hits: stats.hits,
+          misses: stats.misses
+        }
+      });
+    } catch (error) {
+      this.error('서비스 정리 중 오류 발생', error as Error);
+    }
   }
 }
 
