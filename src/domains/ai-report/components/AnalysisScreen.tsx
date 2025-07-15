@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Progress } from '@ui/progress';
 import { Loader2, Brain, Heart, Activity } from 'lucide-react';
 
+// 크래딧 관련 import 추가
+import creditManagementService from '@domains/organization/services/CreditManagementService';
+import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
+
 import type { PersonalInfo, AggregatedMeasurementData, AIAnalysisResponse } from '../types';
 
 interface AnalysisScreenProps {
@@ -16,18 +20,109 @@ export function AnalysisScreen({ onComplete, onError, personalInfo, measurementD
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('preparing');
   
+  // 개발 모드 체크
+  const isDevelopmentMode = process.env.NODE_ENV === 'development';
+  
   const analysisSteps = [
     { key: 'preparing', label: '데이터 준비 중...', icon: Activity },
+    { key: 'credit_check', label: '크래딧 확인 중...', icon: Brain },
     { key: 'eeg_analysis', label: '뇌파 신호 분석 중...', icon: Brain },
     { key: 'ppg_analysis', label: '심박 신호 분석 중...', icon: Heart },
     { key: 'ai_processing', label: 'AI 모델 분석 중...', icon: Loader2 },
     { key: 'report_generation', label: '리포트 생성 중...', icon: Activity }
   ];
 
+  // 크래딧 체크 함수
+  const checkCredits = useCallback(async (): Promise<boolean> => {
+    // 개발 모드에서는 크래딧 체크 바이패스
+    if (isDevelopmentMode) {
+      console.log('🧪 개발 모드: 크래딧 체크 바이패스');
+      return true;
+    }
+
+    try {
+      const currentContext = enterpriseAuthService.getCurrentContext();
+      
+      // 개인 사용자인 경우 개인 크래딧 체크
+      if (!currentContext.organization?.id) {
+        const personalCreditBalance = await creditManagementService.getCreditBalance(undefined, currentContext.user?.id);
+        if (personalCreditBalance < 10) {
+          throw new Error('개인 크래딧이 부족합니다. 크래딧을 충전해주세요.');
+        }
+        return true;
+      }
+      
+      // 조직 사용자인 경우 조직 크래딧 체크
+      const organizationCreditBalance = await creditManagementService.getCreditBalance(currentContext.organization.id);
+      if (organizationCreditBalance < 10) {
+        throw new Error('조직 크래딧이 부족합니다. 관리자에게 문의해주세요.');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('크래딧 체크 실패:', error);
+      throw error;
+    }
+  }, [isDevelopmentMode]);
+
+  // 실제 크래딧 차감 함수
+  const deductCredits = useCallback(async (reportId: string): Promise<void> => {
+    // 개발 모드에서는 크래딧 차감 스킵
+    if (isDevelopmentMode) {
+      console.log('🧪 개발 모드: 크래딧 차감 스킵');
+      return;
+    }
+
+    try {
+      const currentContext = enterpriseAuthService.getCurrentContext();
+      
+      if (!currentContext.organization?.id) {
+        // 개인 사용자 크래딧 차감
+        await creditManagementService.useCredits({
+          userId: currentContext.user!.id,
+          amount: 10,
+          type: 'REPORT_USAGE',
+          description: 'AI Health Report 생성',
+          metadata: {
+            reportId,
+            reportType: 'BASIC'
+          }
+        });
+      } else {
+        // 조직 크래딧 차감
+        await creditManagementService.useCredits({
+          userId: currentContext.user!.id,
+          organizationId: currentContext.organization.id,
+          amount: 10,
+          type: 'REPORT_USAGE',
+          description: 'AI Health Report 생성',
+          metadata: {
+            reportId,
+            reportType: 'BASIC'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('크래딧 차감 실패:', error);
+      // 크래딧 차감 실패해도 리포트는 이미 생성되었으므로 로그만 남김
+    }
+  }, [isDevelopmentMode]);
+
   const performAnalysis = useCallback(async () => {
     try {
       for (let i = 0; i < analysisSteps.length; i++) {
         setCurrentStep(analysisSteps[i].key);
+        
+        // 크래딧 체크 단계
+        if (analysisSteps[i].key === 'credit_check') {
+          try {
+            await checkCredits();
+            console.log('✅ 크래딧 체크 통과');
+          } catch (error) {
+            onError(error instanceof Error ? error.message : '크래딧 체크 실패');
+            return;
+          }
+        }
         
         // 각 단계별 시뮬레이션
         for (let progress = 0; progress <= 100; progress += 10) {
@@ -36,9 +131,12 @@ export function AnalysisScreen({ onComplete, onError, personalInfo, measurementD
         }
       }
 
+      // 리포트 ID 생성
+      const reportId = `report_${Date.now()}`;
+
       // 분석 완료 - 실제로는 AI 서비스 호출
       const mockResult: AIAnalysisResponse = {
-        reportId: `report_${Date.now()}`,
+        reportId,
         personalInfo,
         analysisResults: {
           mentalHealthScore: Math.round(Math.random() * 40 + 60), // 60-100
@@ -56,11 +154,14 @@ export function AnalysisScreen({ onComplete, onError, personalInfo, measurementD
         reliability: measurementData.qualitySummary.qualityPercentage >= 80 ? 'high' : 'medium'
       };
 
+      // 리포트 생성 완료 후 크래딧 차감
+      await deductCredits(reportId);
+
       onComplete(mockResult);
     } catch (error) {
       onError(`분석 중 오류가 발생했습니다: ${error}`);
     }
-  }, [analysisSteps, personalInfo, measurementData, onComplete, onError]);
+  }, [analysisSteps, personalInfo, measurementData, onComplete, onError, checkCredits, deductCredits]);
 
   useEffect(() => {
     performAnalysis();

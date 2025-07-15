@@ -230,6 +230,10 @@ export function HomePage() {
               <FileText className="w-4 h-4 mr-2" />
               View Documentation
             </Button>
+            <Button variant="outline" onClick={() => navigate('/ai-report')}>
+              <Brain className="w-4 h-4 mr-2" />
+              AI Health Report 생성
+            </Button>
             {isAdmin && (
               <Button variant="outline" onClick={() => navigate('/admin')}>
                 <Settings className="w-4 h-4 mr-2" />

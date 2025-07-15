@@ -22,6 +22,8 @@ import MeasurementSubjectAccess from './MeasurementSubjectAccess';
 import OrganizationAdminApp from '@domains/organization/components/OrganizationAdmin/OrganizationAdminApp';
 // Enterprise Auth Service import 추가
 import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
+// AI Report App import 추가
+import { AIHealthReportApp } from '@domains/ai-report/components/AIHealthReportApp';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
@@ -202,6 +204,13 @@ const AppRouter = () => {
       <Route path="/settings" element={
         <ProtectedRoute>
           <SettingsPage />
+        </ProtectedRoute>
+      } />
+      
+      {/* AI Report 테스트 라우트 */}
+      <Route path="/ai-report" element={
+        <ProtectedRoute>
+          <AIHealthReportApp onClose={() => window.history.back()} />
         </ProtectedRoute>
       } />
       

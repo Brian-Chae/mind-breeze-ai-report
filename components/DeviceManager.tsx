@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   BarChart3, 
   Building2, 
@@ -31,11 +32,11 @@ import {
   Filter,
   RefreshCw
 } from 'lucide-react'
-import { Card } from '../src/components/ui/card'
-import { Button } from '../src/components/ui/button'
-import { Badge } from '../src/components/ui/badge'
-import { Input } from '../src/components/ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../src/components/ui/dropdown-menu'
+import { Card } from '../src/shared/components/ui/card'
+import { Button } from '../src/shared/components/ui/button'
+import { Badge } from '../src/shared/components/ui/badge'
+import { Input } from '../src/shared/components/ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../src/shared/components/ui/dropdown-menu'
 
 interface SidebarMenuItem {
   id: string;
@@ -64,6 +65,7 @@ interface RecentActivity {
 }
 
 export function DeviceManager() {
+  const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -430,7 +432,11 @@ export function DeviceManager() {
                     <UserPlus className="w-4 h-4 mr-2" />
                     운영자 초대
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={() => navigate('/ai-report')}
+                  >
                     <Brain className="w-4 h-4 mr-2" />
                     AI 리포트 생성
                   </Button>
