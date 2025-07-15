@@ -20,6 +20,8 @@ import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
 import OrganizationAdminApp from '@domains/organization/components/OrganizationAdmin/OrganizationAdminApp';
+// Enterprise Auth Service import 추가
+import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
@@ -98,24 +100,32 @@ const AppRouter = () => {
     }
   };
 
-  // 임시로 이메일 패턴으로 사용자 타입 확인
+  // Firestore에서 실제 사용자 타입 확인
   const getUserType = (user: any) => {
-    if (!user || !user.email) return 'INDIVIDUAL_USER';
+    if (!user) return 'INDIVIDUAL_USER';
     
-    const email = user.email.toLowerCase();
+    // EnterpriseAuthService에서 실제 사용자 정보 가져오기
+    const enterpriseContext = enterpriseAuthService.getCurrentContext();
     
-    // 특정 이메일을 ORGANIZATION_ADMIN으로 지정
+    // 실제 사용자 타입이 있으면 사용, 없으면 기본값
+    if (enterpriseContext.user?.userType) {
+      console.log('✅ Firestore에서 사용자 타입 확인:', enterpriseContext.user.userType);
+      return enterpriseContext.user.userType;
+    }
+    
+    // Firestore 데이터가 아직 로드되지 않은 경우 임시로 이메일 패턴 사용
+    console.log('⚠️ Firestore 데이터 로드 중... 임시로 이메일 패턴 사용');
+    const email = user.email?.toLowerCase();
+    
     if (email === 'brian.chae@looxidlabs.com') {
       return 'ORGANIZATION_ADMIN';
     }
     
-    // 임시로 admin 키워드가 포함된 이메일을 기업 관리자로 간주
-    if (email.includes('admin') || email.includes('manager') || email.includes('org')) {
+    if (email?.includes('admin') || email?.includes('manager') || email?.includes('org')) {
       return 'ORGANIZATION_ADMIN';
     }
     
-    // 기업 도메인 체크 (예: @company.com)
-    if (email.includes('@company.com') || email.includes('@organization.com')) {
+    if (email?.includes('@company.com') || email?.includes('@organization.com')) {
       return 'ORGANIZATION_MEMBER';
     }
     
