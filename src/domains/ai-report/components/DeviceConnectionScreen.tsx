@@ -32,51 +32,57 @@ export function DeviceConnectionScreen({ onConnected, onError, deviceStatus }: D
     <div className="space-y-6">
       <div className="text-center">
         <Bluetooth className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
           LINK BAND 연결
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-700">
           디바이스를 착용하고 연결 버튼을 눌러주세요.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>디바이스 상태</CardTitle>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-semibold text-gray-900">디바이스 상태</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span>연결 상태</span>
-              <Badge variant={deviceStatus.isConnected ? "default" : "secondary"}>
+              <span className="text-gray-700 font-medium">연결 상태</span>
+              <Badge 
+                variant={deviceStatus.isConnected ? "default" : "secondary"}
+                className={deviceStatus.isConnected 
+                  ? "bg-green-100 text-green-800 border-green-200" 
+                  : "bg-gray-100 text-gray-800 border-gray-200"
+                }
+              >
                 {deviceStatus.isConnected ? "연결됨" : "연결 안됨"}
               </Badge>
             </div>
             
             {deviceStatus.deviceName && (
               <div className="flex items-center justify-between">
-                <span>디바이스 이름</span>
-                <span className="text-sm text-gray-600">{deviceStatus.deviceName}</span>
+                <span className="text-gray-700 font-medium">디바이스 이름</span>
+                <span className="text-gray-900 font-medium">{deviceStatus.deviceName}</span>
               </div>
             )}
             
             {deviceStatus.batteryLevel && (
               <div className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <Battery className="w-4 h-4 mr-2" />
+                <span className="flex items-center text-gray-700 font-medium">
+                  <Battery className="w-4 h-4 mr-2 text-gray-600" />
                   배터리
                 </span>
-                <span className="text-sm text-gray-600">{deviceStatus.batteryLevel}%</span>
+                <span className="text-gray-900 font-medium">{deviceStatus.batteryLevel}%</span>
               </div>
             )}
             
             {deviceStatus.signalStrength && (
               <div className="flex items-center justify-between">
-                <span className="flex items-center">
-                  <Signal className="w-4 h-4 mr-2" />
+                <span className="flex items-center text-gray-700 font-medium">
+                  <Signal className="w-4 h-4 mr-2 text-gray-600" />
                   신호 강도
                 </span>
-                <span className="text-sm text-gray-600">{deviceStatus.signalStrength}%</span>
+                <span className="text-gray-900 font-medium">{deviceStatus.signalStrength}%</span>
               </div>
             )}
           </div>
@@ -87,7 +93,7 @@ export function DeviceConnectionScreen({ onConnected, onError, deviceStatus }: D
         <Button 
           onClick={handleConnect}
           disabled={isConnecting || deviceStatus.isConnected}
-          className="px-8"
+          className="px-8 py-3 text-white font-semibold bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isConnecting ? '연결 중...' : deviceStatus.isConnected ? '연결됨' : '디바이스 연결'}
         </Button>
