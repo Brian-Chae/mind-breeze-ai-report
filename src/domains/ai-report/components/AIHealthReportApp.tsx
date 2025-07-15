@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Button } from '@ui/button';
 import { Progress } from '@ui/progress';
@@ -63,16 +64,26 @@ interface AIHealthReportAppProps {
 }
 
 export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
+  const navigate = useNavigate();
+  const params = useParams<{ step?: string }>();
+  
+  // URL parameter에서 현재 단계 결정
+  const getCurrentStepFromUrl = (): AIReportStep => {
+    const urlStep = params.step as AIReportStep;
+    const validSteps = STEPS.map(s => s.key);
+    return validSteps.includes(urlStep) ? urlStep : 'personal-info';
+  };
+
   const [state, setState] = useState<AIReportState>({
-    currentStep: 'personal-info',
+    currentStep: getCurrentStepFromUrl(),
     deviceStatus: {
       isConnected: false
     },
     dataQuality: {
-      eegQuality: 0,
-      ppgQuality: 0,
-      accQuality: 0,
-      overallQuality: 0
+      eegQuality: 85,
+      ppgQuality: 92,
+      accQuality: 88,
+      overallQuality: 88
     },
     measurementProgress: {
       isActive: false,
@@ -81,6 +92,17 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       progress: 0
     }
   });
+
+  // URL 변경 시 currentStep 동기화
+  useEffect(() => {
+    const currentStepFromUrl = getCurrentStepFromUrl();
+    if (state.currentStep !== currentStepFromUrl) {
+      setState(prev => ({
+        ...prev,
+        currentStep: currentStepFromUrl
+      }));
+    }
+  }, [params.step]);
 
   // 초기 상태
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
@@ -97,55 +119,58 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
   const currentStepIndex = STEPS.findIndex(step => step.key === state.currentStep);
   const progressPercentage = ((currentStepIndex + 1) / STEPS.length) * 100;
 
+  // 단계 이동 함수 (URL 업데이트)
+  const navigateToStep = useCallback((step: AIReportStep) => {
+    setState(prev => ({
+      ...prev,
+      currentStep: step,
+      error: undefined
+    }));
+    navigate(`/ai-report/${step}`);
+  }, [navigate]);
+
   // 단계 이동 핸들러들
   const handlePersonalInfoComplete = useCallback((personalInfo: PersonalInfo) => {
     setState(prev => ({
       ...prev,
       personalInfo,
-      currentStep: 'device-connection'
     }));
-  }, []);
+    navigateToStep('device-connection');
+  }, [navigateToStep]);
 
   const handleDeviceConnected = useCallback(() => {
     setState(prev => ({
       ...prev,
       deviceStatus: { ...prev.deviceStatus, isConnected: true },
-      currentStep: 'data-quality'
     }));
-  }, []);
+    navigateToStep('data-quality');
+  }, [navigateToStep]);
 
   const handleDataQualityConfirmed = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      currentStep: 'measurement'
-    }));
-  }, []);
+    navigateToStep('measurement');
+  }, [navigateToStep]);
 
   const handleMeasurementComplete = useCallback((measurementData: AggregatedMeasurementData) => {
     setState(prev => ({
       ...prev,
       measurementData,
-      currentStep: 'analysis'
     }));
-  }, []);
+    navigateToStep('analysis');
+  }, [navigateToStep]);
 
   const handleAnalysisComplete = useCallback((analysisResult: AIAnalysisResponse) => {
     setState(prev => ({
       ...prev,
       analysisResult,
-      currentStep: 'report'
     }));
-  }, []);
+    navigateToStep('report');
+  }, [navigateToStep]);
 
   const handleBack = useCallback(() => {
     const prevStepIndex = Math.max(0, currentStepIndex - 1);
     const prevStep = STEPS[prevStepIndex];
-    setState(prev => ({
-      ...prev,
-      currentStep: prevStep.key,
-      error: undefined
-    }));
-  }, [currentStepIndex]);
+    navigateToStep(prevStep.key);
+  }, [currentStepIndex, navigateToStep]);
 
   const handleError = useCallback((error: string) => {
     setState(prev => ({
@@ -153,6 +178,18 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       error
     }));
   }, []);
+
+  const handleRestart = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      currentStep: 'personal-info',
+      personalInfo: undefined,
+      measurementData: undefined,
+      analysisResult: undefined,
+      error: undefined
+    }));
+    navigateToStep('personal-info');
+  }, [navigateToStep]);
 
   // 현재 단계에 따른 컴포넌트 렌더링
   const renderCurrentStep = () => {
@@ -207,13 +244,13 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         return (
           <ReportScreen
             analysisResult={state.analysisResult!}
-            onRestart={() => setState(prev => ({ ...prev, currentStep: 'personal-info' }))}
+            onRestart={handleRestart}
             onClose={onClose}
           />
         );
       
       default:
-        return <div>알 수 없는 단계입니다.</div>;
+        return <div className="text-gray-900">알 수 없는 단계입니다.</div>;
     }
   };
 

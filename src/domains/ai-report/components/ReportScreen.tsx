@@ -1,12 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { Button } from '@ui/button';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
-import { Badge } from '@ui/badge';
-import { Progress } from '@ui/progress';
-import { 
-  FileText, Download, Share2, RotateCcw, CheckCircle2, 
-  AlertTriangle, Brain, Heart, TrendingUp, Star 
-} from 'lucide-react';
+import { Button } from '@ui/button';
+import { FileText, RotateCcw, Download, X } from 'lucide-react';
 
 import type { AIAnalysisResponse } from '../types';
 
@@ -17,295 +12,142 @@ interface ReportScreenProps {
 }
 
 export function ReportScreen({ analysisResult, onRestart, onClose }: ReportScreenProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'detailed' | 'recommendations'>('overview');
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+  const handleDownload = () => {
+    // 임시 다운로드 기능
+    console.log('리포트 다운로드 기능 구현 예정');
   };
-
-  const getScoreBadgeVariant = (score: number): "default" | "secondary" | "destructive" | "outline" => {
-    if (score >= 80) return 'default';
-    if (score >= 60) return 'secondary';
-    return 'destructive';
-  };
-
-  const getReliabilityColor = (reliability: string) => {
-    switch (reliability) {
-      case 'high': return 'text-green-600';
-      case 'medium': return 'text-yellow-600';
-      default: return 'text-red-600';
-    }
-  };
-
-  const handleDownload = useCallback(() => {
-    // TODO: PDF 다운로드 기능 구현
-    console.log('Downloading report...', analysisResult.reportId);
-  }, [analysisResult.reportId]);
-
-  const handleShare = useCallback(() => {
-    // TODO: 공유 기능 구현
-    console.log('Sharing report...', analysisResult.reportId);
-  }, [analysisResult.reportId]);
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-          AI Health Report 완성!
+        <FileText className="w-12 h-12 text-green-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+          AI Health Report 완성
         </h2>
-        <p className="text-gray-600">
-          {analysisResult.personalInfo.name}님의 건강 상태 분석이 완료되었습니다.
+        <p className="text-gray-700">
+          개인 맞춤형 건강 리포트가 생성되었습니다.
         </p>
       </div>
 
-      {/* 탭 네비게이션 */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex space-x-4 border-b">
-            {[
-              { key: 'overview', label: '요약', icon: TrendingUp },
-              { key: 'detailed', label: '상세 분석', icon: Brain },
-              { key: 'recommendations', label: '권장사항', icon: Star }
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
-                className={`
-                  flex items-center space-x-2 pb-2 px-4 border-b-2 transition-colors
-                  ${activeTab === tab.key 
-                    ? 'border-blue-500 text-blue-600' 
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }
-                `}
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
+      {/* 전체 점수 */}
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">종합 건강 점수</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {analysisResult.analysisResults.mentalHealthScore}
+              </div>
+              <div className="text-sm text-gray-600">정신 건강</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {analysisResult.analysisResults.physicalHealthScore}
+              </div>
+              <div className="text-sm text-gray-600">신체 건강</div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 요약 탭 */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* 전체 점수 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                건강 점수 요약
-                <Badge variant={analysisResult.reliability === 'high' ? 'default' : 'secondary'}>
-                  {analysisResult.reliability === 'high' ? '높은 신뢰도' : '보통 신뢰도'}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 정신 건강 점수 */}
-                <div className="text-center">
-                  <div className="relative inline-flex items-center justify-center w-24 h-24 mb-4">
-                    <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        className="text-gray-200"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={`${2 * Math.PI * 40}`}
-                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - analysisResult.analysisResults.mentalHealthScore / 100)}`}
-                        className="text-blue-500 transition-all duration-300"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-2xl font-bold ${getScoreColor(analysisResult.analysisResults.mentalHealthScore)}`}>
-                        {analysisResult.analysisResults.mentalHealthScore}
-                      </span>
-                      <span className="text-xs text-gray-500">점</span>
-                    </div>
-                  </div>
-                  <h3 className="font-semibold text-gray-800">정신 건강</h3>
-                  <p className="text-sm text-gray-600">뇌파 기반 분석</p>
-                </div>
+      {/* 스트레스 레벨 */}
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">스트레스 수준</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-700">현재 스트레스 레벨</span>
+            <span className={`text-xl font-bold ${
+              analysisResult.analysisResults.stressLevel <= 30 ? 'text-green-600' :
+              analysisResult.analysisResults.stressLevel <= 60 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {analysisResult.analysisResults.stressLevel}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div 
+              className={`h-3 rounded-full ${
+                analysisResult.analysisResults.stressLevel <= 30 ? 'bg-green-500' :
+                analysisResult.analysisResults.stressLevel <= 60 ? 'bg-yellow-500' : 'bg-red-500'
+              }`}
+              style={{ width: `${analysisResult.analysisResults.stressLevel}%` }}
+            ></div>
+          </div>
+        </CardContent>
+      </Card>
 
-                {/* 신체 건강 점수 */}
-                <div className="text-center">
-                  <div className="relative inline-flex items-center justify-center w-24 h-24 mb-4">
-                    <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        className="text-gray-200"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={`${2 * Math.PI * 40}`}
-                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - analysisResult.analysisResults.physicalHealthScore / 100)}`}
-                        className="text-green-500 transition-all duration-300"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-2xl font-bold ${getScoreColor(analysisResult.analysisResults.physicalHealthScore)}`}>
-                        {analysisResult.analysisResults.physicalHealthScore}
-                      </span>
-                      <span className="text-xs text-gray-500">점</span>
-                    </div>
-                  </div>
-                  <h3 className="font-semibold text-gray-800">신체 건강</h3>
-                  <p className="text-sm text-gray-600">심박 기반 분석</p>
-                </div>
+      {/* 상세 분석 */}
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">상세 분석</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-700 leading-relaxed">
+            {analysisResult.analysisResults.detailedAnalysis}
+          </p>
+        </CardContent>
+      </Card>
 
-                {/* 스트레스 레벨 */}
-                <div className="text-center">
-                  <div className="relative inline-flex items-center justify-center w-24 h-24 mb-4">
-                    <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        className="text-gray-200"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={`${2 * Math.PI * 40}`}
-                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - analysisResult.analysisResults.stressLevel / 100)}`}
-                        className="text-red-500 transition-all duration-300"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-2xl font-bold ${getScoreColor(100 - analysisResult.analysisResults.stressLevel)}`}>
-                        {analysisResult.analysisResults.stressLevel}
-                      </span>
-                      <span className="text-xs text-gray-500">%</span>
-                    </div>
-                  </div>
-                  <h3 className="font-semibold text-gray-800">스트레스</h3>
-                  <p className="text-sm text-gray-600">복합 지표 분석</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* 권장사항 */}
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">개인 맞춤 권장사항</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-3">
+            {analysisResult.analysisResults.recommendations.map((recommendation, index) => (
+              <li key={index} className="flex items-start">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                <span className="text-gray-700">{recommendation}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
-          {/* 리포트 정보 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>리포트 정보</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">리포트 ID:</span>
-                  <span className="ml-2 font-mono">{analysisResult.reportId}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">생성 일시:</span>
-                  <span className="ml-2">{analysisResult.generatedAt.toLocaleString('ko-KR')}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">분석 대상:</span>
-                  <span className="ml-2">{analysisResult.personalInfo.name}님</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">신뢰도:</span>
-                  <span className={`ml-2 font-medium ${getReliabilityColor(analysisResult.reliability)}`}>
-                    {analysisResult.reliability === 'high' ? '높음' : '보통'}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* 리포트 정보 */}
+      <Card className="border border-gray-200 shadow-sm bg-gray-50">
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>리포트 ID: {analysisResult.reportId}</span>
+            <span>생성일: {analysisResult.generatedAt.toLocaleDateString()}</span>
+          </div>
+          <div className="mt-2 text-sm text-gray-600">
+            <span>데이터 신뢰도: {analysisResult.reliability === 'high' ? '높음' : '보통'}</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* 상세 분석 탭 */}
-      {activeTab === 'detailed' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Brain className="w-5 h-5 mr-2" />
-              상세 분석 결과
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {analysisResult.analysisResults.detailedAnalysis}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 권장사항 탭 */}
-      {activeTab === 'recommendations' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Star className="w-5 h-5 mr-2" />
-              AI 권장사항
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {analysisResult.analysisResults.recommendations.map((recommendation, index) => (
-                <div key={index} className="flex items-start space-x-3 p-4 border border-blue-200 rounded-lg bg-blue-50">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    {index + 1}
-                  </div>
-                  <p className="text-blue-800 text-sm">{recommendation}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 액션 버튼들 */}
-      <div className="flex flex-wrap justify-center gap-4">
-        <Button onClick={handleDownload} variant="outline">
+      {/* 액션 버튼 */}
+      <div className="flex flex-wrap gap-4 justify-center">
+        <Button
+          onClick={handleDownload}
+          className="px-6 py-3 text-white bg-blue-500 hover:bg-blue-600"
+        >
           <Download className="w-4 h-4 mr-2" />
           PDF 다운로드
         </Button>
-        <Button onClick={handleShare} variant="outline">
-          <Share2 className="w-4 h-4 mr-2" />
-          공유하기
-        </Button>
-        <Button onClick={onRestart} variant="outline">
+        
+        <Button
+          onClick={onRestart}
+          variant="outline"
+          className="px-6 py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
           <RotateCcw className="w-4 h-4 mr-2" />
-          새로 측정
+          새 측정 시작
         </Button>
+        
         {onClose && (
-          <Button onClick={onClose}>
-            완료
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="px-6 py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <X className="w-4 h-4 mr-2" />
+            닫기
           </Button>
         )}
       </div>

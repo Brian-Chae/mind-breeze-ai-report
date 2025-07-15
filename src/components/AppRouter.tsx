@@ -207,8 +207,13 @@ const AppRouter = () => {
         </ProtectedRoute>
       } />
       
-      {/* AI Report 테스트 라우트 */}
+      {/* AI Report 라우트 - 단계별 네비게이션 지원 */}
       <Route path="/ai-report" element={
+        <ProtectedRoute>
+          <AIHealthReportApp onClose={() => window.history.back()} />
+        </ProtectedRoute>
+      } />
+      <Route path="/ai-report/:step" element={
         <ProtectedRoute>
           <AIHealthReportApp onClose={() => window.history.back()} />
         </ProtectedRoute>
