@@ -2,9 +2,9 @@
 export { UserStoreService } from './UserStoreService';
 export { OrganizationStoreService } from './OrganizationStoreService';
 
-// Service 인스턴스들 - Singleton 패턴으로 사용
-export const userStoreService = UserStoreService.getInstance();
-export const organizationStoreService = OrganizationStoreService.getInstance();
+// Service 인스턴스들 - Singleton 패턴으로 사용 (임시 주석 처리)
+// export const userStoreService = UserStoreService.getInstance();
+// export const organizationStoreService = OrganizationStoreService.getInstance();
 
 /**
  * Phase 3: Service Layer 리팩토링 완료

@@ -63,8 +63,8 @@ export class OrganizationService extends BaseService {
       
       // 캐시 확인
       const cached = this.getCache<Organization>(`org:${organizationId}`);
-      if (cached) {
-        return cached;
+      if (cached !== null) {
+        return cached as Organization;
       }
 
       const docRef = doc(this.db, this.ORGANIZATIONS_COLLECTION, organizationId);

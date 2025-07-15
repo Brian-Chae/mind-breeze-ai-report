@@ -6,7 +6,7 @@ import {
 } from '../core/types/unified';
 import { useUserStore, UserPermissions } from '../stores/userStore';
 import { useOrganizationStore } from '../stores/organizationStore';
-import { EnterpriseAuthService } from '../domains/organization/services/EnterpriseAuthService';
+import enterpriseAuthService from '../domains/organization/services/EnterpriseAuthService';
 
 /**
  * UserStoreService - User Store와 Firebase 서비스 간의 브릿지
@@ -14,10 +14,10 @@ import { EnterpriseAuthService } from '../domains/organization/services/Enterpri
  */
 export class UserStoreService {
   private static instance: UserStoreService;
-  private authService: EnterpriseAuthService;
+  private authService: typeof enterpriseAuthService;
 
   private constructor() {
-    this.authService = new EnterpriseAuthService();
+    this.authService = enterpriseAuthService;
   }
 
   public static getInstance(): UserStoreService {
