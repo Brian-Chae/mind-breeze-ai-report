@@ -84,10 +84,6 @@ const AppRouter = () => {
   }, [user, loading, navigate, location]);
 
   const getRedirectPath = (userType: string) => {
-    // 임시로 모든 사용자를 /admin/dashboard로 리디렉션
-    return '/admin/dashboard';
-    
-    /* 원래 로직 - 나중에 복원
     switch (userType) {
       case 'SYSTEM_ADMIN':
         return '/admin/dashboard';
@@ -100,7 +96,6 @@ const AppRouter = () => {
       default:
         return '/';
     }
-    */
   };
 
   // 임시로 이메일 패턴으로 사용자 타입 확인
