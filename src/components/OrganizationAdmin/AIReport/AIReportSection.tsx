@@ -592,21 +592,39 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   // 탭 렌더링
   const renderTabs = () => (
-    <div className="flex space-x-1 mb-8">
-      {tabs.map((tab) => (
+    <div className="bg-white shadow-sm border-b border-gray-200 -mx-6 -mt-6 mb-6">
+      <div className="flex space-x-8">
         <button
-          key={tab.id}
-          onClick={() => onNavigate('ai-report', tab.id)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            subSection === tab.id
-              ? 'bg-purple-50 text-purple-700 border border-purple-200'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          onClick={() => onNavigate('ai-report', 'report-generation')}
+          className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm ${
+            subSection === 'report-generation' || (!subSection)
+              ? 'border-purple-500 text-purple-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           }`}
         >
-          <tab.icon className="w-4 h-4" />
-          {tab.label}
+          리포트 생성
         </button>
-      ))}
+        <button
+          onClick={() => onNavigate('ai-report', 'report-list')}
+          className={`py-4 px-1 border-b-2 font-medium text-sm ${
+            subSection === 'report-list'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          리포트 목록
+        </button>
+        <button
+          onClick={() => onNavigate('ai-report', 'report-quality')}
+          className={`py-4 px-1 border-b-2 font-medium text-sm ${
+            subSection === 'report-quality'
+              ? 'border-green-500 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          품질 관리
+        </button>
+      </div>
     </div>
   )
 
