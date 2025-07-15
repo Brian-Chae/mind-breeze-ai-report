@@ -218,13 +218,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">AI 리포트 생성</h2>
-        <Button 
-          onClick={() => handleGenerateReport('default', '스트레스 분석')}
-          className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          새 리포트 생성
-        </Button>
+                  <Button 
+            onClick={() => handleGenerateReport('default', '스트레스 분석')}
+            className="bg-gray-600 text-white hover:bg-gray-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            새 리포트 생성
+          </Button>
       </div>
 
       {error && (
@@ -246,17 +246,17 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="p-6 bg-gradient-to-br from-white to-purple-50 hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500">
+        <Card className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl">
-              <Brain className="w-5 h-5 text-purple-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-xl">
+              <Brain className="w-5 h-5 text-gray-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">리포트 생성 설정</h3>
           </div>
           <div className="space-y-6">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">리포트 유형</label>
-              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                 <option>스트레스 분석</option>
                 <option>집중력 분석</option>
                 <option>웰니스 종합</option>
@@ -265,7 +265,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">대상 사용자</label>
-              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
                 <option value="">사용자 선택</option>
                 {measurementUsers.map(user => (
                   <option key={user.id} value={user.id}>{user.displayName}</option>
@@ -275,12 +275,12 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">분석 기간</label>
               <div className="grid grid-cols-2 gap-3">
-                <Input type="date" className="focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
-                <Input type="date" className="focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                <Input type="date" className="focus:ring-2 focus:ring-gray-500 focus:border-transparent" />
+                <Input type="date" className="focus:ring-2 focus:ring-gray-500 focus:border-transparent" />
               </div>
             </div>
             <Button 
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-12"
+              className="w-full bg-gray-600 text-white hover:bg-gray-700 h-12"
               disabled={loading}
             >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
@@ -289,38 +289,38 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-white to-blue-50 hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500">
+        <Card className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-gray-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">생성 현황</h3>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                 <span className="text-sm text-gray-600">진행 중인 작업</span>
               </div>
-              <Badge className="bg-yellow-100 text-yellow-600">
+              <Badge className="bg-gray-100 text-gray-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reportStats.pendingReports}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                 <span className="text-sm text-gray-600">완료된 작업</span>
               </div>
-              <Badge className="bg-green-100 text-green-600">
+              <Badge className="bg-gray-100 text-gray-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reportStats.completedReports}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                 <span className="text-sm text-gray-600">실패한 작업</span>
               </div>
-              <Badge className="bg-red-100 text-red-600">
+              <Badge className="bg-gray-100 text-gray-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reportStats.failedReports}
               </Badge>
             </div>
@@ -345,7 +345,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           </Button>
           <Button 
             onClick={() => handleGenerateReport('default', '스트레스 분석')}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+            className="bg-gray-600 text-white hover:bg-gray-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             새 리포트
@@ -396,7 +396,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                   </p>
                   <Button 
                     onClick={() => handleGenerateReport('default', '스트레스 분석')}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                    className="bg-gray-600 text-white hover:bg-gray-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     첫 리포트 생성하기
@@ -407,11 +407,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           ) : (
             <div className="grid grid-cols-1 gap-6">
               {filteredReports.map((report) => (
-                <Card key={report.id} className="p-6 bg-gradient-to-r from-white to-purple-50 hover:shadow-lg transition-all duration-300 border-l-4 border-purple-500">
+                <Card key={report.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl">
-                        <FileText className="w-6 h-6 text-purple-600" />
+                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                        <FileText className="w-6 h-6 text-gray-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
@@ -432,7 +432,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                       <Badge variant="outline">품질: {report.quality}%</Badge>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="hover:bg-purple-50">
+                          <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -487,17 +487,17 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="p-6 bg-gradient-to-br from-white to-green-50 hover:shadow-lg transition-all duration-300 border-l-4 border-green-500">
+        <Card className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-green-100 to-blue-100 rounded-xl">
-              <BarChart3 className="w-5 h-5 text-green-600" />
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-xl">
+              <BarChart3 className="w-5 h-5 text-gray-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">품질 지표</h3>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <span className="text-sm text-gray-600">평균 품질 점수</span>
-              <span className="text-sm font-semibold text-green-600">
+              <span className="text-sm font-semibold text-gray-600">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${reportStats.averageQuality.toFixed(1)}%`}
               </span>
             </div>

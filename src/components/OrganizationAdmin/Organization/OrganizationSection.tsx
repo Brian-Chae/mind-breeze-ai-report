@@ -275,7 +275,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="p-6">
+          <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -345,7 +345,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">연락처 정보</h3>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -415,7 +415,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
           </Card>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">기업 설명</h3>
           <div className="space-y-4">
             <div>
@@ -484,7 +484,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
         </div>
 
         {showNewDepartmentForm && (
-          <Card className="p-6">
+          <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">새 조직 추가</h3>
             <div className="space-y-4">
               <div>
@@ -508,11 +508,11 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {departments.map((dept) => (
-            <Card key={dept.id} className="p-6">
+            <Card key={dept.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-xl">
-                    <Building2 className="w-5 h-5 text-blue-600" />
+                  <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-xl">
+                    <Building2 className="w-5 h-5 text-gray-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{dept.name}</h3>
@@ -570,15 +570,15 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
     
     const renderOrgNode = (node: OrganizationNode, level: number = 0) => {
       const colors = {
-        company: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 text-blue-700',
-        department: 'bg-gradient-to-br from-green-50 to-green-100 border-green-200 text-green-700',
-        team: 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 text-purple-700'
+        company: 'bg-white border-gray-200 text-gray-700',
+        department: 'bg-white border-gray-200 text-gray-700',
+        team: 'bg-white border-gray-200 text-gray-700'
       }
 
       const iconColors = {
-        company: 'bg-blue-500 text-white',
-        department: 'bg-green-500 text-white',
-        team: 'bg-purple-500 text-white'
+        company: 'bg-gray-600 text-white',
+        department: 'bg-gray-600 text-white',
+        team: 'bg-gray-600 text-white'
       }
 
       return (
@@ -618,11 +618,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
                 {/* 타입 배지 */}
                 <Badge 
                   variant="outline" 
-                  className={`font-semibold ${
-                    node.type === 'company' ? 'bg-blue-50 text-blue-700 border-blue-300' :
-                    node.type === 'department' ? 'bg-green-50 text-green-700 border-green-300' :
-                    'bg-purple-50 text-purple-700 border-purple-300'
-                  }`}
+                  className="font-semibold bg-gray-50 text-gray-700 border-gray-300"
                 >
                   {node.type === 'company' ? '회사' : node.type === 'department' ? '부서' : '팀'}
                 </Badge>

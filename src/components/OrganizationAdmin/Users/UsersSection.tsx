@@ -383,7 +383,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
               <Download className="w-4 h-4 mr-2" />
               내보내기
             </Button>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+            <Button className="bg-gray-600 text-white hover:bg-gray-700">
               <Plus className="w-4 h-4 mr-2" />
               사용자 추가
             </Button>
@@ -429,7 +429,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                 <p className="text-gray-600 mb-4">
                   {searchQuery ? '검색 조건에 맞는 사용자가 없습니다.' : '등록된 사용자가 없습니다.'}
                 </p>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+                <Button className="bg-gray-600 text-white hover:bg-gray-700">
                   <Plus className="w-4 h-4 mr-2" />
                   사용자 추가
                 </Button>
@@ -439,11 +439,11 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {filteredUsers.map((user) => (
-              <Card key={user.id} className="p-6 bg-gradient-to-r from-white to-gray-50 hover:shadow-lg transition-all duration-300 border-l-4 border-blue-500">
+              <Card key={user.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl">
-                      <User className="w-6 h-6 text-blue-600" />
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                      <User className="w-6 h-6 text-gray-600" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
@@ -458,7 +458,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                     </Badge>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="hover:bg-blue-50">
+                        <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
