@@ -177,7 +177,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
               <Download className="w-4 h-4 mr-2" />
               사용 내역
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="bg-green-600 text-white hover:bg-green-700">
               <Plus className="w-4 h-4 mr-2" />
               크레딧 구매
             </Button>
