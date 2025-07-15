@@ -169,11 +169,11 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
 
   const renderCreditDashboard = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-white to-green-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">크레딧 현황</h2>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="hover:bg-green-50">
+            <Button variant="outline" size="sm" className="hover:bg-gray-50">
               <Download className="w-4 h-4 mr-2" />
               사용 내역
             </Button>
@@ -186,71 +186,71 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-700 font-medium">잔여 크레딧</p>
-              <p className="text-2xl font-bold text-green-900">{creditData.balance.toLocaleString()}</p>
-              <p className="text-sm text-green-700">₩ {(creditData.balance * 25).toLocaleString()} 상당</p>
+              <p className="text-sm text-gray-700 font-medium">잔여 크레딧</p>
+              <p className="text-2xl font-bold text-gray-900">{creditData.balance.toLocaleString()}</p>
+              <p className="text-sm text-gray-700">₩ {(creditData.balance * 25).toLocaleString()} 상당</p>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-green-200 rounded-xl">
-              <DollarSign className="w-6 h-6 text-green-600" />
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
+              <DollarSign className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-700 font-medium">이번달 사용량</p>
-              <p className="text-2xl font-bold text-blue-900">{creditData.monthlyUsage.toLocaleString()}</p>
+              <p className="text-sm text-gray-700 font-medium">이번달 사용량</p>
+              <p className="text-2xl font-bold text-gray-900">{creditData.monthlyUsage.toLocaleString()}</p>
               <div className="flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
                 <span className="text-sm text-green-600">이번달</span>
               </div>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-200 rounded-xl">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
+              <TrendingUp className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-purple-700 font-medium">평균 일일 사용량</p>
-              <p className="text-2xl font-bold text-purple-900">{creditData.dailyAverage.toLocaleString()}</p>
+              <p className="text-sm text-gray-700 font-medium">평균 일일 사용량</p>
+              <p className="text-2xl font-bold text-gray-900">{creditData.dailyAverage.toLocaleString()}</p>
               <div className="flex items-center mt-1">
                 <TrendingDown className="w-4 h-4 text-gray-500 mr-1" />
                 <span className="text-sm text-gray-600">최근 30일</span>
               </div>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-purple-200 rounded-xl">
-              <Calendar className="w-6 h-6 text-purple-600" />
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
+              <Calendar className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500 hover:shadow-lg transition-shadow">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-orange-700 font-medium">총 구매액</p>
-              <p className="text-2xl font-bold text-orange-900">{creditData.totalSpent.toLocaleString()}</p>
+              <p className="text-sm text-gray-700 font-medium">총 구매액</p>
+              <p className="text-2xl font-bold text-gray-900">{creditData.totalSpent.toLocaleString()}</p>
               <div className="flex items-center mt-1">
-                <Package className="w-4 h-4 text-orange-500 mr-1" />
-                <span className="text-sm text-orange-600">누적</span>
+                <Package className="w-4 h-4 text-gray-500 mr-1" />
+                <span className="text-sm text-gray-600">누적</span>
               </div>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-orange-200 rounded-xl">
-              <ShoppingCart className="w-6 h-6 text-orange-600" />
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-xl">
+              <ShoppingCart className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Package className="w-5 h-5 mr-2" />
             크레딧 패키지
           </h3>
@@ -262,49 +262,49 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">기본 가격: ₩ 790,000</p>
-                <p className="text-sm font-medium text-green-700">₩ 711,000</p>
+                <p className="text-sm font-medium text-gray-700">₩ 711,000</p>
               </div>
             </div>
-            <div className="border border-blue-200 rounded-lg p-4 bg-white">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-medium text-gray-900">500 크레딧</h4>
                 <Badge className="bg-blue-100 text-blue-600">20% 할인</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">기본 가격: ₩ 3,950,000</p>
-                <p className="text-sm font-medium text-blue-700">₩ 3,160,000</p>
+                <p className="text-sm font-medium text-gray-700">₩ 3,160,000</p>
               </div>
             </div>
-            <div className="border border-purple-200 rounded-lg p-4 bg-white">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-medium text-gray-900">1,000 크레딧</h4>
                 <Badge className="bg-purple-100 text-purple-600">25% 할인</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">기본 가격: ₩ 7,900,000</p>
-                <p className="text-sm font-medium text-purple-700">₩ 5,925,000</p>
+                <p className="text-sm font-medium text-gray-700">₩ 5,925,000</p>
               </div>
             </div>
-            <div className="border border-orange-200 rounded-lg p-4 bg-white">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-medium text-gray-900">2,000 크레딧</h4>
                 <Badge className="bg-orange-100 text-orange-600">30% 할인</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">기본 가격: ₩ 15,800,000</p>
-                <p className="text-sm font-medium text-orange-700">₩ 11,060,000</p>
+                <p className="text-sm font-medium text-gray-700">₩ 11,060,000</p>
               </div>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-green-50 rounded-lg">
-            <p className="text-xs text-green-700">
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <p className="text-xs text-gray-700">
               <strong>기본 가격:</strong> 1크레딧 = ₩ 7,900
             </p>
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Settings className="w-5 h-5 mr-2" />
             알림 설정
           </h3>
@@ -314,28 +314,28 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
                 <p className="text-sm font-medium text-gray-900">크레딧 부족 알림</p>
                 <p className="text-xs text-gray-600">잔여 크레딧이 20% 이하일 때</p>
               </div>
-              <input type="checkbox" className="w-4 h-4 text-green-600 border-gray-300 rounded" defaultChecked />
+              <input type="checkbox" className="w-4 h-4 text-gray-600 border-gray-300 rounded" defaultChecked />
             </div>
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-900">자동 충전</p>
                 <p className="text-xs text-gray-600">잔여 크레딧이 10% 이하일 때</p>
               </div>
-              <input type="checkbox" className="w-4 h-4 text-green-600 border-gray-300 rounded" />
+              <input type="checkbox" className="w-4 h-4 text-gray-600 border-gray-300 rounded" />
             </div>
             <div className="flex items-center justify-between p-3 bg-white rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-900">사용량 리포트</p>
                 <p className="text-xs text-gray-600">월간 사용량 리포트 이메일</p>
               </div>
-              <input type="checkbox" className="w-4 h-4 text-green-600 border-gray-300 rounded" defaultChecked />
+              <input type="checkbox" className="w-4 h-4 text-gray-600 border-gray-300 rounded" defaultChecked />
             </div>
           </div>
         </Card>
       </div>
       
-      <Card className="p-6 bg-gradient-to-r from-white to-green-50 border-l-4 border-green-500">
-        <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+      <Card className="p-6 bg-white border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <Receipt className="w-5 h-5 mr-2" />
           최근 사용 내역
         </h3>
@@ -348,10 +348,10 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             </div>
           ) : (
             creditData.history.map((transaction, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border border-green-200 rounded-lg bg-white hover:bg-green-50 transition-colors">
+              <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors">
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                    <Receipt className="w-4 h-4 text-green-600" />
+                  <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                    <Receipt className="w-4 h-4 text-gray-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
@@ -372,17 +372,17 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
 
   const renderPurchaseHistory = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-white to-blue-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">구매 내역</h2>
-          <Button variant="outline" size="sm" className="hover:bg-blue-50">
+          <Button variant="outline" size="sm" className="hover:bg-gray-50">
             <Download className="w-4 h-4 mr-2" />
             영수증 다운로드
           </Button>
         </div>
       </div>
       
-      <Card className="bg-gradient-to-r from-white to-blue-50 p-6">
+      <Card className="bg-white border border-gray-200 p-6">
         <div className="flex items-center space-x-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -390,16 +390,16 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
               placeholder="구매 내역 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-blue-200 focus:border-blue-500"
+              className="pl-10 border-gray-200 focus:border-gray-500"
             />
           </div>
-          <select className="px-3 py-2 border border-blue-200 rounded-md bg-white focus:border-blue-500">
+          <select className="px-3 py-2 border border-gray-200 rounded-md bg-white focus:border-gray-500">
             <option>최근 30일</option>
             <option>최근 90일</option>
             <option>최근 1년</option>
             <option>전체</option>
           </select>
-          <Button variant="outline" size="sm" className="hover:bg-blue-50">
+          <Button variant="outline" size="sm" className="hover:bg-gray-50">
             <Filter className="w-4 h-4 mr-2" />
             필터
           </Button>
@@ -408,11 +408,11 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
       
       <div className="grid grid-cols-1 gap-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <Card key={i} className="p-6 bg-gradient-to-r from-white to-blue-50 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+          <Card key={i} className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-                  <Package className="w-6 h-6 text-blue-600" />
+                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                  <Package className="w-6 h-6 text-gray-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">베이직 패키지</h3>
@@ -427,15 +427,15 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
-                <CreditCard className="w-4 h-4 text-blue-500" />
+                <CreditCard className="w-4 h-4 text-gray-500" />
                 <span className="text-sm text-gray-600">신용카드 **** 1234</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-blue-500" />
+                <Calendar className="w-4 h-4 text-gray-500" />
                 <span className="text-sm text-gray-600">결제일: 2024-01-{15-i}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Receipt className="w-4 h-4 text-blue-500" />
+                <Receipt className="w-4 h-4 text-gray-500" />
                 <span className="text-sm text-gray-600">주문번호: MB{202401}{15-i}001</span>
               </div>
             </div>
@@ -447,7 +447,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
 
   const renderPaymentSettings = () => (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-white to-purple-50 rounded-xl p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">결제 설정</h2>
           <Button className="bg-purple-600 hover:bg-purple-700">
@@ -458,17 +458,17 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
             등록된 결제 수단
           </h3>
           <div className="space-y-4">
-            <div className="border border-purple-200 rounded-lg p-4 bg-white">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-                    <CreditCard className="w-4 h-4 text-blue-600" />
+                  <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                    <CreditCard className="w-4 h-4 text-gray-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">신용카드</p>
@@ -481,7 +481,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
                 <span className="text-xs text-gray-600">만료일: 12/27</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hover:bg-purple-50">
+                    <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -499,11 +499,11 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
               </div>
             </div>
             
-            <div className="border border-purple-200 rounded-lg p-4 bg-white">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-lg">
-                    <CreditCard className="w-4 h-4 text-purple-600" />
+                  <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                    <CreditCard className="w-4 h-4 text-gray-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">법인카드</p>
@@ -515,7 +515,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
                 <span className="text-xs text-gray-600">만료일: 08/26</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hover:bg-purple-50">
+                    <Button variant="ghost" size="sm" className="hover:bg-gray-50">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -535,8 +535,8 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
-          <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+        <Card className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Settings className="w-5 h-5 mr-2" />
             자동 결제 설정
           </h3>
@@ -546,12 +546,12 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
                 <p className="text-sm font-medium text-gray-900">자동 결제 활성화</p>
                 <p className="text-xs text-gray-600">크레딧 부족 시 자동 충전</p>
               </div>
-              <input type="checkbox" className="w-4 h-4 text-purple-600 border-gray-300 rounded" />
+              <input type="checkbox" className="w-4 h-4 text-gray-600 border-gray-300 rounded" />
             </div>
             
             <div className="bg-white p-3 rounded-lg">
-              <label className="text-sm font-medium text-purple-700">자동 충전 임계값</label>
-              <select className="mt-1 w-full p-2 border border-purple-200 rounded-md bg-white focus:border-purple-500">
+              <label className="text-sm font-medium text-gray-700">자동 충전 임계값</label>
+              <select className="mt-1 w-full p-2 border border-gray-200 rounded-md bg-white focus:border-gray-500">
                 <option>잔여 크레딧 10% 이하</option>
                 <option>잔여 크레딧 20% 이하</option>
                 <option>잔여 크레딧 30% 이하</option>
@@ -559,8 +559,8 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             </div>
             
             <div className="bg-white p-3 rounded-lg">
-              <label className="text-sm font-medium text-purple-700">자동 충전 금액</label>
-              <select className="mt-1 w-full p-2 border border-purple-200 rounded-md bg-white focus:border-purple-500">
+              <label className="text-sm font-medium text-gray-700">자동 충전 금액</label>
+              <select className="mt-1 w-full p-2 border border-gray-200 rounded-md bg-white focus:border-gray-500">
                 <option>베이직 패키지 (5,000 크레딧)</option>
                 <option>프로 패키지 (20,000 크레딧)</option>
                 <option>엔터프라이즈 (무제한)</option>
@@ -568,8 +568,8 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             </div>
             
             <div className="bg-white p-3 rounded-lg">
-              <label className="text-sm font-medium text-purple-700">결제 수단</label>
-              <select className="mt-1 w-full p-2 border border-purple-200 rounded-md bg-white focus:border-purple-500">
+              <label className="text-sm font-medium text-gray-700">결제 수단</label>
+              <select className="mt-1 w-full p-2 border border-gray-200 rounded-md bg-white focus:border-gray-500">
                 <option>신용카드 **** 1234</option>
                 <option>법인카드 **** 5678</option>
               </select>
@@ -583,35 +583,35 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
         </Card>
       </div>
       
-      <Card className="p-6 bg-gradient-to-r from-white to-purple-50 border-l-4 border-purple-500">
-        <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+      <Card className="p-6 bg-white border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <Receipt className="w-5 h-5 mr-2" />
           세금계산서 설정
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-purple-700">사업자등록번호</label>
-            <Input placeholder="000-00-00000" className="mt-1 border-purple-200 focus:border-purple-500" />
+            <label className="text-sm font-medium text-gray-700">사업자등록번호</label>
+            <Input placeholder="000-00-00000" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
           <div>
-            <label className="text-sm font-medium text-purple-700">상호명</label>
-            <Input placeholder="회사명" className="mt-1 border-purple-200 focus:border-purple-500" />
+            <label className="text-sm font-medium text-gray-700">상호명</label>
+            <Input placeholder="회사명" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
           <div>
-            <label className="text-sm font-medium text-purple-700">대표자명</label>
-            <Input placeholder="대표자명" className="mt-1 border-purple-200 focus:border-purple-500" />
+            <label className="text-sm font-medium text-gray-700">대표자명</label>
+            <Input placeholder="대표자명" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
           <div>
-            <label className="text-sm font-medium text-purple-700">업태/종목</label>
-            <Input placeholder="업태/종목" className="mt-1 border-purple-200 focus:border-purple-500" />
+            <label className="text-sm font-medium text-gray-700">업태/종목</label>
+            <Input placeholder="업태/종목" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
           <div className="md:col-span-2">
-            <label className="text-sm font-medium text-purple-700">사업장 주소</label>
-            <Input placeholder="사업장 주소" className="mt-1 border-purple-200 focus:border-purple-500" />
+            <label className="text-sm font-medium text-gray-700">사업장 주소</label>
+            <Input placeholder="사업장 주소" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
           <div className="md:col-span-2">
-            <label className="text-sm font-medium text-purple-700">담당자 이메일</label>
-            <Input placeholder="세금계산서 수신용 이메일" className="mt-1 border-purple-200 focus:border-purple-500" />
+            <label className="text-sm font-medium text-gray-700">담당자 이메일</label>
+            <Input placeholder="세금계산서 수신용 이메일" className="mt-1 border-gray-200 focus:border-gray-500" />
           </div>
         </div>
         <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
