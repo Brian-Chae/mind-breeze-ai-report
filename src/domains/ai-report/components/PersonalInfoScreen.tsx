@@ -54,11 +54,9 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
       newErrors.occupation = '직업은 2글자 이상 입력해주세요.';
     }
 
-    // 직업상 고민 검증
-    if (!formData.workConcerns.trim()) {
-      newErrors.workConcerns = '직업상 고민이나 관심사를 입력해주세요.';
-    } else if (formData.workConcerns.trim().length < 10) {
-      newErrors.workConcerns = '좀 더 구체적으로 작성해주세요. (10글자 이상)';
+    // 상세 요청 사항 검증 (선택사항이므로 입력된 경우만 검증)
+    if (formData.workConcerns.trim() && formData.workConcerns.trim().length < 10) {
+      newErrors.workConcerns = '입력하시는 경우 10글자 이상 작성해주세요.';
     }
 
     setErrors(newErrors);
@@ -197,20 +195,20 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
             )}
           </div>
 
-          {/* 직업상 고민 입력 */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              직업상 평소 고민이 되는점 *
-            </label>
-            <p className="text-sm text-gray-500 mb-2">
-              AI Health Report에서 집중적으로 파악하고 싶은 내용을 자세히 적어주세요
-            </p>
+                     {/* 상세 요청 사항 입력 */}
+           <div className="space-y-2">
+             <label className="block text-sm font-medium text-gray-700">
+               상세 요청 사항
+             </label>
+             <p className="text-sm text-gray-500 mb-2">
+               AI Health Report에서 특별히 분석받고 싶은 부분이나 궁금한 점이 있으시면 작성해주세요 (선택사항)
+             </p>
             <div className="relative">
               <MessageSquare className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                              <Textarea
                  value={formData.workConcerns}
                  onChange={(e) => updateFormData('workConcerns', e.target.value)}
-                 placeholder="예: 업무 스트레스, 집중력 저하, 야근으로 인한 피로, 발표 불안감, 의사결정의 어려움 등 평소 고민이나 개선하고 싶은 점을 구체적으로 작성해주세요."
+                 placeholder="예: 특정 건강 지표에 대한 상세 분석, 스트레스 상황별 대처 방안, 업무 환경 개선 제안 등 원하시는 분석 내용을 자유롭게 작성해주세요."
                  className={`pl-10 pt-3 min-h-[120px] bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500 resize-none text-gray-900 placeholder-gray-500 ${
                    errors.workConcerns ? 'border-red-500' : ''
                  }`}

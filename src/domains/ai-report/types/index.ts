@@ -5,7 +5,7 @@ export interface PersonalInfo {
   gender: 'male' | 'female' | 'other';
   birthDate: string; // YYYY-MM-DD 형식
   occupation: string;
-  workConcerns: string; // 직업상 평소 고민이 되는점 (AI Health Report에서 집중적으로 파악하고 싶은 내용)
+  workConcerns: string; // 상세 요청 사항 (AI Health Report에서 특별히 분석받고 싶은 내용, 선택사항)
 }
 
 export interface DeviceConnectionStatus {
