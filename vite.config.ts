@@ -59,6 +59,7 @@ export default defineConfig({
   },
   // 캐시 무효화를 위한 환경 변수 설정
   define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version || '1.0.0'),
     __BUILD_TIMESTAMP__: JSON.stringify(Date.now())
   }
 });

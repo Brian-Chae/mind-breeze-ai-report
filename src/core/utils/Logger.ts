@@ -113,9 +113,76 @@ export class Logger {
   private logFilters: ((entry: LogEntry) => boolean)[] = [];
   private samplingRates: Map<LogCategory, number> = new Map();
 
+  /**
+   * 환경 안전 감지 메서드
+   */
+  private getEnvironment(): 'development' | 'production' | 'test' {
+    try {
+      // Vite 환경 (브라우저)
+      if (typeof import.meta !== 'undefined' && import.meta.env) {
+        const mode = import.meta.env.MODE;
+        if (mode === 'production' || mode === 'test') return mode;
+        return 'development';
+      }
+      
+      // Node.js 환경
+      if (typeof process !== 'undefined' && process.env) {
+        const env = process.env.NODE_ENV;
+        if (env === 'production' || env === 'test') return env;
+        return 'development';
+      }
+      
+      // 기본값
+      return 'development';
+    } catch {
+      return 'development';
+    }
+  }
+
+  /**
+   * 앱 버전 안전 감지 메서드
+   */
+  private getVersion(): string | undefined {
+    try {
+      // Vite 환경 (브라우저)
+      if (typeof import.meta !== 'undefined' && import.meta.env) {
+        return import.meta.env.VITE_APP_VERSION;
+      }
+      
+      // Node.js 환경
+      if (typeof process !== 'undefined' && process.env) {
+        return process.env.REACT_APP_VERSION;
+      }
+      
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * 프로세스 이벤트 리스너 안전 등록
+   */
+  private setupProcessHandlers(): void {
+    try {
+      if (typeof process !== 'undefined' && process.on) {
+        process.on('exit', () => this.flushLogs());
+        process.on('SIGINT', () => this.flushLogs());
+        process.on('SIGTERM', () => this.flushLogs());
+      } else {
+        // 브라우저 환경에서는 beforeunload 이벤트 사용
+        if (typeof window !== 'undefined') {
+          window.addEventListener('beforeunload', () => this.flushLogs());
+        }
+      }
+    } catch (error) {
+      // 이벤트 리스너 등록 실패 시 무시
+    }
+  }
+
   private constructor(config?: Partial<LoggerConfig>) {
     this.config = {
-      level: process.env.NODE_ENV === 'production' ? LogLevel.WARN : LogLevel.DEBUG,
+      level: this.getEnvironment() === 'production' ? LogLevel.WARN : LogLevel.DEBUG,
       enableConsole: true,
       enableFile: false,
       enableRemote: false,
@@ -146,11 +213,7 @@ export class Logger {
     setInterval(() => this.flushLogs(), 5000);
     
     // 프로세스 종료 시 로그 플러시
-    if (typeof process !== 'undefined') {
-      process.on('exit', () => this.flushLogs());
-      process.on('SIGINT', () => this.flushLogs());
-      process.on('SIGTERM', () => this.flushLogs());
-    }
+    this.setupProcessHandlers();
   }
 
   public static getInstance(config?: Partial<LoggerConfig>): Logger {
@@ -422,8 +485,8 @@ export class Logger {
       service,
       message,
       context: sanitizedContext,
-      environment: (process.env.NODE_ENV as any) || 'development',
-      version: process.env.REACT_APP_VERSION
+      environment: this.getEnvironment(),
+      version: this.getVersion()
     };
     
     // 에러 정보 추가
