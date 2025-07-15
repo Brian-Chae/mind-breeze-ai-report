@@ -44,6 +44,10 @@ export type ServicePackageType =
   | 'PREMIUM'
   | 'ENTERPRISE';
 
+export type AuthStatus = 
+  | 'AUTHENTICATED'
+  | 'UNAUTHENTICATED';
+
 export type CreditTransactionType = 
   | 'PURCHASE'
   | 'TRIAL_GRANT'

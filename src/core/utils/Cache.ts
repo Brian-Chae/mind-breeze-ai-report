@@ -133,7 +133,9 @@ class LocalStorageCacheProvider<T = any> implements CacheProvider<T> {
       const item = localStorage.getItem(this.getStorageKey(key));
       return item ? JSON.parse(item) : null;
     } catch (error) {
-      logger.warn('LocalStorageCacheProvider', '캐시 항목 읽기 실패', { key, error }, LogCategory.SYSTEM);
+      logger.warn('LocalStorageCacheProvider', '캐시 항목 읽기 실패', { 
+        metadata: { key, error } 
+      }, LogCategory.SYSTEM);
       return null;
     }
   }
@@ -142,7 +144,9 @@ class LocalStorageCacheProvider<T = any> implements CacheProvider<T> {
     try {
       localStorage.setItem(this.getStorageKey(key), JSON.stringify(entry));
     } catch (error) {
-      logger.error('LocalStorageCacheProvider', '캐시 항목 저장 실패', error as Error, { key }, LogCategory.SYSTEM);
+      logger.error('LocalStorageCacheProvider', '캐시 항목 저장 실패', error as Error, { 
+        metadata: { metadata: { key } } 
+      }, LogCategory.SYSTEM);
       throw error;
     }
   }
@@ -154,7 +158,7 @@ class LocalStorageCacheProvider<T = any> implements CacheProvider<T> {
       localStorage.removeItem(storageKey);
       return existed;
     } catch (error) {
-      logger.error('LocalStorageCacheProvider', '캐시 항목 삭제 실패', error as Error, { key }, LogCategory.SYSTEM);
+      logger.error('LocalStorageCacheProvider', '캐시 항목 삭제 실패', error as Error, { metadata: { key } }, LogCategory.SYSTEM);
       return false;
     }
   }
@@ -240,7 +244,7 @@ class IndexedDBCacheProvider<T = any> implements CacheProvider<T> {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      logger.error('IndexedDBCacheProvider', '캐시 항목 읽기 실패', error as Error, { key }, LogCategory.DATABASE);
+      logger.error('IndexedDBCacheProvider', '캐시 항목 읽기 실패', error as Error, { metadata: { key } }, LogCategory.DATABASE);
       return null;
     }
   }
@@ -257,7 +261,7 @@ class IndexedDBCacheProvider<T = any> implements CacheProvider<T> {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      logger.error('IndexedDBCacheProvider', '캐시 항목 저장 실패', error as Error, { key }, LogCategory.DATABASE);
+      logger.error('IndexedDBCacheProvider', '캐시 항목 저장 실패', error as Error, { metadata: { key } }, LogCategory.DATABASE);
       throw error;
     }
   }
@@ -274,7 +278,7 @@ class IndexedDBCacheProvider<T = any> implements CacheProvider<T> {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      logger.error('IndexedDBCacheProvider', '캐시 항목 삭제 실패', error as Error, { key }, LogCategory.DATABASE);
+      logger.error('IndexedDBCacheProvider', '캐시 항목 삭제 실패', error as Error, { metadata: { key } }, LogCategory.DATABASE);
       return false;
     }
   }
@@ -364,9 +368,11 @@ export class Cache<T = any> {
     }
 
     logger.info('Cache', '캐시 시스템 초기화됨', {
-      strategy: this.config.strategy,
-      storage: this.config.storage,
-      namespace: this.config.namespace
+      metadata: {
+        strategy: this.config.strategy,
+        storage: this.config.storage,
+        namespace: this.config.namespace
+      }
     }, LogCategory.SYSTEM);
   }
 
@@ -407,7 +413,7 @@ export class Cache<T = any> {
         return null;
       }
     } catch (error) {
-      logger.error('Cache', '캐시 조회 실패', error as Error, { key }, LogCategory.SYSTEM);
+      logger.error('Cache', '캐시 조회 실패', error as Error, { metadata: { key } }, LogCategory.SYSTEM);
       this.updateStats('get', key, startTime, false);
       return null;
     }
@@ -452,10 +458,12 @@ export class Cache<T = any> {
       this.updateStats('set', key, startTime, true, entry.size);
       this.logOperation('set', key, startTime, true, entry.size);
       
-      logger.debug('Cache', '캐시 저장 완료', { key, size: entry.size, ttl }, LogCategory.SYSTEM);
+      logger.debug('Cache', '캐시 저장 완료', { 
+        metadata: { key, size: entry.size, ttl } 
+      }, LogCategory.SYSTEM);
       
     } catch (error) {
-      logger.error('Cache', '캐시 저장 실패', error as Error, { key }, LogCategory.SYSTEM);
+      logger.error('Cache', '캐시 저장 실패', error as Error, { metadata: { key } }, LogCategory.SYSTEM);
       throw error;
     }
   }
@@ -476,7 +484,7 @@ export class Cache<T = any> {
       
       return deleted;
     } catch (error) {
-      logger.error('Cache', '캐시 삭제 실패', error as Error, { key }, LogCategory.SYSTEM);
+      logger.error('Cache', '캐시 삭제 실패', error as Error, { metadata: { key } }, LogCategory.SYSTEM);
       return false;
     }
   }
@@ -518,14 +526,18 @@ export class Cache<T = any> {
       }
       
       logger.info('Cache', '패턴 기반 캐시 삭제 완료', { 
-        pattern: pattern.source, 
-        deleted: deletedCount 
+        metadata: {
+          pattern: pattern.source, 
+          deleted: deletedCount 
+        }
       }, LogCategory.SYSTEM);
       
       return deletedCount;
     } catch (error) {
       logger.error('Cache', '패턴 기반 캐시 삭제 실패', error as Error, { 
-        pattern: pattern.source 
+        metadata: {
+          pattern: pattern.source 
+        }
       }, LogCategory.SYSTEM);
       return 0;
     }
@@ -550,10 +562,10 @@ export class Cache<T = any> {
         }
       }
       
-      logger.info('Cache', '태그 기반 캐시 삭제 완료', { tag, deleted: deletedCount }, LogCategory.SYSTEM);
+      logger.info('Cache', '태그 기반 캐시 삭제 완료', { metadata: { tag, deleted: deletedCount } }, LogCategory.SYSTEM);
       return deletedCount;
     } catch (error) {
-      logger.error('Cache', '태그 기반 캐시 삭제 실패', error as Error, { tag }, LogCategory.SYSTEM);
+      logger.error('Cache', '태그 기반 캐시 삭제 실패', error as Error, { metadata: { tag } }, LogCategory.SYSTEM);
       return 0;
     }
   }
@@ -568,7 +580,7 @@ export class Cache<T = any> {
       const entry = await this.provider.get(key);
       return entry !== null && this.isValidEntry(entry);
     } catch (error) {
-      logger.error('Cache', '캐시 존재 확인 실패', error as Error, { key }, LogCategory.SYSTEM);
+      logger.error('Cache', '캐시 존재 확인 실패', error as Error, { metadata: { key } }, LogCategory.SYSTEM);
       return false;
     }
   }
@@ -654,7 +666,7 @@ export class Cache<T = any> {
       }
       
       if (cleanedCount > 0) {
-        logger.info('Cache', '만료된 엔트리 정리 완료', { cleaned: cleanedCount }, LogCategory.SYSTEM);
+        logger.info('Cache', '만료된 엔트리 정리 완료', { metadata: { cleaned: cleanedCount } }, LogCategory.SYSTEM);
       }
       
       return cleanedCount;
@@ -869,7 +881,7 @@ export class Cache<T = any> {
       clearInterval(this.cleanupTimer);
     }
     
-    logger.info('Cache', '캐시 시스템 종료됨', { namespace: this.config.namespace }, LogCategory.SYSTEM);
+    logger.info('Cache', '캐시 시스템 종료됨', { metadata: { namespace: this.config.namespace } }, LogCategory.SYSTEM);
   }
 }
 

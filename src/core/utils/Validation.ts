@@ -273,7 +273,7 @@ export class FieldValidator<T = any> {
   /**
    * 여러 검증 규칙 추가
    */
-  rules(rules: ValidationRule<T>[]): this {
+  addRules(rules: ValidationRule<T>[]): this {
     this.rules.push(...rules);
     return this;
   }
@@ -521,7 +521,7 @@ export class SchemaValidator {
       // 커스텀 규칙 검증
       if (activeSchema.rules) {
         const validator = new FieldValidator(fieldName, transformedValue, fieldContext);
-        validator.rules(activeSchema.rules);
+        validator.addRules(activeSchema.rules);
         
         const fieldResult = await validator.validate();
         if (!fieldResult.isValid) {
@@ -573,7 +573,7 @@ export class SchemaValidator {
             // 원시 타입 배열
             const itemValidator = new FieldValidator(`${fieldName}[${i}]`, item, itemContext);
             if (activeSchema.itemSchema.rules) {
-              itemValidator.rules(activeSchema.itemSchema.rules);
+              itemValidator.addRules(activeSchema.itemSchema.rules);
             }
             
             const itemResult = await itemValidator.validate();
@@ -756,7 +756,7 @@ export function validateField<T>(
   context?: ValidationContext
 ): Promise<ValidationResult> {
   const validator = new FieldValidator(fieldName, value, context);
-  return validator.rules(rules).validate();
+  return validator.addRules(rules).validate();
 }
 
 /**

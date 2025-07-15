@@ -123,7 +123,7 @@ export const useUserStore = create<UserState>()(
           currentUser: state.currentUser ? {
             ...state.currentUser,
             ...updates,
-            updatedAt: new Date().toISOString(),
+            updatedAt: new Date(),
           } : null
         }));
       },
