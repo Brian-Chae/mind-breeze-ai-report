@@ -499,7 +499,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
         </div>
         <Button 
           onClick={() => setShowInviteForm(true)}
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-2 bg-green-600 text-white hover:bg-green-700"
         >
           <UserPlus className="w-4 h-4" />
           <span>새 초대</span>
@@ -514,7 +514,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
             <h2 className="text-3xl font-bold text-gray-900">초대 관리</h2>
             <p className="text-gray-600 mt-2">운영자 초대를 관리하고 상태를 확인하세요</p>
           </div>
-          <Button onClick={() => setShowInviteForm(true)}>
+          <Button onClick={() => setShowInviteForm(true)} className="bg-green-600 text-white hover:bg-green-700">
             <UserPlus className="w-4 h-4 mr-2" />
             새 초대
           </Button>
