@@ -20,59 +20,18 @@ import {
 } from 'firebase/firestore';
 import { 
   UserType, 
-  EnterpriseUser, 
+  User as EnterpriseUser, 
   Organization,
   OrganizationMember,
   VolumeDiscountTier,
   OrganizationStatus,
   ServicePackageType,
   DEFAULT_BASE_PRICE,
-  VOLUME_DISCOUNT_TIERS
-} from '@core/types/business';
-
-export interface LoginCredentials {
-  email?: string;           // 개인 사용자용
-  employeeId?: string;      // 조직 구성원용
-  organizationId?: string;  // 조직 구성원용
-  password: string;
-}
-
-export interface RegistrationData {
-  userType: UserType;
-  email?: string;           // 개인 사용자 및 조직 관리자용
-  employeeId?: string;      // 조직 구성원용
-  organizationId?: string;  // 조직 구성원용
-  displayName: string;
-  password: string;
-  
-  // 개인 정보
-  phone?: string;           // 전화번호
-  address?: string;         // 주소
-  
-  // 조직 관련 (조직 사용자만)
-  department?: string;
-  position?: string;
-  
-  // 조직 생성 (조직 관리자만)
-  organizationData?: {
-    name: string;
-    businessNumber: string;
-    contactEmail: string;
-    contactPhone?: string;
-    address?: string;
-    initialMemberCount: number;
-    servicePackage: ServicePackageType;
-  };
-}
-
-export interface AuthContext {
-  user: EnterpriseUser | null;
-  organization: Organization | null;
-  memberInfo: OrganizationMember | null;
-  permissions: string[];
-  isLoading: boolean;
-  isTokenAccess?: boolean;  // 토큰 기반 접속 여부
-}
+  VOLUME_DISCOUNT_TIERS,
+  AuthContext,
+  LoginCredentials,
+  RegistrationData
+} from '@core/types/unified';
 
 export interface MeasurementSubjectAccess {
   userId: string;
