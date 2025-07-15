@@ -8,9 +8,19 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Users, CheckCircle } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { 
+  Building, 
+  Users, 
+  TrendingUp, 
+  Shield, 
+  Clock, 
+  CheckCircle, 
+  ArrowRight,
+  ArrowLeft,
+  Sparkles 
+} from 'lucide-react';
+import { Button } from '@ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card';
 
 interface CompanySignupSelectionPageProps {
   onNavigate?: (mode: string) => void;
@@ -35,7 +45,7 @@ export default function CompanySignupSelectionPage({ onNavigate }: CompanySignup
         <div className="text-center mb-12">
           <div className="flex items-center justify-center space-x-2 mb-6">
             <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl">
-              <Building2 className="w-8 h-8 text-white" />
+              <Building className="w-8 h-8 text-white" />
             </div>
             <span className="text-3xl font-bold text-gray-900">MIND BREEZE AI</span>
           </div>
@@ -53,7 +63,7 @@ export default function CompanySignupSelectionPage({ onNavigate }: CompanySignup
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <CardHeader className="relative z-10 pb-4">
               <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-4">
-                <Building2 className="w-8 h-8 text-white" />
+                <Building className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-2xl font-bold text-center text-gray-900">
                 새로운 계약을 생성하고<br />

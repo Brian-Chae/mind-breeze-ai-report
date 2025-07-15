@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Menu, X, Brain, Globe } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from '@ui/button';
 import { useLanguageStore, Language } from '../../stores/languageStore';
 import { landingTexts } from '../../locales/landing';
 

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Activity, Brain, BarChart3, LineChart, Settings, Play, Pause, Square, Download } from 'lucide-react';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
+import { Badge } from '@ui/badge';
+import { Button } from '@ui/button';
 import { Layout } from '../components/Layout';
+import { Visualizer } from '../components/Visualizer/Visualizer';
 
 export const VisualizerPage: React.FC = () => {
   const navigate = useNavigate();

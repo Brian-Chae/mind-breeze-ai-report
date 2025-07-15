@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Download, X } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
+import { Button } from '@ui/button';
+import { Card, CardContent } from '@ui/card';
 
 interface UpdateNotificationProps {
   onUpdate: () => void;

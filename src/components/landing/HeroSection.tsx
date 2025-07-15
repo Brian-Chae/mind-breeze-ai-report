@@ -1,5 +1,5 @@
 import { Clock, Zap, Activity, ArrowRight, Brain } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from '@ui/button';
 import { useLanguageStore } from '../../stores/languageStore';
 import { landingTexts } from '../../locales/landing';
 

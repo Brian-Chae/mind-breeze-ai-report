@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { cn } from './ui/utils'
+import { cn } from '@ui/utils'
 import { 
   Activity, 
   Database, 
@@ -11,8 +11,8 @@ import {
   Bluetooth,
   BarChart3
 } from 'lucide-react'
-import { LooxidIcon } from './ui/LooxidIcon'
-import { NotificationContainer } from './ui/NotificationContainer'
+import { LooxidIcon } from '@ui/LooxidIcon'
+import { NotificationContainer } from '@ui/NotificationContainer'
 
 interface LayoutProps {
   children: React.ReactNode

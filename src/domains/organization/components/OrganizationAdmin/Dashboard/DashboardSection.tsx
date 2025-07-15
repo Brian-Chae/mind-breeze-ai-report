@@ -16,9 +16,9 @@ import {
   Plus,
   Loader2
 } from 'lucide-react'
-import { Card } from '../../ui/card'
-import { Button } from '../../ui/button'
-import { Badge } from '../../ui/badge'
+import { Card } from '@ui/card'
+import { Button } from '@ui/button'
+import { Badge } from '@ui/badge'
 
 // Firebase 서비스 import
 import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'

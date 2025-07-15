@@ -1,7 +1,7 @@
 import React from 'react';
 import { Brain, Cpu, Eye, Database, FileText, Activity, Wifi, Battery, Download } from 'lucide-react';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
+import { Badge } from '@ui/badge';
+import { Button } from '@ui/button';
 import InstallPrompt from './PWA/InstallPrompt';
 
 export const HomeScreen: React.FC = () => {

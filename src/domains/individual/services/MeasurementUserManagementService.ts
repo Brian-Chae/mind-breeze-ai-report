@@ -21,8 +21,8 @@ import {
   limit,
   Timestamp 
 } from 'firebase/firestore';
-import { db } from './firebase';
-import enterpriseAuthService from './EnterpriseAuthService';
+import { db } from '@core/services/firebase';
+import { enterpriseAuthService } from '@core/services/EnterpriseAuthService';
 
 export interface MeasurementUser {
   id: string;

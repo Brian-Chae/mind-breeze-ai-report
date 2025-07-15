@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Database, FolderOpen, Download, Upload, Trash2, Search, Filter, Calendar, BarChart3, FileText, Settings } from 'lucide-react';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
+import { Badge } from '@ui/badge';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
 import { Layout } from '../components/Layout';
+import { DataCenter } from '../components/DataCenter/DataCenter';
 
 export const DataCenterPage: React.FC = () => {
   const navigate = useNavigate();

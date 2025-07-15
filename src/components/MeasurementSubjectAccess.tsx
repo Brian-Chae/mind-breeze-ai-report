@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Alert, AlertDescription } from './ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card';
+import { Button } from '@ui/button';
+import { Alert, AlertDescription } from '@ui/alert';
 import { Loader2, FileText, MessageCircle, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import enterpriseAuthService, { MeasurementSubjectAccess as MeasurementSubjectAccessType } from '../services/EnterpriseAuthService';

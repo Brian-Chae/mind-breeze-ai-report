@@ -1,5 +1,5 @@
 import { Brain, Zap, Activity, TrendingUp, AlertTriangle, CheckCircle, Waves } from 'lucide-react';
-import { Progress } from '../ui/progress';
+import { Progress } from '@ui/progress';
 import { useLanguageStore } from '../../stores/languageStore';
 import { landingTexts } from '../../locales/landing';
 

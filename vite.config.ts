@@ -19,6 +19,8 @@ export default defineConfig({
       '@domains': resolve(__dirname, 'src/domains'),
       '@shared': resolve(__dirname, 'src/shared'),
       '@app': resolve(__dirname, 'src/app'),
+      '@ui': resolve(__dirname, 'src/shared/components/ui'),
+      '@components': resolve(__dirname, 'src/components'),
     },
   },
   test: {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Card } from '@ui/card';
+import { Button } from '@ui/button';
+import { Badge } from '@ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@ui/dialog';
 import { Download, Trash2, FolderOpen, Clock, Database, FileText, Activity, RefreshCw, ChevronLeft, ChevronRight, Play, Square } from 'lucide-react';
 import { sessionManager, type SessionMetadata } from '../utils/SessionManager';
 import { useDeviceStore } from '../stores/deviceStore';

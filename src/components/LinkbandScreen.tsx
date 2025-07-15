@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Brain, Bluetooth, Battery, Wifi, Search, RefreshCw, Settings, Activity } from 'lucide-react';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
+import { Badge } from '@ui/badge';
+import { Button } from '@ui/button';
 
 export const LinkbandScreen: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Brain, Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Check } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Separator } from '../ui/separator';
-import { Checkbox } from '../ui/checkbox';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
+import { Separator } from '@ui/separator';
+import { Checkbox } from '@ui/checkbox';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import { FirebaseService } from '../../services/FirebaseService';

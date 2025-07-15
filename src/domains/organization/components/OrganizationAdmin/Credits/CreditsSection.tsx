@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { CreditCard, DollarSign, ShoppingCart, Plus, Calendar, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Settings, MoreHorizontal, Download, Eye, Search, Filter, Clock, Receipt, Star, Award, Package, Loader2, RefreshCw } from 'lucide-react'
-import { Card } from '../../ui/card'
-import { Button } from '../../ui/button'
-import { Badge } from '../../ui/badge'
-import { Input } from '../../ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+import { Card } from '@ui/card'
+import { Button } from '@ui/button'
+import { Badge } from '@ui/badge'
+import { Input } from '@ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
 
 // Firebase 서비스 import
 import creditManagementService from '../../../services/CreditManagementService'
 import { OrganizationService } from '../../../services/CompanyService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
-import { CreditTransaction } from '../../../types/business'
+import { CreditTransaction } from '@core/types/business'
 
 interface CreditsSectionProps {
   subSection: string;
@@ -71,27 +71,27 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
       const thisMonth = new Date()
       thisMonth.setDate(1)
       const monthlyUsage = history
-        .filter(transaction => 
+        .filter((transaction: CreditTransaction) => 
           (transaction.type === 'REPORT_USAGE' || transaction.type === 'CONSULTATION_USAGE') && 
           transaction.createdAt >= thisMonth
         )
-        .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0)
+        .reduce((sum: number, transaction: CreditTransaction) => sum + Math.abs(transaction.amount), 0)
 
       // 일일 평균 계산 (최근 30일)
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       const recentUsage = history
-        .filter(transaction => 
+        .filter((transaction: CreditTransaction) => 
           (transaction.type === 'REPORT_USAGE' || transaction.type === 'CONSULTATION_USAGE') && 
           transaction.createdAt >= thirtyDaysAgo
         )
-        .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0)
+        .reduce((sum: number, transaction: CreditTransaction) => sum + Math.abs(transaction.amount), 0)
       const dailyAverage = Math.round(recentUsage / 30)
 
       // 총 지출 계산
       const totalSpent = history
-        .filter(transaction => transaction.type === 'PURCHASE')
-        .reduce((sum, transaction) => sum + transaction.amount, 0)
+        .filter((transaction: CreditTransaction) => transaction.type === 'PURCHASE')
+        .reduce((sum: number, transaction: CreditTransaction) => sum + transaction.amount, 0)
 
       setCreditData({
         balance,
@@ -389,7 +389,7 @@ export default function CreditsSection({ subSection, onNavigate }: CreditsSectio
             <Input
               placeholder="구매 내역 검색..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               className="pl-10 border-gray-200 focus:border-gray-500"
             />
           </div>

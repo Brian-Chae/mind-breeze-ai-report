@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Checkbox } from '../ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
-import { Alert, AlertDescription } from '../ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
+import { Checkbox } from '@ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select';
+import { Textarea } from '@ui/textarea';
+import { Badge } from '@ui/badge';
+import { Alert, AlertDescription } from '@ui/alert';
 import { 
   Building2, 
   User, 
@@ -23,8 +23,8 @@ import {
   EyeOff,
   Brain
 } from 'lucide-react';
-import { OrganizationService } from '../../services/CompanyService';
-import { OrganizationCodeService } from '../../services/CompanyCodeService';
+import { OrganizationService } from '@domains/organization/services/CompanyService';
+import { OrganizationCodeService } from '@domains/organization/services/CompanyCodeService';
 import { toast } from 'sonner';
 
 interface CompanyRegistrationData {

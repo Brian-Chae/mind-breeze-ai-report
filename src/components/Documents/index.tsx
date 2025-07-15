@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
 import { FileText, Search, Globe, Languages } from 'lucide-react';
 import { useLanguageStore } from '../../stores/languageStore';
 import { useTranslation } from '../../locales';

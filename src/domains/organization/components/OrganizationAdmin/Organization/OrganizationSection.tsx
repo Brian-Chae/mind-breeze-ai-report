@@ -24,11 +24,11 @@ import {
   X,
   RefreshCw
 } from 'lucide-react'
-import { Card } from '../../ui/card'
-import { Button } from '../../ui/button'
-import { Badge } from '../../ui/badge'
-import { Input } from '../../ui/input'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu'
+import { Card } from '@ui/card'
+import { Button } from '@ui/button'
+import { Badge } from '@ui/badge'
+import { Input } from '@ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
 
 // Firebase 서비스 import
 import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'

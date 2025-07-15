@@ -1,7 +1,7 @@
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
+import { Textarea } from '@ui/textarea';
 import { useState } from 'react';
 import { landingTexts } from '../../locales/landing';
 import { useLanguageStore } from '../../stores/languageStore';

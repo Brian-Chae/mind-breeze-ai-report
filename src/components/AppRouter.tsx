@@ -19,7 +19,7 @@ import CompanyRegistrationForm from './landing/CompanyRegistrationForm';
 import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
-import OrganizationAdminApp from './OrganizationAdmin/OrganizationAdminApp';
+import OrganizationAdminApp from '@domains/organization/components/OrganizationAdmin/OrganizationAdminApp';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Checkbox } from '../ui/checkbox';
-import { Alert, AlertDescription } from '../ui/alert';
+import { Button } from '@ui/button';
+import { Card, CardContent } from '@ui/card';
+import { Input } from '@ui/input';
+import { Textarea } from '@ui/textarea';
+import { Checkbox } from '@ui/checkbox';
+import { Alert, AlertDescription } from '@ui/alert';
 import { ArrowLeft, Building, User, Shield, Mail, Phone, MapPin, IdCard, CheckCircle, AlertCircle, Brain } from 'lucide-react';
-import { OrganizationService } from '../../services/CompanyService';
-import { enterpriseAuthService } from '../../services/EnterpriseAuthService';
+import { OrganizationService } from '@domains/organization/services/CompanyService';
+import { enterpriseAuthService } from '@domains/organization/services/EnterpriseAuthService';
 import { toast } from 'sonner';
 
 // 간단한 validation 함수들

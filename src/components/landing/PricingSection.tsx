@@ -1,5 +1,5 @@
 import { Check, Calculator, Users, Brain, Zap, Crown } from 'lucide-react';
-import { Button } from '../ui/button';
+import { Button } from '@ui/button';
 import { useState } from 'react';
 import { landingTexts } from '../../locales/landing';
 import { useLanguageStore } from '../../stores/languageStore';

@@ -30,7 +30,9 @@
       "@core/*": ["src/core/*"],
       "@domains/*": ["src/domains/*"],
       "@shared/*": ["src/shared/*"],
-      "@app/*": ["src/app/*"]
+      "@app/*": ["src/app/*"],
+      "@ui/*": ["src/shared/components/ui/*"],
+      "@components/*": ["src/components/*"]
     }
   },
   "include": ["src"],
