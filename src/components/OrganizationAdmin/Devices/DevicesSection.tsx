@@ -387,7 +387,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">디바이스 배치</h2>
-          <Button className="bg-purple-600 hover:bg-purple-700">
+          <Button className="bg-purple-600 text-white hover:bg-purple-700">
             <Plus className="w-4 h-4 mr-2" />
             새 배치
           </Button>
@@ -415,7 +415,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
               <label className="text-sm font-medium text-gray-700">배치 위치</label>
               <Input placeholder="위치 정보" className="border-gray-200 focus:border-gray-500" />
             </div>
-            <Button className="w-full bg-purple-600 hover:bg-purple-700">
+            <Button className="w-full bg-purple-600 text-white hover:bg-purple-700">
               <MapPin className="w-4 h-4 mr-2" />
               배치 완료
             </Button>
