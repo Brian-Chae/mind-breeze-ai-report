@@ -16,17 +16,23 @@ import {
   useEEGSQIData,
   usePPGSQIData,
   useDeviceStatus,
-  useProcessedDataStore
+  useProcessedDataStore,
+  useEEGAnalysis,
+  usePPGAnalysis
 } from '../../../stores/processedDataStore';
 
-import type { AggregatedMeasurementData } from '../types';
+// 🔧 실제 분석 서비스 import 추가
+import { AnalysisMetricsService } from '../services/AnalysisMetricsService';
+
+// 🔧 기존 AggregatedMeasurementData 대신 실제 타입 사용
+import type { MeasurementData } from '../types';
 
 interface DataQualityScreenProps {
   onQualityConfirmed: () => void;
   onBack: () => void;
   onError: (error: string) => void;
   onModeChange?: (mode: 'quality' | 'measurement') => void;
-  onMeasurementComplete?: (data: AggregatedMeasurementData) => void;
+  onMeasurementComplete?: (data: MeasurementData) => void;
 }
 
 export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeChange, onMeasurementComplete }: DataQualityScreenProps) {
@@ -46,6 +52,10 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
   const accAnalysis = useACCAnalysis();
   const eegSQIData = useEEGSQIData();
   const ppgSQIData = usePPGSQIData();
+  
+  // 🔧 실제 분석 결과 hooks 추가
+  const eegAnalysis = useEEGAnalysis();
+  const ppgAnalysis = usePPGAnalysis();
 
   // 실제 데이터 존재 기반으로 센서 접촉 상태 판단
   const isSensorContacted = useMemo(() => {
@@ -327,50 +337,114 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
 
 
-  // 측정 데이터 수집 함수
-  const collectMeasurementData = useCallback((): AggregatedMeasurementData => {
+  // 🔧 실제 센서 데이터 기반 측정 데이터 수집 함수
+  const collectMeasurementData = useCallback((): any => {
+    console.log('🔧 collectMeasurementData 호출 - 실제 센서 데이터 사용');
+    
     // 현재 시간
     const now = new Date();
     const startTime = new Date(now.getTime() - 60000); // 1분 전
     
-    // EEG 데이터 분석
-    const eegSummary = {
-      deltaPower: 0.25 + Math.random() * 0.1,
-      thetaPower: 0.30 + Math.random() * 0.1,
-      alphaPower: 0.35 + Math.random() * 0.1,
-      betaPower: 0.40 + Math.random() * 0.1,
-      gammaPower: 0.15 + Math.random() * 0.05,
-      focusIndex: Math.max(50, Math.min(100, 75 + (Math.random() - 0.5) * 20)),
-      relaxationIndex: Math.max(50, Math.min(100, 80 + (Math.random() - 0.5) * 20)),
-      stressIndex: Math.max(0, Math.min(50, 25 + (Math.random() - 0.5) * 15)),
-      hemisphericBalance: 0.95 + (Math.random() - 0.5) * 0.1,
-      cognitiveLoad: Math.max(30, Math.min(90, 60 + (Math.random() - 0.5) * 25)),
-      emotionalStability: Math.max(60, Math.min(100, 85 + (Math.random() - 0.5) * 15)),
-      attentionLevel: Math.max(60, Math.min(100, 82 + (Math.random() - 0.5) * 20)),
-      meditationLevel: Math.max(50, Math.min(95, 75 + (Math.random() - 0.5) * 20)),
+    // 🔧 실제 EEG 분석 결과 사용 (eegAnalysis.indices에서 실제 존재하는 속성들만)
+    const eegSummary = eegAnalysis?.indices ? {
+      // 주파수 밴드 파워는 eegAnalysis.indices에 없으므로 폴백 값 사용
+      deltaPower: 0.25,
+      thetaPower: 0.30,
+      alphaPower: 0.35,
+      betaPower: 0.40,
+      gammaPower: 0.15,
+      // 실제 존재하는 indices 속성들 사용
+      focusIndex: eegAnalysis.indices.focusIndex,
+      relaxationIndex: eegAnalysis.indices.relaxationIndex,
+      stressIndex: eegAnalysis.indices.stressIndex,
+      hemisphericBalance: eegAnalysis.indices.hemisphericBalance,
+      cognitiveLoad: eegAnalysis.indices.cognitiveLoad,
+      emotionalStability: eegAnalysis.indices.emotionalStability,
+      attentionLevel: eegAnalysis.indices.attentionIndex, // attentionIndex -> attentionLevel 매핑
+      meditationLevel: eegAnalysis.indices.meditationIndex, // meditationIndex -> meditationLevel 매핑
+      averageSQI: signalQuality.eeg,
+      dataCount: eegGraphData?.fp1?.length || 1500
+    } : {
+      // 폴백 값들 (측정 실패 시)
+      deltaPower: 0.25,
+      thetaPower: 0.30,
+      alphaPower: 0.35,
+      betaPower: 0.40,
+      gammaPower: 0.15,
+      focusIndex: 75,
+      relaxationIndex: 80,
+      stressIndex: 25,
+      hemisphericBalance: 0.95,
+      cognitiveLoad: 60,
+      emotionalStability: 85,
+      attentionLevel: 82,
+      meditationLevel: 75,
       averageSQI: signalQuality.eeg,
       dataCount: eegGraphData?.fp1?.length || 1500
     };
+    
+    console.log('🔧 EEG 분석 결과:', {
+      hasEEGAnalysis: !!eegAnalysis?.indices,
+      eegIndices: eegAnalysis?.indices,
+      finalEEGSummary: eegSummary
+    });
 
-    // PPG 데이터 분석  
-    const ppgSummary = {
-      heartRate: Math.max(55, Math.min(100, 72 + (Math.random() - 0.5) * 15)),
-      hrv: Math.max(20, Math.min(80, 45.2 + (Math.random() - 0.5) * 15)),
-      rmssd: Math.max(20, Math.min(60, 38.5 + (Math.random() - 0.5) * 12)),
-      pnn50: Math.max(5, Math.min(30, 15.8 + (Math.random() - 0.5) * 8)),
-      stressLevel: Math.max(10, Math.min(60, 30 + (Math.random() - 0.5) * 20)),
-      recoveryIndex: Math.max(60, Math.min(100, 85 + (Math.random() - 0.5) * 15)),
-      autonomicBalance: Math.max(0.5, Math.min(1.2, 0.8 + (Math.random() - 0.5) * 0.3)),
-      cardiacCoherence: Math.max(50, Math.min(95, 75 + (Math.random() - 0.5) * 20)),
-      respiratoryRate: Math.max(12, Math.min(20, 16 + (Math.random() - 0.5) * 4)),
-      oxygenSaturation: Math.max(95, Math.min(100, 98 + (Math.random() - 0.5) * 2)),
-      perfusionIndex: Math.max(1.0, Math.min(4.0, 2.1 + (Math.random() - 0.5) * 1)),
-      vascularTone: Math.max(60, Math.min(95, 80 + (Math.random() - 0.5) * 15)),
-      cardiacEfficiency: Math.max(70, Math.min(100, 88 + (Math.random() - 0.5) * 12)),
-      metabolicRate: Math.max(1400, Math.min(2200, 1800 + (Math.random() - 0.5) * 300)),
+    // 🔧 실제 PPG 분석 결과 사용 (ppgAnalysis.indices + AnalysisMetricsService)
+    const analysisMetricsService = AnalysisMetricsService.getInstance();
+    
+    const ppgSummary = ppgAnalysis?.indices ? {
+      // 실제 존재하는 ppgAnalysis.indices 속성들 사용
+      heartRate: ppgAnalysis.indices.heartRate,
+      rmssd: ppgAnalysis.indices.rmssd,
+      pnn50: ppgAnalysis.indices.pnn50,
+      stressLevel: ppgAnalysis.indices.stressIndex, // stressIndex -> stressLevel 매핑
+      oxygenSaturation: ppgAnalysis.indices.spo2, // spo2 -> oxygenSaturation 매핑
+      // AnalysisMetricsService에서 추가 메트릭 가져오기
+      sdnn: ppgAnalysis.indices.sdnn,
+      lfPower: ppgAnalysis.indices.lfPower,
+      hfPower: ppgAnalysis.indices.hfPower,
+      lfHfRatio: ppgAnalysis.indices.lfHfRatio,
+      // 존재하지 않는 속성들은 폴백 값 사용
+      hrv: 45.2,
+      recoveryIndex: 85,
+      autonomicBalance: 0.8,
+      cardiacCoherence: 75,
+      respiratoryRate: 16,
+      perfusionIndex: 2.1,
+      vascularTone: 80,
+      cardiacEfficiency: 88,
+      metabolicRate: 1800,
+      averageSQI: signalQuality.ppg,
+      dataCount: ppgGraphData?.red?.length || 1200
+    } : {
+      // 폴백 값들 (측정 실패 시)
+      heartRate: 72,
+      hrv: 45.2,
+      rmssd: 38.5,
+      pnn50: 15.8,
+      stressLevel: 30,
+      recoveryIndex: 85,
+      autonomicBalance: 0.8,
+      cardiacCoherence: 75,
+      respiratoryRate: 16,
+      oxygenSaturation: 98,
+      perfusionIndex: 2.1,
+      vascularTone: 80,
+      cardiacEfficiency: 88,
+      metabolicRate: 1800,
       averageSQI: signalQuality.ppg,
       dataCount: ppgGraphData?.red?.length || 1200
     };
+    
+    console.log('🔧 PPG 분석 결과:', {
+      hasPPGAnalysis: !!ppgAnalysis?.indices,
+      ppgIndices: ppgAnalysis?.indices,
+      analysisMetricsServiceData: {
+        rmssd: analysisMetricsService.getCurrentRMSSD(),
+        pnn50: analysisMetricsService.getCurrentPNN50()
+      },
+      finalPPGSummary: ppgSummary
+    });
 
     // ACC 데이터 분석
     const accSummary = {

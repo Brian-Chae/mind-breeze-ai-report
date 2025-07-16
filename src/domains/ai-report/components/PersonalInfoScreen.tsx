@@ -60,7 +60,15 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
       }
     }
 
-    // 직업 검증 (선택사항이므로 필수 검증 제거)
+    // 직업 검증 (필수 입력)
+    if (!formData.occupation.trim()) {
+      newErrors.occupation = '직업을 입력해주세요.';
+    }
+
+    // 부서 검증 (필수 입력)  
+    if (!formData.department.trim()) {
+      newErrors.department = '부서를 입력해주세요.';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -184,7 +192,7 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
         {/* 직업 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            직업
+            직업 *
           </label>
           <div className="relative">
             <Briefcase className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -192,7 +200,7 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
               type="text"
               value={formData.occupation}
               onChange={(e) => setFormData(prev => ({ ...prev, occupation: e.target.value }))}
-              placeholder="직업을 입력하세요 (선택사항)"
+              placeholder="직업을 입력하세요"
               className={`pl-10 ${errors.occupation ? 'border-red-500' : ''}`}
             />
           </div>
@@ -201,17 +209,24 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
           )}
         </div>
 
-        {/* 🔧 부서 필드 추가 */}
+        {/* 부서 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            부서
+            부서 *
           </label>
-          <Input
-            type="text"
-            value={formData.department}
-            onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-            placeholder="부서를 입력하세요 (선택사항)"
-          />
+          <div className="relative">
+            <Briefcase className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              value={formData.department}
+              onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+              placeholder="부서를 입력하세요"
+              className={`pl-10 ${errors.department ? 'border-red-500' : ''}`}
+            />
+          </div>
+          {errors.department && (
+            <p className="text-red-500 text-sm mt-1">{errors.department}</p>
+          )}
         </div>
 
         <div className="flex gap-3 pt-4">
