@@ -102,6 +102,20 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   // 삭제 관련 상태
   const [deletingReports, setDeletingReports] = useState<{[reportId: string]: boolean}>({})
   
+  // 측정 데이터 삭제 관련 상태
+  const [deletingMeasurementData, setDeletingMeasurementData] = useState<{[dataId: string]: boolean}>({})
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    dataId: string;
+    dataUserName: string;
+    reportCount: number;
+  }>({
+    isOpen: false,
+    dataId: '',
+    dataUserName: '',
+    reportCount: 0
+  })
+  
   // 페이지네이션 계산
   const totalPages = Math.ceil(measurementDataList.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -1504,7 +1518,7 @@ AI 건강 분석 리포트
                     </div>
                   </div>
 
-                                     {/* 연결된 분석 리스트 */}
+                  {/* 연결된 분석 리스트 */}
                    {data.hasReports && data.availableReports && data.availableReports.length > 0 ? (
                      <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50">
                        <h4 className="text-sm font-semibold text-purple-700 mb-4 flex items-center">
@@ -1614,6 +1628,24 @@ AI 건강 분석 리포트
                        </div>
                      </div>
                    )}
+
+                  {/* 측정 데이터 삭제 버튼 */}
+                  <div className="flex items-center space-x-2 mt-4">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleOpenDeleteMeasurementDataConfirm(data.id, data.userName, data.availableReports?.length || 0)}
+                      disabled={deletingMeasurementData[data.id]}
+                      className="text-red-600 border-red-300 hover:bg-red-50 text-xs px-3 py-1.5 font-medium"
+                    >
+                      {deletingMeasurementData[data.id] ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3 mr-1" />
+                      )}
+                      {deletingMeasurementData[data.id] ? '삭제 중...' : '측정 데이터 삭제'}
+                    </Button>
+                  </div>
                 </div>
               )
             })}
@@ -1893,6 +1925,85 @@ AI 건강 분석 리포트
     }
   }
 
+  // 측정 데이터 삭제 확인 모달 열기
+  const handleOpenDeleteMeasurementDataConfirm = (dataId: string, userName: string, reportCount: number) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      dataId,
+      dataUserName: userName,
+      reportCount
+    })
+  }
+
+  // 측정 데이터 삭제 모달 닫기
+  const handleCloseDeleteMeasurementDataConfirm = () => {
+    setDeleteConfirmModal({
+      isOpen: false,
+      dataId: '',
+      dataUserName: '',
+      reportCount: 0
+    })
+  }
+
+  // 측정 데이터 삭제 실행 (리포트 포함/미포함 옵션)
+  const handleDeleteMeasurementData = async (deleteReports: boolean = false) => {
+    const { dataId, dataUserName } = deleteConfirmModal
+
+    // 중복 삭제 방지
+    if (deletingMeasurementData[dataId]) {
+      console.log('⚠️ 이미 삭제 중인 측정 데이터입니다.')
+      return
+    }
+
+    try {
+      console.log('🗑️ 측정 데이터 삭제 시작:', dataId, deleteReports ? '(리포트 포함)' : '(리포트 제외)')
+      
+      // 삭제 상태 시작
+      setDeletingMeasurementData(prev => ({ ...prev, [dataId]: true }))
+      
+      // 모달 닫기
+      handleCloseDeleteMeasurementDataConfirm()
+
+      // 1. 연결된 AI 분석 결과도 삭제하는 경우
+      if (deleteReports) {
+        // 해당 측정 데이터와 연결된 모든 AI 분석 결과 조회
+        const analysisFilters = [
+          FirebaseService.createWhereFilter('measurementDataId', '==', dataId)
+        ]
+        const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
+        
+        console.log(`🗑️ 연결된 AI 분석 결과 ${analysisResults.length}개 삭제 중...`)
+        
+        // 모든 AI 분석 결과 삭제
+        for (const analysis of analysisResults) {
+          await FirebaseService.deleteDocument('ai_analysis_results', analysis.id)
+          console.log(`✅ AI 분석 결과 삭제 완료: ${analysis.id}`)
+        }
+      }
+
+      // 2. 측정 세션 삭제
+      await FirebaseService.deleteMeasurementSession(dataId)
+      console.log('✅ 측정 데이터 삭제 완료:', dataId)
+
+      // 3. 데이터 새로고침
+      await loadMeasurementData()
+      console.log('🔄 삭제 후 데이터 새로고침 완료')
+      
+      setError(null)
+
+    } catch (error) {
+      console.error('🚨 측정 데이터 삭제 실패:', error)
+      setError(error instanceof Error ? error.message : '측정 데이터 삭제 중 오류가 발생했습니다.')
+    } finally {
+      // 삭제 상태 종료
+      setDeletingMeasurementData(prev => {
+        const newState = { ...prev }
+        delete newState[dataId]
+        return newState
+      })
+    }
+  }
+
   return (
     <div className="p-6">
       {renderTabs()}
@@ -1906,6 +2017,73 @@ AI 건강 분석 리포트
         viewerId={selectedViewerId}
         viewerName={selectedViewerName}
       />
+
+      {/* 측정 데이터 삭제 확인 모달 */}
+      {deleteConfirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">측정 데이터 삭제</h3>
+                <p className="text-sm text-gray-600">{deleteConfirmModal.dataUserName}님의 측정 데이터</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 mb-3">
+                이 측정 데이터를 삭제하시겠습니까?
+              </p>
+              
+              {deleteConfirmModal.reportCount > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-800">
+                      연결된 AI 분석 결과 {deleteConfirmModal.reportCount}개가 있습니다
+                    </span>
+                  </div>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    연결된 모든 리포트들도 함께 삭제할까요?
+                  </p>
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-500">
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={handleCloseDeleteMeasurementDataConfirm}
+                className="flex-1"
+              >
+                취소
+              </Button>
+              
+              {deleteConfirmModal.reportCount > 0 && (
+                <Button
+                  onClick={() => handleDeleteMeasurementData(false)}
+                  className="flex-1 bg-orange-600 text-white hover:bg-orange-700"
+                >
+                  측정 데이터만 삭제
+                </Button>
+              )}
+              
+              <Button
+                onClick={() => handleDeleteMeasurementData(true)}
+                className="flex-1 bg-red-600 text-white hover:bg-red-700"
+              >
+                {deleteConfirmModal.reportCount > 0 ? '모두 삭제' : '삭제'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
