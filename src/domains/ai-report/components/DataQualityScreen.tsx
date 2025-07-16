@@ -650,13 +650,13 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
                       hide
                     />
                     <YAxis 
-                      domain={[-250, 250]}
+                      domain={[-200, 200]}
                       type="number"
                       allowDataOverflow={false}
                       scale="linear"
                       allowDecimals={false}
                       tickCount={7}
-                      ticks={[-250, -150, -50, 0, 50, 150, 250]}
+                      ticks={[-200, -133, -66, 0, 66, 133, 200]}
                       axisLine={true}
                       tickLine={true}
                       tick={{ fill: '#6b7280', fontSize: 10 }}
