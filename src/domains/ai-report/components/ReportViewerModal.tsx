@@ -546,13 +546,27 @@ export function ReportViewerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${
-        isFullscreen 
-          ? 'max-w-[95vw] max-h-[95vh]' 
-          : viewMode === 'mobile'
-            ? 'w-[375px] max-h-[90vh]'
-            : 'w-[1800px] max-h-[95vh]'
-      } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}>
+      <DialogContent 
+        className={`${
+          isFullscreen 
+            ? 'max-w-[95vw] max-h-[95vh]' 
+            : viewMode === 'mobile'
+              ? '!w-[375px] !max-w-[375px] max-h-[90vh]'
+              : '!w-[1800px] !max-w-none max-h-[95vh]'
+        } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}
+        style={{
+          width: isFullscreen 
+            ? '95vw' 
+            : viewMode === 'mobile' 
+              ? '375px' 
+              : '1800px',
+          maxWidth: isFullscreen 
+            ? '95vw' 
+            : viewMode === 'mobile' 
+              ? '375px' 
+              : 'none'
+        }}
+      >
         <DialogHeader className="flex-shrink-0 pb-4 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
