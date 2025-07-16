@@ -169,20 +169,23 @@ export class MeasurementDataService extends BaseService {
    */
   async getSessionMeasurementData(sessionId: string): Promise<MeasurementData[]> {
     try {
+      // 인덱스 오류 방지를 위해 단순 쿼리 사용 후 클라이언트 정렬
       const q = query(
         collection(this.db, MeasurementDataService.COLLECTION_NAME),
-        where('sessionId', '==', sessionId),
-        orderBy('measurementDate', 'desc')
+        where('sessionId', '==', sessionId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const results = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         measurementDate: doc.data().measurementDate.toDate(),
         createdAt: doc.data().createdAt.toDate(),
         updatedAt: doc.data().updatedAt.toDate()
       })) as MeasurementData[];
+      
+      // 클라이언트에서 정렬 (최신 순)
+      return results.sort((a, b) => b.measurementDate.getTime() - a.measurementDate.getTime());
       
     } catch (error: any) {
       console.error('Failed to get session measurement data:', error);
