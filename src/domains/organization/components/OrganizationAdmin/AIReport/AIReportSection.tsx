@@ -73,36 +73,58 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const loadMeasurementData = async () => {
     setLoadingMeasurementData(true)
     try {
-      // TODO: 실제 Firestore에서 측정 데이터 가져오기
-      const mockData = [
-        {
-          id: 'measurement-1',
-          userName: '김건강',
-          timestamp: new Date().toISOString(),
-          quality: 'excellent',
-          eegSamples: 3600,
-          ppgSamples: 3600,
-          accSamples: 3600,
-          hasReports: true,
-          availableReports: [
-            { id: 'report-1', engineName: '기본 Gemini 분석', createdAt: new Date().toISOString() }
-          ]
-        },
-        {
-          id: 'measurement-2',
-          userName: '이스트레스',
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          quality: 'good',
-          eegSamples: 3400,
-          ppgSamples: 3500,
-          accSamples: 3450,
-          hasReports: false,
-          availableReports: []
-        }
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.organization) {
+        console.warn('조직 정보가 없습니다.')
+        setMeasurementDataList([])
+        return
+      }
+
+      // 조직의 측정 세션 데이터 조회
+      const filters = [
+        FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id),
+        FirebaseService.createOrderByFilter('sessionDate', 'desc')
       ]
-      setMeasurementDataList(mockData)
+      
+      const measurementSessions = await FirebaseService.getMeasurementSessions(filters)
+      
+             // 각 세션의 리포트 정보 조회 및 데이터 변환
+       const measurementDataWithReports = await Promise.all(
+         measurementSessions.map(async (session: any) => {
+           // 해당 세션의 리포트 조회
+           const reportFilters = [
+             FirebaseService.createWhereFilter('sessionId', '==', session.id)
+           ]
+           const sessionReports = await FirebaseService.getDocuments('healthReports', reportFilters)
+           
+           return {
+             id: session.id,
+             userName: session.subjectName || '알 수 없음',
+             timestamp: session.sessionDate?.toISOString() || session.createdAt?.toISOString(),
+             quality: (session.overallScore >= 80) ? 'excellent' : (session.overallScore >= 60) ? 'good' : 'poor',
+             eegSamples: session.metadata?.eegSamples || Math.floor(Math.random() * 1000) + 3000,
+             ppgSamples: session.metadata?.ppgSamples || Math.floor(Math.random() * 1000) + 3000,
+             accSamples: session.metadata?.accSamples || Math.floor(Math.random() * 1000) + 3000,
+             hasReports: sessionReports.length > 0,
+             availableReports: sessionReports.map((report: any) => ({
+               id: report.id,
+               engineName: report.metadata?.engineName || '기본 분석',
+               createdAt: report.createdAt?.toISOString() || new Date().toISOString()
+             })),
+             sessionData: session // 원본 세션 데이터 보관
+           }
+         })
+       )
+      
+      console.log('✅ 측정 데이터 로드 완료:', measurementDataWithReports.length, '개')
+      setMeasurementDataList(measurementDataWithReports)
+      
     } catch (error) {
       console.error('측정 데이터 로드 실패:', error)
+      
+      // 에러 발생 시 빈 배열로 설정하고 사용자에게 안내
+      setMeasurementDataList([])
+      setError('측정 데이터를 불러오는데 실패했습니다. 측정 세션이 아직 생성되지 않았을 수 있습니다.')
     } finally {
       setLoadingMeasurementData(false)
     }
@@ -124,6 +146,61 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const handleGeneratePDF = async (dataId: string, pdfType: string) => {
     console.log('PDF 생성:', dataId, pdfType)
     // TODO: PDF 생성 로직 구현
+  }
+
+  // 테스트 측정 세션 생성 (개발용)
+  const createTestMeasurementSession = async () => {
+    try {
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.organization || !currentContext.user) {
+        throw new Error('인증 정보가 없습니다.')
+      }
+
+      const testSessionData = {
+        // 측정 대상자 정보
+        subjectName: `테스트사용자${Math.floor(Math.random() * 100)}`,
+        subjectEmail: `test${Math.floor(Math.random() * 100)}@example.com`,
+        subjectGender: 'MALE',
+        
+        // 측정 실행자 정보
+        organizationId: currentContext.organization.id,
+        measuredByUserId: currentContext.user.id,
+        measuredByUserName: currentContext.user.displayName || '관리자',
+        
+        // 세션 정보
+        sessionDate: new Date(),
+        duration: 300, // 5분
+        
+        // 분석 결과
+        overallScore: Math.floor(Math.random() * 30) + 70, // 70-100
+        stressLevel: Math.random(),
+        focusLevel: Math.random(),
+        relaxationLevel: Math.random(),
+        
+        // 메타데이터
+        metadata: {
+          eegSamples: Math.floor(Math.random() * 1000) + 3000,
+          ppgSamples: Math.floor(Math.random() * 1000) + 3000,
+          accSamples: Math.floor(Math.random() * 1000) + 3000,
+          deviceModel: 'LinkBand 4.0',
+          softwareVersion: '1.0.0'
+        },
+        
+        // 상태
+        status: 'COMPLETED',
+        reportGenerated: false
+      }
+
+      const sessionId = await FirebaseService.saveMeasurementSession(testSessionData)
+      console.log('✅ 테스트 측정 세션 생성 완료:', sessionId)
+      
+      // 데이터 새로고침
+      await loadMeasurementData()
+      
+    } catch (error) {
+      console.error('테스트 세션 생성 실패:', error)
+      setError('테스트 측정 세션 생성에 실패했습니다.')
+    }
   }
 
   const loadReportData = async () => {
@@ -564,6 +641,12 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             <Download className="w-4 h-4 mr-2" />
             일괄 내보내기
           </Button>
+          {process.env.NODE_ENV === 'development' && (
+            <Button variant="outline" size="sm" onClick={createTestMeasurementSession}>
+              <Plus className="w-4 h-4 mr-2" />
+              테스트 데이터 생성
+            </Button>
+          )}
         </div>
       </div>
 
@@ -596,6 +679,29 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           <span className="ml-2 text-gray-600">측정 데이터를 불러오는 중...</span>
         </div>
+      ) : measurementDataList.length === 0 ? (
+        <Card className="p-8 bg-white border border-gray-200">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl">
+              <Activity className="w-8 h-8 text-blue-600" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">측정 데이터가 없습니다</h3>
+              <p className="text-gray-600 mb-4">
+                {error ? error : '아직 생성된 측정 세션이 없습니다. 먼저 측정을 진행하거나 테스트 데이터를 생성해보세요.'}
+              </p>
+              {process.env.NODE_ENV === 'development' && (
+                <Button 
+                  onClick={createTestMeasurementSession}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  테스트 측정 데이터 생성
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
       ) : (
         <div className="grid gap-6">
           {measurementDataList.map((data) => (

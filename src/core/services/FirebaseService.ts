@@ -379,6 +379,93 @@ export class FirebaseService {
     }
   }
 
+  // Measurement Sessions methods
+  static async saveMeasurementSession(sessionData: any) {
+    try {
+      const docRef = await addDoc(collection(db, 'measurementSessions'), {
+        ...sessionData,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Save measurement session error:', error);
+      throw error;
+    }
+  }
+
+  static async getMeasurementSessions(filters: any[] = []) {
+    try {
+      const collectionRef = collection(db, 'measurementSessions');
+      let q;
+      
+      if (filters.length > 0) {
+        q = query(collectionRef, ...filters);
+      } else {
+        // 기본 정렬: 최신순
+        q = query(collectionRef, orderBy('createdAt', 'desc'));
+      }
+
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate(),
+        updatedAt: doc.data().updatedAt?.toDate(),
+        sessionDate: doc.data().sessionDate?.toDate()
+      }));
+    } catch (error) {
+      console.error('Get measurement sessions error:', error);
+      throw error;
+    }
+  }
+
+  static async getMeasurementSession(sessionId: string) {
+    try {
+      const docRef = doc(db, 'measurementSessions', sessionId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+          sessionDate: data.sessionDate?.toDate()
+        };
+      } else {
+        throw new Error('Measurement session not found');
+      }
+    } catch (error) {
+      console.error('Get measurement session error:', error);
+      throw error;
+    }
+  }
+
+  static async updateMeasurementSession(sessionId: string, updateData: any) {
+    try {
+      const docRef = doc(db, 'measurementSessions', sessionId);
+      await updateDoc(docRef, {
+        ...updateData,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Update measurement session error:', error);
+      throw error;
+    }
+  }
+
+  static async deleteMeasurementSession(sessionId: string) {
+    try {
+      const docRef = doc(db, 'measurementSessions', sessionId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error('Delete measurement session error:', error);
+      throw error;
+    }
+  }
+
   // Query helper methods
   static createWhereFilter(field: string, operator: any, value: any) {
     return where(field, operator, value);
