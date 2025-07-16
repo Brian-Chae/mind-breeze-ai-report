@@ -12,6 +12,7 @@ import measurementUserManagementService from '@domains/individual/services/Measu
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
 import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
+import { useAIReportConfiguration } from '@domains/ai-report/hooks/useAvailableEnginesAndViewers'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -48,6 +49,24 @@ interface ReportStats {
 export default function AIReportSection({ subSection, onNavigate }: AIReportSectionProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // AI Report 설정을 위한 hooks (임시로 organization ID 하드코딩)
+  const organizationId = 'temp-org-id' // TODO: 실제 조직 ID로 교체 필요
+  const {
+    selectedEngine,
+    selectedViewer,
+    selectedPDFViewer,
+    setSelectedEngine,
+    setSelectedViewer,
+    setSelectedPDFViewer,
+    engines,
+    viewers,
+    pdfViewers,
+    loading: configLoading,
+    error: configError,
+    validateConfiguration,
+    selectedEngineDetails
+  } = useAIReportConfiguration(organizationId)
   const [measurementDataList, setMeasurementDataList] = useState<any[]>([])
   const [loadingMeasurementData, setLoadingMeasurementData] = useState(false)
   const [reports, setReports] = useState<HealthReport[]>([])
@@ -940,12 +959,62 @@ AI 건강 분석 리포트
           </div>
           <div className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">리포트 유형</label>
-              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
-                <option>스트레스 분석</option>
-                <option>집중력 분석</option>
-                <option>웰니스 종합</option>
-                <option>개인 맞춤</option>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">AI Engine</label>
+              <select 
+                value={selectedEngine}
+                onChange={(e) => setSelectedEngine(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                disabled={configLoading}
+              >
+                <option value="">엔진을 선택하세요</option>
+                {engines.map(engine => (
+                  <option key={engine.id} value={engine.id}>
+                    {engine.name} ({engine.id}) - {engine.pricing.costPerAnalysis} 크레딧
+                  </option>
+                ))}
+              </select>
+              {selectedEngineDetails && (
+                <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                  {selectedEngineDetails.description}
+                  <br />
+                  <span className="font-medium">지원 데이터:</span> 
+                  {Object.entries(selectedEngineDetails.supportedDataTypes)
+                    .filter(([, supported]) => supported)
+                    .map(([type]) => type.toUpperCase())
+                    .join(', ')}
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">분석 리포트 뷰어</label>
+              <select 
+                value={selectedViewer}
+                onChange={(e) => setSelectedViewer(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                disabled={configLoading || !selectedEngine}
+              >
+                <option value="">뷰어를 선택하세요</option>
+                {viewers.map(viewer => (
+                  <option key={viewer.id} value={viewer.id}>
+                    {viewer.name} ({viewer.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">PDF 뷰어</label>
+              <select 
+                value={selectedPDFViewer}
+                onChange={(e) => setSelectedPDFViewer(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                disabled={configLoading || !selectedEngine}
+              >
+                <option value="">PDF 뷰어를 선택하세요</option>
+                {pdfViewers.map(viewer => (
+                  <option key={viewer.id} value={viewer.id}>
+                    {viewer.name} ({viewer.id})
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -966,11 +1035,29 @@ AI 건강 분석 리포트
             </div>
             <Button 
               className="w-full bg-purple-600 text-white hover:bg-purple-700 h-12"
-              disabled={loading}
+              disabled={loading || configLoading || !selectedEngine || !selectedViewer}
+              onClick={async () => {
+                const validation = await validateConfiguration();
+                if (validation.isValid) {
+                  // TODO: 실제 리포트 생성 로직 구현
+                  console.log('리포트 생성 시작:', {
+                    engine: selectedEngine,
+                    viewer: selectedViewer,
+                    pdfViewer: selectedPDFViewer
+                  });
+                } else {
+                  alert(validation.message);
+                }
+              }}
             >
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
+              {loading || configLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
               리포트 생성 시작
             </Button>
+            {configError && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+                {configError}
+              </div>
+            )}
           </div>
         </Card>
         
@@ -1055,10 +1142,10 @@ AI 건강 분석 리포트
           <option value="failed">실패</option>
         </select>
         <select className="px-3 py-2 border border-gray-300 rounded-md">
-          <option value="all">전체 유형</option>
-          <option value="stress">스트레스 분석</option>
-          <option value="focus">집중력 분석</option>
-          <option value="wellness">웰니스 종합</option>
+          <option value="all">전체 엔진</option>
+          <option value="basic-gemini-v1">기본 Gemini 엔진</option>
+          <option value="mental-gemini-v1">정신건강 Gemini 엔진</option>
+          <option value="biosignal-gemini-v1">생체신호 Gemini 엔진</option>
         </select>
       </div>
       
