@@ -282,7 +282,9 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             name: state.personalInfo?.name || '알 수 없음',
             email: state.personalInfo?.email,
             gender: state.personalInfo?.gender,
-            birthDate: state.personalInfo?.birthDate
+            birthDate: state.personalInfo?.birthDate,
+            occupation: state.personalInfo?.occupation,
+            department: state.personalInfo?.department
           }
         };
 
