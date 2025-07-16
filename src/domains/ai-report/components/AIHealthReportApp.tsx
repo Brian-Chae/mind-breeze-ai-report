@@ -230,7 +230,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       console.log('🔧 Firebase auth 상태:', auth.currentUser ? '로그인됨' : '로그인되지 않음');
       console.log('🔧 현재 개인정보:', state.personalInfo);
       
-      // 🔧 익명 인증으로 로그인 (사용자가 로그인하지 않은 경우)
+      // 현재 사용자 정보 가져오기 (Firebase auth 사용)
       let currentUser = auth.currentUser;
       if (!currentUser) {
         console.log('🔧 익명 인증으로 로그인 시도...');
@@ -249,6 +249,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
 
       // 🔧 Storage에 센서 데이터 저장
       let storageUrl = '';
+      let storagePath = '';
       try {
         console.log('🔧 Storage에 센서 데이터 저장 시작...');
         const sessionId = `measurement_${Date.now()}_${currentUser.uid.substring(0, 8)}`;
@@ -286,7 +287,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         };
 
         // Storage 경로: measurements/{userId}/{sessionId}/sensor_data.json
-        const storagePath = `measurements/${currentUser.uid}/${sessionId}/sensor_data.json`;
+        storagePath = `measurements/${currentUser.uid}/${sessionId}/sensor_data.json`;
         const storageRef = ref(storage, storagePath);
         
         // JSON 문자열로 변환하여 업로드
@@ -304,17 +305,28 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         // Storage 저장 실패해도 계속 진행
       }
 
+      // 🔧 실제 personalInfo 데이터 사용
+      const personalInfo = state.personalInfo;
+      if (!personalInfo) {
+        console.error('❌ 개인정보가 없습니다');
+        setState(prev => ({ ...prev, error: '개인정보가 누락되었습니다' }));
+        return;
+      }
+
       // 1. MeasurementSession 저장
       const sessionData = {
-        subjectName: state.personalInfo?.name || '알 수 없음',
-        subjectEmail: state.personalInfo?.email,
-        subjectGender: state.personalInfo?.gender,
-        subjectBirthDate: state.personalInfo?.birthDate,
+        // 🔧 실제 입력된 개인정보 사용
+        subjectName: personalInfo.name,
+        subjectEmail: personalInfo.email,
+        subjectGender: personalInfo.gender,
+        subjectBirthDate: personalInfo.birthDate,
+        subjectOccupation: personalInfo.occupation,
+        subjectDepartment: personalInfo.department,
         
         // 측정 실행자 정보
         measuredByUserId: currentUser.uid,
         measuredByUserName: currentUser.isAnonymous ? '익명 사용자' : (currentUser.displayName || currentUser.email),
-        isAnonymousUser: currentUser.isAnonymous,
+        isAnonymousUser: currentUser.isAnonymous || false,
         
         // 세션 정보
         sessionDate: new Date(measurementData.measurementInfo?.startTime || Date.now()),
@@ -322,7 +334,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         
         // 🔧 Storage URL 추가
         storageUrl: storageUrl || null,
-        storagePath: storageUrl ? `measurements/${currentUser.uid}/${Date.now()}_${currentUser.uid.substring(0, 8)}/sensor_data.json` : null,
+        storagePath: storageUrl ? storagePath : null,
         
         // 분석 결과 요약
         overallScore: Math.round(measurementData.qualitySummary?.qualityPercentage || 0),
