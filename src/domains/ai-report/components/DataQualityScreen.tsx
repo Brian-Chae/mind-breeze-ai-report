@@ -705,29 +705,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
           </CardContent>
         </Card>
 
-        {/* ACC 움직임 그래프 */}
-        <Card className="bg-white border-gray-200 shadow-sm lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
-              <Move3d className="h-5 w-5 text-green-500" />
-              움직임 총량 (가속도계)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-gray-700 text-sm">
-              활동 상태: {accAnalysis?.indices?.activityState || 'sitting'}
-            </div>
-            <div className="text-gray-700 text-sm">
-              평균 움직임: {accAnalysis?.magnitude?.length > 0 ? `${accAnalysis.magnitude[accAnalysis.magnitude.length - 1].value.toFixed(2)} g` : '5.25 g'}
-            </div>
-            <div className="text-gray-700 text-sm">
-              최대 움직임: {accAnalysis?.magnitude?.length > 0 ? `${Math.max(...accAnalysis.magnitude.map(m => m.value)).toFixed(2)} g` : '7.22 g'}
-            </div>
-            <div className="mt-2 text-xs text-gray-500">
-              움직임 상태: {signalQuality.accStatus}
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
 
       {/* 진행 상황 표시 */}
