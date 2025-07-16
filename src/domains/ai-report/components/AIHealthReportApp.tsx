@@ -314,7 +314,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       }
 
       // 1. MeasurementSession 저장
-      const sessionData = {
+      const sessionDataRaw = {
         // 🔧 실제 입력된 개인정보 사용
         subjectName: personalInfo.name,
         subjectEmail: personalInfo.email,
@@ -346,6 +346,11 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         status: 'COMPLETED',
         reportGenerated: false
       };
+
+      // 🔧 undefined 값들 제거 (Firebase는 undefined를 허용하지 않음)
+      const sessionData = Object.fromEntries(
+        Object.entries(sessionDataRaw).filter(([key, value]) => value !== undefined)
+      );
 
       console.log('🔧 저장할 세션 데이터:', sessionData);
 
