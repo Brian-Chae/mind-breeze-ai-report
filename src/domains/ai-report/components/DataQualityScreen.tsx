@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Progress } from '@ui/progress';
 import { Badge } from '@ui/badge';
 import { Alert, AlertDescription } from '@ui/alert';
-import { CheckCircle2, AlertCircle, Activity, Brain, Heart, Move3d, Clock, Zap } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Activity, Brain, Heart, Move3d, Clock, Zap, Wifi, AlertTriangle } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 // 기존 hook들 import
 import { 
@@ -97,6 +98,78 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       };
     }
   }, [eegSQIData, ppgSQIData, accAnalysis, isSensorContacted]);
+
+  // EEG 그래프 데이터 준비
+  const prepareEEGData = () => {
+    if (!eegGraphData || !eegGraphData.fp1.length || !eegGraphData.fp2.length) {
+      // 더미 데이터 생성
+      return Array.from({ length: 1000 }, (_, i) => ({
+        index: i,
+        fp1: Math.sin(i * 0.1) * 50 + Math.random() * 20 - 10,
+        fp2: Math.cos(i * 0.1) * 40 + Math.random() * 15 - 7.5
+      }));
+    }
+
+    // 최근 1000개 샘플 표시
+    const maxDisplaySamples = 1000;
+    const fp1Channel = eegGraphData.fp1;
+    const fp2Channel = eegGraphData.fp2;
+    
+    // 최소 길이 기준으로 데이터 슬라이스
+    const minLength = Math.min(fp1Channel.length, fp2Channel.length);
+    const startIndex = Math.max(0, minLength - maxDisplaySamples);
+    
+    const fp1Data = fp1Channel.slice(startIndex);
+    const fp2Data = fp2Channel.slice(startIndex);
+    
+    // 배열 인덱스 기반으로 데이터 결합
+    return fp1Data.map((fp1Point: { value: number }, index: number) => ({
+      index: index,
+      fp1: fp1Point.value,
+      fp2: fp2Data[index]?.value || 0
+    }));
+  };
+
+  // PPG 그래프 데이터 준비
+  const preparePPGData = () => {
+    if (!ppgGraphData || !ppgGraphData.red.length || !ppgGraphData.ir.length) {
+      // 더미 데이터 생성
+      return Array.from({ length: 400 }, (_, i) => ({
+        index: i,
+        red: Math.sin(i * 0.2) * 100 + Math.random() * 30 - 15,
+        ir: Math.cos(i * 0.15) * 80 + Math.random() * 25 - 12.5
+      }));
+    }
+
+    const redChannel = ppgGraphData.red;
+    const irChannel = ppgGraphData.ir;
+    
+    // 왼쪽 50개 샘플을 제외하고 400개만 사용
+    const skipSamples = 50;
+    const displaySamples = 400;
+    const minLength = Math.min(redChannel.length, irChannel.length);
+    
+    if (minLength <= skipSamples) {
+      return [];
+    }
+    
+    // 왼쪽 50개를 제외한 후 400개만 사용
+    const startIndex = skipSamples;
+    const endIndex = Math.min(startIndex + displaySamples, minLength);
+    
+    const redData = redChannel.slice(startIndex, endIndex);
+    const irData = irChannel.slice(startIndex, endIndex);
+    
+    // 배열 인덱스 기반으로 데이터 결합
+    return redData.map((redPoint: { value: number }, index: number) => ({
+      index: index,
+      red: redPoint.value,
+      ir: irData[index]?.value || 0
+    }));
+  };
+
+  const finalEEGData = prepareEEGData();
+  const finalPPGData = preparePPGData();
 
   // 품질 기준 체크 (90% 이상)
   const qualityThreshold = 90;
@@ -342,13 +415,92 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-700 text-sm">
-              FP1: {eegGraphData?.fp1?.length > 0 ? `${eegGraphData.fp1[eegGraphData.fp1.length - 1].value.toFixed(2)} μV` : '데이터 없음'}
+            {/* 경고 메시지 표시 */}
+            {!isConnected ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center">
+                  <Wifi className="w-8 h-8 text-red-500 mx-auto mb-3" />
+                  <p className="text-red-500 text-sm font-medium">디바이스가 연결되지 않았습니다</p>
+                  <p className="text-gray-500 text-xs mt-1">LINK BAND를 연결해주세요</p>
+                </div>
+              </div>
+            ) : !isSensorContacted ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center">
+                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                  <p className="text-amber-600 text-sm font-medium">센서 접촉 불량</p>
+                  <p className="text-gray-500 text-xs mt-1">디바이스 위치를 조정해주세요</p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-48 rounded-lg overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={finalEEGData} 
+                    margin={{ top: 10, right: 10, left: 5, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+                    <XAxis 
+                      dataKey="index" 
+                      axisLine={true}
+                      tickLine={true}
+                      tick={{ fill: '#6b7280', fontSize: 10 }}
+                      stroke="#9ca3af"
+                      type="number"
+                      domain={[0, 'dataMax']}
+                      hide
+                    />
+                    <YAxis 
+                      domain={[-150, 150]}
+                      type="number"
+                      allowDataOverflow={false}
+                      scale="linear"
+                      allowDecimals={false}
+                      tickCount={7}
+                      ticks={[-150, -100, -50, 0, 50, 100, 150]}
+                      axisLine={true}
+                      tickLine={true}
+                      tick={{ fill: '#6b7280', fontSize: 10 }}
+                      stroke="#9ca3af"
+                      orientation="left"
+                      width={35}
+                      includeHidden={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="fp1" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="FP1"
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="fp2" 
+                      stroke="#f59e0b" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="FP2"
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-6 mt-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-[#10b981] rounded-full"></div>
+                <span className="text-sm text-gray-600 font-medium">FP1 Channel</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-[#f59e0b] rounded-full"></div>
+                <span className="text-sm text-gray-600 font-medium">FP2 Channel</span>
+              </div>
             </div>
-            <div className="text-gray-700 text-sm">
-              FP2: {eegGraphData?.fp2?.length > 0 ? `${eegGraphData.fp2[eegGraphData.fp2.length - 1].value.toFixed(2)} μV` : '데이터 없음'}
-            </div>
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-gray-500 text-center">
               신호 품질: {signalQuality.eeg.toFixed(1)}%
             </div>
           </CardContent>
@@ -363,13 +515,92 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-700 text-sm">
-              IR: {ppgGraphData?.ir?.length > 0 ? `${ppgGraphData.ir[ppgGraphData.ir.length - 1].value.toFixed(2)}` : '데이터 없음'}
+            {/* 경고 메시지 표시 */}
+            {!isConnected ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center">
+                  <Wifi className="w-8 h-8 text-red-500 mx-auto mb-3" />
+                  <p className="text-red-500 text-sm font-medium">디바이스가 연결되지 않았습니다</p>
+                  <p className="text-gray-500 text-xs mt-1">LINK BAND를 연결해주세요</p>
+                </div>
+              </div>
+            ) : !isSensorContacted ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="text-center">
+                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                  <p className="text-amber-600 text-sm font-medium">센서 접촉 불량</p>
+                  <p className="text-gray-500 text-xs mt-1">디바이스 위치를 조정해주세요</p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-48 rounded-lg overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={finalPPGData} 
+                    margin={{ top: 10, right: 10, left: 5, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+                    <XAxis 
+                      dataKey="index" 
+                      axisLine={true}
+                      tickLine={true}
+                      tick={{ fill: '#6b7280', fontSize: 10 }}
+                      stroke="#9ca3af"
+                      type="number"
+                      domain={[0, 'dataMax']}
+                      hide
+                    />
+                    <YAxis 
+                      domain={[-250, 250]}
+                      type="number"
+                      allowDataOverflow={false}
+                      scale="linear"
+                      allowDecimals={false}
+                      tickCount={7}
+                      ticks={[-250, -150, -50, 0, 50, 150, 250]}
+                      axisLine={true}
+                      tickLine={true}
+                      tick={{ fill: '#6b7280', fontSize: 10 }}
+                      stroke="#9ca3af"
+                      orientation="left"
+                      width={35}
+                      includeHidden={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="red" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="Red"
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="ir" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="IR"
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-6 mt-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-[#ef4444] rounded-full"></div>
+                <span className="text-sm text-gray-600 font-medium">Red Channel</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-[#8b5cf6] rounded-full"></div>
+                <span className="text-sm text-gray-600 font-medium">IR Channel</span>
+              </div>
             </div>
-            <div className="text-gray-700 text-sm">
-              Red: {ppgGraphData?.red?.length > 0 ? `${ppgGraphData.red[ppgGraphData.red.length - 1].value.toFixed(2)}` : '데이터 없음'}
-            </div>
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-gray-500 text-center">
               신호 품질: {signalQuality.ppg.toFixed(1)}%
             </div>
           </CardContent>
