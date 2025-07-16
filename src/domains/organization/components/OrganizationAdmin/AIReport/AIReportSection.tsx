@@ -1542,6 +1542,8 @@ AI 건강 분석 리포트
                 if (!birthDate) {
                   return {
                     displayText: '나이 정보 없음',
+                    birthDateText: '나이 정보 없음',
+                    ageText: '',
                     age: 0
                   }
                 }
@@ -1584,6 +1586,8 @@ AI 건강 분석 리포트
                         console.warn('날짜 파싱 실패:', birthDate)
                         return {
                           displayText: '나이 정보 없음',
+                          birthDateText: '나이 정보 없음',
+                          ageText: '',
                           age: 0
                         }
                       }
@@ -1601,6 +1605,8 @@ AI 건강 분석 리포트
                     console.warn('예상치 못한 birthDate 타입:', typeof birthDate, birthDate)
                     return {
                       displayText: '나이 정보 없음',
+                      birthDateText: '나이 정보 없음',
+                      ageText: '',
                       age: 0
                     }
                   }
@@ -1609,6 +1615,8 @@ AI 건강 분석 리포트
                   if (!birth || isNaN(birth.getTime())) {
                     return {
                       displayText: '나이 정보 없음',
+                      birthDateText: '나이 정보 없음',
+                      ageText: '',
                       age: 0
                     }
                   }
@@ -1616,6 +1624,8 @@ AI 건강 분석 리포트
                   console.warn('Date 생성 실패:', error, birthDate)
                   return {
                     displayText: '나이 정보 없음',
+                    birthDateText: '나이 정보 없음',
+                    ageText: '',
                     age: 0
                   }
                 }
@@ -1630,7 +1640,9 @@ AI 건강 분석 리포트
                 }
                 
                 return {
-                  displayText: `${year}년 ${month}월 ${day}일생 (만 ${age}세)`,
+                  displayText: `${year}년 ${month}월 ${day}일생`,
+                  birthDateText: `${year}년 ${month}월 ${day}일생`,
+                  ageText: `만 ${age}세`,
                   age: age
                 }
               }
@@ -1639,16 +1651,7 @@ AI 건강 분석 리포트
               const sessionData = data.sessionData || {}
               const birthDate = sessionData.subjectBirthDate || null
               
-              // 디버깅: 실제 데이터 구조 확인
-              if (birthDate) {
-                console.log('birthDate 데이터:', {
-                  value: birthDate,
-                  type: typeof birthDate,
-                  isDate: birthDate instanceof Date,
-                  toString: birthDate.toString?.()
-                })
-              }
-              
+
               const ageInfo = calculateAgeInfo(birthDate)
               
               const measurementDate = new Date(data.timestamp)
@@ -1666,9 +1669,18 @@ AI 건강 분석 리포트
                           </div>
                           
                           <div className="text-center">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {ageInfo.displayText}
-                            </span>
+                            <div className="space-y-1">
+                              <div className="text-xs text-gray-600">
+                                {ageInfo.birthDateText}
+                              </div>
+                              {ageInfo.ageText && (
+                                <div>
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {ageInfo.ageText}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                           
                           <div className="text-center">
