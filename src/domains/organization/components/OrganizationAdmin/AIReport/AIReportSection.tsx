@@ -1430,7 +1430,7 @@ AI 건강 분석 리포트
               const measurementDate = new Date(data.timestamp)
               
               return (
-                <div key={data.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all duration-200">
+                <div key={data.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all duration-200 pb-4">
                   {/* 메인 정보 행 - 테이블 형태 */}
                   <div className="p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
@@ -1636,7 +1636,7 @@ AI 건강 분석 리포트
                    )}
 
                   {/* 측정 데이터 삭제 버튼 */}
-                  <div className="flex items-center justify-center mt-2">
+                  <div className="flex items-center justify-center mt-0">
                     <Button 
                       size="sm" 
                       variant="outline"
