@@ -1427,7 +1427,7 @@ AI 건강 분석 리포트
                             <Button 
                               size="sm" 
                               className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
-                              disabled={generatingReports[data.id]?.isLoading}
+                              disabled={generatingReports[data.id]?.isLoading || configLoading}
                             >
                               {generatingReports[data.id]?.isLoading ? (
                                 <>
@@ -1443,15 +1443,25 @@ AI 건강 분석 리포트
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}>
-                              기본 분석 (1 크레딧)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'detailed-gemini-v1')}>
-                              상세 분석 (5 크레딧)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'enterprise-custom')}>
-                              엔터프라이즈 분석 (10 크레딧)
-                            </DropdownMenuItem>
+                            {configLoading ? (
+                              <DropdownMenuItem disabled>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                엔진 목록 로딩 중...
+                              </DropdownMenuItem>
+                            ) : engines && engines.length > 0 ? (
+                              engines.map(engine => (
+                                <DropdownMenuItem 
+                                  key={engine.id}
+                                  onClick={() => handleGenerateReportFromData(data.id, engine.id)}
+                                >
+                                  {engine.name} ({engine.costPerAnalysis} 크레딧)
+                                </DropdownMenuItem>
+                              ))
+                            ) : (
+                              <DropdownMenuItem disabled>
+                                사용 가능한 엔진이 없습니다
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
