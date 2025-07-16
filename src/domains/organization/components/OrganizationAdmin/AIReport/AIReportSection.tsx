@@ -1458,40 +1458,50 @@ AI 건강 분석 리포트
                     </div>
                   </div>
 
-                                     {/* 연결된 분석 리스트 */}
-                   {data.hasReports && data.availableReports.length > 0 ? (
+                                     {/* 사용 가능한 AI 엔진 목록 */}
+                   {engines && engines.length > 0 ? (
                      <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50">
                        <h4 className="text-sm font-semibold text-purple-700 mb-4 flex items-center">
                          <Brain className="w-4 h-4 mr-2" />
-                         연결된 분석 리스트 ({data.availableReports.length}개)
+                         사용 가능한 AI 엔진 ({engines.length}개)
                        </h4>
                        <div className="space-y-3">
-                         {data.availableReports.map((report: any) => {
-                           const analysisDate = new Date(report.createdAt)
+                         {engines.map((engine: any) => {
                            return (
-                             <div key={report.id} className="bg-white rounded-lg border border-purple-100 shadow-sm p-3">
+                             <div key={engine.id} className="bg-white rounded-lg border border-purple-100 shadow-sm p-3">
                                <div className="flex items-center justify-between">
-                                 <div className="grid grid-cols-3 gap-4 flex-1">
+                                 <div className="grid grid-cols-4 gap-4 flex-1">
                                    <div className="flex items-center space-x-2">
                                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                     <span className="font-semibold text-purple-900">{report.engineName}</span>
+                                     <span className="font-semibold text-purple-900">{engine.name}</span>
                                    </div>
                                    
                                    <div className="text-center">
-                                     <div className="text-xs text-gray-500 font-medium">분석 엔진</div>
+                                     <div className="text-xs text-gray-500 font-medium">엔진 ID</div>
                                      <span className="text-sm text-gray-700 font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
-                                       {report.engineId}
+                                       {engine.id}
                                      </span>
                                    </div>
                                    
                                    <div className="text-center">
-                                     <div className="text-xs text-gray-500 font-medium">분석일시</div>
-                                     <div className="text-sm text-gray-700">
-                                       {analysisDate.toLocaleDateString('ko-KR')} 
-                                       <br />
-                                       <span className="text-xs text-gray-500">
-                                         {analysisDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                                       </span>
+                                     <div className="text-xs text-gray-500 font-medium">비용</div>
+                                     <div className="text-sm text-gray-700 font-semibold">
+                                       {engine.costPerAnalysis} 크레딧
+                                     </div>
+                                   </div>
+                                   
+                                   <div className="text-center">
+                                     <div className="text-xs text-gray-500 font-medium">지원 데이터</div>
+                                     <div className="flex justify-center items-center space-x-1">
+                                       {engine.supportedDataTypes.eeg && (
+                                         <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">EEG</span>
+                                       )}
+                                       {engine.supportedDataTypes.ppg && (
+                                         <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">PPG</span>
+                                       )}
+                                       {engine.supportedDataTypes.acc && (
+                                         <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">ACC</span>
+                                       )}
                                      </div>
                                    </div>
                                  </div>
@@ -1500,34 +1510,37 @@ AI 건강 분석 리포트
                                    <Button 
                                      size="sm" 
                                      variant="outline"
-                                     onClick={() => handleViewReport(report.id, report)}
-                                     className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs px-3 py-1.5 font-medium"
+                                     onClick={() => handleGenerateReportFromData(data.id, engine.id)}
+                                     className="text-purple-600 border-purple-300 hover:bg-purple-50 text-xs px-3 py-1.5 font-medium"
                                    >
-                                     <Eye className="w-3 h-3 mr-1" />
-                                     리포트보기
-                                   </Button>
-                                   <Button 
-                                     size="sm" 
-                                     variant="outline"
-                                     onClick={() => handleDownloadPDF(report.id, report)}
-                                     className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-3 py-1.5 font-medium"
-                                   >
-                                     <Download className="w-3 h-3 mr-1" />
-                                     PDF 보기
+                                     <Play className="w-3 h-3 mr-1" />
+                                     분석 시작
                                    </Button>
                                  </div>
                                </div>
+                               {engine.description && (
+                                 <div className="mt-2 pt-2 border-t border-gray-100">
+                                   <p className="text-xs text-gray-600">{engine.description}</p>
+                                 </div>
+                               )}
                              </div>
                            )
                          })}
+                       </div>
+                     </div>
+                   ) : configLoading ? (
+                     <div className="p-4 bg-gray-50">
+                       <div className="text-center py-6">
+                         <Loader2 className="w-8 h-8 mx-auto text-gray-300 mb-2 animate-spin" />
+                         <p className="text-sm text-gray-500 font-medium">AI 엔진 목록을 불러오는 중...</p>
                        </div>
                      </div>
                    ) : (
                      <div className="p-4 bg-gray-50">
                        <div className="text-center py-6">
                          <Brain className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                         <p className="text-sm text-gray-500 font-medium">아직 생성된 AI 분석 리포트가 없습니다.</p>
-                         <p className="text-xs text-gray-400 mt-1">위의 "AI 분석 생성" 버튼을 클릭하여 분석을 시작하세요.</p>
+                         <p className="text-sm text-gray-500 font-medium">사용 가능한 AI 엔진이 없습니다.</p>
+                         <p className="text-xs text-gray-400 mt-1">시스템 관리자에게 문의하세요.</p>
                        </div>
                      </div>
                    )}
