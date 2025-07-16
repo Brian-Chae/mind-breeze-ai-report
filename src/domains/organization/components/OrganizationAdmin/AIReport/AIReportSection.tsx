@@ -761,8 +761,12 @@ AI 건강 분석 리포트
     
     try {
       const currentContext = enterpriseAuthService.getCurrentContext()
+      
+      // 인증 정보가 아직 로드되지 않은 경우 잠시 대기
       if (!currentContext.user || !currentContext.organization) {
-        throw new Error('인증 정보가 없습니다.')
+        console.log('⏳ 인증 정보 로드 대기 중...')
+        setLoading(false)
+        return
       }
 
       // 조직의 모든 건강 리포트 조회 (인덱스 오류 방지를 위해 orderBy 제거)
@@ -814,6 +818,19 @@ AI 건강 분석 리포트
 
     } catch (error) {
       console.error('리포트 데이터 로드 실패:', error)
+      
+      // 인증 정보가 없는 경우 특별 처리
+      if (error instanceof Error && error.message.includes('인증 정보가 없습니다')) {
+        console.log('⏳ 인증 정보가 로드되지 않았습니다. 잠시 후 재시도합니다.')
+        setError('인증 정보를 로드하는 중입니다. 잠시만 기다려주세요.')
+        
+        // 3초 후 자동 재시도
+        setTimeout(() => {
+          loadReportData()
+        }, 3000)
+        return
+      }
+      
       setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.')
     } finally {
       setLoading(false)
@@ -969,7 +986,7 @@ AI 건강 분석 리포트
                 <option value="">엔진을 선택하세요</option>
                 {engines.map(engine => (
                   <option key={engine.id} value={engine.id}>
-                    {engine.name} ({engine.id}) - {engine.pricing.costPerAnalysis} 크레딧
+                                            {engine.name} ({engine.id}) - {engine.costPerAnalysis} 크레딧
                   </option>
                 ))}
               </select>
