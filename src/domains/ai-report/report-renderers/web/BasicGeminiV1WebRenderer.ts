@@ -192,7 +192,9 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
 <html lang="${language}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="${options.brandColors?.primary || '#3B82F6'}">
     <title>${this.getTitle(language)} - ${organizationName}</title>
     <style>
         ${this.getCSS(theme, options)}
@@ -478,6 +480,11 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             line-height: 1.6;
             color: ${textColor};
             background-color: ${bgColor};
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         
         .report-container {
@@ -564,6 +571,16 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             border-radius: 12px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .score-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         .score-label {
@@ -680,6 +697,9 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             border-radius: 8px;
             border-left: 4px solid ${accentColor};
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            min-height: 44px; /* 터치 친화적 최소 높이 */
+            display: flex;
+            align-items: center;
         }
         
         .recommendation-item::before {
@@ -718,30 +738,213 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             font-style: italic;
         }
         
-        @media (max-width: 768px) {
+        /* 모바일 (작은 화면) */
+        @media (max-width: 480px) {
             .report-container {
-                padding: 10px;
+                padding: 8px;
+                margin: 0;
+            }
+            
+            .report-header {
+                padding: 15px;
+                margin-bottom: 20px;
             }
             
             .report-title {
-                font-size: 2rem;
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+            }
+            
+            .logo {
+                height: 40px;
+                margin-bottom: 10px;
             }
             
             section {
-                padding: 20px;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            h2 {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
             }
             
             .scores-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .score-card {
+                padding: 15px;
+            }
+            
+            .score-value {
+                font-size: 2rem;
+                margin-bottom: 10px;
             }
             
             .metrics-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .metric-group {
+                padding: 15px;
+            }
+            
+            .recommendation-item {
+                padding: 12px;
+                margin-bottom: 8px;
             }
             
             .report-meta {
                 flex-direction: column;
-                gap: 5px;
+                gap: 3px;
+                font-size: 0.8rem;
+            }
+            
+            .report-footer {
+                padding: 20px;
+                margin-top: 20px;
+            }
+        }
+        
+        /* 태블릿 (중간 화면) */
+        @media (min-width: 481px) and (max-width: 768px) {
+            .report-container {
+                padding: 12px;
+            }
+            
+            .report-header {
+                padding: 20px;
+                margin-bottom: 30px;
+            }
+            
+            .report-title {
+                font-size: 1.8rem;
+            }
+            
+            .logo {
+                height: 50px;
+                margin-bottom: 15px;
+            }
+            
+            section {
+                padding: 20px;
+                margin-bottom: 30px;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .scores-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 18px;
+            }
+            
+            .score-card {
+                padding: 20px;
+            }
+            
+            .score-value {
+                font-size: 2.5rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 18px;
+            }
+            
+            .report-meta {
+                flex-direction: row;
+                justify-content: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+        }
+        
+        /* 데스크탑 (큰 화면) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .report-container {
+                padding: 16px;
+            }
+            
+            .scores-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* 대형 데스크탑 */
+        @media (min-width: 1025px) {
+            .report-container {
+                padding: 20px;
+            }
+            
+            .scores-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* 세로/가로 모드 대응 */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .report-header {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .report-title {
+                font-size: 1.5rem;
+            }
+            
+            section {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .score-value {
+                font-size: 2rem;
+            }
+        }
+        
+        /* 다크모드에서의 추가 스타일 */
+        @media (prefers-color-scheme: dark) {
+            .warnings-box {
+                background: #451A03;
+                border-color: #92400E;
+            }
+            
+            .warnings-list li {
+                color: #FBBF24;
+            }
+        }
+        
+        /* 고대비 모드 지원 */
+        @media (prefers-contrast: high) {
+            .score-card, .metric-group, .recommendation-item {
+                border: 2px solid ${isDark ? '#FFFFFF' : '#000000'};
+            }
+        }
+        
+        /* 애니메이션 감소 모드 */
+        @media (prefers-reduced-motion: reduce) {
+            .score-fill {
+                transition: none;
+            }
+            
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
             }
         }
     `;

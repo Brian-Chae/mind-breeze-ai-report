@@ -14,6 +14,8 @@ import {
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
+import { rendererRegistry } from '../core/registry/RendererRegistry';
+import { selectBestRenderer } from '../core/utils/EngineRendererMatcher';
 import { 
   Brain, 
   Eye, 
@@ -46,9 +48,39 @@ export function ReportViewerModal({
   viewerName
 }: ReportViewerModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [actualRenderer, setActualRenderer] = useState<any>(null);
+  const [rendererName, setRendererName] = useState(viewerName || '웹 뷰어');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<any>(null);
+  
+  // 실제 렌더러 찾기
+  useEffect(() => {
+    if (report && isOpen) {
+      try {
+        // report에서 engineId를 가져와서 적절한 렌더러 찾기
+        const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
+        const bestRenderer = selectBestRenderer(engineId, 'web');
+        
+        if (bestRenderer) {
+          setActualRenderer(bestRenderer);
+          setRendererName(bestRenderer.name);
+          console.log('🎯 선택된 렌더러:', bestRenderer.name, '(ID:', bestRenderer.id, ')');
+        } else {
+          // 기본 렌더러 사용
+          const allRenderers = rendererRegistry.getAll();
+          const defaultRenderer = allRenderers.find(r => r.outputFormat === 'web');
+          if (defaultRenderer) {
+            setActualRenderer(defaultRenderer);
+            setRendererName(defaultRenderer.name);
+          }
+        }
+      } catch (error) {
+        console.warn('렌더러 선택 중 오류:', error);
+        setRendererName('기본 웹 뷰어');
+      }
+    }
+  }, [report, isOpen]);
 
   // 리포트 데이터 로드
   useEffect(() => {
@@ -313,11 +345,16 @@ export function ReportViewerModal({
             <div>
               <DialogTitle className="text-xl font-bold flex items-center gap-2 text-gray-900">
                 <Monitor className="w-5 h-5 text-blue-600" />
-                {viewerName}
+                {rendererName}
               </DialogTitle>
               <DialogDescription className="text-base text-gray-700 font-medium mt-1">
                 {(report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트')}
               </DialogDescription>
+              {actualRenderer && (
+                <div className="text-sm text-gray-500 mt-1">
+                  {actualRenderer.description}
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-2">
