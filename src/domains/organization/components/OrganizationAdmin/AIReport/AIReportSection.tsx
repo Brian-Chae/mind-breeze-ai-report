@@ -241,11 +241,27 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             
             // 세션 데이터를 AI 분석용 형식으로 변환
             const sessionData = sessionDoc as any // 타입 단언으로 안전하게 접근
+            
+            // sessionDate 안전하게 처리 (이미 Date 객체일 수 있음)
+            let measurementDate = new Date()
+            if (sessionDoc.sessionDate) {
+              if (typeof sessionDoc.sessionDate.toDate === 'function') {
+                // Firestore Timestamp 객체인 경우
+                measurementDate = sessionDoc.sessionDate.toDate()
+              } else if (sessionDoc.sessionDate instanceof Date) {
+                // 이미 Date 객체인 경우
+                measurementDate = sessionDoc.sessionDate
+              } else if (typeof sessionDoc.sessionDate === 'string') {
+                // 문자열인 경우
+                measurementDate = new Date(sessionDoc.sessionDate)
+              }
+            }
+            
             measurementData = {
               id: dataId,
               sessionId: dataId,
               userId: sessionData.measuredByUserId || 'unknown',
-              measurementDate: sessionDoc.sessionDate?.toDate() || new Date(),
+              measurementDate,
               duration: sessionData.duration || 60,
               deviceInfo: {
                 serialNumber: 'LINKBAND_SIMULATOR',
