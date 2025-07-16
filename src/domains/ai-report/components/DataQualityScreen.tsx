@@ -733,24 +733,35 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            {mode === 'measurement' && isMeasuring ? (
+            {mode === 'measurement' ? (
               /* 측정 모드일 때 큰 타이머 표시 */
               <div className="text-center py-8">
                 <div className="text-6xl font-bold text-blue-600 mb-4">
-                  {String(Math.floor((60 - measurementTimer) / 60)).padStart(2, '0')}:
-                  {String((60 - measurementTimer) % 60).padStart(2, '0')}
+                  {isMeasuring ? (
+                    // 측정 중일 때: 카운트다운 표시
+                    <>
+                      {String(Math.floor((60 - measurementTimer) / 60)).padStart(2, '0')}:
+                      {String((60 - measurementTimer) % 60).padStart(2, '0')}
+                    </>
+                  ) : (
+                    // 측정 시작 전: 1:00 표시
+                    "01:00"
+                  )}
                 </div>
                 <div className="text-lg text-gray-600 mb-4">
-                  측정 진행 중
+                  {isMeasuring ? '측정 진행 중' : '측정 대기 중'}
                 </div>
                 <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${(measurementTimer / 60) * 100}%` }}
+                    style={{ width: isMeasuring ? `${(measurementTimer / 60) * 100}%` : '0%' }}
                   />
                 </div>
                 <div className="text-sm text-gray-500 mt-2">
-                  {Math.round((measurementTimer / 60) * 100)}% 완료
+                  {isMeasuring 
+                    ? `${Math.round((measurementTimer / 60) * 100)}% 완료`
+                    : '측정을 시작하려면 아래 버튼을 눌러주세요'
+                  }
                 </div>
               </div>
             ) : (
