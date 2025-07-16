@@ -1,9 +1,25 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Button } from '@ui/button';
 import { FileText, RotateCcw, Download, X } from 'lucide-react';
 
-import type { AIAnalysisResponse } from '../types';
+// 실제 사용 중인 분석 결과 타입 정의
+interface AnalysisResults {
+  mentalHealthScore: number;
+  physicalHealthScore: number;
+  stressLevel: number;
+  recommendations: string[];
+  detailedAnalysis: string;
+}
+
+interface AIAnalysisResponse {
+  reportId: string;
+  personalInfo: any;
+  analysisResults: AnalysisResults;
+  generatedAt: Date;
+  reliability: string;
+}
 
 interface ReportScreenProps {
   analysisResult: AIAnalysisResponse;
@@ -12,9 +28,16 @@ interface ReportScreenProps {
 }
 
 export function ReportScreen({ analysisResult, onRestart, onClose }: ReportScreenProps) {
+  const navigate = useNavigate();
+
   const handleDownload = () => {
     // 임시 다운로드 기능
     console.log('리포트 다운로드 기능 구현 예정');
+  };
+
+  const handleClose = () => {
+    // /admin/ai-report로 이동
+    navigate('/admin/ai-report');
   };
 
   return (
@@ -142,7 +165,7 @@ export function ReportScreen({ analysisResult, onRestart, onClose }: ReportScree
         
         {onClose && (
           <Button
-            onClick={onClose}
+            onClick={handleClose}
             variant="outline"
             className="px-6 py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
           >
