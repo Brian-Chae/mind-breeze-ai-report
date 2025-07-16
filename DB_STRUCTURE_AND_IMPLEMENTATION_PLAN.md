@@ -1,554 +1,848 @@
-# DB 구조 및 세부 구현 계획
+# Firestore 기반 DB 구조 및 구현 계획
 
-## 📊 현재 DB 구조 분석
+## 📊 DB 구조 결정사항
 
-### 사용 중인 DB 시스템
-- **Firebase Data Connect (GraphQL)** - 메인 스키마
-- **Firestore (NoSQL)** - 실시간 데이터 및 트랜잭션
-- **하이브리드 구조**: 구조화된 데이터는 Data Connect, 실시간/트랜잭션은 Firestore
+### **최종 결정: Firestore 완전 통일 구조** ✅
 
-### 기존 핵심 테이블/컬렉션
+**결정 근거:**
+- 현재 모든 서비스가 100% Firestore 기반으로 구현됨
+- GraphQL Data Connect는 설계되었으나 실제 사용되지 않음
+- 실시간 업데이트와 간단한 개발 프로세스를 위해 Firestore 통일
+- MVP 개발 속도 최적화
+
+---
+
+## 🗃️ Firestore 컬렉션 구조
+
+### **1. 사용자 관리 컬렉션**
+
+#### A. `users` 컬렉션
 ```typescript
-// Firebase Data Connect (GraphQL)
-- User (사용자 기본 정보)
-- Organization (조직 정보)
-- OrganizationMember (조직 멤버십)
-- CreditTransaction (크레딧 거래)
-- Device (디바이스 정보)
-- BioSignalSession (측정 세션)
-- MentalHealthReport (건강 리포트)
-- TrialService (체험 서비스)
-- Contract (계약 정보)
-- AIReportUsage (AI 리포트 사용)
+interface User {
+  // 문서 ID: Firebase Auth UID
+  
+  // 기본 정보
+  email: string;
+  displayName: string;
+  createdAt: Timestamp;
+  lastLoginAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // 사용자 유형별 필드
+  userType: 'SYSTEM_ADMIN' | 'ORGANIZATION_ADMIN' | 'ORGANIZATION_MEMBER' | 'INDIVIDUAL_USER' | 'MEASUREMENT_SUBJECT';
+  
+  // 조직 관련 (B2B 사용자만)
+  organizationId?: string;
+  organizationCode?: string; // 6자리 코드 (MB2401, MB2402...)
+  employeeId?: string;
+  department?: string;
+  position?: string;
+  
+  // 개인 사용자 전용
+  personalCreditBalance?: number;
+  
+  // 연락처 정보
+  phone?: string;
+  address?: string;
+  profileImage?: string;
+  
+  // 상태
+  isActive: boolean;
+  
+  // 권한 (JSON 배열)
+  permissions?: string[]; // ['users.read', 'reports.create', ...]
+  
+  // 측정 대상자 전용 필드
+  accessToken?: string;
+  tokenExpiresAt?: Timestamp;
+}
+```
 
-// Firestore Collections
-- users (사용자 프로필)
-- organizations (조직 실시간 데이터)
-- creditTransactions (크레딧 거래 이력)
-- devices (디바이스 상태)
-- chatHistory (AI 상담 이력)
-- healthReports (건강 리포트)
+#### B. `organizations` 컬렉션
+```typescript
+interface Organization {
+  // 문서 ID: 자동 생성
+  
+  // 기본 정보
+  organizationName: string;
+  organizationCode: string; // 6자리 고유 코드
+  businessRegistrationNumber: string;
+  industry: string;
+  
+  // 연락처
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  
+  // 관리자
+  adminUserId: string; // users 컬렉션 참조
+  
+  // 크레딧 관리
+  creditBalance: number;
+  
+  // 계약 정보
+  servicePackage: 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
+  contractStartDate?: Timestamp;
+  contractEndDate?: Timestamp;
+  
+  // 상태
+  status: 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'TERMINATED';
+  
+  // 통계
+  memberCount: number;
+  totalReports: number;
+  totalSessions: number;
+  
+  // 설정 (JSON)
+  settings: {
+    autoInviteEnabled: boolean;
+    reportAutoGeneration: boolean;
+    maxMembersAllowed: number;
+    [key: string]: any;
+  };
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+#### C. `organizationMembers` 컬렉션
+```typescript
+interface OrganizationMember {
+  // 문서 ID: 자동 생성
+  
+  userId: string; // users 컬렉션 참조
+  organizationId: string; // organizations 컬렉션 참조
+  
+  // 멤버 정보
+  employeeId: string;
+  department: string;
+  position: string;
+  
+  // 권한
+  role: 'ADMIN' | 'MEMBER' | 'VIEWER';
+  permissions: string[];
+  
+  // 상태
+  status: 'ACTIVE' | 'INVITED' | 'SUSPENDED' | 'LEFT';
+  joinedAt: Timestamp;
+  
+  // 사용 통계
+  reportsGenerated: number;
+  consultationsUsed: number;
+  lastActivityAt: Timestamp;
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
 ```
 
 ---
 
-## 🔧 추가 필요 DB 구조
+### **2. 측정 및 리포트 관리**
 
-### 1. 시스템 관리자를 위한 추가 테이블
-
-#### A. SystemStats (시스템 통계)
-```graphql
-type SystemStats @table {
-  id: UUID! @default(expr: "uuidV4()")
-  date: Date!
-  
-  # 전체 현황
-  totalOrganizations: Int!
-  totalUsers: Int!
-  activeUsers: Int!
-  totalReports: Int!
-  totalSessions: Int!
-  
-  # 사용량 통계
-  dailyReports: Int!
-  weeklyReports: Int!
-  monthlyReports: Int!
-  
-  # 크레딧 통계
-  totalCreditsIssued: Int!
-  totalCreditsUsed: Int!
-  totalRevenue: Int!
-  
-  # 시스템 상태
-  systemHealth: String!      # 'HEALTHY' | 'WARNING' | 'CRITICAL'
-  errorCount: Int!
-  
-  createdAt: Timestamp!
-}
-```
-
-#### B. SystemLogs (시스템 로그)
-```graphql
-type SystemLog @table {
-  id: UUID! @default(expr: "uuidV4()")
-  level: LogLevel!
-  category: LogCategory!
-  message: String!
-  details: String           # JSON string
-  
-  # 관련 정보
-  userId: String
-  organizationId: String
-  requestId: String
-  
-  createdAt: Timestamp!
-}
-
-enum LogLevel {
-  DEBUG
-  INFO
-  WARNING
-  ERROR
-  CRITICAL
-}
-
-enum LogCategory {
-  AUTH
-  PAYMENT
-  SYSTEM
-  API
-  MEASUREMENT
-  REPORT
-}
-```
-
-#### C. OrganizationMetrics (조직별 메트릭)
-```graphql
-type OrganizationMetrics @table {
-  id: UUID! @default(expr: "uuidV4()")
-  organization: Organization!
-  period: String!           # 'DAILY' | 'WEEKLY' | 'MONTHLY'
-  periodStart: Date!
-  periodEnd: Date!
-  
-  # 사용량 메트릭
-  activeMemberCount: Int!
-  totalMeasurements: Int!
-  completedReports: Int!
-  consultationSessions: Int!
-  
-  # 크레딧 메트릭
-  creditsUsed: Int!
-  creditsRemaining: Int!
-  
-  # 참여도 메트릭
-  participationRate: Float!
-  completionRate: Float!
-  
-  # 건강 메트릭
-  averageHealthScore: Float!
-  riskMemberCount: Int!
-  
-  createdAt: Timestamp!
-}
-```
-
-### 2. 기업 관리자를 위한 추가 테이블
-
-#### A. LinkBandDevice (링크밴드 관리)
-```graphql
-type LinkBandDevice @table {
-  id: UUID! @default(expr: "uuidV4()")
-  organization: Organization!
-  serialNumber: String!
-  model: String!
-  
-  # 할당 정보
-  assignedTo: User            # 현재 사용자
-  assignedAt: Timestamp
-  
-  # 렌탈 정보
-  rentalType: RentalType!
-  rentalStartDate: Date!
-  rentalEndDate: Date!
-  rentalCost: Int!
-  
-  # 상태 정보
-  status: DeviceStatus!
-  lastSyncAt: Timestamp
-  batteryLevel: Int
-  firmwareVersion: String
-  
-  # 사용 통계
-  totalUsageHours: Int!
-  lastUsedAt: Timestamp
-  
-  createdAt: Timestamp!
-  updatedAt: Timestamp!
-}
-
-enum RentalType {
-  MONTHLY
-  QUARTERLY
-  SEMI_ANNUAL
-  PURCHASED
-}
-
-enum DeviceStatus {
-  ACTIVE
-  INACTIVE
-  MAINTENANCE
-  LOST
-  RETURNED
-}
-```
-
-#### B. MemberInvitation (멤버 초대)
-```graphql
-type MemberInvitation @table {
-  id: UUID! @default(expr: "uuidV4()")
-  organization: Organization!
-  invitedBy: User!
-  
-  # 초대 정보
-  employeeId: String!
-  email: String
-  displayName: String!
-  department: String
-  position: String
-  
-  # 초대 상태
-  status: InvitationStatus!
-  invitedAt: Timestamp!
-  expiresAt: Timestamp!
-  acceptedAt: Timestamp
-  
-  # 초대 코드
-  invitationCode: String!
-  
-  createdAt: Timestamp!
-}
-
-enum InvitationStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-  CANCELLED
-}
-```
-
-#### C. OrganizationInsights (조직 인사이트)
-```graphql
-type OrganizationInsights @table {
-  id: UUID! @default(expr: "uuidV4()")
-  organization: Organization!
-  generatedAt: Timestamp!
-  
-  # 위험 회원 분석
-  riskMembers: String!        # JSON array of risk member data
-  
-  # 부서별 건강 분석
-  departmentHealth: String!   # JSON object of department health scores
-  
-  # 트렌드 분석
-  healthTrends: String!       # JSON object of health trends
-  
-  # 추천사항
-  recommendations: String!    # JSON array of recommendations
-  
-  # 알림 생성
-  alerts: String!             # JSON array of alerts
-  
-  createdAt: Timestamp!
-}
-```
-
-### 3. Firestore 컬렉션 확장
-
-#### A. systemStats (실시간 시스템 통계)
+#### A. `measurementSessions` 컬렉션
 ```typescript
-interface SystemStatsRealtime {
-  date: string;
-  currentActiveUsers: number;
-  currentSystemLoad: number;
-  realtimeMetrics: {
-    apiCallsPerMinute: number;
-    errorRatePercentage: number;
-    responseTimeAverage: number;
+interface MeasurementSession {
+  // 문서 ID: 자동 생성
+  
+  // 측정 대상자 정보
+  subjectName: string;
+  subjectEmail?: string;
+  subjectPhone?: string;
+  subjectBirthDate?: Timestamp;
+  subjectGender?: 'MALE' | 'FEMALE' | 'OTHER';
+  
+  // 측정 실행자 정보
+  organizationId: string; // organizations 컬렉션 참조
+  measuredByUserId: string; // users 컬렉션 참조
+  measuredByUserName: string;
+  
+  // 세션 정보
+  sessionDate: Timestamp;
+  duration: number; // 초 단위
+  
+  // 데이터 저장 경로
+  rawDataPath?: string; // Storage 경로
+  processedDataPath?: string; // Storage 경로
+  
+  // 분석 결과
+  overallScore?: number; // 0-100
+  stressLevel?: number; // 0-1
+  focusLevel?: number; // 0-1
+  relaxationLevel?: number; // 0-1
+  
+  // 리포트 정보
+  reportGenerated: boolean;
+  reportId?: string; // healthReports 컬렉션 참조
+  
+  // 상태
+  status: 'MEASURING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+#### B. `healthReports` 컬렉션
+```typescript
+interface HealthReport {
+  // 문서 ID: 자동 생성
+  
+  // 연관 정보
+  sessionId: string; // measurementSessions 컬렉션 참조
+  userId: string; // 리포트 대상자 (측정 대상자)
+  organizationId?: string; // B2B인 경우
+  
+  // 리포트 정보
+  reportType: 'STRESS_ANALYSIS' | 'FOCUS_ANALYSIS' | 'COMPREHENSIVE' | 'CUSTOM';
+  title: string;
+  summary: string;
+  
+  // AI 분석 결과 (JSON)
+  analysisResult: {
+    overallScore: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    
+    // 상세 지표들
+    stressAnalysis: any;
+    focusAnalysis: any;
+    sleepQualityAnalysis: any;
+    cognitiveLoadAnalysis: any;
+    
+    // 추천사항
+    recommendations: string[];
+    warnings: string[];
   };
-  alerts: {
-    id: string;
-    type: 'WARNING' | 'ERROR' | 'CRITICAL';
-    message: string;
-    timestamp: Date;
-  }[];
+  
+  // 생성 정보
+  generatedBy: 'AI_AUTO' | 'MANUAL_REQUEST';
+  generatedAt: Timestamp;
+  
+  // 상태
+  status: 'GENERATING' | 'COMPLETED' | 'FAILED';
+  isShared: boolean;
+  sharedWith: string[]; // 공유된 사용자 ID 목록
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 ```
 
-#### B. organizationDashboard (조직 대시보드 데이터)
+---
+
+### **3. 크레딧 및 결제 관리**
+
+#### A. `creditTransactions` 컬렉션
 ```typescript
-interface OrganizationDashboardData {
+interface CreditTransaction {
+  // 문서 ID: 자동 생성
+  
+  // 거래 주체
+  organizationId?: string; // B2B 거래인 경우
+  userId?: string; // 개인 사용자 거래인 경우
+  
+  // 거래 정보
+  type: 'PURCHASE' | 'TRIAL_GRANT' | 'BONUS_GRANT' | 'REPORT_USAGE' | 'CONSULTATION_USAGE' | 'REFUND' | 'EXPIRY';
+  amount: number; // 양수: 적립, 음수: 사용
+  balanceAfter: number; // 거래 후 잔액
+  
+  // 결제 정보 (구매인 경우)
+  paymentMethod?: 'CREDIT_CARD' | 'BANK_TRANSFER' | 'DIGITAL_WALLET';
+  paymentId?: string; // 외부 결제 시스템 ID
+  
+  // 사용 정보 (사용인 경우)
+  relatedResourceId?: string; // 리포트 ID, 상담 ID 등
+  relatedResourceType?: 'REPORT' | 'CONSULTATION';
+  
+  // 설명
+  description: string;
+  
+  // 메타데이터
+  metadata?: {
+    [key: string]: any;
+  };
+  
+  createdAt: Timestamp;
+}
+```
+
+#### B. `trialServices` 컬렉션
+```typescript
+interface TrialService {
+  // 문서 ID: 자동 생성
+  
   organizationId: string;
-  lastUpdated: Date;
   
-  quickStats: {
-    totalMembers: number;
-    activeMembers: number;
-    recentMeasurements: number;
-    riskMembers: number;
-    creditBalance: number;
+  // 체험 정보
+  trialType: 'FREE_TRIAL' | 'PAID_TRIAL';
+  startDate: Timestamp;
+  endDate: Timestamp;
+  
+  // 제공 혜택
+  creditsGranted: number;
+  maxMembers: number;
+  maxReports: number;
+  
+  // 사용 현황
+  creditsUsed: number;
+  reportsGenerated: number;
+  membersAdded: number;
+  
+  // 상태
+  status: 'ACTIVE' | 'EXPIRED' | 'CONVERTED' | 'CANCELLED';
+  
+  // 전환 정보
+  convertedToPaidAt?: Timestamp;
+  
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
+### **4. 디바이스 관리**
+
+#### A. `devices` 컬렉션
+```typescript
+interface Device {
+  // 문서 ID: 디바이스 시리얼 넘버
+  
+  // 디바이스 정보
+  serialNumber: string;
+  model: string; // 'LINK_BAND_V4', 'LINK_BAND_WELLNESS'
+  firmwareVersion: string;
+  
+  // 할당 정보
+  organizationId?: string; // B2B 할당인 경우
+  assignedToUserId?: string; // 현재 사용자
+  assignedAt?: Timestamp;
+  
+  // 렌탈 정보 (B2B)
+  rentalType?: 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUAL' | 'PURCHASED';
+  rentalStartDate?: Timestamp;
+  rentalEndDate?: Timestamp;
+  rentalCost?: number;
+  
+  // 상태
+  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE' | 'LOST' | 'RETURNED';
+  batteryLevel?: number;
+  lastSyncAt?: Timestamp;
+  
+  // 사용 통계
+  totalUsageHours: number;
+  lastUsedAt?: Timestamp;
+  connectionHistory: {
+    startTime: Timestamp;
+    duration: number; // 초
+  }[];
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
+### **5. 초대 및 알림 관리**
+
+#### A. `invitations` 컬렉션
+```typescript
+interface Invitation {
+  // 문서 ID: 자동 생성
+  
+  organizationId: string;
+  invitedByUserId: string;
+  
+  // 초대 정보
+  email: string;
+  displayName: string;
+  employeeId: string;
+  department: string;
+  position: string;
+  
+  // 초대 상태
+  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'CANCELLED';
+  invitationCode: string; // 고유 초대 코드
+  
+  // 만료 정보
+  expiresAt: Timestamp;
+  acceptedAt?: Timestamp;
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+#### B. `notifications` 컬렉션
+```typescript
+interface Notification {
+  // 문서 ID: 자동 생성
+  
+  // 수신자
+  userId: string;
+  organizationId?: string; // 조직 알림인 경우
+  
+  // 알림 내용
+  type: 'CREDIT_LOW' | 'DEVICE_ISSUE' | 'MEMBER_RISK' | 'REPORT_READY' | 'INVITATION' | 'SYSTEM';
+  title: string;
+  message: string;
+  
+  // 우선순위
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  
+  // 상태
+  isRead: boolean;
+  readAt?: Timestamp;
+  
+  // 액션 정보
+  actionRequired?: boolean;
+  actionUrl?: string;
+  actionType?: 'NAVIGATE' | 'DOWNLOAD' | 'APPROVE' | 'DISMISS';
+  
+  // 관련 리소스
+  relatedResourceId?: string;
+  relatedResourceType?: 'REPORT' | 'DEVICE' | 'MEMBER' | 'CREDIT';
+  
+  // 메타데이터
+  metadata?: {
+    [key: string]: any;
   };
   
-  recentActivity: {
-    type: 'MEASUREMENT' | 'REPORT' | 'CONSULTATION' | 'MEMBER_JOIN';
-    userId: string;
-    userName: string;
-    timestamp: Date;
-    details: any;
-  }[];
-  
-  alerts: {
-    type: 'CREDIT_LOW' | 'DEVICE_ISSUE' | 'MEMBER_RISK';
-    severity: 'LOW' | 'MEDIUM' | 'HIGH';
-    message: string;
-    timestamp: Date;
-  }[];
+  createdAt: Timestamp;
+  expiresAt?: Timestamp;
 }
 ```
 
 ---
 
-## 🏗 세부 구현 계획
+### **6. AI 상담 관리**
 
-### 1. 시스템 관리자 기능 구현
-
-#### A. SystemAdminService
+#### A. `chatHistory` 컬렉션
 ```typescript
-class SystemAdminService {
-  // 전체 시스템 현황
-  async getSystemOverview(): Promise<SystemOverview>;
+interface ChatMessage {
+  // 문서 ID: 자동 생성
   
-  // 기업별 현황
-  async getOrganizationList(filters?: OrganizationFilters): Promise<Organization[]>;
-  async getOrganizationDetails(orgId: string): Promise<OrganizationDetails>;
-  async getOrganizationMetrics(orgId: string, period: string): Promise<OrganizationMetrics>;
+  userId: string;
+  sessionId: string; // 대화 세션 ID
   
-  // 시스템 모니터링
-  async getSystemStats(dateRange: DateRange): Promise<SystemStats[]>;
-  async getSystemLogs(filters: LogFilters): Promise<SystemLog[]>;
-  async getSystemHealth(): Promise<SystemHealth>;
+  // 메시지 내용
+  message: string;
+  sender: 'USER' | 'AI';
+  messageType: 'TEXT' | 'IMAGE' | 'FILE' | 'REPORT_REFERENCE';
   
-  // 관리 작업
-  async suspendOrganization(orgId: string, reason: string): Promise<void>;
-  async reactivateOrganization(orgId: string): Promise<void>;
-  async adjustOrganizationCredits(orgId: string, amount: number, reason: string): Promise<void>;
-}
-```
-
-#### B. SystemMetricsService
-```typescript
-class SystemMetricsService {
-  // 메트릭 수집
-  async collectDailyMetrics(): Promise<void>;
-  async collectRealTimeMetrics(): Promise<void>;
+  // AI 응답 메타데이터
+  aiModel?: string;
+  aiResponseTime?: number; // ms
+  confidence?: number; // 0-1
   
-  // 메트릭 분석
-  async analyzeSystemTrends(period: string): Promise<TrendAnalysis>;
-  async detectAnomalies(): Promise<Anomaly[]>;
-  async generateAlerts(): Promise<Alert[]>;
+  // 관련 리소스
+  relatedReportId?: string;
+  relatedSessionId?: string;
   
-  // 리포트 생성
-  async generateSystemReport(type: 'DAILY' | 'WEEKLY' | 'MONTHLY'): Promise<string>;
-}
-```
-
-### 2. 기업 관리자 기능 구현
-
-#### A. OrganizationDashboardService
-```typescript
-class OrganizationDashboardService {
-  // 대시보드 데이터
-  async getDashboardData(orgId: string): Promise<OrganizationDashboardData>;
-  async getQuickStats(orgId: string): Promise<QuickStats>;
-  async getRecentActivity(orgId: string, limit: number): Promise<Activity[]>;
+  // 상태
+  isImportant: boolean;
+  tags: string[];
   
-  // 알림 관리
-  async getAlerts(orgId: string): Promise<Alert[]>;
-  async markAlertAsRead(alertId: string): Promise<void>;
-  async dismissAlert(alertId: string): Promise<void>;
-}
-```
-
-#### B. OrganizationDataCenterService
-```typescript
-class OrganizationDataCenterService {
-  // 데이터 조회
-  async getOrganizationView(orgId: string): Promise<OrganizationViewData>;
-  async getMemberView(orgId: string, memberId?: string): Promise<MemberViewData>;
-  async getReportDetails(reportId: string): Promise<ReportDetails>;
-  
-  // 인사이트 분석
-  async generateInsights(orgId: string): Promise<OrganizationInsights>;
-  async getRiskMembers(orgId: string): Promise<RiskMember[]>;
-  async getDepartmentHealth(orgId: string): Promise<DepartmentHealth[]>;
-  
-  // 데이터 내보내기
-  async exportData(orgId: string, options: ExportOptions): Promise<string>;
-}
-```
-
-#### C. OrganizationMemberService
-```typescript
-class OrganizationMemberService {
-  // 멤버 관리
-  async getMembers(orgId: string, filters?: MemberFilters): Promise<OrganizationMember[]>;
-  async getMemberDetails(memberId: string): Promise<MemberDetails>;
-  async updateMemberInfo(memberId: string, updates: MemberUpdates): Promise<void>;
-  
-  // 멤버 초대
-  async inviteMember(orgId: string, invitationData: InvitationData): Promise<string>;
-  async bulkInviteMembers(orgId: string, csvData: string): Promise<BulkInvitationResult>;
-  async cancelInvitation(invitationId: string): Promise<void>;
-  
-  // 멤버 상태 관리
-  async activateMember(memberId: string): Promise<void>;
-  async deactivateMember(memberId: string): Promise<void>;
-  async removeMember(memberId: string): Promise<void>;
-}
-```
-
-#### D. LinkBandManagementService
-```typescript
-class LinkBandManagementService {
-  // 디바이스 관리
-  async getOrganizationDevices(orgId: string): Promise<LinkBandDevice[]>;
-  async getDeviceDetails(deviceId: string): Promise<DeviceDetails>;
-  async assignDevice(deviceId: string, userId: string): Promise<void>;
-  async unassignDevice(deviceId: string): Promise<void>;
-  
-  // 렌탈 관리
-  async renewDeviceRental(deviceId: string, period: RentalPeriod): Promise<void>;
-  async getExpiringDevices(orgId: string, days: number): Promise<LinkBandDevice[]>;
-  
-  // 상태 모니터링
-  async syncDeviceStatus(deviceId: string): Promise<void>;
-  async getLowBatteryDevices(orgId: string): Promise<LinkBandDevice[]>;
-  async getDeviceUsageStats(deviceId: string): Promise<DeviceUsageStats>;
-}
-```
-
-### 3. 공통 서비스 확장
-
-#### A. CreditManagementService 확장
-```typescript
-// 기존 서비스에 추가 메서드
-class CreditManagementService {
-  // 조직별 크레딧 관리
-  async getOrganizationCreditDashboard(orgId: string): Promise<CreditDashboard>;
-  async getCreditUsageProjection(orgId: string): Promise<CreditProjection>;
-  async setCreditAlert(orgId: string, threshold: number): Promise<void>;
-  
-  // 부서별 크레딧 할당
-  async allocateCreditsToDepartment(orgId: string, department: string, amount: number): Promise<void>;
-  async getDepartmentCreditUsage(orgId: string): Promise<DepartmentCreditUsage[]>;
-  
-  // 크레딧 구매 및 결제
-  async initiateCreditPurchase(orgId: string, amount: number, paymentMethod: string): Promise<string>;
-  async processCreditPayment(paymentId: string): Promise<void>;
-  async getCreditPurchaseHistory(orgId: string): Promise<CreditPurchase[]>;
-}
-```
-
-#### B. NotificationService (신규)
-```typescript
-class NotificationService {
-  // 알림 생성
-  async createAlert(type: AlertType, recipientId: string, message: string): Promise<void>;
-  async createSystemAlert(type: AlertType, message: string): Promise<void>;
-  
-  // 알림 전송
-  async sendEmailNotification(email: string, subject: string, body: string): Promise<void>;
-  async sendSMSNotification(phone: string, message: string): Promise<void>;
-  
-  // 알림 관리
-  async getNotifications(userId: string): Promise<Notification[]>;
-  async markAsRead(notificationId: string): Promise<void>;
-  async getUnreadCount(userId: string): Promise<number>;
+  timestamp: Timestamp;
 }
 ```
 
 ---
 
-## 📊 API 엔드포인트 설계
+## 🔧 Firestore 보안 규칙
 
-### 1. 시스템 관리자 API
-```
-GET /api/admin/system/overview
-GET /api/admin/system/stats?period=daily|weekly|monthly
-GET /api/admin/system/logs?level=error&category=payment
-GET /api/admin/organizations?status=active&page=1&limit=20
-GET /api/admin/organizations/:id/details
-POST /api/admin/organizations/:id/suspend
-POST /api/admin/organizations/:id/credits/adjust
-```
+### **보안 규칙 구조**
 
-### 2. 기업 관리자 API
-```
-GET /api/org/:id/dashboard
-GET /api/org/:id/members?department=engineering&active=true
-POST /api/org/:id/members/invite
-POST /api/org/:id/members/bulk-invite
-GET /api/org/:id/datacenter/overview
-GET /api/org/:id/datacenter/insights
-GET /api/org/:id/credits/dashboard
-POST /api/org/:id/credits/purchase
-GET /api/org/:id/devices
-POST /api/org/:id/devices/:deviceId/assign
-```
-
-### 3. 실시간 데이터 API (WebSocket)
-```
-ws://api/admin/system/realtime
-ws://api/org/:id/realtime
-ws://api/org/:id/alerts
-```
-
----
-
-## 🔧 구현 우선순위
-
-### Phase 1: 기본 대시보드 (1주)
-1. SystemAdminService 기본 구현
-2. OrganizationDashboardService 기본 구현
-3. 기본 UI 컴포넌트 구현
-
-### Phase 2: 핵심 기능 (1주)
-1. 시스템 관리자 기능 완성
-2. 기업 관리자 Data Center 구현
-3. 크레딧 관리 기능 구현
-
-### Phase 3: 고급 기능 (추가 1주)
-1. 멤버 관리 시스템
-2. 링크밴드 관리 시스템
-3. 인사이트 및 분석 기능
-
----
-
-## 🛡 보안 고려사항
-
-### 1. 데이터 접근 제어
-- 시스템 관리자: 모든 데이터 접근 가능
-- 기업 관리자: 본인 조직 데이터만 접근 가능
-- 조직 멤버: 본인 데이터만 접근 가능
-
-### 2. Firebase Security Rules
 ```javascript
-// Firestore Security Rules
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 시스템 관리자만 시스템 데이터 접근
-    match /systemStats/{document} {
-      allow read, write: if request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'SYSTEM_ADMIN';
+    
+    // 사용자 컬렉션 - 본인 및 권한자만 접근
+    match /users/{userId} {
+      allow read, write: if 
+        request.auth != null && 
+        (request.auth.uid == userId || 
+         hasRole(['SYSTEM_ADMIN']) ||
+         (hasRole(['ORGANIZATION_ADMIN']) && 
+          isSameOrganization(userId)));
     }
     
-    // 조직 관리자는 본인 조직 데이터만 접근
+    // 조직 컬렉션 - 조직 관리자 및 시스템 관리자만 접근
     match /organizations/{orgId} {
-      allow read, write: if request.auth != null && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'SYSTEM_ADMIN' ||
-         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'ORGANIZATION_ADMIN'));
+      allow read: if 
+        request.auth != null && 
+        (hasRole(['SYSTEM_ADMIN']) ||
+         getUserOrganizationId() == orgId);
+      
+      allow write: if 
+        request.auth != null && 
+        (hasRole(['SYSTEM_ADMIN']) ||
+         (hasRole(['ORGANIZATION_ADMIN']) && 
+          getUserOrganizationId() == orgId));
+    }
+    
+    // 측정 세션 - 조직 멤버만 접근
+    match /measurementSessions/{sessionId} {
+      allow read, write: if 
+        request.auth != null && 
+        (hasRole(['SYSTEM_ADMIN']) ||
+         isOrganizationMember(resource.data.organizationId) ||
+         resource.data.measuredByUserId == request.auth.uid);
+    }
+    
+    // 건강 리포트 - 본인 또는 권한자만 접근
+    match /healthReports/{reportId} {
+      allow read: if 
+        request.auth != null && 
+        (hasRole(['SYSTEM_ADMIN']) ||
+         resource.data.userId == request.auth.uid ||
+         isOrganizationMember(resource.data.organizationId));
+      
+      allow write: if 
+        request.auth != null && 
+        (hasRole(['SYSTEM_ADMIN']) ||
+         isOrganizationMember(resource.data.organizationId));
+    }
+    
+    // 크레딧 거래 - 읽기 전용 (시스템에서만 생성)
+    match /creditTransactions/{transactionId} {
+      allow read: if 
+        request.auth != null && 
+        (hasRole(['SYSTEM_ADMIN']) ||
+         resource.data.userId == request.auth.uid ||
+         isOrganizationMember(resource.data.organizationId));
+      
+      // 쓰기는 서버 함수에서만
+      allow write: if false;
+    }
+    
+    // 헬퍼 함수들
+    function hasRole(roles) {
+      return request.auth != null && 
+             getUserData().userType in roles;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function getUserOrganizationId() {
+      return getUserData().organizationId;
+    }
+    
+    function isSameOrganization(targetUserId) {
+      let targetUser = get(/databases/$(database)/documents/users/$(targetUserId)).data;
+      return getUserOrganizationId() == targetUser.organizationId;
+    }
+    
+    function isOrganizationMember(orgId) {
+      return getUserOrganizationId() == orgId &&
+             getUserData().userType in ['ORGANIZATION_ADMIN', 'ORGANIZATION_MEMBER'];
     }
   }
 }
 ```
 
-### 3. API 인증 및 권한
-- Firebase Authentication + JWT 토큰
-- 역할 기반 접근 제어 (RBAC)
-- 요청 로깅 및 모니터링
+---
+
+## 🚀 서비스 계층 최적화
+
+### **1. Core Services (공통 기반)**
+
+#### A. `FirebaseService` (확장)
+```typescript
+// src/core/services/FirebaseService.ts
+export class FirebaseService {
+  // 기존 기능 + 추가 유틸리티
+  
+  // 트랜잭션 헬퍼
+  static async runTransaction<T>(
+    updateFunction: (transaction: Transaction) => Promise<T>
+  ): Promise<T> {
+    return await runTransaction(db, updateFunction);
+  }
+  
+  // 배치 작업 헬퍼
+  static createBatch(): WriteBatch {
+    return writeBatch(db);
+  }
+  
+  // 실시간 구독 관리
+  static subscribeToDocument(
+    path: string, 
+    callback: (data: any) => void
+  ): () => void {
+    const unsubscribe = onSnapshot(doc(db, path), (doc) => {
+      callback(doc.exists() ? { id: doc.id, ...doc.data() } : null);
+    });
+    return unsubscribe;
+  }
+  
+  // 쿼리 빌더
+  static buildQuery(
+    collectionPath: string,
+    constraints: QueryConstraint[]
+  ): Query {
+    return query(collection(db, collectionPath), ...constraints);
+  }
+}
+```
+
+#### B. `BaseService` (최적화)
+```typescript
+// src/core/services/BaseService.ts
+export abstract class BaseService {
+  protected db: Firestore;
+  protected auth: Auth;
+  protected cache: Cache;
+  
+  // Firestore 전용 헬퍼 메서드들
+  protected async getDocument<T>(
+    collectionPath: string, 
+    docId: string
+  ): Promise<T | null> {
+    const cacheKey = `${collectionPath}:${docId}`;
+    
+    // 캐시 확인
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+    
+    // Firestore 조회
+    const docSnap = await getDoc(doc(this.db, collectionPath, docId));
+    const result = docSnap.exists() ? 
+      { id: docSnap.id, ...docSnap.data() } as T : null;
+    
+    // 캐시 저장
+    if (result) {
+      this.cache.set(cacheKey, result, 5 * 60 * 1000); // 5분
+    }
+    
+    return result;
+  }
+  
+  protected async queryDocuments<T>(
+    collectionPath: string,
+    constraints: QueryConstraint[]
+  ): Promise<T[]> {
+    const q = query(collection(this.db, collectionPath), ...constraints);
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as T[];
+  }
+  
+  protected async createDocument<T>(
+    collectionPath: string,
+    data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<string> {
+    const docData = {
+      ...data,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    };
+    
+    const docRef = await addDoc(collection(this.db, collectionPath), docData);
+    return docRef.id;
+  }
+  
+  protected async updateDocument(
+    collectionPath: string,
+    docId: string,
+    data: Partial<any>
+  ): Promise<void> {
+    await updateDoc(doc(this.db, collectionPath, docId), {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+    
+    // 캐시 무효화
+    this.cache.delete(`${collectionPath}:${docId}`);
+  }
+}
+```
 
 ---
 
-이 구현 계획으로 시작하시겠습니까? 먼저 어떤 부분부터 구현해보실지 말씀해주세요! 
+## 📈 성능 최적화 전략
+
+### **1. 인덱스 최적화**
+
+#### A. 복합 인덱스 설정
+```javascript
+// firestore.indexes.json
+{
+  "indexes": [
+    {
+      "collectionGroup": "measurementSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "sessionDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "healthReports", 
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "creditTransactions",
+      "queryScope": "COLLECTION", 
+      "fields": [
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "organizationMembers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "joinedAt", "order": "DESCENDING" }
+      ]
+    }
+  ]
+}
+```
+
+### **2. 캐싱 전략**
+
+#### A. 다계층 캐싱
+```typescript
+// 메모리 캐시 (실시간 데이터)
+const realtimeCache = new Map();
+
+// IndexedDB 캐시 (오프라인 지원)
+const persistentCache = new Cache('firestore-cache');
+
+// 캐싱 전략별 TTL
+const CACHE_TTL = {
+  USER_DATA: 10 * 60 * 1000,      // 10분
+  ORGANIZATION_DATA: 30 * 60 * 1000, // 30분
+  STATIC_DATA: 60 * 60 * 1000,    // 1시간
+  REALTIME_DATA: 30 * 1000        // 30초
+};
+```
+
+### **3. 배치 처리**
+
+#### A. 일괄 작업 최적화
+```typescript
+// 벌크 멤버 초대
+export async function bulkInviteMembers(
+  organizationId: string,
+  members: InviteMemberData[]
+): Promise<BulkInviteResult> {
+  const batch = writeBatch(db);
+  const results: BulkInviteResult = {
+    success: [],
+    failed: []
+  };
+  
+  // 최대 500개씩 배치 처리 (Firestore 제한)
+  const chunks = chunkArray(members, 500);
+  
+  for (const chunk of chunks) {
+    for (const member of chunk) {
+      try {
+        const inviteRef = doc(collection(db, 'invitations'));
+        batch.set(inviteRef, {
+          ...member,
+          organizationId,
+          status: 'PENDING',
+          createdAt: Timestamp.now()
+        });
+        
+        results.success.push(member.email);
+      } catch (error) {
+        results.failed.push({
+          email: member.email,
+          error: error.message
+        });
+      }
+    }
+    
+    await batch.commit();
+  }
+  
+  return results;
+}
+```
+
+---
+
+## 🛠️ 구현 우선순위
+
+### **Phase 1: 핵심 데이터 구조 (1주)**
+1. ✅ 기존 Firestore 서비스 최적화
+2. ✅ 보안 규칙 적용
+3. ✅ 인덱스 최적화
+4. ✅ 캐싱 전략 구현
+
+### **Phase 2: 관리 기능 구현 (1주)**
+1. 시스템 관리자 대시보드
+2. 조직 관리자 기능
+3. 멤버 관리 시스템
+4. 디바이스 관리
+
+### **Phase 3: 고급 기능 (1주)**
+1. 실시간 알림 시스템
+2. 고급 분석 및 리포트
+3. 일괄 작업 기능
+4. 데이터 내보내기
+
+---
+
+## 🔄 마이그레이션 및 백업 전략
+
+### **데이터 백업**
+```typescript
+// 정기 백업 자동화
+export class FirestoreBackupService {
+  static async createBackup() {
+    const collections = [
+      'users', 'organizations', 'measurementSessions', 
+      'healthReports', 'creditTransactions'
+    ];
+    
+    for (const collectionName of collections) {
+      await this.backupCollection(collectionName);
+    }
+  }
+  
+  static async backupCollection(collectionName: string) {
+    // Firebase Admin SDK를 통한 백업 구현
+    // Google Cloud Storage에 JSON 형태로 저장
+  }
+}
+```
+
+### **데이터 마이그레이션**
+```typescript
+// 향후 스키마 변경 시 마이그레이션
+export class MigrationService {
+  static async migrateToV2() {
+    // 기존 데이터 구조에서 새로운 구조로 변환
+    // 안전한 롤백 지원
+  }
+}
+```
+
+---
+
+이제 **Firestore 완전 통일 구조**로 모든 DB 작업을 진행할 수 있습니다! 🚀 

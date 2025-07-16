@@ -2,11 +2,11 @@
  * Mind Breeze AI - 통합 타입 시스템
  * 
  * 모든 데이터 타입의 단일 소스 진실(Single Source of Truth)
- * DataConnect GraphQL 스키마와 완전 일치하는 TypeScript 인터페이스
+ * Firestore 기반 데이터 구조와 완전 일치하는 TypeScript 인터페이스
  */
 
 // ============================================================================
-// 기본 Enum 타입들 (DataConnect schema.gql과 동일)
+// 기본 Enum 타입들 (Firestore 컬렉션 구조 기반)
 // ============================================================================
 
 export type UserType = 
@@ -58,11 +58,11 @@ export type CreditTransactionType =
   | 'EXPIRY';
 
 // ============================================================================
-// 핵심 엔티티 인터페이스들 (DataConnect schema.gql과 동일)
+// 핵심 엔티티 인터페이스들 (Firestore 컬렉션 구조 기반)
 // ============================================================================
 
 /**
- * 통합 사용자 인터페이스 (schema.gql의 User @table과 동일)
+ * 통합 사용자 인터페이스 (Firestore users 컬렉션 기반)
  */
 export interface User {
   id: string;                    // 사용자 고유 ID (Firebase UID)
@@ -99,7 +99,7 @@ export interface User {
 }
 
 /**
- * 조직 인터페이스 (schema.gql의 Organization @table과 동일)
+ * 조직 인터페이스 (Firestore organizations 컬렉션 기반)
  */
 export interface Organization {
   id: string;
@@ -142,7 +142,7 @@ export interface Organization {
 }
 
 /**
- * 조직 멤버 인터페이스 (schema.gql의 OrganizationMember @table과 동일)
+ * 조직 멤버 인터페이스 (Firestore organizationMembers 컬렉션 기반)
  */
 export interface OrganizationMember {
   id: string;
@@ -161,7 +161,7 @@ export interface OrganizationMember {
 }
 
 /**
- * 크레딧 거래 인터페이스 (schema.gql의 CreditTransaction @table과 동일)
+ * 크레딧 거래 인터페이스 (Firestore creditTransactions 컬렉션 기반)
  */
 export interface CreditTransaction {
   id: string;
