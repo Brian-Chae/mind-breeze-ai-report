@@ -28,6 +28,11 @@ interface DataQualityScreenProps {
 export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQualityScreenProps) {
   const [qualityTimer, setQualityTimer] = useState(0);
   const [isMonitoring, setIsMonitoring] = useState(true);
+  
+  // 측정 모드 상태 추가
+  const [mode, setMode] = useState<'quality' | 'measurement'>('quality');
+  const [measurementTimer, setMeasurementTimer] = useState(0);
+  const [isMeasuring, setIsMeasuring] = useState(false);
 
   // 기존 데이터 hook들 사용
   const isConnected = useConnectionState();
@@ -295,11 +300,13 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
   // 10초간 안정적인 품질 유지 확인
   useEffect(() => {
-    if (isGoodQuality && isMonitoring) {
+    if (isGoodQuality && isMonitoring && mode === 'quality') {
       const timer = setInterval(() => {
         setQualityTimer(prev => {
           if (prev >= 10) {
             clearInterval(timer);
+            // 안정화 완료 시 측정 모드로 전환
+            setMode('measurement');
             return prev;
           }
           return prev + 1;
@@ -307,10 +314,30 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       }, 1000);
 
       return () => clearInterval(timer);
-    } else {
+    } else if (mode === 'quality') {
       setQualityTimer(0);
     }
-  }, [isGoodQuality, isMonitoring]);
+  }, [isGoodQuality, isMonitoring, mode]);
+
+  // 1분 측정 타이머
+  useEffect(() => {
+    if (isMeasuring) {
+      const timer = setInterval(() => {
+        setMeasurementTimer(prev => {
+          if (prev >= 60) {
+            clearInterval(timer);
+            setIsMeasuring(false);
+            // 측정 완료 시 다음 단계로 이동
+            onQualityConfirmed();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [isMeasuring, onQualityConfirmed]);
 
   // 품질 상태 확인 함수
   const getQualityStatus = (quality: number) => {
@@ -353,15 +380,37 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
     onQualityConfirmed();
   }, [isConnected, isGoodQuality, qualityTimer, onQualityConfirmed, onError]);
 
+  // 측정 시작 함수
+  const handleStartMeasurement = useCallback(() => {
+    if (!isConnected) {
+      onError('디바이스가 연결되지 않았습니다.');
+      return;
+    }
+
+    if (!isGoodQuality) {
+      onError('신호 품질이 좋지 않습니다. 디바이스 착용을 확인해주세요.');
+      return;
+    }
+
+    setMeasurementTimer(0);
+    setIsMeasuring(true);
+  }, [isConnected, isGoodQuality, onError]);
+
   return (
     <div className="data-quality-screen p-4 flex flex-col">
       {/* 헤더 */}
       <div className="mb-4">
         <h1 className="text-xl font-bold text-gray-800 mb-1">
-          🔍 디바이스 착용 및 신호 품질 확인
+          {mode === 'quality' 
+            ? '🔍 디바이스 착용 및 신호 품질 확인'
+            : '⏱️ 1분 측정'
+          }
         </h1>
         <p className="text-gray-600 text-sm">
-          정확한 측정을 위해 센서 접촉과 신호 품질을 확인해주세요.
+          {mode === 'quality'
+            ? '정확한 측정을 위해 센서 접촉과 신호 품질을 확인해주세요.'
+            : '1분간 안정된 자세를 유지하며 측정을 진행합니다.'
+          }
         </p>
       </div>
 
@@ -669,31 +718,48 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       </div>
 
       {/* 진행 상황 표시 */}
-      {isMonitoring && isConnected && (
+      {isConnected && (
         <Card className="bg-white border-gray-200 shadow-sm mb-3">
           <CardHeader className="pb-2 px-4 pt-4">
             <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
               <Clock className="h-4 w-4 text-blue-500" />
-              신호 품질 안정화 확인 중... ({qualityTimer}/10초)
+              {mode === 'quality' 
+                ? `신호 품질 안정화 확인 중... (${qualityTimer}/10초)`
+                : `1분 측정 ${isMeasuring ? '진행 중' : '대기 중'}... (${measurementTimer}/60초)`
+              }
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs text-gray-600">
                 <span>진행률</span>
-                <span>{Math.round((qualityTimer / 10) * 100)}%</span>
+                <span>
+                  {mode === 'quality' 
+                    ? `${Math.round((qualityTimer / 10) * 100)}%`
+                    : `${Math.round((measurementTimer / 60) * 100)}%`
+                  }
+                </span>
               </div>
               <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${(qualityTimer / 10) * 100}%` }}
+                  style={{ 
+                    width: mode === 'quality' 
+                      ? `${(qualityTimer / 10) * 100}%`
+                      : `${(measurementTimer / 60) * 100}%`
+                  }}
                 />
               </div>
               <div className="text-xs text-gray-500 text-center">
-                {qualityTimer < 10 
-                  ? `안정적인 신호 대기 중... ${10 - qualityTimer}초 남음`
-                  : '신호 안정화 완료!'
-                }
+                {mode === 'quality' ? (
+                  qualityTimer < 10 
+                    ? `안정적인 신호 대기 중... ${10 - qualityTimer}초 남음`
+                    : '신호 안정화 완료!'
+                ) : (
+                  isMeasuring
+                    ? `측정 진행 중... ${60 - measurementTimer}초 남음`
+                    : '측정을 시작하려면 버튼을 눌러주세요'
+                )}
               </div>
             </div>
           </CardContent>
@@ -706,20 +772,34 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
           onClick={onBack}
           variant="outline"
           className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+          disabled={isMeasuring}
         >
           이전 단계
         </Button>
         
-        <Button 
-          onClick={handleConfirm}
-          disabled={!isConnected || qualityTimer < 10 || !isGoodQuality}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:text-gray-500"
-        >
-          {qualityTimer < 10
-            ? `안정적인 신호 대기 중... ${qualityTimer}/10초`
-            : '측정 시작하기'
-          }
-        </Button>
+        {mode === 'quality' ? (
+          <Button 
+            onClick={handleConfirm}
+            disabled={!isConnected || qualityTimer < 10 || !isGoodQuality}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:text-gray-500"
+          >
+            {qualityTimer < 10
+              ? `안정적인 신호 대기 중... ${qualityTimer}/10초`
+              : '측정 시작하기'
+            }
+          </Button>
+        ) : (
+          <Button 
+            onClick={handleStartMeasurement}
+            disabled={!isConnected || !isGoodQuality || isMeasuring}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:text-gray-500"
+          >
+            {isMeasuring
+              ? `측정 진행 중... ${measurementTimer}/60초`
+              : '측정 시작'
+            }
+          </Button>
+        )}
       </div>
     </div>
   );
