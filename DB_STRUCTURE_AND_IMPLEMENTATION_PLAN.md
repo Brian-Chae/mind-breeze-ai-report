@@ -457,6 +457,502 @@ interface ChatMessage {
 
 ---
 
+## 🤖 **AI Report 시스템 컬렉션 구조**
+
+### **7. 측정 데이터 관리**
+
+#### A. `measurementData` 컬렉션
+```typescript
+interface MeasurementData {
+  // 문서 ID: 자동 생성
+  
+  // 연관 정보
+  sessionId: string; // measurementSessions 컬렉션 참조
+  organizationId?: string;
+  userId: string; // 측정 대상자
+  
+  // 측정 기본 정보
+  measurementDate: Timestamp;
+  duration: number; // 초 단위 (기본 60초)
+  deviceInfo: {
+    serialNumber: string;
+    model: string; // 'LINK_BAND_V4', 'LINK_BAND_WELLNESS'
+    firmwareVersion: string;
+    batteryLevel?: number;
+  };
+  
+  // EEG 분석 메트릭
+  eegMetrics: {
+    // 주파수 밴드 파워
+    delta: number; // 0.5-4 Hz
+    theta: number; // 4-8 Hz  
+    alpha: number; // 8-13 Hz
+    beta: number; // 13-30 Hz
+    gamma: number; // 30-100 Hz
+    
+    // 파생 지표들
+    attentionIndex: number; // 0-100
+    meditationIndex: number; // 0-100
+    stressIndex: number; // 0-100
+    fatigueIndex: number; // 0-100
+    
+    // 신호 품질
+    signalQuality: number; // 0-1
+    artifactRatio: number; // 0-1
+    
+    // 원시 데이터 경로 (Firebase Storage)
+    rawDataPath?: string;
+    processedDataPath?: string;
+  };
+  
+  // PPG 분석 메트릭
+  ppgMetrics: {
+    // 심박 관련
+    heartRate: number; // BPM
+    heartRateVariability: number; // RMSSD
+    rrIntervals: number[]; // ms 단위
+    
+    // 혈압 추정
+    systolicBP?: number;
+    diastolicBP?: number;
+    
+    // 스트레스 지표
+    stressScore: number; // 0-100
+    autonomicBalance: number; // LF/HF ratio
+    
+    // 신호 품질
+    signalQuality: number; // 0-1
+    motionArtifact: number; // 0-1
+    
+    // 원시 데이터 경로
+    rawDataPath?: string;
+    processedDataPath?: string;
+  };
+  
+  // ACC 움직임 메트릭
+  accMetrics: {
+    // 활동 수준
+    activityLevel: number; // 0-100
+    movementIntensity: number; // 0-1
+    
+    // 자세 정보
+    posture: 'SITTING' | 'STANDING' | 'LYING' | 'MOVING' | 'UNKNOWN';
+    postureStability: number; // 0-1
+    
+    // 움직임 패턴
+    stepCount?: number;
+    movementEvents: {
+      timestamp: number; // measurement 시작 기준 ms
+      intensity: number; // 0-1
+      duration: number; // ms
+    }[];
+    
+    // 원시 데이터 경로
+    rawDataPath?: string;
+  };
+  
+  // 데이터 품질 종합 평가
+  dataQuality: {
+    overallScore: number; // 0-100
+    eegQuality: number; // 0-100
+    ppgQuality: number; // 0-100
+    motionInterference: number; // 0-100
+    usableForAnalysis: boolean;
+    qualityIssues: string[]; // 품질 문제 목록
+  };
+  
+  // 환경 정보
+  environmentInfo?: {
+    ambientNoise?: number; // dB
+    temperature?: number; // Celsius
+    humidity?: number; // %
+    lightLevel?: number; // lux
+  };
+  
+  // 메타데이터
+  processingVersion: string; // 분석 알고리즘 버전
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
+### **8. AI 엔진 시스템**
+
+#### A. `aiEngines` 컬렉션
+```typescript
+interface AIEngine {
+  // 문서 ID: 엔진 고유 식별자 (예: 'basic_gemini_v1')
+  
+  // 기본 정보
+  engineId: string; // 'basic_gemini_v1', 'detail_gemini_v1', 'focus_claude_v1'
+  name: string; // '기본 건강 리포트', '정밀 건강 분석', '집중력 전문 분석'
+  description: string;
+  version: string; // 'v1.0.0'
+  
+  // AI 모델 설정
+  aiProvider: 'GEMINI' | 'CLAUDE' | 'OPENAI' | 'CUSTOM';
+  modelName: string; // 'gemini-1.5-pro', 'claude-3-sonnet'
+  
+  // 프롬프트 설정
+  promptTemplate: {
+    systemPrompt: string;
+    userPromptTemplate: string; // 변수 포함 템플릿
+    requiredVariables: string[]; // ['eegMetrics', 'ppgMetrics', 'accMetrics']
+  };
+  
+  // 출력 설정
+  outputFormat: {
+    type: 'JSON' | 'MARKDOWN' | 'HTML';
+    schema: any; // JSON 스키마
+    validationRules: string[];
+  };
+  
+  // 비용 설정
+  creditCost: number; // 엔진 사용 시 차감되는 크레딧
+  
+  // 성능 정보
+  averageProcessingTime: number; // ms
+  successRate: number; // 0-1
+  
+  // 사용 제한
+  restrictions: {
+    minDataQuality: number; // 최소 데이터 품질 요구사항
+    requiredMetrics: string[]; // 필수 메트릭 목록
+    maxRetries: number;
+    timeoutMs: number;
+  };
+  
+  // 접근 권한
+  accessControl: {
+    isPublic: boolean;
+    allowedOrganizations: string[]; // 특정 조직만 사용 가능
+    userTypes: string[]; // 사용 가능한 사용자 유형
+    subscriptionRequired?: string; // 필요한 구독 등급
+  };
+  
+  // 상태
+  status: 'ACTIVE' | 'DEPRECATED' | 'MAINTENANCE' | 'BETA';
+  
+  // 메타데이터
+  createdBy: string; // 개발자/조직
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastUsedAt?: Timestamp;
+  usageCount: number;
+}
+```
+
+#### B. `reportRenderers` 컬렉션
+```typescript
+interface ReportRenderer {
+  // 문서 ID: 렌더러 고유 식별자 (예: 'detail_gemini_v1_web')
+  
+  // 기본 정보
+  rendererId: string; // 'basic_web_v1', 'detail_pdf_v1', 'company_samsung_web_v1'
+  name: string; // '웹 기본 렌더러', 'PDF 상세 렌더러', '삼성전자 전용 웹 렌더러'
+  description: string;
+  version: string;
+  
+  // 입력/출력 설정
+  inputFormat: {
+    supportedEngines: string[]; // 지원하는 AI 엔진 목록
+    requiredJsonSchema: any; // 필요한 입력 JSON 스키마
+  };
+  
+  outputFormat: {
+    type: 'WEB_COMPONENT' | 'PDF' | 'DOCX' | 'EMAIL' | 'MOBILE_APP';
+    mimeType: string; // 'text/html', 'application/pdf'
+    downloadable: boolean;
+  };
+  
+  // 렌더링 설정
+  renderingConfig: {
+    templateEngine: 'REACT' | 'HANDLEBARS' | 'MUSTACHE' | 'CUSTOM';
+    stylesheetPath?: string; // CSS/SCSS 파일 경로
+    assetsPath?: string; // 이미지, 폰트 등 에셋 경로
+    customBranding?: {
+      logoPath: string;
+      colors: {
+        primary: string;
+        secondary: string;
+        accent: string;
+      };
+      fonts: string[];
+    };
+  };
+  
+  // 비용 설정
+  creditCost: number; // 렌더러 사용 시 추가 차감 크레딧
+  
+  // 접근 권한
+  accessControl: {
+    isPublic: boolean;
+    allowedOrganizations: string[]; // B2B 전용 렌더러
+    customizationLevel: 'NONE' | 'BASIC' | 'ADVANCED' | 'FULL';
+  };
+  
+  // 성능 정보
+  averageRenderTime: number; // ms
+  maxFileSize: number; // bytes (PDF 등의 경우)
+  
+  // 상태
+  status: 'ACTIVE' | 'DEPRECATED' | 'MAINTENANCE' | 'BETA';
+  
+  // 메타데이터
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  usageCount: number;
+}
+```
+
+---
+
+### **9. 리포트 인스턴스 관리**
+
+#### A. `reportInstances` 컬렉션
+```typescript
+interface ReportInstance {
+  // 문서 ID: 자동 생성
+  
+  // 연관 정보
+  measurementDataId: string; // measurementData 컬렉션 참조
+  sessionId: string; // measurementSessions 컬렉션 참조
+  userId: string; // 리포트 대상자
+  organizationId?: string;
+  
+  // 생성 설정
+  engineId: string; // 사용된 AI 엔진
+  rendererId: string; // 사용된 렌더러
+  
+  // 리포트 내용
+  aiAnalysisResult: {
+    // AI 엔진 원본 출력
+    rawOutput: any; // JSON 형태
+    
+    // 파싱된 분석 결과
+    parsedResult: {
+      overallScore: number; // 0-100
+      riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+      
+      // 상세 분석 (엔진별로 다름)
+      stressAnalysis?: any;
+      focusAnalysis?: any;
+      healthRiskAnalysis?: any;
+      
+      // 추천사항
+      recommendations: string[];
+      warnings: string[];
+      
+      // 메타데이터
+      confidence: number; // 0-1
+      analysisVersion: string;
+    };
+  };
+  
+  // 렌더링 결과
+  renderedOutput: {
+    // 렌더러 출력
+    content: string; // HTML, Base64 PDF 등
+    contentType: string; // MIME type
+    
+    // 다운로드 정보
+    downloadUrl?: string; // Firebase Storage URL
+    fileName?: string;
+    fileSize?: number; // bytes
+    
+    // 렌더링 메타데이터
+    renderingTime: number; // ms
+    renderingVersion: string;
+  };
+  
+  // 비용 정보
+  costBreakdown: {
+    engineCost: number; // 엔진 사용 크레딧
+    rendererCost: number; // 렌더러 사용 크레딧
+    totalCost: number; // 총 차감 크레딧
+    
+    // 결제 정보
+    paidBy: string; // 결제한 사용자/조직 ID
+    paymentMethod: 'ORGANIZATION_CREDIT' | 'INDIVIDUAL_CREDIT' | 'FREE_TIER';
+  };
+  
+  // 생성 과정 추적
+  processingStatus: {
+    stage: 'QUEUED' | 'AI_PROCESSING' | 'RENDERING' | 'COMPLETED' | 'FAILED';
+    progress: number; // 0-100
+    
+    // 단계별 타이밍
+    queuedAt: Timestamp;
+    aiProcessingStartedAt?: Timestamp;
+    aiProcessingCompletedAt?: Timestamp;
+    renderingStartedAt?: Timestamp;
+    renderingCompletedAt?: Timestamp;
+    
+    // 오류 정보
+    errorMessage?: string;
+    errorCode?: string;
+    retryCount: number;
+  };
+  
+  // 공유 및 접근 제어
+  accessControl: {
+    isPublic: boolean;
+    sharedWith: string[]; // 공유된 사용자 ID 목록
+    accessCode?: string; // 링크 공유용 코드
+    expiresAt?: Timestamp;
+  };
+  
+  // 사용 통계
+  viewCount: number;
+  downloadCount: number;
+  lastViewedAt?: Timestamp;
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
+### **10. 크레딧 정책 관리**
+
+#### A. `creditPolicies` 컬렉션
+```typescript
+interface CreditPolicy {
+  // 문서 ID: 자동 생성
+  
+  // 적용 범위
+  policyType: 'ENGINE' | 'RENDERER' | 'COMBO' | 'ORGANIZATION_OVERRIDE';
+  
+  // 대상 지정
+  targetEngineId?: string; // 특정 엔진에 대한 정책
+  targetRendererId?: string; // 특정 렌더러에 대한 정책
+  targetOrganizationId?: string; // 조직별 할인 정책
+  
+  // 비용 설정
+  baseCost: number; // 기본 크레딧 비용
+  
+  // 할인 정책
+  discounts: {
+    type: 'VOLUME' | 'SUBSCRIPTION' | 'PROMOTION' | 'LOYALTY';
+    condition: any; // 할인 조건 (JSON)
+    discountRate: number; // 0-1 (0.2 = 20% 할인)
+    maxDiscount?: number; // 최대 할인 크레딧
+  }[];
+  
+  // 번들 정책
+  bundleRules?: {
+    engineId: string;
+    rendererId: string;
+    bundleCost: number; // 개별 비용 합보다 저렴
+    description: string;
+  }[];
+  
+  // 무료 사용 정책
+  freeTierRules?: {
+    userType: string[]; // 무료 사용 가능한 사용자 유형
+    dailyLimit: number; // 일일 무료 사용 한도
+    monthlyLimit: number; // 월간 무료 사용 한도
+    qualityThreshold?: number; // 무료 사용 시 품질 제한
+  };
+  
+  // 유효 기간
+  validFrom: Timestamp;
+  validUntil?: Timestamp;
+  
+  // 상태
+  isActive: boolean;
+  priority: number; // 정책 우선순위 (숫자가 낮을수록 높은 우선순위)
+  
+  // 메타데이터
+  createdBy: string;
+  description: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
+### **11. 조직별 AI 시스템 설정**
+
+#### A. `organizationAIConfigs` 컬렉션
+```typescript
+interface OrganizationAIConfig {
+  // 문서 ID: organizationId
+  
+  organizationId: string;
+  
+  // 사용 가능한 AI 엔진
+  enabledEngines: {
+    engineId: string;
+    isEnabled: boolean;
+    customSettings?: {
+      promptOverrides?: any; // 프롬프트 커스터마이징
+      outputCustomization?: any; // 출력 형식 조정
+      costOverride?: number; // 조직별 특별 가격
+    };
+  }[];
+  
+  // 사용 가능한 렌더러
+  enabledRenderers: {
+    rendererId: string;
+    isEnabled: boolean;
+    customBranding?: {
+      logoUrl: string;
+      companyName: string;
+      colors: any;
+      fonts: string[];
+    };
+    costOverride?: number;
+  }[];
+  
+  // 기본 설정
+  defaultEngine: string; // 기본 선택될 엔진
+  defaultRenderer: string; // 기본 선택될 렌더러
+  
+  // 사용 제한
+  limits: {
+    dailyReportLimit: number;
+    monthlyReportLimit: number;
+    concurrentProcessingLimit: number; // 동시 처리 가능한 리포트 수
+    
+    // 엔진별 제한
+    engineLimits: {
+      [engineId: string]: {
+        dailyLimit: number;
+        monthlyLimit: number;
+      };
+    };
+  };
+  
+  // 자동화 설정
+  automation: {
+    autoGenerateBasicReport: boolean; // 측정 완료 시 자동 기본 리포트 생성
+    autoNotifyCompletion: boolean; // 리포트 완성 시 자동 알림
+    autoArchiveOldReports: boolean; // 오래된 리포트 자동 아카이브
+    
+    // 스케줄링
+    scheduledReports?: {
+      frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+      engineId: string;
+      rendererId: string;
+      recipientEmails: string[];
+    }[];
+  };
+  
+  // 메타데이터
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+---
+
 ## 🔧 Firestore 보안 규칙
 
 ### **보안 규칙 구조**
