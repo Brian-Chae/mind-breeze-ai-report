@@ -615,7 +615,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         .map(renderer => ({
           id: renderer.id,
           name: renderer.name,
-          description: renderer.description,
+          description: renderer.description.length > 20 ? renderer.description.substring(0, 20) + '...' : renderer.description,
           version: renderer.version,
           costPerRender: renderer.costPerRender,
           isRecommended: recommendedRenderers.some(r => r.id === renderer.id),
@@ -633,7 +633,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         .map((custom: any) => ({
           id: custom.rendererId,
           name: custom.name,
-          description: custom.description,
+          description: custom.description.length > 20 ? custom.description.substring(0, 20) + '...' : custom.description,
           version: custom.version,
           costPerRender: custom.creditCostPerRender,
           isRecommended: false,

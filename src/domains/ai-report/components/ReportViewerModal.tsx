@@ -4,6 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { 
   Dialog, 
   DialogContent, 
@@ -29,7 +31,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  X
+  X,
+  Smartphone
 } from 'lucide-react';
 
 interface ReportViewerModalProps {
@@ -53,6 +56,8 @@ export function ReportViewerModal({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<any>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   
   // 실제 렌더러 찾기
   useEffect(() => {
@@ -182,17 +187,94 @@ export function ReportViewerModal({
     return null;
   }
 
-  const handleDownloadReport = () => {
-    // PDF 다운로드 기능 구현
-    console.log('리포트 다운로드:', report.id);
-    // TODO: 실제 PDF 생성 및 다운로드 로직
+  const handleDownloadReport = async () => {
+    if (!reportContent) return;
+    
+    setIsDownloading(true);
+    try {
+      // 리포트 콘텐츠 영역을 캔버스로 변환
+      const reportElement = document.getElementById('report-content');
+      if (!reportElement) {
+        throw new Error('리포트 콘텐츠를 찾을 수 없습니다.');
+      }
+
+      // HTML을 캔버스로 변환 (고화질)
+      const canvas = await html2canvas(reportElement, {
+        scale: 2, // 고화질을 위한 스케일 증가
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        width: viewMode === 'mobile' ? 375 : 800,
+        windowWidth: viewMode === 'mobile' ? 375 : 1200
+      });
+
+      // PDF 생성
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // A4 크기 계산
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 20; // 여백 10mm씩
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let position = 10; // 상단 여백
+
+      // 이미지가 페이지를 넘어가면 페이지 분할
+      if (imgHeight <= pageHeight - 20) {
+        // 한 페이지에 모두 들어감
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      } else {
+        // 여러 페이지로 분할
+        let remainingHeight = imgHeight;
+        let sourceY = 0;
+        
+        while (remainingHeight > 0) {
+          const pageContentHeight = pageHeight - 20; // 상하 여백
+          const currentPageHeight = Math.min(remainingHeight, pageContentHeight);
+          
+          // 현재 페이지에 이미지 추가
+          pdf.addImage(
+            imgData, 
+            'PNG', 
+            10, 
+            10, 
+            imgWidth, 
+            currentPageHeight
+          );
+          
+          remainingHeight -= currentPageHeight;
+          sourceY += currentPageHeight;
+          
+          if (remainingHeight > 0) {
+            pdf.addPage();
+          }
+        }
+      }
+
+      // PDF 다운로드
+      const fileName = `AI_건강분석_리포트_${report?.userName || '사용자'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      console.log('✅ PDF 다운로드 완료:', fileName);
+      
+    } catch (error) {
+      console.error('❌ PDF 생성 실패:', error);
+      alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const renderUniversalWebViewer = () => {
     if (!reportContent) return null;
 
     return (
-      <div className="space-y-6 p-6">
+      <div id="report-content" className={`space-y-6 p-6 ${viewMode === 'mobile' ? 'max-w-sm mx-auto' : 'max-w-4xl mx-auto'}`}>
         {/* 헤더 정보 */}
         <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -202,17 +284,33 @@ export function ReportViewerModal({
             </Badge>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid gap-4 ${
+            viewMode === 'mobile' 
+              ? 'grid-cols-1' 
+              : 'grid-cols-1 md:grid-cols-3'
+          }`}>
             <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
-              <div className="text-3xl font-bold text-green-700">{reportContent.overallScore}</div>
+              <div className={`font-bold text-green-700 ${
+                viewMode === 'mobile' ? 'text-2xl' : 'text-3xl'
+              }`}>
+                {reportContent.overallScore}
+              </div>
               <div className="text-sm text-gray-700 font-medium">종합 점수</div>
             </div>
             <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
-              <div className="text-3xl font-bold text-orange-600">{reportContent.stressLevel}</div>
+              <div className={`font-bold text-orange-600 ${
+                viewMode === 'mobile' ? 'text-2xl' : 'text-3xl'
+              }`}>
+                {reportContent.stressLevel}
+              </div>
               <div className="text-sm text-gray-700 font-medium">스트레스</div>
             </div>
             <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
-              <div className="text-3xl font-bold text-blue-700">{reportContent.focusLevel}</div>
+              <div className={`font-bold text-blue-700 ${
+                viewMode === 'mobile' ? 'text-2xl' : 'text-3xl'
+              }`}>
+                {reportContent.focusLevel}
+              </div>
               <div className="text-sm text-gray-700 font-medium">집중도</div>
             </div>
           </div>
@@ -269,7 +367,11 @@ export function ReportViewerModal({
             </CardTitle>
           </CardHeader>
           <CardContent className="bg-white p-6">
-            <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className={`grid gap-4 text-sm ${
+              viewMode === 'mobile' 
+                ? 'grid-cols-1' 
+                : 'grid-cols-1 md:grid-cols-3'
+            }`}>
               <div>
                 <span className="font-semibold text-gray-700">분석 일시:</span>
                 <div className="text-gray-800 mt-1">{reportContent.metadata.analysisDate}</div>
@@ -339,7 +441,13 @@ export function ReportViewerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isFullscreen ? 'max-w-[95vw] max-h-[95vh]' : 'max-w-4xl max-h-[90vh]'} overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}>
+      <DialogContent className={`${
+        isFullscreen 
+          ? 'max-w-[95vw] max-h-[95vh]' 
+          : viewMode === 'mobile'
+            ? 'max-w-md max-h-[90vh] w-[95vw]'
+            : 'max-w-4xl max-h-[90vh]'
+      } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}>
         <DialogHeader className="flex-shrink-0 pb-4 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -352,22 +460,59 @@ export function ReportViewerModal({
               </DialogDescription>
               {actualRenderer && (
                 <div className="text-sm text-gray-500 mt-1">
-                  {actualRenderer.description}
+                  {actualRenderer.description.length > 20 ? actualRenderer.description.substring(0, 20) + '...' : actualRenderer.description}
                 </div>
               )}
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* 뷰 모드 전환 버튼 */}
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                <Button
+                  variant={viewMode === 'desktop' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('desktop')}
+                  className={`px-3 py-1 text-xs rounded-none ${
+                    viewMode === 'desktop' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Monitor className="w-3 h-3 mr-1" />
+                  데스크톱
+                </Button>
+                <Button
+                  variant={viewMode === 'mobile' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('mobile')}
+                  className={`px-3 py-1 text-xs rounded-none ${
+                    viewMode === 'mobile' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Smartphone className="w-3 h-3 mr-1" />
+                  모바일
+                </Button>
+              </div>
+
+              {/* PDF 다운로드 버튼 */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleDownloadReport}
-                className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                disabled={isDownloading}
+                className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50"
               >
-                <Download className="w-4 h-4" />
-                PDF 다운로드
+                {isDownloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {isDownloading ? 'PDF 생성중...' : 'PDF 다운로드'}
               </Button>
               
+              {/* 전체화면 버튼 */}
               <Button
                 variant="outline"
                 size="sm"
