@@ -1,48 +1,71 @@
 /**
- * AI 엔진 초기화 및 등록
+ * AI 엔진 등록 시스템
+ * 모든 AI 엔진들을 자동으로 등록하고 관리
  */
 
-import { AIEngineRegistry } from '../services/AIEngineService';
+import { aiEngineRegistry } from '../core/registry/AIEngineRegistry';
 import { BasicGeminiV1Engine } from './BasicGeminiV1Engine';
 
-// 환경변수에서 API 키 로드
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-
 /**
- * AI 엔진들 초기화 및 등록
+ * 모든 AI 엔진 등록
  */
-export function initializeAIEngines(): void {
-  console.log('Initializing AI engines...');
-  
+export function registerAllEngines(): void {
   try {
     // Basic Gemini V1 엔진 등록
-    if (GEMINI_API_KEY) {
-      const basicGeminiEngine = new BasicGeminiV1Engine(GEMINI_API_KEY);
-      AIEngineRegistry.register('basic_gemini_v1', basicGeminiEngine);
-      console.log('✅ Basic Gemini V1 engine registered');
-    } else {
-      console.warn('⚠️ Gemini API key not found, skipping Basic Gemini V1 engine');
-    }
-    
-    // TODO: 추가 엔진들 등록
-    // - Detail Gemini V1
-    // - Focus Claude V1
-    // - Custom engines...
-    
-    const registeredEngines = AIEngineRegistry.getAll();
-    console.log(`🎯 Successfully registered ${registeredEngines.length} AI engines:`, registeredEngines);
-    
+    const basicGeminiEngine = new BasicGeminiV1Engine();
+    aiEngineRegistry.register(basicGeminiEngine);
+
+    console.log('✅ All AI engines registered successfully');
   } catch (error) {
-    console.error('❌ Failed to initialize AI engines:', error);
+    console.error('❌ Failed to register AI engines:', error);
   }
 }
 
 /**
- * 앱 시작 시 자동 초기화
+ * 개발 환경용 테스트 엔진들 등록
  */
-if (typeof window !== 'undefined') {
-  // 브라우저 환경에서만 실행
-  initializeAIEngines();
+export function registerTestEngines(): void {
+  try {
+    // 테스트용 엔진들을 여기에 등록
+    // 예: MockEngine, DemoEngine 등
+    
+    console.log('✅ Test engines registered for development');
+  } catch (error) {
+    console.error('❌ Failed to register test engines:', error);
+  }
 }
 
-export { BasicGeminiV1Engine }; 
+/**
+ * 특정 환경에 따른 엔진 등록
+ */
+export function initializeEngines(): void {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // 기본 엔진들 등록
+  registerAllEngines();
+  
+  // 개발 환경에서는 테스트 엔진들도 등록
+  if (isDevelopment) {
+    registerTestEngines();
+  }
+  
+  // 엔진 통계 출력
+  const stats = aiEngineRegistry.getStats();
+  console.log(`📊 Engine Registry Stats:`, {
+    totalEngines: stats.totalEngines,
+    enabledEngines: stats.enabledEngines,
+    providersCount: stats.providersCount
+  });
+}
+
+// 기본 엔진들 내보내기
+export { BasicGeminiV1Engine };
+
+// 레지스트리도 함께 내보내기
+export { aiEngineRegistry };
+
+export default {
+  registerAllEngines,
+  registerTestEngines,
+  initializeEngines
+}; 

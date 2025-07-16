@@ -1,313 +1,416 @@
 /**
  * Basic Gemini V1 AI 엔진 구현체
- * 기본적인 건강 분석 리포트 생성
+ * 기본적인 건강 분석 리포트 생성을 위한 Gemini API 엔진
  */
 
 import { 
-  AIAnalysisResult, 
-  EngineExecutionContext, 
-  MeasurementData 
-} from '../types';
+  IAIEngine, 
+  MeasurementDataType, 
+  ValidationResult, 
+  AnalysisOptions, 
+  AnalysisResult, 
+  EngineCapabilities 
+} from '../core/interfaces/IAIEngine';
 
-interface AIEngineExecutor {
-  execute(context: EngineExecutionContext): Promise<AIAnalysisResult>;
-  validate(measurementData: MeasurementData): boolean;
-}
+export class BasicGeminiV1Engine implements IAIEngine {
+  // 기본 정보
+  readonly id = 'basic-gemini-v1';
+  readonly name = '기본 Gemini 분석';
+  readonly description = 'Google Gemini API를 사용한 기본적인 건강 분석 엔진';
+  readonly version = '1.0.0';
+  readonly provider = 'gemini';
+  
+  // 지원 기능
+  readonly supportedDataTypes: MeasurementDataType = {
+    eeg: true,
+    ppg: true,
+    acc: true
+  };
+  
+  readonly costPerAnalysis = 1; // 1 크레딧
+  
+  readonly capabilities: EngineCapabilities = {
+    supportedLanguages: ['ko', 'en'],
+    maxDataDuration: 300, // 5분
+    minDataQuality: 30, // 30% 이상
+    supportedOutputFormats: ['json', 'text'],
+    realTimeProcessing: false
+  };
 
-export class BasicGeminiV1Engine implements AIEngineExecutor {
   private readonly apiKey: string;
   private readonly modelName = 'gemini-1.5-flash';
   
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  constructor(apiKey?: string) {
+    this.apiKey = apiKey || process.env.GOOGLE_GEMINI_API_KEY || '';
+    if (!this.apiKey) {
+      console.warn('Gemini API key not provided. Engine will not function properly.');
+    }
   }
-  
+
   /**
-   * AI 엔진 실행
+   * 측정 데이터 유효성 검증
    */
-  async execute(context: EngineExecutionContext): Promise<AIAnalysisResult> {
+  async validate(data: any): Promise<ValidationResult> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    let qualityScore = 0;
+
     try {
-      // 1. 프롬프트 생성
-      const prompt = this.generatePrompt(context.measurementData);
-      
-      // 2. Gemini API 호출
-      const rawOutput = await this.callGeminiAPI(prompt);
-      
-      // 3. 결과 파싱
-      const parsedResult = this.parseResponse(rawOutput);
-      
-      return {
-        rawOutput,
-        parsedResult: {
-          overallScore: parsedResult.overallScore,
-          riskLevel: parsedResult.riskLevel,
-          stressAnalysis: parsedResult.stressAnalysis,
-          focusAnalysis: parsedResult.focusAnalysis,
-          recommendations: parsedResult.recommendations,
-          warnings: parsedResult.warnings,
-          confidence: parsedResult.confidence || 0.85,
-          analysisVersion: 'basic_gemini_v1.0'
+      // 기본 구조 검증
+      if (!data) {
+        errors.push('측정 데이터가 없습니다.');
+        return { isValid: false, errors, warnings, qualityScore: 0 };
+      }
+
+      // EEG 데이터 검증
+      if (data.eeg) {
+        if (!data.eeg.rawData || data.eeg.rawData.length === 0) {
+          errors.push('EEG 원시 데이터가 없습니다.');
+        } else if (data.eeg.rawData.length < 3600) { // 최소 1분 데이터
+          warnings.push('EEG 데이터가 짧습니다. 더 정확한 분석을 위해 더 긴 측정을 권장합니다.');
         }
+        qualityScore += 40;
+      }
+
+      // PPG 데이터 검증
+      if (data.ppg) {
+        if (!data.ppg.rawData || data.ppg.rawData.length === 0) {
+          errors.push('PPG 원시 데이터가 없습니다.');
+        } else if (data.ppg.rawData.length < 3600) {
+          warnings.push('PPG 데이터가 짧습니다.');
+        }
+        qualityScore += 40;
+      }
+
+      // ACC 데이터 검증
+      if (data.acc) {
+        if (!data.acc.rawData || data.acc.rawData.length === 0) {
+          warnings.push('ACC 데이터가 없습니다. 움직임 분석이 제한될 수 있습니다.');
+        }
+        qualityScore += 20;
+      }
+
+      // 품질 점수 계산
+      if (data.qualityMetrics) {
+        if (data.qualityMetrics.signalQuality < 0.3) {
+          warnings.push('신호 품질이 낮습니다.');
+          qualityScore *= 0.7;
+        } else if (data.qualityMetrics.signalQuality > 0.8) {
+          qualityScore *= 1.1;
+        }
+      }
+
+      qualityScore = Math.min(100, Math.max(0, qualityScore));
+
+      return {
+        isValid: errors.length === 0,
+        errors,
+        warnings,
+        qualityScore
       };
+
+    } catch (error) {
+      return {
+        isValid: false,
+        errors: [`데이터 검증 중 오류 발생: ${error}`],
+        warnings,
+        qualityScore: 0
+      };
+    }
+  }
+
+  /**
+   * AI 분석 수행
+   */
+  async analyze(data: any, options: AnalysisOptions = {}): Promise<AnalysisResult> {
+    const startTime = Date.now();
+    const analysisId = `${this.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      // 데이터 유효성 검증
+      const validation = await this.validate(data);
+      if (!validation.isValid) {
+        throw new Error(`데이터 검증 실패: ${validation.errors.join(', ')}`);
+      }
+
+      // AI 분석 요청 준비
+      const analysisPrompt = this.generateAnalysisPrompt(data, options);
+      const geminiResponse = await this.callGeminiAPI(analysisPrompt, options);
       
-    } catch (error: any) {
-      console.error('BasicGeminiV1Engine execution failed:', error);
-      throw new Error(`AI analysis failed: ${error.message}`);
+      // 결과 파싱
+      const analysisData = this.parseGeminiResponse(geminiResponse);
+      
+      const processingTime = Date.now() - startTime;
+
+      return {
+        engineId: this.id,
+        engineVersion: this.version,
+        timestamp: new Date().toISOString(),
+        analysisId,
+        
+        // 분석 결과
+        overallScore: analysisData.overallScore || 70,
+        stressLevel: analysisData.stressLevel || 50,
+        focusLevel: analysisData.focusLevel || 60,
+        
+        // 상세 분석
+        insights: {
+          summary: analysisData.summary || '기본 건강 상태가 양호합니다.',
+          detailedAnalysis: analysisData.detailedAnalysis || '상세 분석 데이터가 부족합니다.',
+          recommendations: analysisData.recommendations || ['규칙적인 운동을 하세요.', '충분한 수면을 취하세요.'],
+          warnings: validation.warnings
+        },
+        
+        // 생체 지표
+        metrics: {
+          eeg: data.eeg ? {
+            alpha: data.eeg.alpha || 0,
+            beta: data.eeg.beta || 0,
+            gamma: data.eeg.gamma || 0,
+            theta: data.eeg.theta || 0,
+            delta: data.eeg.delta || 0
+          } : undefined,
+          ppg: data.ppg ? {
+            heartRate: data.ppg.heartRate || 70,
+            hrv: data.ppg.hrv || 50,
+            stressIndex: data.ppg.stressIndex || 30
+          } : undefined,
+          acc: data.acc ? {
+            movementLevel: data.acc.movementLevel || 20,
+            stability: data.acc.stability || 80
+          } : undefined
+        },
+        
+        // 메타 정보
+        processingTime,
+        costUsed: this.costPerAnalysis,
+        rawData: geminiResponse
+      };
+
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      
+      // 오류 발생 시 기본 결과 반환
+      return {
+        engineId: this.id,
+        engineVersion: this.version,
+        timestamp: new Date().toISOString(),
+        analysisId,
+        
+        overallScore: 0,
+        stressLevel: 0,
+        focusLevel: 0,
+        
+        insights: {
+          summary: '분석 중 오류가 발생했습니다.',
+          detailedAnalysis: `오류 내용: ${error}`,
+          recommendations: ['나중에 다시 시도해주세요.'],
+          warnings: ['분석 실패']
+        },
+        
+        metrics: {},
+        
+        processingTime,
+        costUsed: 0,
+        rawData: { error: error?.toString() }
+      };
     }
   }
-  
+
   /**
-   * 측정 데이터 검증
+   * Gemini API 분석 프롬프트 생성
    */
-  validate(measurementData: MeasurementData): boolean {
-    // 기본 품질 요구사항
-    if (measurementData.dataQuality.overallScore < 50) {
-      return false;
-    }
+  private generateAnalysisPrompt(data: any, options: AnalysisOptions): string {
+    const language = options.outputLanguage || 'ko';
+    const depth = options.analysisDepth || 'basic';
     
-    // EEG와 PPG 데이터 필수
-    if (!measurementData.eegMetrics || !measurementData.ppgMetrics) {
-      return false;
-    }
+    let prompt = '';
     
-    // 심박수 유효성 확인
-    if (measurementData.ppgMetrics.heartRate <= 0 || 
-        measurementData.ppgMetrics.heartRate > 200) {
-      return false;
-    }
-    
-    return true;
-  }
-  
-  /**
-   * 프롬프트 생성
-   */
-  private generatePrompt(measurementData: MeasurementData): string {
-    const { eegMetrics, ppgMetrics, accMetrics, dataQuality } = measurementData;
-    
-    return `
-## 생체신호 분석 요청
+    if (language === 'ko') {
+      prompt = `
+당신은 전문 의료진이자 건강 분석 전문가입니다. 
+다음 생체 데이터를 분석하여 사용자의 건강 상태를 평가해주세요.
 
-당신은 전문 의료진과 AI 전문가로 구성된 팀의 일원입니다. 다음 1분간 측정된 생체신호 데이터를 분석하여 건강 상태를 평가해주세요.
+## 측정 데이터:
+${JSON.stringify(data, null, 2)}
 
-### 측정 데이터
-**측정 일시**: ${measurementData.measurementDate.toISOString()}
-**측정 기간**: ${measurementData.duration}초
-**디바이스**: ${measurementData.deviceInfo.model}
+## 분석 요청사항:
+- 전반적인 건강 점수 (0-100점)
+- 스트레스 수준 (0-100점, 높을수록 스트레스 많음)
+- 집중력 수준 (0-100점, 높을수록 집중력 좋음)
+- 상세 분석 및 해석
+- 개선 방향 및 권장사항
 
-### EEG (뇌파) 데이터
-- Delta 파워: ${eegMetrics.delta.toFixed(2)}
-- Theta 파워: ${eegMetrics.theta.toFixed(2)}
-- Alpha 파워: ${eegMetrics.alpha.toFixed(2)}
-- Beta 파워: ${eegMetrics.beta.toFixed(2)}
-- Gamma 파워: ${eegMetrics.gamma.toFixed(2)}
-
-**뇌파 지표**:
-- 집중도 지수: ${eegMetrics.attentionIndex}/100
-- 명상 지수: ${eegMetrics.meditationIndex}/100
-- 스트레스 지수: ${eegMetrics.stressIndex}/100
-- 피로도 지수: ${eegMetrics.fatigueIndex}/100
-- 신호 품질: ${(eegMetrics.signalQuality * 100).toFixed(1)}%
-
-### PPG (심박) 데이터
-- 심박수: ${ppgMetrics.heartRate} BPM
-- 심박변이도 (HRV): ${ppgMetrics.heartRateVariability.toFixed(2)} ms
-- 스트레스 점수: ${ppgMetrics.stressScore}/100
-- 자율신경균형: ${ppgMetrics.autonomicBalance.toFixed(2)}
-- 신호 품질: ${(ppgMetrics.signalQuality * 100).toFixed(1)}%
-
-### 활동 데이터
-- 활동 수준: ${accMetrics.activityLevel}/100
-- 움직임 강도: ${(accMetrics.movementIntensity * 100).toFixed(1)}%
-- 자세: ${accMetrics.posture}
-- 자세 안정성: ${(accMetrics.postureStability * 100).toFixed(1)}%
-
-### 데이터 품질
-- 전체 품질: ${dataQuality.overallScore}/100
-- EEG 품질: ${dataQuality.eegQuality}/100
-- PPG 품질: ${dataQuality.ppgQuality}/100
-- 움직임 간섭: ${dataQuality.motionInterference}/100
-
-## 분석 요구사항
-
-다음 형식의 JSON으로 분석 결과를 제공해주세요:
-
-\`\`\`json
+## 출력 형식:
+JSON 형태로 다음 구조에 맞춰 응답해주세요:
 {
-  "overallScore": 85,
-  "riskLevel": "LOW",
-  "stressAnalysis": {
-    "stressLevel": "보통",
-    "stressFactors": ["업무 스트레스", "수면 부족"],
-    "autonomicBalance": "양호",
-    "recommendation": "규칙적인 휴식과 명상 권장"
-  },
-  "focusAnalysis": {
-    "concentrationLevel": "높음",
-    "attentionSpan": "양호",
-    "cognitiveLoad": "적정",
-    "recommendation": "현재 집중력 상태 유지"
-  },
-  "recommendations": [
-    "하루 20분 이상 명상 또는 심호흡 연습",
-    "규칙적인 수면 패턴 유지 (7-8시간)",
-    "적당한 강도의 유산소 운동 (주 3회)"
-  ],
-  "warnings": [
-    "스트레스 지수가 다소 높게 측정됨"
-  ],
-  "confidence": 0.87
+  "overallScore": 점수,
+  "stressLevel": 점수,
+  "focusLevel": 점수,
+  "summary": "한줄 요약",
+  "detailedAnalysis": "상세 분석 내용",
+  "recommendations": ["권장사항1", "권장사항2", "권장사항3"]
 }
-\`\`\`
-
-### 분석 지침
-1. **전체 점수 (overallScore)**: 0-100점으로 전반적인 건강 상태 평가
-2. **위험도 (riskLevel)**: LOW, MEDIUM, HIGH, CRITICAL 중 선택
-3. **스트레스 분석**: EEG 스트레스 지수와 PPG 자율신경 데이터 종합 분석
-4. **집중력 분석**: EEG 집중도 지수와 관련 뇌파 패턴 분석
-5. **추천사항**: 구체적이고 실행 가능한 3-5개 권장사항
-6. **주의사항**: 주의깊게 관찰해야 할 이상 징후나 패턴
-7. **신뢰도**: 분석 결과의 신뢰도 (0.0-1.0)
-
-분석은 의학적 진단이 아닌 건강 관리 참고용입니다.
 `;
+    } else {
+      prompt = `
+You are a medical professional and health analysis expert.
+Please analyze the following biometric data to evaluate the user's health status.
+
+## Measurement Data:
+${JSON.stringify(data, null, 2)}
+
+## Analysis Requirements:
+- Overall health score (0-100)
+- Stress level (0-100, higher means more stressed)
+- Focus level (0-100, higher means better focus)
+- Detailed analysis and interpretation
+- Improvement directions and recommendations
+
+## Output Format:
+Please respond in JSON format with the following structure:
+{
+  "overallScore": score,
+  "stressLevel": score,
+  "focusLevel": score,
+  "summary": "one-line summary",
+  "detailedAnalysis": "detailed analysis content",
+  "recommendations": ["recommendation1", "recommendation2", "recommendation3"]
+}
+`;
+    }
+
+    if (options.customPrompt) {
+      prompt += `\n\n추가 요청사항: ${options.customPrompt}`;
+    }
+
+    return prompt;
   }
-  
+
   /**
    * Gemini API 호출
    */
-  private async callGeminiAPI(prompt: string): Promise<any> {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`, {
+  private async callGeminiAPI(prompt: string, options: AnalysisOptions): Promise<any> {
+    if (!this.apiKey) {
+      throw new Error('Gemini API key가 설정되지 않았습니다.');
+    }
+
+    const requestBody = {
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.1, // 일관성 있는 결과를 위해 낮은 temperature
+        topK: 1,
+        topP: 1,
+        maxOutputTokens: 2048,
+      },
+    };
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`,
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          }
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+        body: JSON.stringify(requestBody)
       }
-      
-      const data = await response.json();
-      
-      if (!data.candidates || data.candidates.length === 0) {
-        throw new Error('No response from Gemini API');
-      }
-      
-      const text = data.candidates[0].content.parts[0].text;
-      return text;
-      
-    } catch (error: any) {
-      console.error('Gemini API call failed:', error);
-      throw new Error(`API call failed: ${error.message}`);
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API 호출 실패: ${response.status} ${response.statusText}`);
     }
+
+    const result = await response.json();
+    return result;
   }
-  
+
   /**
-   * API 응답 파싱
+   * Gemini 응답 파싱
    */
-  private parseResponse(rawOutput: string): any {
+  private parseGeminiResponse(response: any): any {
     try {
-      // JSON 블록 추출
-      const jsonMatch = rawOutput.match(/```json\n([\s\S]*?)\n```/);
-      
-      if (!jsonMatch) {
-        // JSON 블록이 없는 경우 전체 텍스트에서 JSON 추출 시도
-        const jsonStart = rawOutput.indexOf('{');
-        const jsonEnd = rawOutput.lastIndexOf('}');
-        
-        if (jsonStart === -1 || jsonEnd === -1) {
-          throw new Error('No valid JSON found in response');
-        }
-        
-        const jsonText = rawOutput.substring(jsonStart, jsonEnd + 1);
-        return JSON.parse(jsonText);
+      if (!response.candidates || response.candidates.length === 0) {
+        throw new Error('Gemini API에서 유효한 응답을 받지 못했습니다.');
       }
-      
-      const jsonText = jsonMatch[1];
-      const parsed = JSON.parse(jsonText);
-      
-      // 필수 필드 검증
-      this.validateParsedResponse(parsed);
-      
-      return parsed;
-      
-    } catch (error: any) {
-      console.error('Failed to parse AI response:', error);
-      
-      // 파싱 실패 시 기본 응답 반환
-      return this.createFallbackResponse();
-    }
-  }
-  
-  /**
-   * 파싱된 응답 검증
-   */
-  private validateParsedResponse(parsed: any): void {
-    const required = ['overallScore', 'riskLevel', 'recommendations'];
-    
-    for (const field of required) {
-      if (!(field in parsed)) {
-        throw new Error(`Missing required field: ${field}`);
+
+      const text = response.candidates[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error('Gemini API 응답에서 텍스트를 찾을 수 없습니다.');
       }
-    }
-    
-    if (parsed.overallScore < 0 || parsed.overallScore > 100) {
-      throw new Error('Invalid overallScore range');
-    }
-    
-    if (!['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(parsed.riskLevel)) {
-      throw new Error('Invalid riskLevel');
-    }
-    
-    if (!Array.isArray(parsed.recommendations) || parsed.recommendations.length === 0) {
-      throw new Error('Invalid recommendations format');
+
+      // JSON 파싱 시도
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+
+      // JSON이 없으면 기본 구조로 파싱
+      return {
+        overallScore: 70,
+        stressLevel: 50,
+        focusLevel: 60,
+        summary: text.substring(0, 100) + '...',
+        detailedAnalysis: text,
+        recommendations: ['정기적인 건강 검진을 받으세요.']
+      };
+
+    } catch (error) {
+      console.error('Gemini 응답 파싱 오류:', error);
+      return {
+        overallScore: 50,
+        stressLevel: 60,
+        focusLevel: 40,
+        summary: '응답 파싱에 실패했습니다.',
+        detailedAnalysis: '응답을 처리하는 중 문제가 발생했습니다.',
+        recommendations: ['나중에 다시 시도해주세요.']
+      };
     }
   }
-  
+
   /**
-   * 파싱 실패 시 기본 응답 생성
+   * 지원하는 건강 지표 목록
    */
-  private createFallbackResponse(): any {
-    return {
-      overallScore: 75,
-      riskLevel: 'MEDIUM',
-      stressAnalysis: {
-        stressLevel: '보통',
-        stressFactors: ['측정 데이터 품질 이슈'],
-        autonomicBalance: '평가 불가',
-        recommendation: '재측정 권장'
-      },
-      focusAnalysis: {
-        concentrationLevel: '평가 불가',
-        attentionSpan: '데이터 부족',
-        cognitiveLoad: '평가 불가',
-        recommendation: '재측정 권장'
-      },
-      recommendations: [
-        '측정 환경을 개선하여 재측정하시기 바랍니다',
-        '디바이스 연결 상태와 착용 상태를 확인해주세요',
-        '측정 중 움직임을 최소화해주세요'
-      ],
-      warnings: [
-        '데이터 품질 이슈로 인해 정확한 분석이 어려움',
-        '결과 해석 시 주의 필요'
-      ],
-      confidence: 0.3
-    };
+  getHealthMetrics(): string[] {
+    return [
+      'overall_health',
+      'stress_level', 
+      'focus_level',
+      'heart_rate',
+      'hrv',
+      'brain_waves',
+      'movement_analysis'
+    ];
   }
-} 
+
+  /**
+   * 권장사항 카테고리 목록
+   */
+  getRecommendationCategories(): string[] {
+    return [
+      'exercise',
+      'nutrition',
+      'sleep',
+      'stress_management',
+      'mental_health',
+      'lifestyle'
+    ];
+  }
+
+  /**
+   * 샘플 프롬프트 목록
+   */
+  getSamplePrompts(): string[] {
+    return [
+      '스트레스 관리에 중점을 둔 분석',
+      '수면 패턴 개선 방안 중심 분석',
+      '운동 계획 수립을 위한 분석',
+      '업무 집중력 향상 방안 분석'
+    ];
+  }
+}
+
+export default BasicGeminiV1Engine; 
