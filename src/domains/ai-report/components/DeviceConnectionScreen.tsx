@@ -287,8 +287,8 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
   // 브라우저 호환성 체크
   if (browserInfo && !browserInfo.isSupported) {
     return (
-      <div className="device-connection-screen min-h-screen bg-gray-50 p-6 flex flex-col">
-        <div className="mb-6">
+      <div className="device-connection-screen bg-gray-50 p-4 flex flex-col">
+        <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             🔗 디바이스 연결
           </h1>
@@ -297,7 +297,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
           </p>
         </div>
 
-        <Alert className="mb-6 border-red-200 bg-red-50">
+        <Alert className="mb-4 border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-500" />
           <AlertDescription className="text-red-700">
             <div className="font-medium mb-2">브라우저가 지원되지 않습니다</div>
@@ -316,7 +316,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
           </AlertDescription>
         </Alert>
 
-        <div className="flex gap-4 mt-auto">
+        <div className="flex gap-4 mt-4">
           <Button onClick={onBack} variant="outline" className="flex-1">
             <ArrowLeft className="w-4 h-4 mr-2" />
             이전 단계
@@ -327,9 +327,9 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
   }
 
   return (
-    <div className="device-connection-screen min-h-screen bg-gray-50 p-6 flex flex-col">
+    <div className="device-connection-screen bg-gray-50 p-4 flex flex-col">
       {/* 헤더 */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">
           🔗 디바이스 연결
         </h1>
@@ -340,8 +340,8 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
 
       {/* 브라우저별 안내 */}
       {!isConnected && browserInfo && (
-        <Card className="bg-white border-gray-200 shadow-sm mb-6">
-          <CardContent className="p-6">
+        <Card className="bg-white border-gray-200 shadow-sm mb-4">
+          <CardContent className="p-4">
             <div className={`${
               browserInfo.isIOS ? 'bg-blue-50 border-blue-200' :
               browserInfo.isAndroid ? 'bg-green-50 border-green-200' :
@@ -380,7 +380,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
 
       {/* 시스템 초기화 중 */}
       {!systemReady && (
-        <Alert className="mb-6 border-amber-200 bg-amber-50">
+        <Alert className="mb-4 border-amber-200 bg-amber-50">
           <div className="flex items-center space-x-3">
             <div className="animate-spin w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full"></div>
             <div>
@@ -397,7 +397,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
 
       {/* 연결 오류 */}
       {(scanError || connectionError) && (
-        <Alert className="mb-6 border-red-200 bg-red-50">
+        <Alert className="mb-4 border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-500" />
           <AlertDescription className="text-red-700">
             <div className="font-medium mb-1">연결 오류</div>
@@ -410,7 +410,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
 
       {/* 연결된 디바이스 정보 */}
       {isConnected && realtimeDeviceInfo && (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg mb-6">
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-lg mb-4">
           <CardHeader>
             <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -518,7 +518,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
 
       {/* 사용 가능한 디바이스 목록 */}
       {!isConnected && (
-        <Card className="bg-white border-gray-200 shadow-sm mb-6 flex-1">
+        <Card className="bg-white border-gray-200 shadow-sm mb-4">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg text-gray-700">사용 가능한 디바이스 ({availableDevices.length})</CardTitle>
@@ -658,7 +658,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       )}
 
       {/* 액션 버튼들 */}
-      <div className="flex gap-4 mt-auto">
+      <div className="flex gap-4 mt-4">
         <Button 
           onClick={onBack}
           variant="outline"
