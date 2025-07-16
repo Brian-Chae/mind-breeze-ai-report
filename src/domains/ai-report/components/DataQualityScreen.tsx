@@ -31,12 +31,23 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
   // 기존 데이터 hook들 사용
   const isConnected = useConnectionState();
-  const { isSensorContacted } = useDeviceStatus();
+  const { isSensorContacted: rawSensorContacted } = useDeviceStatus();
   const eegGraphData = useEEGGraphData();
   const ppgGraphData = usePPGGraphData();
   const accAnalysis = useACCAnalysis();
   const eegSQIData = useEEGSQIData();
   const ppgSQIData = usePPGSQIData();
+
+  // 실제 데이터 존재 기반으로 센서 접촉 상태 판단
+  const isSensorContacted = useMemo(() => {
+    // 기본적으로는 rawSensorContacted 사용하지만,
+    // 실제 데이터가 있으면 접촉된 것으로 판단
+    if (eegGraphData?.fp1?.length > 0 && eegGraphData?.fp2?.length > 0 && 
+        ppgGraphData?.red?.length > 0 && ppgGraphData?.ir?.length > 0) {
+      return true;
+    }
+    return rawSensorContacted;
+  }, [rawSensorContacted, eegGraphData, ppgGraphData]);
 
   // 디버깅: 데이터 상태 로깅
   useEffect(() => {
@@ -79,6 +90,18 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       ppgSQI_last: ppgSQIData?.overallSQI?.[ppgSQIData?.overallSQI?.length - 1],
       eegSQI_type: typeof eegSQIData?.ch1SQI?.[0],
       ppgSQI_type: typeof ppgSQIData?.overallSQI?.[0]
+    });
+
+    // 그래프 데이터 구조 확인
+    console.log('🔍 그래프 데이터 구조 확인:', {
+      eegFP1_first: eegGraphData?.fp1?.[0],
+      eegFP1_last: eegGraphData?.fp1?.[eegGraphData?.fp1?.length - 1],
+      ppgRed_first: ppgGraphData?.red?.[0],
+      ppgRed_last: ppgGraphData?.red?.[ppgGraphData?.red?.length - 1],
+      eegFP1_type: typeof eegGraphData?.fp1?.[0],
+      ppgRed_type: typeof ppgGraphData?.red?.[0],
+      isSensorContacted,
+      rawSensorContacted
     });
   }, [isConnected, isSensorContacted, eegGraphData, ppgGraphData, accAnalysis, eegSQIData, ppgSQIData]);
 
@@ -182,11 +205,13 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
     const fp1Data = fp1Channel.slice(startIndex);
     const fp2Data = fp2Channel.slice(startIndex);
     
-    // 배열 인덱스 기반으로 데이터 결합
-    return fp1Data.map((fp1Point: { value: number }, index: number) => ({
+    // 배열 인덱스 기반으로 데이터 결합 - 유연한 데이터 처리
+    const getValue = (item: any) => typeof item === 'number' ? item : (item?.value || 0);
+    
+    return fp1Data.map((fp1Point: any, index: number) => ({
       index: index,
-      fp1: fp1Point.value,
-      fp2: fp2Data[index]?.value || 0
+      fp1: getValue(fp1Point),
+      fp2: getValue(fp2Data[index]) || 0
     }));
   };
 
@@ -220,16 +245,30 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
     const redData = redChannel.slice(startIndex, endIndex);
     const irData = irChannel.slice(startIndex, endIndex);
     
-    // 배열 인덱스 기반으로 데이터 결합
-    return redData.map((redPoint: { value: number }, index: number) => ({
+    // 배열 인덱스 기반으로 데이터 결합 - 유연한 데이터 처리
+    const getValue = (item: any) => typeof item === 'number' ? item : (item?.value || 0);
+    
+    return redData.map((redPoint: any, index: number) => ({
       index: index,
-      red: redPoint.value,
-      ir: irData[index]?.value || 0
+      red: getValue(redPoint),
+      ir: getValue(irData[index]) || 0
     }));
   };
 
   const finalEEGData = prepareEEGData();
   const finalPPGData = preparePPGData();
+
+  // 차트 데이터 확인
+  useEffect(() => {
+    console.log('🔍 최종 차트 데이터:', {
+      finalEEGData_length: finalEEGData?.length,
+      finalEEGData_first: finalEEGData?.[0],
+      finalEEGData_last: finalEEGData?.[finalEEGData?.length - 1],
+      finalPPGData_length: finalPPGData?.length,
+      finalPPGData_first: finalPPGData?.[0],
+      finalPPGData_last: finalPPGData?.[finalPPGData?.length - 1]
+    });
+  }, [finalEEGData, finalPPGData]);
 
   // 품질 기준 체크 (90% 이상)
   const qualityThreshold = 90;
