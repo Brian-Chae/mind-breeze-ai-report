@@ -11,6 +11,7 @@ import creditManagementService from '@domains/organization/services/CreditManage
 import measurementUserManagementService from '@domains/individual/services/MeasurementUserManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
+import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -63,11 +64,24 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [error, setError] = useState<string | null>(null)
   const [creditService] = useState(creditManagementService)
   const [measurementService] = useState(measurementUserManagementService)
+  
+  // AI 분석 생성 상태 관리
+  const [generatingReports, setGeneratingReports] = useState<{[dataId: string]: {isLoading: boolean, startTime: number, elapsedSeconds: number}}>({})
+  const [analysisTimers, setAnalysisTimers] = useState<{[dataId: string]: NodeJS.Timeout}>({})
 
   useEffect(() => {
     loadReportData()
     loadMeasurementUsers()
     loadMeasurementData()
+    
+    // Cleanup: 컴포넌트 unmount 시 모든 타이머 정리
+    return () => {
+      Object.values(analysisTimers).forEach(timer => {
+        if (timer) {
+          clearInterval(timer)
+        }
+      })
+    }
   }, [])
 
   // 측정 데이터 로드
@@ -155,8 +169,146 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   // 측정 데이터 기반 리포트 생성 핸들러
   const handleGenerateReportFromData = async (dataId: string, engineType: string) => {
-    console.log('리포트 생성:', dataId, engineType)
-    // TODO: 실제 리포트 생성 로직 구현
+    console.log('🚀 AI 분석 시작:', dataId, engineType)
+    
+    // 중복 실행 방지
+    if (generatingReports[dataId]?.isLoading) {
+      console.log('⚠️ 이미 분석 중인 데이터입니다.')
+      return
+    }
+
+    try {
+      const startTime = Date.now()
+      
+      // 로딩 상태 시작
+      setGeneratingReports(prev => ({
+        ...prev,
+        [dataId]: { isLoading: true, startTime, elapsedSeconds: 0 }
+      }))
+
+      // 1초마다 경과 시간 업데이트
+      const timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        setGeneratingReports(prev => ({
+          ...prev,
+          [dataId]: { ...prev[dataId], elapsedSeconds: elapsed }
+        }))
+      }, 1000)
+
+      setAnalysisTimers(prev => ({ ...prev, [dataId]: timer }))
+
+      // 1. 측정 데이터 로드
+      console.log('📊 측정 데이터 로드 중...')
+      const measurementDataService = new MeasurementDataService()
+      const measurementData = await measurementDataService.getMeasurementData(dataId)
+      if (!measurementData) {
+        throw new Error('측정 데이터를 찾을 수 없습니다.')
+      }
+
+      // 2. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
+      console.log('🤖 AI 엔진 초기화 중...')
+      const aiEngine = new BasicGeminiV1Engine()
+
+      // 3. 데이터 검증
+      console.log('✅ 데이터 검증 중...')
+      const validation = await aiEngine.validate(measurementData)
+      if (!validation.isValid) {
+        throw new Error(`데이터 검증 실패: ${validation.errors.join(', ')}`)
+      }
+
+      // 4. AI 분석 실행
+      console.log('🧠 AI 분석 실행 중...')
+      const analysisOptions = {
+        outputLanguage: 'ko' as const,
+        analysisDepth: 'basic' as const,
+        includeDetailedMetrics: true
+      }
+      
+      const analysisResult = await aiEngine.analyze(measurementData, analysisOptions)
+      console.log('✅ AI 분석 완료:', analysisResult)
+
+      // 5. 분석 결과 저장
+      console.log('💾 분석 결과 저장 중...')
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      
+      const analysisRecord = {
+        measurementDataId: dataId,
+        engineId: aiEngine.id,
+        engineName: aiEngine.name,
+        engineVersion: aiEngine.version,
+        analysisId: analysisResult.analysisId,
+        
+        // 분석 결과
+        overallScore: analysisResult.overallScore,
+        stressLevel: analysisResult.stressLevel,
+        focusLevel: analysisResult.focusLevel,
+        insights: analysisResult.insights,
+        metrics: analysisResult.metrics,
+        
+        // 메타 정보
+        processingTime: analysisResult.processingTime,
+        costUsed: analysisResult.costUsed,
+        qualityScore: validation.qualityScore,
+        
+        // 생성 정보
+        createdAt: new Date(),
+        createdByUserId: currentContext.user?.id,
+        createdByUserName: currentContext.user?.displayName,
+        organizationId: currentContext.organization?.id
+      }
+
+      // Firestore에 분석 결과 저장
+      const analysisId = await FirebaseService.addDocument('ai_analysis_results', analysisRecord)
+      console.log('✅ 분석 결과 저장 완료:', analysisId)
+
+      // 6. 크레딧 차감
+      if (currentContext.organization && analysisResult.costUsed > 0) {
+        try {
+          await creditManagementService.useCredits({
+            userId: currentContext.user?.id || 'system',
+            organizationId: currentContext.organization.id,
+            amount: analysisResult.costUsed,
+            type: 'REPORT_USAGE',
+            description: `AI 분석 (${aiEngine.name})`,
+            metadata: {
+              reportId: analysisId,
+              reportType: engineType
+            }
+          })
+          console.log('✅ 크레딧 차감 완료:', analysisResult.costUsed)
+        } catch (creditError) {
+          console.warn('⚠️ 크레딧 차감 실패:', creditError)
+          // 크레딧 차감 실패해도 분석 결과는 유지
+        }
+      }
+
+      // 7. 측정 데이터 목록 새로고침
+      await loadMeasurementData()
+      
+      // 성공 메시지
+      setError(null)
+      console.log('🎉 AI 분석 완료!')
+
+    } catch (error) {
+      console.error('🚨 AI 분석 실패:', error)
+      setError(error instanceof Error ? error.message : 'AI 분석 중 오류가 발생했습니다.')
+    } finally {
+      // 로딩 상태 종료 및 타이머 정리
+      if (analysisTimers[dataId]) {
+        clearInterval(analysisTimers[dataId])
+        setAnalysisTimers(prev => {
+          const newTimers = { ...prev }
+          delete newTimers[dataId]
+          return newTimers
+        })
+      }
+      
+      setGeneratingReports(prev => {
+        const newState = { ...prev }
+        delete newState[dataId]
+        return newState
+      })
+    }
   }
 
   // 리포트 보기 핸들러
@@ -892,9 +1044,22 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                   <div className="flex items-center space-x-3">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="sm" className="bg-purple-600 text-white hover:bg-purple-700">
-                          <Brain className="w-4 h-4 mr-2" />
-                          AI 분석 생성
+                        <Button 
+                          size="sm" 
+                          className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
+                          disabled={generatingReports[data.id]?.isLoading}
+                        >
+                          {generatingReports[data.id]?.isLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              분석 중... ({generatingReports[data.id]?.elapsedSeconds || 0}초)
+                            </>
+                          ) : (
+                            <>
+                              <Brain className="w-4 h-4 mr-2" />
+                              AI 분석 생성
+                            </>
+                          )}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
