@@ -662,10 +662,22 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <Progress 
-              value={(qualityTimer / 10) * 100} 
-              className="h-2"
-            />
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs text-gray-600">
+                <span>진행률</span>
+                <span>{Math.round((qualityTimer / 10) * 100)}%</span>
+              </div>
+              <Progress 
+                value={(qualityTimer / 10) * 100} 
+                className="h-3 bg-gray-200"
+              />
+              <div className="text-xs text-gray-500 text-center">
+                {qualityTimer < 10 
+                  ? `안정적인 신호 대기 중... ${10 - qualityTimer}초 남음`
+                  : '신호 안정화 완료!'
+                }
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
