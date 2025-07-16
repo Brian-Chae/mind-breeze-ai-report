@@ -549,6 +549,12 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   // 리포트 뷰어 선택 및 모달 열기
   const handleViewReportWithViewer = (report: any, viewerId: string, viewerName: string) => {
+    // report가 유효한지 확인
+    if (!report) {
+      console.error('유효하지 않은 리포트 데이터입니다.')
+      return
+    }
+    
     setSelectedReportForView(report)
     setSelectedViewerId(viewerId)
     setSelectedViewerName(viewerName)
@@ -2010,13 +2016,20 @@ AI 건강 분석 리포트
       {renderContent()}
       
       {/* 리포트 뷰어 모달 */}
-      <ReportViewerModal
-        isOpen={isViewerModalOpen}
-        onClose={() => setIsViewerModalOpen(false)}
-        report={selectedReportForView}
-        viewerId={selectedViewerId}
-        viewerName={selectedViewerName}
-      />
+      {selectedReportForView && (
+        <ReportViewerModal
+          isOpen={isViewerModalOpen}
+          onClose={() => {
+            setIsViewerModalOpen(false)
+            setSelectedReportForView(null)
+            setSelectedViewerId('')
+            setSelectedViewerName('')
+          }}
+          report={selectedReportForView}
+          viewerId={selectedViewerId}
+          viewerName={selectedViewerName}
+        />
+      )}
 
       {/* 측정 데이터 삭제 확인 모달 */}
       {deleteConfirmModal.isOpen && (

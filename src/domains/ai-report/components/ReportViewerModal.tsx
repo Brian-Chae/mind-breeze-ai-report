@@ -57,6 +57,14 @@ export function ReportViewerModal({
     }
   }, [isOpen, report, viewerId]);
 
+  // report 유효성 재검증
+  useEffect(() => {
+    if (isOpen && !report) {
+      console.warn('ReportViewerModal: report가 null입니다. 모달을 닫습니다.');
+      onClose();
+    }
+  }, [isOpen, report, onClose]);
+
   const loadReportContent = async () => {
     setIsLoading(true);
     setError(null);
@@ -67,7 +75,7 @@ export function ReportViewerModal({
       await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
       
       const mockReportContent = {
-        title: report.title || `${report.engineName} 분석 리포트`,
+        title: (report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트'),
         summary: "전반적인 건강 상태가 양호하며, 스트레스 수준은 보통입니다.",
         overallScore: 78,
         stressLevel: 45,
@@ -78,45 +86,69 @@ export function ReportViewerModal({
 ### 🧠 뇌파 분석
 - **집중도**: 82점 (우수)
 - **스트레스**: 45점 (보통)
-- **안정도**: 75점 (양호)
+- **안정도**: 76점 (양호)
 
 ### ❤️ 심박 분석  
 - **평균 심박수**: 72 BPM (정상)
-- **심박변이도**: 45ms (양호)
-- **스트레스 지수**: 3.2 (보통)
+- **심박 변이도**: 42ms (양호)
+- **자율신경균형**: 안정적
 
-### 📊 상세 지표
-- Alpha파: 8.5-12Hz 대역에서 안정적인 패턴 관찰
-- Beta파: 집중 상태를 나타내는 양호한 수준
-- PPG 신호: 규칙적인 심박 리듬 확인
+### 🏃‍♂️ 활동 분석
+- **움직임 수준**: 보통
+- **자세 안정성**: 85점 (우수)
 
-### 💡 권장사항
-1. **운동**: 주 3회 이상 유산소 운동 권장
-2. **수면**: 7-8시간 충분한 수면 취하기
-3. **스트레스 관리**: 명상이나 요가 등 이완 활동
-4. **정기 검진**: 3개월마다 정기적인 건강 상태 모니터링
+## 개선 권장사항
 
-### ⚠️ 주의사항
-- 본 분석 결과는 참고용이며, 의학적 진단을 대체하지 않습니다
-- 지속적인 이상 증상이 있을 경우 전문의 상담을 받으시기 바랍니다
+1. **스트레스 관리**
+   - 규칙적인 명상이나 깊은 호흡 연습
+   - 충분한 휴식과 수면
+
+2. **집중력 향상** 
+   - 집중력이 좋은 상태를 유지하기 위한 규칙적인 운동
+   - 적절한 업무-휴식 균형
+
+3. **전반적 건강**
+   - 현재 상태가 양호하므로 현재 생활습관 유지
+   - 정기적인 건강 체크 권장
+
+## 추가 분석 데이터
+
+### 상세 지표
+- **Delta파**: 15%
+- **Theta파**: 20%  
+- **Alpha파**: 35%
+- **Beta파**: 25%
+- **Gamma파**: 5%
+
+### 시계열 데이터
+측정 기간 동안의 변화 패턴이 안정적으로 유지되었습니다.
         `,
+        recommendations: [
+          "규칙적인 명상이나 깊은 호흡 연습을 통한 스트레스 관리",
+          "집중력 유지를 위한 규칙적인 운동",
+          "현재 생활습관 유지 및 정기적인 건강 체크"
+        ],
         metadata: {
-          analysisDate: new Date(report.createdAt).toLocaleString('ko-KR'),
-          engineId: report.engineId,
-          engineName: report.engineName,
-          version: "1.0.0",
-          dataQuality: 85
+          analysisDate: new Date().toLocaleDateString(),
+          engineName: report?.engineName || '기본 분석',
+          processingTime: `${report?.processingTime || 3.2}초`,
+          dataQuality: '우수'
         }
       };
       
       setReportContent(mockReportContent);
-    } catch (err) {
-      console.error('리포트 로드 실패:', err);
-      setError('리포트를 불러오는데 실패했습니다.');
+    } catch (error) {
+      console.error('리포트 로드 실패:', error);
+      setError('리포트를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // report가 null이면 렌더링하지 않음
+  if (!report) {
+    return null;
+  }
 
   const handleDownloadReport = () => {
     // PDF 다운로드 기능 구현
@@ -276,7 +308,7 @@ export function ReportViewerModal({
                 {viewerName}
               </DialogTitle>
               <DialogDescription className="text-base">
-                {report.title || `${report.engineName} 분석 리포트`}
+                {(report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트')}
               </DialogDescription>
             </div>
             
