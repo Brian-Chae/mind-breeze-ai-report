@@ -1556,6 +1556,18 @@ AI 건강 분석 리포트
                     year = birth.getFullYear()
                     month = birth.getMonth() + 1
                     day = birth.getDate()
+                  } else if (birthDate && typeof birthDate === 'object' && 'seconds' in birthDate) {
+                    // Firestore Timestamp 객체 처리
+                    if (typeof birthDate.toDate === 'function') {
+                      // toDate() 메소드가 있는 경우
+                      birth = birthDate.toDate()
+                    } else {
+                      // seconds 값으로 Date 생성
+                      birth = new Date(birthDate.seconds * 1000)
+                    }
+                    year = birth.getFullYear()
+                    month = birth.getMonth() + 1
+                    day = birth.getDate()
                   } else if (typeof birthDate === 'string') {
                     // 한국어 날짜 형태 파싱: "1984년 4월 24일 오전 9시 0분 0초 UTC+9"
                     const koreanDateMatch = birthDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/)
