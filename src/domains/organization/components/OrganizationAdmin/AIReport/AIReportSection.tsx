@@ -1548,11 +1548,42 @@ AI 건강 분석 리포트
                 
                 // 안전한 Date 객체 생성
                 let birth: Date
+                let year: number, month: number, day: number
+                
                 try {
                   if (birthDate instanceof Date) {
                     birth = birthDate
-                  } else if (typeof birthDate === 'string' || typeof birthDate === 'number') {
+                    year = birth.getFullYear()
+                    month = birth.getMonth() + 1
+                    day = birth.getDate()
+                  } else if (typeof birthDate === 'string') {
+                    // 한국어 날짜 형태 파싱: "1984년 4월 24일 오전 9시 0분 0초 UTC+9"
+                    const koreanDateMatch = birthDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/)
+                    
+                    if (koreanDateMatch) {
+                      year = parseInt(koreanDateMatch[1])
+                      month = parseInt(koreanDateMatch[2])
+                      day = parseInt(koreanDateMatch[3])
+                      birth = new Date(year, month - 1, day) // month는 0부터 시작
+                    } else {
+                      // 일반적인 날짜 형태 시도
+                      birth = new Date(birthDate)
+                      if (isNaN(birth.getTime())) {
+                        console.warn('날짜 파싱 실패:', birthDate)
+                        return {
+                          displayText: '나이 정보 없음',
+                          age: 0
+                        }
+                      }
+                      year = birth.getFullYear()
+                      month = birth.getMonth() + 1
+                      day = birth.getDate()
+                    }
+                  } else if (typeof birthDate === 'number') {
                     birth = new Date(birthDate)
+                    year = birth.getFullYear()
+                    month = birth.getMonth() + 1
+                    day = birth.getDate()
                   } else {
                     // 예상치 못한 타입의 데이터
                     console.warn('예상치 못한 birthDate 타입:', typeof birthDate, birthDate)
@@ -1585,10 +1616,6 @@ AI 건강 분석 리포트
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
                   age--
                 }
-                
-                const year = birth.getFullYear()
-                const month = birth.getMonth() + 1
-                const day = birth.getDate()
                 
                 return {
                   displayText: `${year}년 ${month}월 ${day}일생 (만 ${age}세)`,
