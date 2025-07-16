@@ -1670,9 +1670,6 @@ AI 건강 분석 리포트
                           
                           <div className="text-center">
                             <div className="space-y-1">
-                              <div className="text-xs text-gray-600">
-                                {ageInfo.birthDateText}
-                              </div>
                               {ageInfo.ageText && (
                                 <div>
                                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -1680,6 +1677,9 @@ AI 건강 분석 리포트
                                   </span>
                                 </div>
                               )}
+                              <div className="text-xs text-gray-600">
+                                {ageInfo.birthDateText}
+                              </div>
                             </div>
                           </div>
                           
