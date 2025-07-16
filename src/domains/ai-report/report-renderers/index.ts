@@ -4,16 +4,16 @@
  */
 
 import { rendererRegistry } from '../core/registry/RendererRegistry';
-import { BasicWebRenderer } from './web/BasicWebRenderer';
+import { BasicGeminiV1WebRenderer } from './web/BasicGeminiV1WebRenderer';
 
 /**
  * 모든 리포트 렌더러 등록
  */
 export function registerAllRenderers(): void {
   try {
-    // Basic Web 렌더러 등록
-    const basicWebRenderer = new BasicWebRenderer();
-    rendererRegistry.register(basicWebRenderer);
+    // Gemini V1 Web 렌더러 등록
+    const basicGeminiV1WebRenderer = new BasicGeminiV1WebRenderer();
+    rendererRegistry.register(basicGeminiV1WebRenderer);
 
     console.log('✅ All report renderers registered successfully');
   } catch (error) {
@@ -59,7 +59,7 @@ export function initializeRenderers(): void {
 }
 
 // 기본 렌더러들 내보내기
-export { BasicWebRenderer };
+export { BasicGeminiV1WebRenderer };
 
 // 레지스트리도 함께 내보내기
 export { rendererRegistry };

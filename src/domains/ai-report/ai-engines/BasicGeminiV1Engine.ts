@@ -28,6 +28,7 @@ export class BasicGeminiV1Engine implements IAIEngine {
   };
   
   readonly costPerAnalysis = 1; // 1 크레딧
+  readonly recommendedRenderers = ['basic-gemini-v1-web']; // 매칭되는 렌더러 ID
   
   readonly capabilities: EngineCapabilities = {
     supportedLanguages: ['ko', 'en'],

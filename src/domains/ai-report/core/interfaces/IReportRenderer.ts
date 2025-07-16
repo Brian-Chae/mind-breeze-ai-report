@@ -103,6 +103,7 @@ export interface IReportRenderer {
   // 비용 및 기능
   readonly costPerRender: number; // credits
   readonly capabilities: RendererCapabilities;
+  readonly supportedEngines: string[]; // 지원하는 AI 엔진 ID 목록
   
   // 필수 메서드
   render(analysis: AnalysisResult, options?: RenderOptions): Promise<RenderedReport>;

@@ -88,6 +88,7 @@ export interface IAIEngine {
   readonly supportedDataTypes: MeasurementDataType;
   readonly costPerAnalysis: number; // credits
   readonly capabilities: EngineCapabilities;
+  readonly recommendedRenderers: string[]; // 권장 렌더러 ID 목록
   
   // 필수 메서드
   validate(data: any): Promise<ValidationResult>;

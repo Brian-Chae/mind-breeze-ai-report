@@ -1,6 +1,6 @@
 /**
- * 기본 웹 렌더러
- * HTML/React 컴포넌트 형태로 리포트를 렌더링
+ * Gemini V1용 기본 웹 렌더러
+ * BasicGeminiV1Engine의 분석 결과를 HTML/React 컴포넌트 형태로 렌더링
  */
 
 import { 
@@ -13,16 +13,17 @@ import {
 } from '../../core/interfaces/IReportRenderer';
 import { AnalysisResult } from '../../core/interfaces/IAIEngine';
 
-export class BasicWebRenderer implements IReportRenderer {
+export class BasicGeminiV1WebRenderer implements IReportRenderer {
   // 기본 정보
-  readonly id = 'basic-web-v1';
-  readonly name = '기본 웹 렌더러';
-  readonly description = 'HTML/React 형태의 기본 웹 리포트 렌더러';
+  readonly id = 'basic-gemini-v1-web';
+  readonly name = 'Gemini V1 웹 렌더러';
+  readonly description = 'BasicGeminiV1Engine 결과를 HTML/React 형태로 렌더링하는 웹 렌더러';
   readonly version = '1.0.0';
   readonly outputFormat: OutputFormat = 'web';
   
   // 비용 및 기능
   readonly costPerRender = 0; // 무료
+  readonly supportedEngines = ['basic-gemini-v1']; // BasicGeminiV1Engine 전용
   
   readonly capabilities: RendererCapabilities = {
     supportedFormats: ['web'],
@@ -893,4 +894,4 @@ export class BasicWebRenderer implements IReportRenderer {
   }
 }
 
-export default BasicWebRenderer; 
+export default BasicGeminiV1WebRenderer; 
