@@ -157,6 +157,51 @@ export function ReportViewerModal({
 - **Beta파**: 25%
 - **Gamma파**: 5%
 
+
+### 측정 데이터 목록
+
+<table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #e5e7eb;">
+<thead>
+<tr style="background-color: #f9fafb;">
+<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: left;">측정 시간</th>
+<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">심박수 (BPM)</th>
+<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">스트레스 지수</th>
+<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">집중도</th>
+<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">데이터 품질</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:00-00:15</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">74</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">42</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">78</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">우수</td>
+</tr>
+<tr style="background-color: #fafafa;">
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:15-00:30</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">71</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">46</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">81</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">우수</td>
+</tr>
+<tr>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:30-00:45</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">73</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">43</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">84</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">양호</td>
+</tr>
+<tr style="background-color: #fafafa;">
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:45-01:00</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">70</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">47</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">85</td>
+<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">우수</td>
+</tr>
+</tbody>
+</table>
+
 ### 시계열 데이터
 측정 기간 동안의 변화 패턴이 안정적으로 유지되었습니다.
         `,
