@@ -253,6 +253,11 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       await systemControl.connectDevice(deviceId);
       console.log('✅ Device connected successfully');
       
+      // 데이터 스트리밍 시작
+      console.log('🚀 Starting data streaming...');
+      await systemControl.startStreaming();
+      console.log('✅ Data streaming started successfully');
+      
       // 연결 성공은 useEffect에서 isConnected 상태 변화로 처리됨
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Connection failed';

@@ -37,6 +37,19 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
   const eegSQIData = useEEGSQIData();
   const ppgSQIData = usePPGSQIData();
 
+  // 디버깅: 데이터 상태 로깅
+  useEffect(() => {
+    console.log('🔍 DataQualityScreen - 현재 데이터 상태:', {
+      isConnected,
+      isSensorContacted,
+      eegGraphData: eegGraphData ? Object.keys(eegGraphData) : 'null',
+      ppgGraphData: ppgGraphData ? Object.keys(ppgGraphData) : 'null',
+      accAnalysis: accAnalysis ? Object.keys(accAnalysis) : 'null',
+      eegSQIData: eegSQIData ? Object.keys(eegSQIData) : 'null',
+      ppgSQIData: ppgSQIData ? Object.keys(ppgSQIData) : 'null'
+    });
+  }, [isConnected, isSensorContacted, eegGraphData, ppgGraphData, accAnalysis, eegSQIData, ppgSQIData]);
+
   // 신호 품질 계산
   const signalQuality = useMemo(() => {
     try {
