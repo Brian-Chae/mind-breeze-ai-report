@@ -44,7 +44,7 @@ import { initializeEngines } from './ai-engines';
 
 // 리포트 렌더러들
 export { 
-  BasicWebRenderer,
+  BasicGeminiV1WebRenderer,
   registerAllRenderers
 } from './report-renderers';
 import { initializeRenderers } from './report-renderers';
