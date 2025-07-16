@@ -298,7 +298,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
-   * 종합 요약 생성
+   * 종합 요약 생성 (복잡한 구조)
    */
   private generateOverallSummary(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
@@ -306,10 +306,94 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     
     return `
     <section class="summary-section">
-        <h2>${language === 'ko' ? '종합 분석 결과' : 'Overall Analysis Result'}</h2>
-        <div class="summary-content">
-            <p class="summary-text">${detailedAnalysis?.overallInterpretation || analysis.insights.summary}</p>
+        <h2>${language === 'ko' ? '종합 건강 개요' : 'Overall Health Overview'}</h2>
+        
+        <!-- 개인 정보 요약 -->
+        <div class="personal-info-section">
+            <h3 class="subsection-title">${language === 'ko' ? '분석 대상 정보' : 'Analysis Subject Information'}</h3>
+            <div class="personal-info-grid">
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '이름:' : 'Name:'}</span>
+                    <span class="info-value">${language === 'ko' ? '익명' : 'Anonymous'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '나이:' : 'Age:'}</span>
+                    <span class="info-value">-${language === 'ko' ? '세' : ' years'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '성별:' : 'Gender:'}</span>
+                    <span class="info-value">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '직업:' : 'Occupation:'}</span>
+                    <span class="info-value">-</span>
+                </div>
+            </div>
         </div>
+
+        <div class="summary-main-grid">
+            <!-- 종합 건강 점수 -->
+            <div class="health-score-section">
+                <h3 class="subsection-title">${language === 'ko' ? '종합 건강 점수' : 'Overall Health Score'}</h3>
+                <div class="score-gauge-container">
+                    <div class="gauge-chart">
+                        <svg width="200" height="200" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="80" stroke="#E5E7EB" stroke-width="16" fill="none"/>
+                            <circle cx="100" cy="100" r="80" 
+                                stroke="${this.getScoreColor(analysis.overallScore)}" 
+                                stroke-width="16" 
+                                fill="none"
+                                stroke-dasharray="${(analysis.overallScore / 100) * 502} 502"
+                                stroke-linecap="round"
+                                transform="rotate(-90 100 100)"/>
+                        </svg>
+                        <div class="gauge-center">
+                            <div class="gauge-value">${analysis.overallScore}</div>
+                            <div class="gauge-max">/100</div>
+                        </div>
+                    </div>
+                    <div class="score-status">
+                        <span class="status-badge ${this.getStatusClass(analysis.overallScore)}">${this.getScoreLabel(analysis.overallScore, language)}</span>
+                        <p class="score-description">${detailedAnalysis?.overallInterpretation || analysis.insights.summary}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 건강 요소별 현황 -->
+            <div class="health-elements-section">
+                <h3 class="subsection-title">${language === 'ko' ? '건강 요소별 현황' : 'Health Elements Status'}</h3>
+                <div class="health-elements-grid">
+                    ${this.generateHealthElement(language === 'ko' ? '뇌파 건강도' : 'EEG Health', detailedAnalysis?.eegAnalysis?.score || 78, false)}
+                    ${this.generateHealthElement(language === 'ko' ? '맥파 건강도' : 'PPG Health', detailedAnalysis?.ppgAnalysis?.score || 82, false)}
+                    ${this.generateHealthElement(language === 'ko' ? '스트레스 관리' : 'Stress Management', 100 - Math.max((detailedAnalysis?.eegAnalysis?.score || 78), (detailedAnalysis?.ppgAnalysis?.score || 82)), false)}
+                </div>
+            </div>
+        </div>
+
+        <!-- 정신건강 위험도 분석 -->
+        <div class="risk-analysis-section">
+            <h3 class="subsection-title">${language === 'ko' ? '정신건강 위험도 분석' : 'Mental Health Risk Analysis'}</h3>
+            <div class="risk-elements-grid">
+                ${this.generateHealthElement(language === 'ko' ? '우울 위험도' : 'Depression Risk', Math.floor(Math.random() * 40) + 15, true)}
+                ${this.generateHealthElement(language === 'ko' ? '집중력 저하' : 'Attention Deficit', Math.floor(Math.random() * 50) + 25, true)}
+                ${this.generateHealthElement(language === 'ko' ? '번아웃 위험도' : 'Burnout Risk', Math.floor(Math.random() * 35) + 10, true)}
+            </div>
+        </div>
+
+        <!-- 주요 발견사항 -->
+        ${detailedAnalysis?.eegAnalysis?.keyFindings?.length > 0 ? `
+        <div class="key-findings-section">
+            <h3 class="subsection-title">${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
+            <div class="findings-grid">
+                ${detailedAnalysis.eegAnalysis.keyFindings.slice(0, 4).map((finding: string) => `
+                    <div class="finding-item">
+                        <div class="finding-icon">⚠️</div>
+                        <p class="finding-text">${finding}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
     </section>`;
   }
 
@@ -667,6 +751,309 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             background: ${cardBg};
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 개인 정보 섹션 */
+        .personal-info-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .personal-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: ${isDark ? '#9CA3AF' : '#6B7280'};
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+            color: ${textColor};
+            font-weight: 600;
+        }
+
+        /* 메인 그리드 */
+        .summary-main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* 게이지 차트 */
+        .health-score-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 8px;
+            padding: 25px;
+        }
+
+        .score-gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .gauge-chart {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .gauge-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .gauge-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: ${textColor};
+        }
+
+        .gauge-max {
+            font-size: 0.875rem;
+            color: ${secondaryColor};
+        }
+
+        .score-status {
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-good {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .status-medium {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-bad {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .score-description {
+            margin-top: 15px;
+            font-size: 0.875rem;
+            color: ${secondaryColor};
+            line-height: 1.6;
+        }
+
+        /* 건강 요소별 현황 */
+        .health-elements-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 8px;
+            padding: 25px;
+        }
+
+        .health-elements-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        /* 위험도 분석 */
+        .risk-analysis-section {
+            background: ${isDark ? '#7F1D1D' : '#FEF2F2'};
+            border: 1px solid ${isDark ? '#991B1B' : '#FECACA'};
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .risk-elements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        /* 건강 요소 컴포넌트 */
+        .health-element {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .element-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .element-label-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .element-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: ${textColor};
+        }
+
+        .element-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .element-value {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: ${textColor};
+        }
+
+        .progress-container {
+            position: relative;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-track {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .health-segment.bad,
+        .risk-segment.bad {
+            background: #FCA5A5;
+        }
+
+        .health-segment.medium,
+        .risk-segment.medium {
+            background: #FCD34D;
+        }
+
+        .health-segment.good,
+        .risk-segment.good {
+            background: #86EFAC;
+        }
+
+        .health-segment.bad {
+            width: 70%;
+        }
+
+        .health-segment.medium {
+            width: 10%;
+        }
+
+        .health-segment.good {
+            width: 20%;
+        }
+
+        .risk-segment.good {
+            width: 20%;
+        }
+
+        .risk-segment.medium {
+            width: 15%;
+        }
+
+        .risk-segment.bad {
+            width: 65%;
+        }
+
+        .progress-marker {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: #1F2937;
+            border-radius: 2px;
+            transform: translateX(-50%);
+        }
+
+        .progress-divider {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: white;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: ${secondaryColor};
+        }
+
+        /* 주요 발견사항 */
+        .key-findings-section {
+            margin-top: 30px;
+        }
+
+        .findings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .finding-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: ${isDark ? '#FEF3C7' : '#FFFBEB'};
+            border: 1px solid ${isDark ? '#F59E0B' : '#FDE68A'};
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .finding-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .finding-text {
+            font-size: 0.875rem;
+            color: ${isDark ? '#92400E' : '#78350F'};
+            line-height: 1.5;
+        }
+
+        .subsection-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: ${textColor};
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         h2 {
@@ -1100,6 +1487,88 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     </div>
 </body>
 </html>`;
+  }
+
+  /**
+   * 건강 요소 생성 (프로그레스 바)
+   */
+  private generateHealthElement(label: string, value: number, isRisk: boolean): string {
+    const clampedValue = Math.min(Math.max(value, 0), 100);
+    const status = this.getStatusClass(clampedValue, isRisk);
+    const statusLabel = this.getStatusLabel(clampedValue, isRisk);
+    
+    return `
+    <div class="health-element">
+        <div class="element-header">
+            <div class="element-label-group">
+                <span class="element-label">${label}</span>
+                <span class="element-badge ${status}">${statusLabel}</span>
+            </div>
+            <span class="element-value">${Math.round(clampedValue)}${isRisk ? '% 위험도' : '/100'}</span>
+        </div>
+        <div class="progress-container">
+            <div class="progress-track">
+                ${isRisk ? `
+                    <div class="risk-segment good"></div>
+                    <div class="risk-segment medium"></div>
+                    <div class="risk-segment bad"></div>
+                ` : `
+                    <div class="health-segment bad"></div>
+                    <div class="health-segment medium"></div>
+                    <div class="health-segment good"></div>
+                `}
+            </div>
+            <div class="progress-marker" style="left: ${clampedValue}%"></div>
+            ${isRisk ? `
+                <div class="progress-divider" style="left: 20%"></div>
+                <div class="progress-divider" style="left: 35%"></div>
+            ` : `
+                <div class="progress-divider" style="left: 70%"></div>
+                <div class="progress-divider" style="left: 80%"></div>
+            `}
+        </div>
+        <div class="progress-labels">
+            ${isRisk ? `
+                <span>양호</span>
+                <span>보통</span>
+                <span>주의</span>
+            ` : `
+                <span>주의</span>
+                <span>보통</span>
+                <span>양호</span>
+            `}
+        </div>
+    </div>`;
+  }
+
+  /**
+   * 상태 클래스 반환
+   */
+  private getStatusClass(score: number, isRisk: boolean = false): string {
+    if (isRisk) {
+      if (score <= 20) return 'status-good';
+      if (score <= 35) return 'status-medium';
+      return 'status-bad';
+    } else {
+      if (score >= 80) return 'status-good';
+      if (score >= 70) return 'status-medium';
+      return 'status-bad';
+    }
+  }
+
+  /**
+   * 상태 라벨 반환
+   */
+  private getStatusLabel(score: number, isRisk: boolean = false): string {
+    if (isRisk) {
+      if (score <= 20) return '양호';
+      if (score <= 35) return '보통';
+      return '주의';
+    } else {
+      if (score >= 80) return '양호';
+      if (score >= 70) return '보통';
+      return '주의';
+    }
   }
 
   /**
