@@ -237,22 +237,18 @@ export function ReportViewerModal({
             </CardTitle>
           </CardHeader>
           <CardContent className="bg-white p-6">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="font-semibold text-gray-700">분석 일시:</span>
                 <div className="text-gray-800 mt-1">{reportContent.metadata.analysisDate}</div>
               </div>
               <div>
-                <span className="font-semibold text-gray-700">분석 엔진:</span>
-                <div className="text-gray-800 mt-1">{reportContent.metadata.engineName}</div>
+                <span className="font-semibold text-gray-700">분석 엔진 버전:</span>
+                <div className="text-gray-800 mt-1">basic-gemini-v1</div>
               </div>
               <div>
                 <span className="font-semibold text-gray-700">데이터 품질:</span>
                 <div className="text-gray-800 mt-1">{reportContent.metadata.dataQuality}</div>
-              </div>
-              <div>
-                <span className="font-semibold text-gray-700">처리 시간:</span>
-                <div className="text-gray-800 mt-1">{reportContent.metadata.processingTime}</div>
               </div>
             </div>
           </CardContent>
