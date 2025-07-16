@@ -42,7 +42,15 @@ export class BasicGeminiV1Engine implements IAIEngine {
   private readonly modelName = 'gemini-1.5-flash';
   
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.GOOGLE_GEMINI_API_KEY || '';
+    // 브라우저 환경에서는 import.meta.env 사용
+    let envApiKey = '';
+    try {
+      envApiKey = import.meta.env?.VITE_GOOGLE_GEMINI_API_KEY || '';
+    } catch (e) {
+      // 환경변수 접근 실패시 무시
+    }
+    
+    this.apiKey = apiKey || envApiKey || '';
     if (!this.apiKey) {
       console.warn('Gemini API key not provided. Engine will not function properly.');
     }
