@@ -99,6 +99,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [selectedViewerId, setSelectedViewerId] = useState<string>('')
   const [selectedViewerName, setSelectedViewerName] = useState<string>('')
   
+  // 삭제 관련 상태
+  const [deletingReports, setDeletingReports] = useState<{[reportId: string]: boolean}>({})
+  
   // 페이지네이션 계산
   const totalPages = Math.ceil(measurementDataList.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -1580,6 +1583,21 @@ AI 건강 분석 리포트
                                      <Download className="w-3 h-3 mr-1" />
                                      PDF 보기
                                    </Button>
+                                   
+                                   <Button 
+                                     size="sm" 
+                                     variant="outline"
+                                     onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
+                                     disabled={deletingReports[report.id]}
+                                     className="text-red-600 border-red-300 hover:bg-red-50 text-xs px-3 py-1.5 font-medium"
+                                   >
+                                     {deletingReports[report.id] ? (
+                                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                     ) : (
+                                       <Trash2 className="w-3 h-3 mr-1" />
+                                     )}
+                                     {deletingReports[report.id] ? '삭제 중...' : '삭제'}
+                                   </Button>
                                  </div>
                                </div>
                              </div>
@@ -1829,6 +1847,49 @@ AI 건강 분석 리포트
         return renderMeasurementDataList()
       default:
         return renderReportGeneration()
+    }
+  }
+
+  // AI 분석 결과 삭제 핸들러
+  const handleDeleteReport = async (reportId: string, reportName: string) => {
+    // 삭제 확인
+    const confirmMessage = `정말로 "${reportName}" 분석 결과를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    // 중복 삭제 방지
+    if (deletingReports[reportId]) {
+      console.log('⚠️ 이미 삭제 중인 리포트입니다.')
+      return
+    }
+
+    try {
+      console.log('🗑️ AI 분석 결과 삭제 시작:', reportId)
+      
+      // 삭제 상태 시작
+      setDeletingReports(prev => ({ ...prev, [reportId]: true }))
+
+      // Firestore에서 분석 결과 삭제
+      await FirebaseService.deleteDocument('ai_analysis_results', reportId)
+      console.log('✅ AI 분석 결과 삭제 완료:', reportId)
+
+      // 데이터 새로고침
+      await loadMeasurementData()
+      console.log('🔄 삭제 후 데이터 새로고침 완료')
+      
+      setError(null)
+
+    } catch (error) {
+      console.error('🚨 AI 분석 결과 삭제 실패:', error)
+      setError(error instanceof Error ? error.message : 'AI 분석 결과 삭제 중 오류가 발생했습니다.')
+    } finally {
+      // 삭제 상태 종료
+      setDeletingReports(prev => {
+        const newState = { ...prev }
+        delete newState[reportId]
+        return newState
+      })
     }
   }
 
