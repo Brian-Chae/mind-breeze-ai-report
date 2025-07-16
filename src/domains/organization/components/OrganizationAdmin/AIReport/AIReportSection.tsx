@@ -68,6 +68,21 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   // AI 분석 생성 상태 관리
   const [generatingReports, setGeneratingReports] = useState<{[dataId: string]: {isLoading: boolean, startTime: number, elapsedSeconds: number}}>({})
   const [analysisTimers, setAnalysisTimers] = useState<{[dataId: string]: NodeJS.Timeout}>({})
+  
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(measurementDataList.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = measurementDataList.slice(startIndex, endIndex)
+  
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
   useEffect(() => {
     loadReportData()
@@ -1221,211 +1236,181 @@ AI 건강 분석 리포트
           </div>
         </Card>
       ) : (
-        <div className="grid gap-6">
-          {measurementDataList.map((data) => (
-            <Card key={data.id} className="p-6 bg-white border border-gray-200 hover:shadow-md transition-all duration-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-xl">
-                      <User className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{data.userName}</h3>
-                      <div className="flex items-center space-x-3 text-sm text-gray-600">
-                        <span>{data.userGender}</span>
-                        <span>{data.userOccupation}</span>
-                        <span>{data.userDepartment}</span>
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        측정일시: {new Date(data.timestamp).toLocaleDateString('ko-KR')} {new Date(data.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <Badge 
-                      variant={data.quality === 'excellent' ? 'default' : data.quality === 'good' ? 'secondary' : 'destructive'}
-                      className="ml-auto"
-                    >
-                      {data.quality === 'excellent' ? '우수' : data.quality === 'good' ? '양호' : '불량'} 품질
-                    </Badge>
-                  </div>
+        <div className="space-y-4">
+          {/* 전체 통계 정보 */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>전체 {measurementDataList.length}개 측정 데이터</span>
+              <span>페이지 {currentPage} / {totalPages}</span>
+            </div>
+          </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-                      <Activity className="w-4 h-4 text-green-600" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">EEG 데이터</p>
-                        <p className="text-xs text-gray-600">{data.eegSamples}개 샘플</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-                      <Activity className="w-4 h-4 text-red-600" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">PPG 데이터</p>
-                        <p className="text-xs text-gray-600">{data.ppgSamples}개 샘플</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-                      <Activity className="w-4 h-4 text-blue-600" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">ACC 데이터</p>
-                        <p className="text-xs text-gray-600">{data.accSamples}개 샘플</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
-                          disabled={generatingReports[data.id]?.isLoading}
-                        >
-                          {generatingReports[data.id]?.isLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              분석 중... ({generatingReports[data.id]?.elapsedSeconds || 0}초)
-                            </>
-                          ) : (
-                            <>
-                              <Brain className="w-4 h-4 mr-2" />
-                              AI 분석 생성
-                            </>
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                                                 <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}>
-                           기본 분석 (1 크레딧)
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'detailed-gemini-v1')}>
-                           상세 분석 (5 크레딧)
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'enterprise-custom')}>
-                           엔터프라이즈 분석 (10 크레딧)
-                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {data.hasReports && (
-                      <>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4 mr-2" />
-                              리포트 보기
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {data.availableReports?.map((report: any) => (
-                              <DropdownMenuItem 
-                                key={report.id} 
-                                onClick={() => handleViewReport(report.id, report)}
-                              >
-                                {report.engineName} - {new Date(report.createdAt).toLocaleDateString('ko-KR')}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Download className="w-4 h-4 mr-2" />
-                              PDF 생성
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem disabled>
-                              기본 PDF (2 크레딧) - 준비 중
-                            </DropdownMenuItem>
-                            <DropdownMenuItem disabled>
-                              상세 PDF (5 크레딧) - 준비 중
-                            </DropdownMenuItem>
-                            <DropdownMenuItem disabled>
-                              브랜딩 PDF (7 크레딧) - 준비 중
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </>
-                    )}
-
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI 분석 리포트 섹션 */}
-              {data.hasReports && data.availableReports.length > 0 && (
-                <div className="mt-6 border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                    <Brain className="w-4 h-4 mr-2 text-purple-600" />
-                    연결된 AI 분석 리포트 ({data.availableReports.length}개)
-                  </h4>
-                  <div className="space-y-3">
-                    {data.availableReports.map((report: any) => (
-                      <div key={report.id} className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-lg">
-                            <Brain className="w-4 h-4 text-purple-600" />
-                          </div>
-                          <div>
-                            <h5 className="text-sm font-medium text-gray-900">{report.engineName}</h5>
-                            <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              <span>분석 엔진: {report.engineId}</span>
-                              <span>분석 일시: {new Date(report.createdAt).toLocaleDateString('ko-KR')} {new Date(report.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
-                              <span>생성자: {report.createdByUserName}</span>
-                            </div>
-                            <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
-                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">전체 점수: {report.overallScore}/100</span>
-                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded">스트레스: {report.stressLevel}/100</span>
-                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded">집중력: {report.focusLevel}/100</span>
-                              <span className="text-gray-500">처리 시간: {report.processingTime}ms</span>
-                              <span className="text-gray-500">크레딧: {report.costUsed}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
+          {/* 컴팩트한 리스트 */}
+          <div className="space-y-3">
+            {currentItems.map((data) => {
+              // 나이 계산 (임시로 랜덤 값 사용)
+              const age = Math.floor(Math.random() * 40) + 25
+              const measurementDate = new Date(data.timestamp)
+              
+              return (
+                <div key={data.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  {/* 메인 정보 행 */}
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 flex-1">
                         <div className="flex items-center space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleViewReport(report.id, report)}
-                            className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            리포트 보기
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleDownloadPDF(report.id, report)}
-                            className="text-green-600 border-green-200 hover:bg-green-50"
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            PDF 다운로드
-                          </Button>
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span className="font-medium text-gray-900">{data.userName}</span>
                         </div>
+                        <span className="text-gray-500">|</span>
+                        <span className="text-gray-600">{age}세</span>
+                        <span className="text-gray-500">|</span>
+                        <span className="text-gray-600">{data.userGender}</span>
+                        <span className="text-gray-500">|</span>
+                        <span className="text-gray-600">{data.userOccupation}</span>
+                        <span className="text-gray-500">|</span>
+                        <span className="text-gray-600">측정일시: {measurementDate.toLocaleDateString('ko-KR')} {measurementDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-gray-500">|</span>
+                        <span className="text-gray-600">생성자: {data.userName}</span>
                       </div>
-                    ))}
+                      
+                      <div className="flex items-center space-x-3">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
+                              disabled={generatingReports[data.id]?.isLoading}
+                            >
+                              {generatingReports[data.id]?.isLoading ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  분석 중... ({generatingReports[data.id]?.elapsedSeconds || 0}초)
+                                </>
+                              ) : (
+                                <>
+                                  <Brain className="w-4 h-4 mr-2" />
+                                  AI 분석 생성
+                                </>
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}>
+                              기본 분석 (1 크레딧)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'detailed-gemini-v1')}>
+                              상세 분석 (5 크레딧)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'enterprise-custom')}>
+                              엔터프라이즈 분석 (10 크레딧)
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* 리포트가 없을 때 안내 메시지 */}
-              {!data.hasReports && (
-                <div className="mt-6 border-t pt-4">
-                  <div className="text-center py-6 text-gray-500">
-                    <Brain className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm">아직 생성된 AI 분석 리포트가 없습니다.</p>
-                    <p className="text-xs text-gray-400">위의 "AI 분석 생성" 버튼을 클릭하여 리포트를 생성해보세요.</p>
-                  </div>
+                  {/* 연결된 분석 리스트 */}
+                  {data.hasReports && data.availableReports.length > 0 ? (
+                    <div className="p-4 bg-gray-50">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">
+                        연결된 분석 리스트 ({data.availableReports.length}개)
+                      </h4>
+                      <div className="space-y-2">
+                        {data.availableReports.map((report: any) => {
+                          const analysisDate = new Date(report.createdAt)
+                          return (
+                            <div key={report.id} className="flex items-center justify-between py-2 px-3 bg-white rounded border border-gray-100">
+                              <div className="flex items-center space-x-4 flex-1">
+                                <span className="font-medium text-gray-900">{report.engineName}</span>
+                                <span className="text-gray-500">|</span>
+                                <span className="text-gray-600">분석 엔진: {report.engineId}</span>
+                                <span className="text-gray-500">|</span>
+                                <span className="text-gray-600">
+                                  분석일시: {analysisDate.toLocaleDateString('ko-KR')} {analysisDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleViewReport(report.id, report)}
+                                  className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-2 py-1"
+                                >
+                                  리포트보기
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleDownloadPDF(report.id, report)}
+                                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs px-2 py-1"
+                                >
+                                  PDF 보기
+                                </Button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-gray-50">
+                      <p className="text-sm text-gray-500 text-center">아직 생성된 AI 분석 리포트가 없습니다.</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </Card>
-          ))}
+              )
+            })}
+          </div>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                이전
+              </Button>
+              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className={currentPage === pageNum ? "bg-purple-600 text-white" : ""}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                다음
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
