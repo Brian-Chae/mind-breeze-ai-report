@@ -115,17 +115,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
     initializeSystem();
   }, []);
 
-  // 연결 상태 모니터링
-  useEffect(() => {
-    if (isConnected) {
-      // 2초 후 자동으로 다음 단계로 진행
-      const timer = setTimeout(() => {
-        onConnectionSuccess();
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isConnected, onConnectionSuccess]);
+
 
   // 자동 연결 기능
   useEffect(() => {
@@ -509,7 +499,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
                 ✅ 디바이스 연결이 완료되었습니다!
               </p>
               <p className="text-gray-600 text-sm">
-                자동으로 다음 단계로 진행됩니다...
+                아래 "다음 단계" 버튼을 눌러 계속 진행하세요.
               </p>
             </div>
           </CardContent>
@@ -668,15 +658,18 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
           이전 단계
         </Button>
         
-        {isConnected && (
-          <Button 
-            onClick={onConnectionSuccess}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-          >
-            다음 단계
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        )}
+        <Button 
+          onClick={onConnectionSuccess}
+          disabled={!isConnected}
+          className={`flex-1 ${
+            isConnected 
+              ? 'bg-green-600 hover:bg-green-700 text-white' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          다음 단계
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
       </div>
     </div>
   );
