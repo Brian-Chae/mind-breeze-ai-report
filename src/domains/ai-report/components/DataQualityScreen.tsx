@@ -500,18 +500,16 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
                     <YAxis 
                       domain={[-150, 150]}
                       type="number"
-                      allowDataOverflow={false}
+                      allowDataOverflow={true}
                       scale="linear"
                       allowDecimals={false}
                       tickCount={7}
-                      ticks={[-150, -100, -50, 0, 50, 100, 150]}
                       axisLine={true}
                       tickLine={true}
                       tick={{ fill: '#6b7280', fontSize: 10 }}
                       stroke="#9ca3af"
                       orientation="left"
                       width={35}
-                      includeHidden={false}
                     />
                     <Line 
                       type="monotone" 
@@ -600,18 +598,16 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
                     <YAxis 
                       domain={[-200, 200]}
                       type="number"
-                      allowDataOverflow={false}
+                      allowDataOverflow={true}
                       scale="linear"
                       allowDecimals={false}
                       tickCount={7}
-                      ticks={[-200, -133, -66, 0, 66, 133, 200]}
                       axisLine={true}
                       tickLine={true}
                       tick={{ fill: '#6b7280', fontSize: 10 }}
                       stroke="#9ca3af"
                       orientation="left"
                       width={35}
-                      includeHidden={false}
                     />
                     <Line 
                       type="monotone" 
