@@ -1552,9 +1552,8 @@ AI 건강 분석 리포트
                                    
                                    <div className="text-center">
                                      <div className="text-xs text-gray-500 font-medium">분석일시</div>
-                                     <div className="text-sm text-gray-700">
-                                       {analysisDate.toLocaleDateString('ko-KR')} 
-                                       <br />
+                                     <div className="text-sm text-gray-700 whitespace-nowrap">
+                                       {analysisDate.toLocaleDateString('ko-KR')} {' '}
                                        <span className="text-xs text-gray-500">
                                          {analysisDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                                        </span>
