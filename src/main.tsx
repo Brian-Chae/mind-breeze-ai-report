@@ -6,6 +6,16 @@ import './index.css'
 import '@core/services/firebase' // Firebase 초기화
 import { AuthProvider } from './components/AuthProvider'
 
+// AI 리포트 시스템 초기화
+import { initializeAIReportSystem } from '@domains/ai-report'
+
+// 시스템 초기화
+try {
+  initializeAIReportSystem();
+} catch (error) {
+  console.error('Failed to initialize AI Report System:', error);
+}
+
 // Cache busting - 브라우저 캐시 강제 새로고침
 const forceCacheRefresh = () => {
   // 빌드 타임스탬프 확인
