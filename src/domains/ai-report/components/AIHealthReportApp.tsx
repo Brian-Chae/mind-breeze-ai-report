@@ -12,13 +12,100 @@ import { MeasurementScreen } from './MeasurementScreen';
 import { AnalysisScreen } from './AnalysisScreen';
 import { ReportScreen } from './ReportScreen';
 
-import type { 
-  AIReportStep, 
-  AIReportState, 
-  PersonalInfo,
-  AggregatedMeasurementData,
-  AIAnalysisResponse 
-} from '../types';
+// 🔧 Firebase 저장을 위한 import 추가
+import { FirebaseService } from '../../../core/services/FirebaseService';
+import { MeasurementDataService } from '../services/MeasurementDataService';
+import { auth } from '../../../core/services/firebase';
+
+// 🔧 타입 정의 추가 (누락된 타입들)
+export type AIReportStep = 'personal-info' | 'device-connection' | 'data-quality' | 'measurement' | 'analysis' | 'report';
+
+export interface PersonalInfo {
+  name: string;
+  email?: string;
+  birthDate?: Date;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  occupation?: string;
+  department?: string;
+  healthConditions?: string[];
+}
+
+export interface AggregatedMeasurementData {
+  eegSummary?: {
+    deltaPower?: number;
+    thetaPower?: number;
+    alphaPower?: number;
+    betaPower?: number;
+    gammaPower?: number;
+    focusIndex?: number;
+    relaxationIndex?: number;
+    stressIndex?: number;
+    hemisphericBalance?: number;
+    cognitiveLoad?: number;
+    emotionalStability?: number;
+    attentionLevel?: number;
+    meditationLevel?: number;
+    averageSQI?: number;
+    dataCount?: number;
+  };
+  ppgSummary?: {
+    bpm?: number;
+    sdnn?: number;
+    rmssd?: number;
+    pnn50?: number;
+    lfPower?: number;
+    hfPower?: number;
+    lfHfRatio?: number;
+    stressIndex?: number;
+    spo2?: number;
+    avnn?: number;
+    pnn20?: number;
+    sdsd?: number;
+    hrMax?: number;
+    hrMin?: number;
+  };
+  accSummary?: {
+    activityState?: string;
+    intensity?: number;
+    stability?: number;
+    avgMovement?: number;
+    maxMovement?: number;
+  };
+  qualitySummary?: {
+    totalDataPoints?: number;
+    highQualityDataPoints?: number;
+    qualityPercentage?: number;
+    measurementReliability?: 'high' | 'medium' | 'low';
+  };
+  measurementInfo?: {
+    startTime?: Date;
+    endTime?: Date;
+    duration?: number;
+    environment?: string;
+    notes?: string;
+  };
+  sessionId?: string;
+  savedAt?: Date;
+}
+
+export interface AIAnalysisResponse {
+  id: string;
+  content: string;
+  recommendations?: string[];
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  overallScore?: number;
+  generatedAt?: Date;
+}
+
+export interface AIReportState {
+  currentStep: AIReportStep;
+  personalInfo?: PersonalInfo;
+  deviceStatus: { isConnected: boolean };
+  measurementData?: AggregatedMeasurementData;
+  analysisResult?: AIAnalysisResponse;
+  measurementProgress?: number;
+  error?: string;
+}
 
 const STEPS: { key: AIReportStep; title: string; description: string; icon: React.ComponentType }[] = [
   { 
@@ -65,58 +152,32 @@ interface AIHealthReportAppProps {
 
 export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
   const navigate = useNavigate();
-  const params = useParams<{ step?: string }>();
-  
-  // URL parameter에서 현재 단계 결정
+  const params = useParams();
+
+  // 상태 관리
+  const [state, setState] = useState<AIReportState>({
+    currentStep: 'personal-info',
+    deviceStatus: { isConnected: false },
+  });
+
+  // URL에서 현재 단계 가져오기
   const getCurrentStepFromUrl = (): AIReportStep => {
     const urlStep = params.step as AIReportStep;
-    const validSteps = STEPS.map(s => s.key);
+    const validSteps: AIReportStep[] = ['personal-info', 'device-connection', 'data-quality', 'measurement', 'analysis', 'report'];
     return validSteps.includes(urlStep) ? urlStep : 'personal-info';
   };
 
-  const [state, setState] = useState<AIReportState>({
-    currentStep: getCurrentStepFromUrl(),
-    deviceStatus: {
-      isConnected: false
-    },
-    dataQuality: {
-      eegQuality: 85,
-      ppgQuality: 92,
-      accQuality: 88,
-      overallQuality: 88
-    },
-    measurementProgress: {
-      isActive: false,
-      duration: 0,
-      targetDuration: 60,
-      progress: 0
-    }
-  });
-
-  // URL 변경 시 currentStep 동기화
-  useEffect(() => {
-    const currentStepFromUrl = getCurrentStepFromUrl();
-    if (state.currentStep !== currentStepFromUrl) {
-      setState(prev => ({
-        ...prev,
-        currentStep: currentStepFromUrl
-      }));
-    }
-  }, [params.step]);
-
-  // 초기 상태
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
-  
-  // 더미 개인정보 (테스트용)
-  const dummyPersonalInfo: PersonalInfo = {
-    name: '홍길동',
-    gender: 'male',
-    birthDate: '1990-01-01',
-    occupation: '소프트웨어 개발자',
-    workConcerns: '장시간 코딩으로 인한 목과 어깨 통증, 야근으로 인한 수면 부족과 집중력 저하가 주요 고민입니다.'
-  };
-
+  // 현재 단계 인덱스
   const currentStepIndex = STEPS.findIndex(step => step.key === state.currentStep);
+
+  // 초기화 시 URL에서 단계 설정
+  useEffect(() => {
+    const urlStep = getCurrentStepFromUrl();
+    setState(prev => ({
+      ...prev,
+      currentStep: urlStep
+    }));
+  }, [params.step]);
 
   // 단계 이동 함수 (URL 업데이트)
   const navigateToStep = useCallback((step: AIReportStep) => {
@@ -160,13 +221,154 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
     }
   }, [state.currentStep]);
 
-  const handleMeasurementComplete = useCallback((measurementData: AggregatedMeasurementData) => {
-    setState(prev => ({
-      ...prev,
-      measurementData,
-    }));
-    navigateToStep('analysis');
-  }, [navigateToStep]);
+  const handleMeasurementComplete = useCallback(async (measurementData: AggregatedMeasurementData) => {
+    try {
+      console.log('🔧 측정 완료 - Firebase 저장 시작:', measurementData);
+      
+      // 현재 사용자 정보 가져오기 (Firebase auth 사용)
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.error('❌ 사용자 정보가 없어서 저장할 수 없습니다');
+        setState(prev => ({ ...prev, error: '사용자 정보가 없어서 저장할 수 없습니다' }));
+        return;
+      }
+
+      // 1. MeasurementSession 저장
+      const sessionData = {
+        subjectName: state.personalInfo?.name || '알 수 없음',
+        subjectEmail: state.personalInfo?.email,
+        subjectGender: state.personalInfo?.gender,
+        subjectBirthDate: state.personalInfo?.birthDate,
+        
+        // 측정 실행자 정보
+        measuredByUserId: currentUser.uid,
+        measuredByUserName: currentUser.displayName || currentUser.email,
+        
+        // 세션 정보
+        sessionDate: new Date(measurementData.measurementInfo?.startTime || Date.now()),
+        duration: measurementData.measurementInfo?.duration || 60,
+        
+        // 분석 결과 요약
+        overallScore: Math.round(measurementData.qualitySummary?.qualityPercentage || 0),
+        stressLevel: measurementData.eegSummary?.stressIndex ? measurementData.eegSummary.stressIndex / 100 : 0,
+        focusLevel: measurementData.eegSummary?.focusIndex ? measurementData.eegSummary.focusIndex / 100 : 0,
+        relaxationLevel: measurementData.eegSummary?.relaxationIndex ? measurementData.eegSummary.relaxationIndex / 100 : 0,
+        
+        // 상태
+        status: 'COMPLETED',
+        reportGenerated: false
+      };
+
+      const sessionId = await FirebaseService.saveMeasurementSession(sessionData);
+      console.log('✅ MeasurementSession 저장 완료:', sessionId);
+
+      // 2. 상세 측정 데이터 저장 (MeasurementDataService 사용)
+      try {
+        const measurementDataService = new MeasurementDataService();
+        
+        const detailedMeasurementData = {
+          sessionId,
+          userId: currentUser.uid,
+          measurementDate: new Date(measurementData.measurementInfo?.startTime || Date.now()),
+          duration: measurementData.measurementInfo?.duration || 60,
+          
+          deviceInfo: {
+            serialNumber: 'LINKBAND_SIMULATOR', // 실제 디바이스 연결 시 실제 값으로 변경
+            model: 'LINK_BAND_V4' as const,
+            firmwareVersion: '1.0.0',
+            batteryLevel: 85
+          },
+          
+          eegMetrics: {
+            delta: measurementData.eegSummary?.deltaPower || 0,
+            theta: measurementData.eegSummary?.thetaPower || 0,
+            alpha: measurementData.eegSummary?.alphaPower || 0,
+            beta: measurementData.eegSummary?.betaPower || 0,
+            gamma: measurementData.eegSummary?.gammaPower || 0,
+            
+            attentionIndex: measurementData.eegSummary?.attentionLevel || 0,
+            meditationIndex: measurementData.eegSummary?.meditationLevel || 0,
+            stressIndex: measurementData.eegSummary?.stressIndex || 0,
+            fatigueIndex: (100 - (measurementData.eegSummary?.focusIndex || 50)), // 역산으로 계산
+            
+            signalQuality: measurementData.eegSummary?.averageSQI ? measurementData.eegSummary.averageSQI / 100 : 0,
+            artifactRatio: 0.1 // 기본값
+          },
+          
+          ppgMetrics: {
+            heartRate: measurementData.ppgSummary?.bpm || 0,
+            heartRateVariability: measurementData.ppgSummary?.rmssd || 0,
+            rrIntervals: [], // 실제 RR 간격 데이터는 추가 구현 필요
+            
+            stressScore: measurementData.ppgSummary?.stressIndex || 0,
+            autonomicBalance: measurementData.ppgSummary?.lfHfRatio || 0,
+            
+            signalQuality: 0.8, // 기본값 - 실제 PPG SQI 데이터로 변경 필요
+            motionArtifact: 0.1
+          },
+          
+          accMetrics: {
+            activityLevel: measurementData.accSummary?.intensity || 0,
+            movementVariability: measurementData.accSummary?.avgMovement || 0,
+            postureStability: measurementData.accSummary?.stability || 0,
+            movementIntensity: measurementData.accSummary?.intensity || 0,
+            posture: 'UNKNOWN' as const, // 기본값
+            movementEvents: [] // 기본값
+          },
+          
+          dataQuality: {
+            overallScore: measurementData.qualitySummary?.qualityPercentage || 0,
+            eegQuality: measurementData.eegSummary?.averageSQI || 80,
+            ppgQuality: 80, // 기본값 - 실제 PPG SQI 데이터로 변경 필요
+            motionInterference: 20, // 기본값
+            usableForAnalysis: (measurementData.qualitySummary?.qualityPercentage || 0) >= 70,
+            qualityIssues: [],
+            overallQuality: measurementData.qualitySummary?.qualityPercentage || 0,
+            sensorContact: true, // 기본값
+            signalStability: measurementData.qualitySummary?.measurementReliability === 'high' ? 1.0 : 
+                            measurementData.qualitySummary?.measurementReliability === 'medium' ? 0.7 : 0.4,
+            artifactLevel: 0.1 // 기본값
+          },
+          
+          processingVersion: '1.0.0' // 필수 필드 추가
+        };
+
+        const measurementId = await measurementDataService.saveMeasurementData(detailedMeasurementData);
+        console.log('✅ MeasurementData 저장 완료:', measurementId);
+        
+      } catch (detailError) {
+        console.error('❌ MeasurementData 저장 실패 (세션은 저장됨):', detailError);
+        // 세션은 저장되었으므로 계속 진행
+      }
+
+      // 3. 상태 업데이트 및 다음 단계로 이동
+      setState(prev => ({
+        ...prev,
+        measurementData: {
+          ...measurementData,
+          sessionId, // sessionId 추가
+          savedAt: new Date()
+        },
+      }));
+      
+      console.log('✅ 측정 데이터 저장 완료 - 분석 단계로 이동');
+      navigateToStep('analysis');
+      
+    } catch (error) {
+      console.error('❌ 측정 데이터 저장 실패:', error);
+      setState(prev => ({ 
+        ...prev, 
+        error: `데이터 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}` 
+      }));
+      
+      // 저장은 실패했지만 분석은 계속 진행할 수 있도록 함
+      setState(prev => ({
+        ...prev,
+        measurementData,
+      }));
+      navigateToStep('analysis');
+    }
+  }, [navigateToStep, state.personalInfo]);
 
   const handleAnalysisComplete = useCallback((analysisResult: AIAnalysisResponse) => {
     setState(prev => ({
@@ -185,7 +387,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
   const handleError = useCallback((error: string) => {
     setState(prev => ({
       ...prev,
-      error
+      error,
     }));
   }, []);
 
@@ -247,16 +449,6 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
           );
         }
         // 정상적인 measurement 단계인 경우 MeasurementScreen 표시
-        return (
-          <MeasurementScreen
-            onComplete={handleMeasurementComplete}
-            onBack={handleBack}
-            onError={handleError}
-            progress={state.measurementProgress}
-          />
-        );
-      
-      case 'measurement':
         return (
           <MeasurementScreen
             onComplete={handleMeasurementComplete}
