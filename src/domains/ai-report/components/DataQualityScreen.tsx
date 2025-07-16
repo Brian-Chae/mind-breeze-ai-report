@@ -338,20 +338,20 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
   }, [isConnected, isGoodQuality, qualityTimer, onQualityConfirmed, onError]);
 
   return (
-    <div className="data-quality-screen min-h-screen bg-gray-50 p-6 flex flex-col">
+    <div className="data-quality-screen p-4 flex flex-col">
       {/* 헤더 */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-gray-800 mb-1">
           🔍 디바이스 착용 및 신호 품질 확인
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 text-sm">
           정확한 측정을 위해 센서 접촉과 신호 품질을 확인해주세요.
         </p>
       </div>
 
       {/* 연결 상태 확인 */}
       {!isConnected && (
-        <Alert className="mb-6 border-red-200 bg-red-50">
+        <Alert className="mb-4 border-red-200 bg-red-50">
           <AlertCircle className="h-4 w-4 text-red-500" />
           <AlertDescription className="text-red-700">
             디바이스가 연결되지 않았습니다. 이전 단계로 돌아가서 디바이스를 연결해주세요.
@@ -361,7 +361,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
       {/* 센서 접촉 상태 경고 */}
       {isConnected && !isSensorContacted && (
-        <Alert className="mb-6 border-red-200 bg-red-50">
+        <Alert className="mb-4 border-red-200 bg-red-50">
           <AlertCircle className="h-4 w-4 text-red-500" />
           <AlertDescription className="text-red-700">
             <div className="font-medium mb-1">센서 접촉 불량 감지</div>
@@ -373,17 +373,17 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       )}
 
       {/* 신호 품질 요약 카드 */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         {/* EEG 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-              <Brain className="h-4 w-4 text-blue-500" />
+          <CardHeader className="pb-1 px-3 pt-3">
+            <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
+              <Brain className="h-3 w-3 text-blue-500" />
               EEG 신호
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-700 mb-1">
+          <CardContent className="px-3 pb-3">
+            <div className="text-xl font-bold text-gray-700 mb-1">
               {signalQuality.eeg.toFixed(0)}%
             </div>
             <Badge className={getQualityStatus(signalQuality.eeg).color}>
@@ -394,14 +394,14 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
         {/* PPG 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-              <Heart className="h-4 w-4 text-red-500" />
+          <CardHeader className="pb-1 px-3 pt-3">
+            <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
+              <Heart className="h-3 w-3 text-red-500" />
               PPG 신호
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-700 mb-1">
+          <CardContent className="px-3 pb-3">
+            <div className="text-xl font-bold text-gray-700 mb-1">
               {signalQuality.ppg.toFixed(0)}%
             </div>
             <Badge className={getQualityStatus(signalQuality.ppg).color}>
@@ -412,14 +412,14 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
         {/* ACC 상태 */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-              <Move3d className="h-4 w-4 text-green-500" />
+          <CardHeader className="pb-1 px-3 pt-3">
+            <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
+              <Move3d className="h-3 w-3 text-green-500" />
               움직임 상태
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-lg font-bold text-gray-700 mb-1">
+          <CardContent className="px-3 pb-3">
+            <div className="text-base font-bold text-gray-700 mb-1">
               {signalQuality.accStatus}
             </div>
             <Badge className={signalQuality.acc >= 90 ? 'text-green-600 bg-green-100 border-green-200' : 'text-red-600 bg-red-100 border-red-200'}>
@@ -434,35 +434,35 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
 
       {/* 실시간 신호 그래프들 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 flex-1">
         {/* EEG 신호 그래프 */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
-              <Brain className="h-5 w-5 text-blue-500" />
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-base text-gray-700 flex items-center gap-2">
+              <Brain className="h-4 w-4 text-blue-500" />
               EEG 뇌파 신호 (FP1, FP2)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4">
             {/* 경고 메시지 표시 */}
             {!isConnected ? (
-              <div className="h-48 flex items-center justify-center">
+              <div className="h-32 flex items-center justify-center">
                 <div className="text-center">
-                  <Wifi className="w-8 h-8 text-red-500 mx-auto mb-3" />
-                  <p className="text-red-500 text-sm font-medium">디바이스가 연결되지 않았습니다</p>
+                  <Wifi className="w-6 h-6 text-red-500 mx-auto mb-2" />
+                  <p className="text-red-500 text-xs font-medium">디바이스가 연결되지 않았습니다</p>
                   <p className="text-gray-500 text-xs mt-1">LINK BAND를 연결해주세요</p>
                 </div>
               </div>
             ) : !isSensorContacted ? (
-              <div className="h-48 flex items-center justify-center">
+              <div className="h-32 flex items-center justify-center">
                 <div className="text-center">
-                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-                  <p className="text-amber-600 text-sm font-medium">센서 접촉 불량</p>
+                  <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                  <p className="text-amber-600 text-xs font-medium">센서 접촉 불량</p>
                   <p className="text-gray-500 text-xs mt-1">디바이스 위치를 조정해주세요</p>
                 </div>
               </div>
             ) : (
-              <div className="h-48 rounded-lg overflow-hidden">
+              <div className="h-32 rounded-lg overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart 
                     data={finalEEGData} 
@@ -519,17 +519,17 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
                 </ResponsiveContainer>
               </div>
             )}
-            <div className="flex items-center justify-center gap-6 mt-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-[#10b981] rounded-full"></div>
-                <span className="text-sm text-gray-600 font-medium">FP1 Channel</span>
+            <div className="flex items-center justify-center gap-4 mt-2">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-[#10b981] rounded-full"></div>
+                <span className="text-xs text-gray-600">FP1</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-[#f59e0b] rounded-full"></div>
-                <span className="text-sm text-gray-600 font-medium">FP2 Channel</span>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-[#f59e0b] rounded-full"></div>
+                <span className="text-xs text-gray-600">FP2</span>
               </div>
             </div>
-            <div className="mt-2 text-xs text-gray-500 text-center">
+            <div className="mt-1 text-xs text-gray-500 text-center">
               신호 품질: {signalQuality.eeg.toFixed(1)}%
             </div>
           </CardContent>
@@ -537,32 +537,32 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
         {/* PPG 신호 그래프 */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
-              <Heart className="h-5 w-5 text-red-500" />
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-base text-gray-700 flex items-center gap-2">
+              <Heart className="h-4 w-4 text-red-500" />
               PPG 심박 신호 (IR, Red)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4">
             {/* 경고 메시지 표시 */}
             {!isConnected ? (
-              <div className="h-48 flex items-center justify-center">
+              <div className="h-32 flex items-center justify-center">
                 <div className="text-center">
-                  <Wifi className="w-8 h-8 text-red-500 mx-auto mb-3" />
-                  <p className="text-red-500 text-sm font-medium">디바이스가 연결되지 않았습니다</p>
+                  <Wifi className="w-6 h-6 text-red-500 mx-auto mb-2" />
+                  <p className="text-red-500 text-xs font-medium">디바이스가 연결되지 않았습니다</p>
                   <p className="text-gray-500 text-xs mt-1">LINK BAND를 연결해주세요</p>
                 </div>
               </div>
             ) : !isSensorContacted ? (
-              <div className="h-48 flex items-center justify-center">
+              <div className="h-32 flex items-center justify-center">
                 <div className="text-center">
-                  <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-                  <p className="text-amber-600 text-sm font-medium">센서 접촉 불량</p>
+                  <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                  <p className="text-amber-600 text-xs font-medium">센서 접촉 불량</p>
                   <p className="text-gray-500 text-xs mt-1">디바이스 위치를 조정해주세요</p>
                 </div>
               </div>
             ) : (
-              <div className="h-48 rounded-lg overflow-hidden">
+              <div className="h-32 rounded-lg overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart 
                     data={finalPPGData} 
@@ -619,17 +619,17 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
                 </ResponsiveContainer>
               </div>
             )}
-            <div className="flex items-center justify-center gap-6 mt-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-[#ef4444] rounded-full"></div>
-                <span className="text-sm text-gray-600 font-medium">Red Channel</span>
+            <div className="flex items-center justify-center gap-4 mt-2">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-[#ef4444] rounded-full"></div>
+                <span className="text-xs text-gray-600">Red</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-[#8b5cf6] rounded-full"></div>
-                <span className="text-sm text-gray-600 font-medium">IR Channel</span>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-[#8b5cf6] rounded-full"></div>
+                <span className="text-xs text-gray-600">IR</span>
               </div>
             </div>
-            <div className="mt-2 text-xs text-gray-500 text-center">
+            <div className="mt-1 text-xs text-gray-500 text-center">
               신호 품질: {signalQuality.ppg.toFixed(1)}%
             </div>
           </CardContent>
@@ -640,14 +640,14 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
       {/* 진행 상황 표시 */}
       {isMonitoring && isConnected && (
-        <Card className="bg-white border-gray-200 shadow-sm mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-500" />
+        <Card className="bg-white border-gray-200 shadow-sm mb-3">
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-500" />
               신호 품질 안정화 확인 중... ({qualityTimer}/10초)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4">
             <Progress 
               value={(qualityTimer / 10) * 100} 
               className="h-2"
