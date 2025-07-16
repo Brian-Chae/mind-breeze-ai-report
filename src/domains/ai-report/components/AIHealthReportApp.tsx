@@ -206,9 +206,9 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       case 'device-connection':
         return (
           <DeviceConnectionScreen
-            onConnected={handleDeviceConnected}
+            onConnectionSuccess={handleDeviceConnected}
+            onBack={handleBack}
             onError={handleError}
-            deviceStatus={state.deviceStatus}
           />
         );
       
@@ -216,8 +216,8 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         return (
           <DataQualityScreen
             onQualityConfirmed={handleDataQualityConfirmed}
+            onBack={handleBack}
             onError={handleError}
-            dataQuality={state.dataQuality}
           />
         );
       
@@ -225,6 +225,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         return (
           <MeasurementScreen
             onComplete={handleMeasurementComplete}
+            onBack={handleBack}
             onError={handleError}
             progress={state.measurementProgress}
           />
@@ -234,6 +235,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         return (
           <AnalysisScreen
             onComplete={handleAnalysisComplete}
+            onBack={handleBack}
             onError={handleError}
             personalInfo={state.personalInfo!}
             measurementData={state.measurementData!}

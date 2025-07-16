@@ -7,11 +7,12 @@ import type { MeasurementProgress, AggregatedMeasurementData } from '../types';
 
 interface MeasurementScreenProps {
   onComplete: (data: AggregatedMeasurementData) => void;
+  onBack: () => void;
   onError: (error: string) => void;
   progress: MeasurementProgress;
 }
 
-export function MeasurementScreen({ onComplete, onError, progress }: MeasurementScreenProps) {
+export function MeasurementScreen({ onComplete, onBack, onError, progress }: MeasurementScreenProps) {
   const handleStartMeasurement = () => {
     // 임시 더미 데이터 (타입에 맞게 간단히)
     const dummyData: AggregatedMeasurementData = {

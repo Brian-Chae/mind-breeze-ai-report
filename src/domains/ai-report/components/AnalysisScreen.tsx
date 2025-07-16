@@ -6,12 +6,13 @@ import type { PersonalInfo, AggregatedMeasurementData, AIAnalysisResponse } from
 
 interface AnalysisScreenProps {
   onComplete: (result: AIAnalysisResponse) => void;
+  onBack: () => void;
   onError: (error: string) => void;
   personalInfo: PersonalInfo;
   measurementData: AggregatedMeasurementData;
 }
 
-export function AnalysisScreen({ onComplete, onError, personalInfo, measurementData }: AnalysisScreenProps) {
+export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, measurementData }: AnalysisScreenProps) {
   useEffect(() => {
     // 2초 후 더미 분석 결과 생성
     const timer = setTimeout(() => {
