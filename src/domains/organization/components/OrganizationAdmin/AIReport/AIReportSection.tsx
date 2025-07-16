@@ -162,7 +162,23 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                  costUsed: analysis.costUsed || 1,
                  processingTime: analysis.processingTime || 0,
                  qualityScore: analysis.qualityScore || 0,
-                 createdAt: analysis.createdAt?.toISOString() || new Date().toISOString(),
+                 createdAt: (() => {
+                   if (analysis.createdAt) {
+                     // Firestore Timestamp 객체인 경우
+                     if (typeof analysis.createdAt.toDate === 'function') {
+                       return analysis.createdAt.toDate().toISOString()
+                     }
+                     // 이미 Date 객체인 경우
+                     if (analysis.createdAt instanceof Date) {
+                       return analysis.createdAt.toISOString()
+                     }
+                     // 문자열인 경우
+                     if (typeof analysis.createdAt === 'string') {
+                       return new Date(analysis.createdAt).toISOString()
+                     }
+                   }
+                   return new Date().toISOString()
+                 })(),
                  createdByUserName: analysis.createdByUserName || '시스템'
                })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
                sessionData: session // 원본 세션 데이터 보관
@@ -194,6 +210,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       
       console.log('✅ 측정 데이터 로드 완료:', measurementDataWithReports.length, '개')
       setMeasurementDataList(measurementDataWithReports)
+      
+      // 상세 로깅: 각 측정 데이터의 리포트 개수 확인
+      measurementDataWithReports.forEach(data => {
+        console.log(`📊 ${data.userName} - 리포트 ${data.availableReports.length}개`)
+      })
       
     } catch (error) {
       console.error('측정 데이터 로드 실패:', error)
@@ -436,12 +457,15 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         }
       }
 
-      // 7. 측정 데이터 목록 새로고침
-      await loadMeasurementData()
+      // 7. 측정 데이터 목록 새로고침 (Firestore 반영 시간을 고려하여 지연 후 재로드)
+      console.log('🎉 AI 분석 완료! 데이터 새로고침 중...')
+      setTimeout(async () => {
+        await loadMeasurementData()
+        console.log('🔄 AI 분석 완료 후 데이터 새로고침 완료')
+      }, 1500)
       
       // 성공 메시지
       setError(null)
-      console.log('🎉 AI 분석 완료!')
 
     } catch (error) {
       console.error('🚨 AI 분석 실패:', error)
