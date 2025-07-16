@@ -16,6 +16,38 @@ try {
   console.error('Failed to initialize AI Report System:', error);
 }
 
+// 개발 환경 전역 함수 추가
+if (process.env.NODE_ENV === 'development') {
+  // @ts-ignore
+  window.addDevCredits = async (amount = 99999999999999) => {
+    try {
+      const { default: creditManagementService } = await import('@domains/organization/services/CreditManagementService');
+      const { default: enterpriseAuthService } = await import('@domains/organization/services/EnterpriseAuthService');
+      
+      const currentContext = enterpriseAuthService.getCurrentContext();
+      if (!currentContext.user) {
+        console.error('로그인된 사용자가 없습니다.');
+        return;
+      }
+
+             await creditManagementService.addCredits({
+        organizationId: currentContext.user.organizationId,
+        userId: currentContext.user.id,
+        amount,
+        description: `개발용 크레딧 수동 추가 (${amount} 크레딧)`,
+        purchaseType: 'BONUS'
+      });
+      
+      console.log(`🚀 개발용 크레딧 ${amount.toLocaleString()}개가 추가되었습니다!`);
+    } catch (error) {
+      console.error('❌ 개발용 크레딧 추가 실패:', error);
+    }
+  };
+  
+  console.log('🚀 개발 환경 감지: 크레딧 추가 함수 사용 가능');
+  console.log('   사용법: addDevCredits() 또는 addDevCredits(원하는크레딧수)');
+}
+
 // Cache busting - 브라우저 캐시 강제 새로고침
 const forceCacheRefresh = () => {
   // 빌드 타임스탬프 확인

@@ -30,6 +30,7 @@ import {
   Organization,
   TrialService
 } from '@core/types/business';
+import { toast } from 'sonner';
 
 export interface CreditUsageOptions {
   userId: string;
@@ -94,6 +95,18 @@ export interface VolumeDiscountCalculationResult {
 
 class CreditManagementService {
   
+  // === 개발 환경 지원 ===
+
+  /**
+   * 개발 환경에서 크레딧 체크 우회 여부 확인
+   */
+  private isDevelopmentMode(): boolean {
+    return process.env.NODE_ENV === 'development' || 
+           process.env.REACT_APP_ENV === 'development' ||
+           window.location.hostname === 'localhost' ||
+           window.location.hostname.includes('127.0.0.1');
+  }
+
   // === 볼륨 할인 계산 ===
 
   calculateVolumeDiscount(memberCount: number): VolumeDiscountCalculationResult {
@@ -187,6 +200,7 @@ class CreditManagementService {
       return 0;
     } catch (error) {
       console.error('❌ 크레딧 잔액 조회 실패:', error);
+      toast.error('크레딧 잔액을 조회할 수 없습니다.');
       throw new Error('크레딧 잔액을 조회할 수 없습니다.');
     }
   }
@@ -215,9 +229,34 @@ class CreditManagementService {
           currentBalance = userSnap.data().personalCreditBalance || 0;
         }
 
-        // 잔액 확인
-        if (currentBalance < options.amount) {
-          throw new Error(`크레딧이 부족합니다. (현재: ${currentBalance}, 필요: ${options.amount})`);
+        // 잔액 확인 (개발 환경에서는 우회)
+        if (!this.isDevelopmentMode() && currentBalance < options.amount) {
+          const errorMessage = `크레딧이 부족합니다. (현재: ${currentBalance}, 필요: ${options.amount})`;
+          toast.error(errorMessage);
+          throw new Error(errorMessage);
+        }
+
+        // 개발 환경에서 크레딧이 부족하면 자동으로 충전
+        if (this.isDevelopmentMode() && currentBalance < options.amount) {
+          console.log(`🚀 개발 환경: 크레딧 부족으로 자동 충전 (현재: ${currentBalance}, 필요: ${options.amount})`);
+          const autoChargeAmount = Math.max(99999999, options.amount * 100);
+          
+          // 자동 충전
+          if (options.organizationId) {
+            transaction.update(balanceDoc, { 
+              creditBalance: autoChargeAmount,
+              updatedAt: Timestamp.now()
+            });
+          } else {
+            transaction.update(balanceDoc, { 
+              personalCreditBalance: autoChargeAmount,
+              updatedAt: Timestamp.now()
+            });
+          }
+          
+          currentBalance = autoChargeAmount;
+          console.log(`✅ 개발용 크레딧 자동 충전 완료: ${autoChargeAmount} 크레딧`);
+          toast.success(`🚀 개발 환경: 크레딧 자동 충전! ${autoChargeAmount.toLocaleString()} 크레딧 추가`);
         }
 
         const newBalance = currentBalance - options.amount;
@@ -263,6 +302,9 @@ class CreditManagementService {
 
       } catch (error) {
         console.error('❌ 크레딧 사용 실패:', error);
+        if (error instanceof Error && !error.message.includes('크레딧이 부족합니다')) {
+          toast.error(`크레딧 사용 실패: ${error.message}`);
+        }
         throw error;
       }
     });
@@ -342,6 +384,7 @@ class CreditManagementService {
         });
 
         console.log(`✅ 크레딧 충전 완료: ${options.amount} (잔액: ${newBalance})`);
+        toast.success(`✅ 크레딧 충전 완료! ${options.amount.toLocaleString()} 크레딧 추가`);
         
         return {
           id: transactionRef.id,
@@ -350,6 +393,7 @@ class CreditManagementService {
 
       } catch (error) {
         console.error('❌ 크레딧 충전 실패:', error);
+        toast.error(`크레딧 충전 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
         throw error;
       }
     });
