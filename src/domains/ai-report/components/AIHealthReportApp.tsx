@@ -230,6 +230,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             onBack={handleBack}
             onError={handleError}
             onModeChange={handleDataQualityModeChange}
+            onMeasurementComplete={handleMeasurementComplete}
           />
         );
         
@@ -242,6 +243,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
               onBack={handleBack}
               onError={handleError}
               onModeChange={handleDataQualityModeChange}
+              onMeasurementComplete={handleMeasurementComplete}
             />
           );
         }
