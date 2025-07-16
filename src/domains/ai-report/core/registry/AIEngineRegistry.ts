@@ -19,15 +19,147 @@ export interface EngineSearchOptions {
   sortOrder?: 'asc' | 'desc';
 }
 
+// 엔진 검증 결과 인터페이스
+export interface EngineValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
 class AIEngineRegistry {
   private engines: Map<string, IAIEngine> = new Map();
   private enabledEngines: Set<string> = new Set();
   private engineMetadata: Map<string, EngineMetadata> = new Map();
 
   /**
-   * 엔진 등록
+   * 엔진 필수 정보 검증
    */
-  register(engine: IAIEngine): void {
+  private validateEngine(engine: IAIEngine): EngineValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 1. 필수 메타정보 검증
+    if (!engine.id || typeof engine.id !== 'string' || engine.id.trim() === '') {
+      errors.push('엔진 ID가 필수입니다.');
+    } else if (!/^[a-z0-9-]+$/.test(engine.id)) {
+      errors.push('엔진 ID는 소문자, 숫자, 하이픈(-)만 사용 가능합니다.');
+    }
+
+    if (!engine.name || typeof engine.name !== 'string' || engine.name.trim() === '') {
+      errors.push('엔진 이름이 필수입니다.');
+    }
+
+    if (!engine.description || typeof engine.description !== 'string' || engine.description.trim() === '') {
+      errors.push('엔진 설명이 필수입니다.');
+    }
+
+    if (!engine.version || typeof engine.version !== 'string' || engine.version.trim() === '') {
+      errors.push('엔진 버전이 필수입니다.');
+    } else if (!/^\d+\.\d+\.\d+$/.test(engine.version)) {
+      warnings.push('버전은 x.y.z 형식을 권장합니다.');
+    }
+
+    if (!engine.provider || typeof engine.provider !== 'string' || engine.provider.trim() === '') {
+      errors.push('엔진 제공업체(provider)가 필수입니다.');
+    }
+
+    // 2. 비용 정보 검증
+    if (typeof engine.costPerAnalysis !== 'number') {
+      errors.push('분석당 비용(costPerAnalysis)이 필수입니다.');
+    } else if (engine.costPerAnalysis < 0) {
+      errors.push('분석당 비용은 0 이상이어야 합니다.');
+    } else if (!Number.isInteger(engine.costPerAnalysis)) {
+      errors.push('분석당 비용은 정수여야 합니다.');
+    }
+
+    // 3. 지원 데이터 타입 검증
+    if (!engine.supportedDataTypes || typeof engine.supportedDataTypes !== 'object') {
+      errors.push('지원 데이터 타입(supportedDataTypes)이 필수입니다.');
+    } else {
+      const { eeg, ppg, acc } = engine.supportedDataTypes;
+      if (typeof eeg !== 'boolean' || typeof ppg !== 'boolean' || typeof acc !== 'boolean') {
+        errors.push('supportedDataTypes의 모든 속성(eeg, ppg, acc)은 boolean이어야 합니다.');
+      }
+      if (!eeg && !ppg && !acc) {
+        errors.push('최소 하나의 데이터 타입은 지원해야 합니다.');
+      }
+    }
+
+    // 4. 능력(capabilities) 검증
+    if (!engine.capabilities || typeof engine.capabilities !== 'object') {
+      errors.push('엔진 능력(capabilities)이 필수입니다.');
+    } else {
+      const caps = engine.capabilities;
+      
+      if (!Array.isArray(caps.supportedLanguages) || caps.supportedLanguages.length === 0) {
+        errors.push('지원 언어(supportedLanguages)가 필수입니다.');
+      }
+      
+      if (typeof caps.maxDataDuration !== 'number' || caps.maxDataDuration <= 0) {
+        errors.push('최대 데이터 길이(maxDataDuration)는 양수여야 합니다.');
+      }
+      
+      if (typeof caps.minDataQuality !== 'number' || caps.minDataQuality < 0 || caps.minDataQuality > 100) {
+        errors.push('최소 데이터 품질(minDataQuality)은 0-100 사이여야 합니다.');
+      }
+      
+      if (!Array.isArray(caps.supportedOutputFormats) || caps.supportedOutputFormats.length === 0) {
+        errors.push('지원 출력 형식(supportedOutputFormats)이 필수입니다.');
+      }
+      
+      if (typeof caps.realTimeProcessing !== 'boolean') {
+        errors.push('실시간 처리 지원(realTimeProcessing)은 boolean이어야 합니다.');
+      }
+    }
+
+    // 5. 권장 렌더러 검증
+    if (!Array.isArray(engine.recommendedRenderers)) {
+      warnings.push('권장 렌더러(recommendedRenderers) 목록을 설정하는 것을 권장합니다.');
+    }
+
+    // 6. 필수 메서드 검증
+    if (typeof engine.validate !== 'function') {
+      errors.push('validate 메서드가 필수입니다.');
+    }
+
+    if (typeof engine.analyze !== 'function') {
+      errors.push('analyze 메서드가 필수입니다.');
+    }
+
+    // 7. 중복 ID 검증
+    if (this.engines.has(engine.id)) {
+      warnings.push(`엔진 ID '${engine.id}'가 이미 등록되어 있습니다. 기존 엔진을 덮어씁니다.`);
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * 엔진 등록 (검증 포함)
+   */
+  register(engine: IAIEngine, options: { skipValidation?: boolean } = {}): void {
+    // 검증 수행 (skipValidation이 false인 경우)
+    if (!options.skipValidation) {
+      const validation = this.validateEngine(engine);
+      
+      // 검증 실패 시 등록 중단
+      if (!validation.isValid) {
+        const errorMessage = `엔진 등록 실패 (${engine.id || 'unknown'}): ${validation.errors.join(', ')}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      // 경고 출력
+      if (validation.warnings.length > 0) {
+        console.warn(`엔진 등록 경고 (${engine.id}): ${validation.warnings.join(', ')}`);
+      }
+    }
+
+    // 기존 엔진 덮어쓰기 경고
     if (this.engines.has(engine.id)) {
       console.warn(`Engine ${engine.id} is already registered. Overwriting...`);
     }
@@ -44,7 +176,57 @@ class AIEngineRegistry {
       isEnabled: true
     });
     
-    console.log(`AI Engine registered: ${engine.id} (${engine.name})`);
+    console.log(`✅ AI Engine registered: ${engine.id} (${engine.name}) - Cost: ${engine.costPerAnalysis} credits`);
+  }
+
+  /**
+   * 엔진 일괄 검증
+   */
+  validateAllEngines(): Map<string, EngineValidationResult> {
+    const results = new Map<string, EngineValidationResult>();
+    
+    this.engines.forEach((engine, id) => {
+      const validation = this.validateEngine(engine);
+      results.set(id, validation);
+    });
+    
+    return results;
+  }
+
+  /**
+   * 엔진 상태 보고서 생성
+   */
+  generateHealthReport(): EngineHealthReport {
+    const validationResults = this.validateAllEngines();
+    const totalEngines = this.engines.size;
+    let validEngines = 0;
+    let enginesWithWarnings = 0;
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    validationResults.forEach((result, engineId) => {
+      if (result.isValid) {
+        validEngines++;
+      } else {
+        errors.push(`${engineId}: ${result.errors.join(', ')}`);
+      }
+      
+      if (result.warnings.length > 0) {
+        enginesWithWarnings++;
+        warnings.push(`${engineId}: ${result.warnings.join(', ')}`);
+      }
+    });
+
+    return {
+      timestamp: new Date().toISOString(),
+      totalEngines,
+      validEngines,
+      invalidEngines: totalEngines - validEngines,
+      enginesWithWarnings,
+      errors,
+      warnings,
+      overallHealth: validEngines === totalEngines ? 'healthy' : validEngines > 0 ? 'warning' : 'critical'
+    };
   }
 
   /**
@@ -244,6 +426,17 @@ interface RegistryStats {
   providersCount: number;
   totalUsage: number;
   averageRating: number;
+}
+
+interface EngineHealthReport {
+  timestamp: string;
+  totalEngines: number;
+  validEngines: number;
+  invalidEngines: number;
+  enginesWithWarnings: number;
+  errors: string[];
+  warnings: string[];
+  overallHealth: 'healthy' | 'warning' | 'critical';
 }
 
 // 싱글톤 인스턴스 생성

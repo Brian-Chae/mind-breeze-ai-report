@@ -5,4 +5,5 @@ export { DeviceConnectionScreen } from './DeviceConnectionScreen';
 export { DataQualityScreen } from './DataQualityScreen';
 export { MeasurementScreen } from './MeasurementScreen';
 export { AnalysisScreen } from './AnalysisScreen';
-export { ReportScreen } from './ReportScreen'; 
+export { ReportScreen } from './ReportScreen';
+export { EngineSelectionModal } from './EngineSelectionModal'; 
