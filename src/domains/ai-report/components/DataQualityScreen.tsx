@@ -373,7 +373,25 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       )}
 
       {/* 신호 품질 요약 카드 */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        {/* 전체 품질 */}
+        <Card className="bg-white border-gray-200 shadow-sm">
+          <CardHeader className="pb-1 px-3 pt-3">
+            <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-purple-500" />
+              전체 품질
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3">
+            <div className="text-xl font-bold text-gray-700 mb-1">
+              {signalQuality.overall.toFixed(0)}%
+            </div>
+            <Badge className={getQualityStatus(signalQuality.overall).color}>
+              {getQualityStatus(signalQuality.overall).label}
+            </Badge>
+          </CardContent>
+        </Card>
+
         {/* EEG 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-1 px-3 pt-3">
