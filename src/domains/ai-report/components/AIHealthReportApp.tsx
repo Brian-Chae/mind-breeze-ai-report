@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Button } from '@ui/button';
-import { Progress } from '@ui/progress';
+
 import { AlertCircle, CheckCircle2, Clock, Activity, X } from 'lucide-react';
 
 import { PersonalInfoScreen } from './PersonalInfoScreen';
@@ -117,7 +117,6 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
   };
 
   const currentStepIndex = STEPS.findIndex(step => step.key === state.currentStep);
-  const progressPercentage = ((currentStepIndex + 1) / STEPS.length) * 100;
 
   // 단계 이동 함수 (URL 업데이트)
   const navigateToStep = useCallback((step: AIReportStep) => {
@@ -302,23 +301,14 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
               <CardTitle className="text-2xl font-bold text-gray-900">
                 AI Health Report 생성
               </CardTitle>
-              {onClose && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>진행률</span>
-                <span>{Math.round(progressPercentage)}%</span>
-              </div>
-              <Progress value={progressPercentage} />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate('/admin/ai-report')}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
           </CardHeader>
         </Card>
