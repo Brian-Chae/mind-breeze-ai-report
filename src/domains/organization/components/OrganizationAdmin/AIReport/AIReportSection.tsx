@@ -197,13 +197,34 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
       setAnalysisTimers(prev => ({ ...prev, [dataId]: timer }))
 
-      // 1. 측정 데이터 로드
-      console.log('📊 측정 데이터 로드 중...')
+      // 1. 측정 데이터 로드 (세션 ID를 통해 실제 측정 데이터 찾기)
+      console.log('📊 측정 데이터 로드 중... 세션 ID:', dataId)
       const measurementDataService = new MeasurementDataService()
-      const measurementData = await measurementDataService.getMeasurementData(dataId)
-      if (!measurementData) {
-        throw new Error('측정 데이터를 찾을 수 없습니다.')
+      
+      // 먼저 세션 ID로 상세 측정 데이터 조회
+      const sessionMeasurementData = await measurementDataService.getSessionMeasurementData(dataId)
+      console.log('📊 세션별 측정 데이터 조회 결과:', sessionMeasurementData.length, '개')
+      
+      let measurementData = null
+      if (sessionMeasurementData.length > 0) {
+        // 가장 최신 측정 데이터 사용
+        measurementData = sessionMeasurementData[0]
+        console.log('✅ 세션별 측정 데이터 사용:', measurementData.id)
+      } else {
+        // 폴백: 직접 ID로 조회 시도
+        console.log('📊 폴백: 직접 ID로 측정 데이터 조회 시도...')
+        measurementData = await measurementDataService.getMeasurementData(dataId)
       }
+      
+      if (!measurementData) {
+        throw new Error('측정 데이터를 찾을 수 없습니다. 세션에 연결된 상세 측정 데이터가 없거나 데이터 저장에 실패했을 수 있습니다.')
+      }
+      
+      console.log('✅ 사용할 측정 데이터:', {
+        id: measurementData.id,
+        sessionId: measurementData.sessionId,
+        measurementDate: measurementData.measurementDate
+      })
 
       // 2. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
       console.log('🤖 AI 엔진 초기화 중...')
