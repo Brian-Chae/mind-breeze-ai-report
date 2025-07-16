@@ -160,87 +160,99 @@ export function ReportViewerModal({
     if (!reportContent) return null;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* 헤더 정보 */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+        <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900">{reportContent.title}</h1>
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
               {reportContent.metadata.engineName}
             </Badge>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-              <div className="text-2xl font-bold text-green-600">{reportContent.overallScore}</div>
-              <div className="text-sm text-gray-600">종합 점수</div>
+            <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+              <div className="text-3xl font-bold text-green-700">{reportContent.overallScore}</div>
+              <div className="text-sm text-gray-700 font-medium">종합 점수</div>
             </div>
-            <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-              <div className="text-2xl font-bold text-yellow-600">{reportContent.stressLevel}</div>
-              <div className="text-sm text-gray-600">스트레스</div>
+            <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+              <div className="text-3xl font-bold text-orange-600">{reportContent.stressLevel}</div>
+              <div className="text-sm text-gray-700 font-medium">스트레스</div>
             </div>
-            <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-              <div className="text-2xl font-bold text-blue-600">{reportContent.focusLevel}</div>
-              <div className="text-sm text-gray-600">집중도</div>
+            <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+              <div className="text-3xl font-bold text-blue-700">{reportContent.focusLevel}</div>
+              <div className="text-sm text-gray-700 font-medium">집중도</div>
             </div>
           </div>
         </div>
 
         {/* 요약 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-blue-500" />
+        <Card className="bg-white border border-gray-200 shadow-md">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Brain className="w-5 h-5 text-blue-600" />
               분석 요약
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-700 leading-relaxed">{reportContent.summary}</p>
+          <CardContent className="bg-white p-6">
+            <p className="text-gray-800 leading-relaxed text-base">{reportContent.summary}</p>
           </CardContent>
         </Card>
 
         {/* 상세 분석 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-green-500" />
+        <Card className="bg-white border border-gray-200 shadow-md">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <FileText className="w-5 h-5 text-green-600" />
               상세 분석 결과
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="prose max-w-none">
-              <div dangerouslySetInnerHTML={{ 
-                __html: reportContent.detailedAnalysis.replace(/\n/g, '<br>').replace(/###/g, '<h3>').replace(/##/g, '<h2>') 
-              }} />
+          <CardContent className="bg-white p-6">
+            <div className="prose max-w-none text-gray-800">
+              <div 
+                className="leading-relaxed"
+                style={{
+                  color: '#374151',
+                  lineHeight: '1.75'
+                }}
+                dangerouslySetInnerHTML={{ 
+                  __html: reportContent.detailedAnalysis
+                    .replace(/\n/g, '<br>')
+                    .replace(/### /g, '<h3 style="color: #1f2937; font-weight: 600; margin: 1rem 0 0.5rem 0; font-size: 1.1rem;">')
+                    .replace(/## /g, '<h2 style="color: #111827; font-weight: 700; margin: 1.5rem 0 0.75rem 0; font-size: 1.25rem;">')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f2937;">$1</strong>')
+                    .replace(/- /g, '• ')
+                }} 
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* 메타데이터 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-gray-500" />
+        <Card className="bg-white border border-gray-200 shadow-md">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Settings className="w-5 h-5 text-gray-600" />
               분석 정보
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-white p-6">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium text-gray-600">분석 일시:</span>
-                <div>{reportContent.metadata.analysisDate}</div>
+                <span className="font-semibold text-gray-700">분석 일시:</span>
+                <div className="text-gray-800 mt-1">{reportContent.metadata.analysisDate}</div>
               </div>
               <div>
-                <span className="font-medium text-gray-600">분석 엔진:</span>
-                <div>{reportContent.metadata.engineId}</div>
+                <span className="font-semibold text-gray-700">분석 엔진:</span>
+                <div className="text-gray-800 mt-1">{reportContent.metadata.engineName}</div>
               </div>
               <div>
-                <span className="font-medium text-gray-600">데이터 품질:</span>
-                <div>{reportContent.metadata.dataQuality}%</div>
+                <span className="font-semibold text-gray-700">데이터 품질:</span>
+                <div className="text-gray-800 mt-1">{reportContent.metadata.dataQuality}</div>
               </div>
               <div>
-                <span className="font-medium text-gray-600">버전:</span>
-                <div>{reportContent.metadata.version}</div>
+                <span className="font-semibold text-gray-700">처리 시간:</span>
+                <div className="text-gray-800 mt-1">{reportContent.metadata.processingTime}</div>
               </div>
             </div>
           </CardContent>
@@ -257,10 +269,10 @@ export function ReportViewerModal({
   const renderReportContent = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-gray-200 shadow-sm">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-blue-500" />
-            <p className="text-gray-600">리포트를 불러오는 중...</p>
+            <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin text-blue-600" />
+            <p className="text-gray-800 font-medium">리포트를 불러오는 중...</p>
           </div>
         </div>
       );
@@ -268,15 +280,15 @@ export function ReportViewerModal({
 
     if (error) {
       return (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-red-200 shadow-sm">
           <div className="text-center">
-            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-            <p className="text-red-600 font-medium">{error}</p>
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-600" />
+            <p className="text-red-700 font-semibold mb-2">{error}</p>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={loadReportContent}
-              className="mt-4"
+              className="mt-4 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               다시 시도
@@ -299,15 +311,15 @@ export function ReportViewerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isFullscreen ? 'max-w-[95vw] max-h-[95vh]' : 'max-w-4xl max-h-[90vh]'} overflow-hidden flex flex-col`}>
-        <DialogHeader className="flex-shrink-0 pb-4">
+      <DialogContent className={`${isFullscreen ? 'max-w-[95vw] max-h-[95vh]' : 'max-w-4xl max-h-[90vh]'} overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}>
+        <DialogHeader className="flex-shrink-0 pb-4 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-                <Monitor className="w-5 h-5 text-blue-500" />
+              <DialogTitle className="text-xl font-bold flex items-center gap-2 text-gray-900">
+                <Monitor className="w-5 h-5 text-blue-600" />
                 {viewerName}
               </DialogTitle>
-              <DialogDescription className="text-base">
+              <DialogDescription className="text-base text-gray-700 font-medium mt-1">
                 {(report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트')}
               </DialogDescription>
             </div>
@@ -317,7 +329,7 @@ export function ReportViewerModal({
                 variant="outline"
                 size="sm"
                 onClick={handleDownloadReport}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
               >
                 <Download className="w-4 h-4" />
                 PDF 다운로드
@@ -327,7 +339,7 @@ export function ReportViewerModal({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
               >
                 {isFullscreen ? (
                   <Minimize2 className="w-4 h-4" />
@@ -340,7 +352,7 @@ export function ReportViewerModal({
         </DialogHeader>
 
         {/* 스크롤 가능한 콘텐츠 영역 */}
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 overflow-y-auto pr-2 bg-gray-50">
           {renderReportContent()}
         </div>
       </DialogContent>
