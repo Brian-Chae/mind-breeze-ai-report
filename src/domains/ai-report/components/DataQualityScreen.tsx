@@ -70,6 +70,16 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       eegSQIData,
       ppgSQIData
     });
+
+    // SQI 데이터 구조 확인
+    console.log('🔍 SQI 데이터 구조 확인:', {
+      eegSQI_first: eegSQIData?.ch1SQI?.[0],
+      eegSQI_last: eegSQIData?.ch1SQI?.[eegSQIData?.ch1SQI?.length - 1],
+      ppgSQI_first: ppgSQIData?.overallSQI?.[0],
+      ppgSQI_last: ppgSQIData?.overallSQI?.[ppgSQIData?.overallSQI?.length - 1],
+      eegSQI_type: typeof eegSQIData?.ch1SQI?.[0],
+      ppgSQI_type: typeof ppgSQIData?.overallSQI?.[0]
+    });
   }, [isConnected, isSensorContacted, eegGraphData, ppgGraphData, accAnalysis, eegSQIData, ppgSQIData]);
 
   // 신호 품질 계산
@@ -81,8 +91,11 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         const recentCh1 = eegSQIData.ch1SQI.slice(-100);
         const recentCh2 = eegSQIData.ch2SQI.slice(-100);
         
-        const avgCh1 = recentCh1.reduce((sum, p) => sum + p.value, 0) / recentCh1.length;
-        const avgCh2 = recentCh2.reduce((sum, p) => sum + p.value, 0) / recentCh2.length;
+        // 데이터 구조 확인 후 적절히 처리
+        const getValue = (item: any) => typeof item === 'number' ? item : (item?.value || 0);
+        
+        const avgCh1 = recentCh1.reduce((sum, p) => sum + getValue(p), 0) / recentCh1.length;
+        const avgCh2 = recentCh2.reduce((sum, p) => sum + getValue(p), 0) / recentCh2.length;
         
         eegQuality = (avgCh1 + avgCh2) / 2;
       }
@@ -91,7 +104,8 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       let ppgQuality = 0;
       if (ppgSQIData?.overallSQI?.length > 0) {
         const recentOverall = ppgSQIData.overallSQI.slice(-100);
-        ppgQuality = recentOverall.reduce((sum, p) => sum + p.value, 0) / recentOverall.length;
+        const getValue = (item: any) => typeof item === 'number' ? item : (item?.value || 0);
+        ppgQuality = recentOverall.reduce((sum, p) => sum + getValue(p), 0) / recentOverall.length;
       }
 
       // ACC 품질: 활동 상태 기반
@@ -112,6 +126,17 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       const finalPpgQuality = !isSensorContacted ? 0 : ppgQuality;
 
       const overallQuality = (finalEegQuality + finalPpgQuality + accQuality) / 3;
+
+      console.log('🔍 신호 품질 계산 결과:', {
+        eegQuality: finalEegQuality,
+        ppgQuality: finalPpgQuality,
+        accQuality,
+        overallQuality,
+        isSensorContacted,
+        activityState,
+        rawEegQuality: eegQuality,
+        rawPpgQuality: ppgQuality
+      });
 
       return {
         eeg: finalEegQuality,
