@@ -90,13 +90,20 @@ export interface AggregatedMeasurementData {
   savedAt?: Date;
 }
 
+interface AnalysisResults {
+  mentalHealthScore: number;
+  physicalHealthScore: number;
+  stressLevel: number;
+  recommendations: string[];
+  detailedAnalysis: string;
+}
+
 export interface AIAnalysisResponse {
-  id: string;
-  content: string;
-  recommendations?: string[];
-  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  overallScore?: number;
-  generatedAt?: Date;
+  reportId: string;
+  personalInfo: any;
+  analysisResults: AnalysisResults;
+  generatedAt: Date;
+  reliability: string;
 }
 
 export interface AIReportState {

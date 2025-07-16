@@ -75,18 +75,34 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     setLoadingMeasurementData(true)
     try {
       const currentContext = enterpriseAuthService.getCurrentContext()
-      if (!currentContext.organization) {
-        console.warn('조직 정보가 없습니다.')
-        setMeasurementDataList([])
-        return
-      }
-
-      // 조직의 측정 세션 데이터 조회 (복합 인덱스 에러 방지를 위해 orderBy 제거)
-      const filters = [
-        FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id)
-      ]
       
-      const measurementSessions = await FirebaseService.getMeasurementSessions(filters)
+      // 🔧 조직과 개인 측정 데이터 모두 조회하도록 수정
+      let measurementSessions = [];
+      
+      try {
+        if (currentContext.organization) {
+          // 1. 조직 측정 세션 조회
+          const orgFilters = [
+            FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id)
+          ]
+          const orgSessions = await FirebaseService.getMeasurementSessions(orgFilters)
+          measurementSessions.push(...orgSessions);
+          console.log(`✅ 조직 세션: ${orgSessions.length}개`);
+        }
+        
+        // 2. 모든 측정 세션을 조회한 후 organizationId가 없는 것들 필터링
+        // (AI Health Report 등에서 생성된 개인 측정 데이터)
+        const allSessions = await FirebaseService.getMeasurementSessions([])
+        const personalSessions = allSessions.filter((session: any) => !session.organizationId);
+        measurementSessions.push(...personalSessions);
+        console.log(`✅ 개인 세션: ${personalSessions.length}개`);
+        
+      } catch (queryError) {
+        console.error('측정 세션 조회 중 오류:', queryError);
+        // 실패 시 모든 세션 조회로 폴백
+        console.log('📝 폴백: 모든 측정 세션 조회');
+        measurementSessions = await FirebaseService.getMeasurementSessions([])
+      }
       
       // 클라이언트에서 sessionDate로 정렬 (최신순)
       measurementSessions.sort((a, b) => {
