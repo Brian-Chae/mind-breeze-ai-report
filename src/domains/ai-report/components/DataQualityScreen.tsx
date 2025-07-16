@@ -683,10 +683,12 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
                 <span>진행률</span>
                 <span>{Math.round((qualityTimer / 10) * 100)}%</span>
               </div>
-              <Progress 
-                value={(qualityTimer / 10) * 100} 
-                className="h-3 bg-gray-200"
-              />
+              <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${(qualityTimer / 10) * 100}%` }}
+                />
+              </div>
               <div className="text-xs text-gray-500 text-center">
                 {qualityTimer < 10 
                   ? `안정적인 신호 대기 중... ${10 - qualityTimer}초 남음`
