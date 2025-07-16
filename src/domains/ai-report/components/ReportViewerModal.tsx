@@ -119,8 +119,65 @@ export function ReportViewerModal({
           }
         };
         
-        // Mock 분석 결과 데이터 (실제로는 Firebase에서 가져와야 함)
-        const mockAnalysisResult = {
+        // 🎯 실제 리포트 데이터 사용 (report에서 가져오기)
+        let actualAnalysisResult;
+        
+        // 📊 디버깅: 실제 report 구조 확인
+        console.log('🔍 실제 report 전체 구조:', report);
+        console.log('🔍 report.analysisResults:', report?.analysisResults);
+        console.log('🔍 report.rawData:', report?.rawData);
+        console.log('🔍 insights.detailedAnalysis 타입:', typeof report?.analysisResults?.detailedAnalysis);
+        console.log('🔍 rawData.detailedAnalysis 타입:', typeof report?.rawData?.detailedAnalysis);
+        console.log('🔍 rawData.detailedAnalysis 내용:', report?.rawData?.detailedAnalysis);
+        
+        // 🎯 우선순위: rawData.detailedAnalysis 객체 > insights.detailedAnalysis 문자열 파싱
+        if (report?.rawData?.detailedAnalysis && typeof report.rawData.detailedAnalysis === 'object') {
+          // rawData에 detailedAnalysis 객체가 있으면 직접 사용 (가장 완전한 데이터)
+          actualAnalysisResult = {
+            engineId: report.engineId || 'basic-gemini-v1',
+            engineVersion: report.engineVersion || '1.1.0',
+            timestamp: report.timestamp || new Date().toISOString(),
+            analysisId: report.analysisId || 'unknown',
+            overallScore: report.overallScore || 78,
+            stressLevel: report.stressLevel || 45,
+            focusLevel: report.focusLevel || 82,
+            insights: {
+              summary: report.analysisResults?.recommendations?.join(' ') || "분석 결과를 확인하세요."
+            },
+            metrics: report.metrics || {},
+            processingTime: report.processingTime || 1000,
+            rawData: {
+              detailedAnalysis: report.rawData.detailedAnalysis
+            }
+          };
+          console.log('✅ rawData.detailedAnalysis 객체 직접 사용:', report.rawData.detailedAnalysis);
+          
+        } else if (report?.analysisResults?.detailedAnalysis && typeof report.analysisResults.detailedAnalysis === 'string') {
+          // 문자열로 저장된 상세 분석 결과를 파싱하여 사용 (fallback)
+          try {
+            const parsedDetailedAnalysis = JSON.parse(report.analysisResults.detailedAnalysis);
+            actualAnalysisResult = {
+              overallScore: report.analysisResults.mentalHealthScore || 78,
+              insights: {
+                summary: report.analysisResults.recommendations?.join(' ') || "분석 결과를 확인하세요."
+              },
+              rawData: {
+                detailedAnalysis: parsedDetailedAnalysis
+              }
+            };
+            console.log('✅ 파싱된 실제 분석 결과 사용:', parsedDetailedAnalysis);
+          } catch (parseError) {
+            console.warn('⚠️ 분석 결과 파싱 실패, null 설정:', parseError);
+            actualAnalysisResult = null;
+          }
+        } else {
+          // 둘 다 없으면 null 설정하여 fallback 데이터 사용
+          console.warn('⚠️ detailedAnalysis 데이터를 찾을 수 없음, fallback 사용');
+          actualAnalysisResult = null;
+        }
+        
+        // 실제 데이터가 없으면 fallback mock 데이터 사용
+        const analysisResult = actualAnalysisResult || {
           overallScore: 78,
           insights: {
             summary: "전반적인 건강 상태가 양호하며, 스트레스 수준은 보통입니다."
@@ -128,15 +185,14 @@ export function ReportViewerModal({
           rawData: {
             detailedAnalysis: {
               overallScore: 78,
-              overallInterpretation: "전반적으로 건강한 상태를 유지하고 있으며, 몇 가지 개선 영역이 있습니다.",
+              overallInterpretation: "실제 분석 결과를 로드할 수 없어 기본 데이터를 표시합니다.",
               
               eegAnalysis: {
                 score: 75,
                 interpretation: "뇌파 분석 결과 집중력과 이완 상태가 전반적으로 양호합니다.",
                 keyFindings: [
                   "알파파 활동이 안정적으로 유지됨",
-                  "집중 상태에서 베타파 증가 패턴 확인",
-                  "명상 시 세타파 활동 증가"
+                  "집중 상태에서 베타파 증가 패턴 확인"
                 ],
                 concerns: [
                   "스트레스 상황에서 일시적인 고주파 활동 증가"
@@ -148,8 +204,7 @@ export function ReportViewerModal({
                 interpretation: "심혈관 건강 상태가 우수하며, 자율신경계 균형이 양호합니다.",
                 keyFindings: [
                   "안정적인 심박변이도 패턴",
-                  "정상 범위의 혈관 탄력성",
-                  "적절한 자율신경계 반응"
+                  "정상 범위의 혈관 탄력성"
                 ],
                 concerns: []
               },
@@ -158,38 +213,31 @@ export function ReportViewerModal({
                 ageSpecific: "연령대 평균보다 우수한 건강 지표를 보여줍니다.",
                 genderSpecific: "성별 특성을 고려한 분석 결과 정상 범위 내에 있습니다.",
                 combinedInsights: [
-                  "연령과 성별을 고려했을 때 건강한 상태",
-                  "지속적인 관리를 통해 현재 상태 유지 권장"
+                  "연령과 성별을 고려했을 때 건강한 상태"
                 ]
               },
               
               occupationalAnalysis: {
                 jobSpecificRisks: [
-                  "장시간 앉아서 일하는 직업 특성상 혈액순환 저하 위험",
-                  "컴퓨터 작업으로 인한 눈의 피로 증가"
+                  "직업 특성상 발생할 수 있는 건강 위험"
                 ],
                 workplaceRecommendations: [
-                  "1시간마다 5-10분 휴식 및 스트레칭",
-                  "업무 환경의 조명 개선"
+                  "정기적인 휴식 및 스트레칭"
                 ],
                 careerHealthTips: [
-                  "정기적인 건강검진",
-                  "업무 스트레스 관리 방법 습득"
+                  "정기적인 건강검진"
                 ]
               },
               
               improvementPlan: {
                 immediate: [
-                  "규칙적인 깊은 호흡 연습",
-                  "충분한 수분 섭취"
+                  "규칙적인 깊은 호흡 연습"
                 ],
                 shortTerm: [
-                  "주 3회 이상 규칙적인 운동",
-                  "스트레스 관리 기법 학습"
+                  "주 3회 이상 규칙적인 운동"
                 ],
                 longTerm: [
-                  "생활 패턴 개선",
-                  "정기적인 건강 모니터링"
+                  "생활 패턴 개선"
                 ]
               }
             }
@@ -197,7 +245,7 @@ export function ReportViewerModal({
         };
         
         // 실제 렌더러로 HTML 생성
-        const renderedReport = await actualRenderer.render(mockAnalysisResult, renderOptions);
+        const renderedReport = await actualRenderer.render(analysisResult, renderOptions);
         
         setReportContent({
           htmlContent: renderedReport.content,

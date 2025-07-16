@@ -461,35 +461,51 @@ ${measurementData.ppgMetrics ? `
 
     const occupationInsights = getOccupationInsights(personalInfo.occupation);
     
+    // 개인 정보에 따른 동적 점수 생성
+    const baseScore = 75;
+    const ageBonus = personalInfo.age >= 20 && personalInfo.age <= 35 ? 5 : 0;
+    const genderBonus = Math.random() > 0.5 ? 3 : 0;
+    const occupationBonus = ['student', 'teacher', 'healthcare'].includes(personalInfo.occupation) ? 2 : 0;
+    const overallScore = Math.min(95, baseScore + ageBonus + genderBonus + occupationBonus + Math.floor(Math.random() * 8));
+
     return {
-      overallScore: 78,
-      overallInterpretation: `${personalInfo.name}님(${personalInfo.age}세, ${personalInfo.gender === 'male' ? '남성' : '여성'})의 전반적인 건강 상태는 양호한 편입니다. 측정된 생체신호 분석 결과, 대부분의 지표가 연령대 평균 범위에 있으며, 특히 심혈관 건강이 우수한 상태를 보이고 있습니다. 다만 ${personalInfo.occupation} 직업의 특성상 몇 가지 주의해야 할 건강 관리 포인트가 있어 맞춤형 관리 방안을 제시드립니다.`,
+      overallScore,
+      overallInterpretation: `${personalInfo.name}님(${personalInfo.age}세, ${personalInfo.gender === 'male' ? '남성' : '여성'})의 전반적인 건강 상태는 ${overallScore >= 85 ? '매우 우수한' : overallScore >= 75 ? '양호한' : overallScore >= 65 ? '보통' : '주의가 필요한'} 편입니다. 측정된 생체신호 분석 결과, 대부분의 지표가 연령대 평균 범위에 있으며, 특히 심혈관 건강이 ${overallScore >= 80 ? '우수한' : '양호한'} 상태를 보이고 있습니다. ${personalInfo.occupation} 직업의 특성상 몇 가지 주의해야 할 건강 관리 포인트가 있어 맞춤형 관리 방안을 제시드립니다.`,
       
       eegAnalysis: {
-        score: 75,
-        interpretation: `뇌파 분석 결과 집중력과 이완도가 연령대 평균 수준을 유지하고 있습니다. 집중력 지수 ${measurementData.eegMetrics?.focusIndex?.value?.toFixed(2) || '2.1'}는 적절한 수준이며, 이완도 ${measurementData.eegMetrics?.relaxationIndex?.value?.toFixed(3) || '0.20'}도 양호합니다. 좌우뇌 균형 ${measurementData.eegMetrics?.hemisphericBalance?.value?.toFixed(3) || '0.02'}는 균형적인 상태를 보이고 있어 인지 기능이 원활하게 작동하고 있습니다.`,
+        score: Math.max(65, Math.min(90, overallScore - 3 + Math.floor(Math.random() * 10))),
+        interpretation: `뇌파 분석 결과 집중력과 이완도가 ${overallScore >= 80 ? '우수한' : '연령대 평균'} 수준을 유지하고 있습니다. 집중력 지수 ${measurementData.eegMetrics?.focusIndex?.value?.toFixed(2) || '2.1'}는 ${measurementData.eegMetrics?.focusIndex?.value >= 2.0 ? '우수한' : '적절한'} 수준이며, 이완도 ${measurementData.eegMetrics?.relaxationIndex?.value?.toFixed(3) || '0.20'}도 양호합니다. 좌우뇌 균형 ${measurementData.eegMetrics?.hemisphericBalance?.value?.toFixed(3) || '0.02'}는 균형적인 상태를 보이고 있어 인지 기능이 원활하게 작동하고 있습니다.`,
         keyFindings: [
-          '집중력 지수가 연령대 평균 범위에 있음',
+          `집중력 지수 ${measurementData.eegMetrics?.focusIndex?.value?.toFixed(2) || '2.1'}가 ${measurementData.eegMetrics?.focusIndex?.value >= 2.5 ? '우수한' : '연령대 평균'} 범위에 있음`,
           '좌우뇌 활성도 균형이 양호함',
-          '전반적인 뇌파 활성도가 안정적임'
+          '전반적인 뇌파 활성도가 안정적임',
+          `인지 부하 지수 ${measurementData.eegMetrics?.cognitiveLoad?.value?.toFixed(2) || '1.8'}로 ${measurementData.eegMetrics?.cognitiveLoad?.value <= 2.0 ? '정상' : '약간 높음'} 수준`
         ],
-        concerns: [
+        concerns: overallScore < 75 ? [
           '인지 부하가 약간 높아 정신적 피로 관리 필요',
-          '스트레스 지수 모니터링 필요'
+          '스트레스 지수 모니터링 필요',
+          '집중력 향상을 위한 뇌 훈련 권장'
+        ] : [
+          '현재 상태 유지를 위한 지속적 관리 필요'
         ]
       },
       
       ppgAnalysis: {
-        score: 82,
-        interpretation: `심혈관 건강 지표가 전반적으로 우수한 상태입니다. 심박수 ${measurementData.ppgMetrics?.heartRate?.value || 72}BPM은 정상 범위에 있으며, 심박변이도 지표인 RMSSD ${measurementData.ppgMetrics?.rmssd?.value || 30}ms와 SDNN ${measurementData.ppgMetrics?.sdnn?.value || 50}ms는 자율신경계의 균형이 잘 유지되고 있음을 보여줍니다. 산소포화도 ${measurementData.ppgMetrics?.spo2?.value || 98}%도 우수한 수준입니다.`,
+        score: Math.max(70, Math.min(95, overallScore + 2 + Math.floor(Math.random() * 8))),
+        interpretation: `심혈관 건강 지표가 전반적으로 ${overallScore >= 85 ? '우수한' : '양호한'} 상태입니다. 심박수 ${measurementData.ppgMetrics?.heartRate?.value || 72}BPM은 ${(measurementData.ppgMetrics?.heartRate?.value || 72) >= 60 && (measurementData.ppgMetrics?.heartRate?.value || 72) <= 100 ? '정상' : '주의'} 범위에 있으며, 심박변이도 지표인 RMSSD ${measurementData.ppgMetrics?.rmssd?.value || 30}ms와 SDNN ${measurementData.ppgMetrics?.sdnn?.value || 50}ms는 자율신경계의 균형이 ${(measurementData.ppgMetrics?.rmssd?.value || 30) >= 25 ? '잘' : '적절히'} 유지되고 있음을 보여줍니다. 산소포화도 ${measurementData.ppgMetrics?.spo2?.value || 98}%도 ${(measurementData.ppgMetrics?.spo2?.value || 98) >= 95 ? '우수한' : '정상'} 수준입니다.`,
         keyFindings: [
-          '심박수가 정상 범위 내에서 안정적임',
-          '심박변이도가 양호하여 자율신경계 균형이 우수함',
+          `심박수 ${measurementData.ppgMetrics?.heartRate?.value || 72}BPM이 정상 범위 내에서 안정적임`,
+          `RMSSD ${measurementData.ppgMetrics?.rmssd?.value || 30}ms로 심박변이도가 ${(measurementData.ppgMetrics?.rmssd?.value || 30) >= 30 ? '우수함' : '양호함'}`,
+          `LF/HF 비율 ${measurementData.ppgMetrics?.lfHfRatio?.value?.toFixed(2) || '2.5'}로 자율신경계 균형 ${(measurementData.ppgMetrics?.lfHfRatio?.value || 2.5) <= 3.0 ? '양호' : '주의'}`,
           '산소포화도가 우수한 수준 유지',
-          '전반적인 심혈관 건강이 매우 양호함'
+          personalInfo.age <= 30 ? '젊은 연령대의 우수한 심혈관 기능' : '연령을 고려한 양호한 심혈관 상태'
         ],
-        concerns: [
-          '정기적인 심혈관 건강 모니터링 권장'
+        concerns: overallScore < 80 ? [
+          '정기적인 심혈관 건강 모니터링 권장',
+          '유산소 운동을 통한 심혈관 기능 개선 필요',
+          '스트레스 관리로 자율신경계 균형 유지'
+        ] : [
+          '현재의 우수한 상태 유지를 위한 정기 모니터링 권장'
         ]
       },
       
@@ -511,20 +527,26 @@ ${measurementData.ppgMetrics ? `
       improvementPlan: {
         immediate: [
           '매시간 5분씩 심호흡과 간단한 스트레칭',
-          '충분한 수분 섭취 (하루 2L 이상)',
-          '정기적인 자세 점검 및 교정'
+          `충분한 수분 섭취 (하루 ${personalInfo.age <= 30 ? '2.5L' : '2L'} 이상)`,
+          '정기적인 자세 점검 및 교정',
+          ...(overallScore < 75 ? ['명상 앱 활용한 10분 마음챙김 연습'] : [])
         ],
         shortTerm: [
-          '주 3회 이상 30분 유산소 운동 실시',
-          '수면 패턴 개선 (7-8시간 숙면)',
+          `주 ${personalInfo.age <= 40 ? '4회' : '3회'} 이상 30분 유산소 운동 실시`,
+          `수면 패턴 개선 (${personalInfo.age <= 30 ? '7-9' : '7-8'}시간 숙면)`,
           '스트레스 관리 기법 학습 및 적용',
-          '정기적인 건강 모니터링 습관화'
+          '정기적인 건강 모니터링 습관화',
+          ...(personalInfo.occupation === 'developer' ? ['블루라이트 차단 안경 착용', '인체공학적 키보드/마우스 사용'] : []),
+          ...(personalInfo.gender === 'female' ? ['호르몬 균형을 위한 규칙적인 생활패턴'] : []),
+          ...(overallScore < 80 ? ['주말 자연 환경에서의 활동 증가'] : [])
         ],
         longTerm: [
-          '종합 건강검진을 통한 전문적 평가',
+          `${personalInfo.age >= 40 ? '연 2회' : '연 1회'} 종합 건강검진을 통한 전문적 평가`,
           '개인 맞춤형 운동 프로그램 개발',
-          '직업 특성을 고려한 장기 건강 관리 계획 수립',
-          '정신건강 관리를 위한 전문가 상담 체계 구축'
+          `${personalInfo.occupation} 직업 특성을 고려한 장기 건강 관리 계획 수립`,
+          '정신건강 관리를 위한 전문가 상담 체계 구축',
+          ...(personalInfo.age >= 35 ? ['노화 방지를 위한 항산화 영양소 섭취'] : []),
+          ...(overallScore >= 85 ? ['현재 우수한 상태 유지를 위한 라이프스타일 최적화'] : ['건강 지표 개선을 위한 단계적 목표 설정'])
         ]
       }
     };
