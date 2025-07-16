@@ -506,7 +506,7 @@ export function ReportViewerModal({
           ? 'max-w-[95vw] max-h-[95vh]' 
           : viewMode === 'mobile'
             ? 'w-[375px] max-h-[90vh]'
-            : 'w-[1200px] max-h-[90vh]'
+            : 'w-[1400px] max-h-[95vh]'
       } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}>
         <DialogHeader className="flex-shrink-0 pb-4 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between">
