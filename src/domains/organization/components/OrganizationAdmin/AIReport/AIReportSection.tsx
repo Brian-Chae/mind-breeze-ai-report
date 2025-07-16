@@ -1636,7 +1636,7 @@ AI 건강 분석 리포트
                    )}
 
                   {/* 측정 데이터 삭제 버튼 */}
-                  <div className="flex items-center space-x-2 mt-4">
+                  <div className="flex items-center justify-center mt-4">
                     <Button 
                       size="sm" 
                       variant="outline"
