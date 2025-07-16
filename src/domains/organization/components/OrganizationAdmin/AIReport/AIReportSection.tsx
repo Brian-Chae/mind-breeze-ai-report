@@ -1237,11 +1237,28 @@ AI 건강 분석 리포트
         </Card>
       ) : (
         <div className="space-y-4">
-          {/* 전체 통계 정보 */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>전체 {measurementDataList.length}개 측정 데이터</span>
-              <span>페이지 {currentPage} / {totalPages}</span>
+          {/* 테이블 헤더 */}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-800">측정 데이터 목록</h3>
+              <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+                  전체 {measurementDataList.length}개
+                </span>
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-medium">
+                  페이지 {currentPage} / {totalPages}
+                </span>
+              </div>
+            </div>
+            
+            {/* 컬럼 헤더 */}
+            <div className="grid grid-cols-6 gap-6 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300 pb-2">
+              <div>사용자 정보</div>
+              <div className="text-center">나이</div>
+              <div className="text-center">성별</div>
+              <div className="text-center">직업</div>
+              <div className="text-center">측정일시</div>
+              <div className="text-center">생성자</div>
             </div>
           </div>
 
@@ -1253,25 +1270,51 @@ AI 건강 분석 리포트
               const measurementDate = new Date(data.timestamp)
               
               return (
-                <div key={data.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  {/* 메인 정보 행 */}
+                <div key={data.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all duration-200">
+                  {/* 메인 정보 행 - 테이블 형태 */}
                   <div className="p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium text-gray-900">{data.userName}</span>
+                      <div className="flex items-center flex-1">
+                        <div className="grid grid-cols-6 gap-6 flex-1 items-center">
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-blue-500" />
+                            <span className="font-semibold text-gray-900">{data.userName}</span>
+                          </div>
+                          
+                          <div className="text-center">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {age}세
+                            </span>
+                          </div>
+                          
+                          <div className="text-center">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              data.userGender === 'MALE' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-pink-100 text-pink-800'
+                            }`}>
+                              {data.userGender === 'MALE' ? '남성' : '여성'}
+                            </span>
+                          </div>
+                          
+                          <div className="text-center">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {data.userOccupation}
+                            </span>
+                          </div>
+                          
+                          <div className="text-sm text-gray-600">
+                            <div className="font-medium">측정일시</div>
+                            <div className="text-xs text-gray-500">
+                              {measurementDate.toLocaleDateString('ko-KR')} {measurementDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-gray-600">
+                            <div className="font-medium">생성자</div>
+                            <div className="text-xs text-gray-500">{data.userName}</div>
+                          </div>
                         </div>
-                        <span className="text-gray-500">|</span>
-                        <span className="text-gray-600">{age}세</span>
-                        <span className="text-gray-500">|</span>
-                        <span className="text-gray-600">{data.userGender}</span>
-                        <span className="text-gray-500">|</span>
-                        <span className="text-gray-600">{data.userOccupation}</span>
-                        <span className="text-gray-500">|</span>
-                        <span className="text-gray-600">측정일시: {measurementDate.toLocaleDateString('ko-KR')} {measurementDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
-                        <span className="text-gray-500">|</span>
-                        <span className="text-gray-600">생성자: {data.userName}</span>
                       </div>
                       
                       <div className="flex items-center space-x-3">
@@ -1311,54 +1354,79 @@ AI 건강 분석 리포트
                     </div>
                   </div>
 
-                  {/* 연결된 분석 리스트 */}
-                  {data.hasReports && data.availableReports.length > 0 ? (
-                    <div className="p-4 bg-gray-50">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">
-                        연결된 분석 리스트 ({data.availableReports.length}개)
-                      </h4>
-                      <div className="space-y-2">
-                        {data.availableReports.map((report: any) => {
-                          const analysisDate = new Date(report.createdAt)
-                          return (
-                            <div key={report.id} className="flex items-center justify-between py-2 px-3 bg-white rounded border border-gray-100">
-                              <div className="flex items-center space-x-4 flex-1">
-                                <span className="font-medium text-gray-900">{report.engineName}</span>
-                                <span className="text-gray-500">|</span>
-                                <span className="text-gray-600">분석 엔진: {report.engineId}</span>
-                                <span className="text-gray-500">|</span>
-                                <span className="text-gray-600">
-                                  분석일시: {analysisDate.toLocaleDateString('ko-KR')} {analysisDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleViewReport(report.id, report)}
-                                  className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-2 py-1"
-                                >
-                                  리포트보기
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleDownloadPDF(report.id, report)}
-                                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs px-2 py-1"
-                                >
-                                  PDF 보기
-                                </Button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gray-50">
-                      <p className="text-sm text-gray-500 text-center">아직 생성된 AI 분석 리포트가 없습니다.</p>
-                    </div>
-                  )}
+                                     {/* 연결된 분석 리스트 */}
+                   {data.hasReports && data.availableReports.length > 0 ? (
+                     <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50">
+                       <h4 className="text-sm font-semibold text-purple-700 mb-4 flex items-center">
+                         <Brain className="w-4 h-4 mr-2" />
+                         연결된 분석 리스트 ({data.availableReports.length}개)
+                       </h4>
+                       <div className="space-y-3">
+                         {data.availableReports.map((report: any) => {
+                           const analysisDate = new Date(report.createdAt)
+                           return (
+                             <div key={report.id} className="bg-white rounded-lg border border-purple-100 shadow-sm p-3">
+                               <div className="flex items-center justify-between">
+                                 <div className="grid grid-cols-3 gap-4 flex-1">
+                                   <div className="flex items-center space-x-2">
+                                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                     <span className="font-semibold text-purple-900">{report.engineName}</span>
+                                   </div>
+                                   
+                                   <div className="text-center">
+                                     <div className="text-xs text-gray-500 font-medium">분석 엔진</div>
+                                     <span className="text-sm text-gray-700 font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                       {report.engineId}
+                                     </span>
+                                   </div>
+                                   
+                                   <div className="text-center">
+                                     <div className="text-xs text-gray-500 font-medium">분석일시</div>
+                                     <div className="text-sm text-gray-700">
+                                       {analysisDate.toLocaleDateString('ko-KR')} 
+                                       <br />
+                                       <span className="text-xs text-gray-500">
+                                         {analysisDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                                       </span>
+                                     </div>
+                                   </div>
+                                 </div>
+                                 
+                                 <div className="flex items-center space-x-2 ml-4">
+                                   <Button 
+                                     size="sm" 
+                                     variant="outline"
+                                     onClick={() => handleViewReport(report.id, report)}
+                                     className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs px-3 py-1.5 font-medium"
+                                   >
+                                     <Eye className="w-3 h-3 mr-1" />
+                                     리포트보기
+                                   </Button>
+                                   <Button 
+                                     size="sm" 
+                                     variant="outline"
+                                     onClick={() => handleDownloadPDF(report.id, report)}
+                                     className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-3 py-1.5 font-medium"
+                                   >
+                                     <Download className="w-3 h-3 mr-1" />
+                                     PDF 보기
+                                   </Button>
+                                 </div>
+                               </div>
+                             </div>
+                           )
+                         })}
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="p-4 bg-gray-50">
+                       <div className="text-center py-6">
+                         <Brain className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                         <p className="text-sm text-gray-500 font-medium">아직 생성된 AI 분석 리포트가 없습니다.</p>
+                         <p className="text-xs text-gray-400 mt-1">위의 "AI 분석 생성" 버튼을 클릭하여 분석을 시작하세요.</p>
+                       </div>
+                     </div>
+                   )}
                 </div>
               )
             })}
@@ -1366,49 +1434,63 @@ AI 건강 분석 리포트
 
           {/* 페이지네이션 */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                이전
-              </Button>
-              
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum
-                if (totalPages <= 5) {
-                  pageNum = i + 1
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i
-                } else {
-                  pageNum = currentPage - 2 + i
-                }
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mt-6">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  {startIndex + 1}-{Math.min(endIndex, measurementDataList.length)}개 표시 (전체 {measurementDataList.length}개 중)
+                </div>
                 
-                return (
+                <div className="flex items-center space-x-2">
                   <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
+                    variant="outline"
                     size="sm"
-                    onClick={() => handlePageChange(pageNum)}
-                    className={currentPage === pageNum ? "bg-purple-600 text-white" : ""}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="hover:bg-purple-50 hover:border-purple-300"
                   >
-                    {pageNum}
+                    이전
                   </Button>
-                )
-              })}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                다음
-              </Button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={
+                          currentPage === pageNum 
+                            ? "bg-purple-600 text-white hover:bg-purple-700" 
+                            : "hover:bg-purple-50 hover:border-purple-300"
+                        }
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="hover:bg-purple-50 hover:border-purple-300"
+                  >
+                    다음
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
