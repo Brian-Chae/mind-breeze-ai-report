@@ -182,6 +182,22 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
     }
   }, [eegSQIData, ppgSQIData, accAnalysis, isSensorContacted]);
 
+  // 카드 배경색 결정 함수
+  const getCardBackgroundClass = (type: 'quality' | 'movement', value?: number, activityState?: string) => {
+    if (type === 'quality') {
+      // 신호 품질 카드 (90% 이상: 연한 파란색, 미만: 연한 빨간색)
+      return (value ?? 0) >= 90 
+        ? 'bg-blue-50 border-blue-200 shadow-sm' 
+        : 'bg-red-50 border-red-200 shadow-sm';
+    } else {
+      // 움직임 상태 카드 (stationary, sitting: 연한 파란색, 그 외: 연한 빨간색)
+      const isGoodMovement = activityState === 'stationary' || activityState === 'sitting';
+      return isGoodMovement 
+        ? 'bg-blue-50 border-blue-200 shadow-sm' 
+        : 'bg-red-50 border-red-200 shadow-sm';
+    }
+  };
+
   // EEG 그래프 데이터 준비
   const prepareEEGData = () => {
     if (!eegGraphData || !eegGraphData.fp1.length || !eegGraphData.fp2.length) {
@@ -375,7 +391,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       {/* 신호 품질 요약 카드 */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         {/* 전체 품질 */}
-        <Card className="bg-white border-gray-200 shadow-sm">
+        <Card className={getCardBackgroundClass('quality', signalQuality.overall)}>
           <CardHeader className="pb-1 px-3 pt-3">
             <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
               <CheckCircle2 className="h-3 w-3 text-purple-500" />
@@ -393,7 +409,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         </Card>
 
         {/* EEG 품질 */}
-        <Card className="bg-white border-gray-200 shadow-sm">
+        <Card className={getCardBackgroundClass('quality', signalQuality.eeg)}>
           <CardHeader className="pb-1 px-3 pt-3">
             <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
               <Brain className="h-3 w-3 text-blue-500" />
@@ -411,7 +427,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         </Card>
 
         {/* PPG 품질 */}
-        <Card className="bg-white border-gray-200 shadow-sm">
+        <Card className={getCardBackgroundClass('quality', signalQuality.ppg)}>
           <CardHeader className="pb-1 px-3 pt-3">
             <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
               <Heart className="h-3 w-3 text-red-500" />
@@ -429,7 +445,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         </Card>
 
         {/* ACC 상태 */}
-        <Card className="bg-white border-gray-200 shadow-sm">
+        <Card className={getCardBackgroundClass('movement', undefined, accAnalysis?.indices?.activityState)}>
           <CardHeader className="pb-1 px-3 pt-3">
             <CardTitle className="text-xs text-gray-700 flex items-center gap-1">
               <Move3d className="h-3 w-3 text-green-500" />
