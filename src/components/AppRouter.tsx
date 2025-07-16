@@ -305,7 +305,7 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/ai-report/report-quality" element={
+      <Route path="/admin/ai-report/measurement-data" element={
         <ProtectedRoute>
           <OrganizationAdminApp />
         </ProtectedRoute>

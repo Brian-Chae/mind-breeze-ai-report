@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2 } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -46,6 +46,8 @@ interface ReportStats {
 export default function AIReportSection({ subSection, onNavigate }: AIReportSectionProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [measurementDataList, setMeasurementDataList] = useState<any[]>([])
+  const [loadingMeasurementData, setLoadingMeasurementData] = useState(false)
   const [reports, setReports] = useState<HealthReport[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({
     totalReports: 0,
@@ -64,7 +66,65 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   useEffect(() => {
     loadReportData()
     loadMeasurementUsers()
+    loadMeasurementData()
   }, [])
+
+  // 측정 데이터 로드
+  const loadMeasurementData = async () => {
+    setLoadingMeasurementData(true)
+    try {
+      // TODO: 실제 Firestore에서 측정 데이터 가져오기
+      const mockData = [
+        {
+          id: 'measurement-1',
+          userName: '김건강',
+          timestamp: new Date().toISOString(),
+          quality: 'excellent',
+          eegSamples: 3600,
+          ppgSamples: 3600,
+          accSamples: 3600,
+          hasReports: true,
+          availableReports: [
+            { id: 'report-1', engineName: '기본 Gemini 분석', createdAt: new Date().toISOString() }
+          ]
+        },
+        {
+          id: 'measurement-2',
+          userName: '이스트레스',
+          timestamp: new Date(Date.now() - 86400000).toISOString(),
+          quality: 'good',
+          eegSamples: 3400,
+          ppgSamples: 3500,
+          accSamples: 3450,
+          hasReports: false,
+          availableReports: []
+        }
+      ]
+      setMeasurementDataList(mockData)
+    } catch (error) {
+      console.error('측정 데이터 로드 실패:', error)
+    } finally {
+      setLoadingMeasurementData(false)
+    }
+  }
+
+  // 측정 데이터 기반 리포트 생성 핸들러
+  const handleGenerateReportFromData = async (dataId: string, engineType: string) => {
+    console.log('리포트 생성:', dataId, engineType)
+    // TODO: 실제 리포트 생성 로직 구현
+  }
+
+  // 리포트 보기 핸들러
+  const handleViewReport = (reportId: string) => {
+    console.log('리포트 보기:', reportId)
+    // TODO: 리포트 상세 페이지로 이동
+  }
+
+  // PDF 생성 핸들러
+  const handleGeneratePDF = async (dataId: string, pdfType: string) => {
+    console.log('PDF 생성:', dataId, pdfType)
+    // TODO: PDF 생성 로직 구현
+  }
 
   const loadReportData = async () => {
     setLoading(true)
@@ -491,6 +551,174 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     </div>
   )
 
+  const renderMeasurementDataList = () => (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">측정 데이터 목록</h2>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={loadMeasurementData}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            새로고침
+          </Button>
+          <Button variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-2" />
+            일괄 내보내기
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="사용자명 또는 측정일로 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <select className="px-3 py-2 border border-gray-300 rounded-md">
+          <option value="all">전체 기간</option>
+          <option value="today">오늘</option>
+          <option value="week">최근 7일</option>
+          <option value="month">최근 30일</option>
+        </select>
+        <select className="px-3 py-2 border border-gray-300 rounded-md">
+          <option value="all">전체 품질</option>
+          <option value="excellent">우수</option>
+          <option value="good">양호</option>
+          <option value="poor">불량</option>
+        </select>
+      </div>
+
+      {loadingMeasurementData ? (
+        <div className="flex items-center justify-center h-40">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">측정 데이터를 불러오는 중...</span>
+        </div>
+      ) : (
+        <div className="grid gap-6">
+          {measurementDataList.map((data) => (
+            <Card key={data.id} className="p-6 bg-white border border-gray-200 hover:shadow-md transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-xl">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{data.userName}</h3>
+                      <p className="text-sm text-gray-600">측정일: {new Date(data.timestamp).toLocaleString('ko-KR')}</p>
+                    </div>
+                    <Badge 
+                      variant={data.quality === 'excellent' ? 'default' : data.quality === 'good' ? 'secondary' : 'destructive'}
+                      className="ml-auto"
+                    >
+                      {data.quality === 'excellent' ? '우수' : data.quality === 'good' ? '양호' : '불량'} 품질
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                      <Activity className="w-4 h-4 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">EEG 데이터</p>
+                        <p className="text-xs text-gray-600">{data.eegSamples}개 샘플</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                      <Activity className="w-4 h-4 text-red-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">PPG 데이터</p>
+                        <p className="text-xs text-gray-600">{data.ppgSamples}개 샘플</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                      <Activity className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">ACC 데이터</p>
+                        <p className="text-xs text-gray-600">{data.accSamples}개 샘플</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" className="bg-purple-600 text-white hover:bg-purple-700">
+                          <Brain className="w-4 h-4 mr-2" />
+                          AI 분석 생성
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                                                 <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}>
+                           기본 분석 (1 크레딧)
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'detailed-gemini-v1')}>
+                           상세 분석 (5 크레딧)
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => handleGenerateReportFromData(data.id, 'enterprise-custom')}>
+                           엔터프라이즈 분석 (10 크레딧)
+                         </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {data.hasReports && (
+                      <>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Eye className="w-4 h-4 mr-2" />
+                              리포트 보기
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {data.availableReports?.map((report: any) => (
+                              <DropdownMenuItem 
+                                key={report.id} 
+                                onClick={() => handleViewReport(report.id)}
+                              >
+                                {report.engineName} - {new Date(report.createdAt).toLocaleDateString('ko-KR')}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Download className="w-4 h-4 mr-2" />
+                              PDF 생성
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleGeneratePDF(data.id, 'basic-pdf')}>
+                              기본 PDF (2 크레딧)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGeneratePDF(data.id, 'detailed-pdf')}>
+                              상세 PDF (5 크레딧)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGeneratePDF(data.id, 'branded-pdf')}>
+                              브랜딩 PDF (7 크레딧)
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   const renderQualityManagement = () => (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -630,14 +858,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           리포트 목록
         </button>
         <button
-          onClick={() => onNavigate('ai-report', 'report-quality')}
+          onClick={() => onNavigate('ai-report', 'measurement-data')}
           className={`py-4 px-1 border-b-2 font-medium text-sm ${
-            subSection === 'report-quality'
+            subSection === 'measurement-data'
               ? 'border-green-500 text-green-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           }`}
         >
-          품질 관리
+          측정 데이터 목록
         </button>
       </div>
     </div>
@@ -649,8 +877,8 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         return renderReportGeneration()
       case 'report-list':
         return renderReportList()
-      case 'report-quality':
-        return renderQualityManagement()
+      case 'measurement-data':
+        return renderMeasurementDataList()
       default:
         return renderReportGeneration()
     }

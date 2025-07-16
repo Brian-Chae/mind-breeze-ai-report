@@ -257,7 +257,7 @@ export default function OrganizationAdminApp() {
       children: [
         { id: 'report-generation', title: '리포트 생성', icon: Plus, path: '/admin/ai-report/report-generation' },
         { id: 'report-list', title: '리포트 목록', icon: Eye, path: '/admin/ai-report/report-list' },
-        { id: 'report-quality', title: '품질 관리', icon: Shield, path: '/admin/ai-report/report-quality' }
+        { id: 'measurement-data', title: '측정 데이터 목록', icon: Shield, path: '/admin/ai-report/measurement-data' }
       ]
     },
     {
