@@ -15,7 +15,8 @@ import {
   useConnectionState,
   useEEGSQIData,
   usePPGSQIData,
-  useDeviceStatus
+  useDeviceStatus,
+  useProcessedDataStore
 } from '../../../stores/processedDataStore';
 
 interface DataQualityScreenProps {
@@ -47,6 +48,27 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       accAnalysis: accAnalysis ? Object.keys(accAnalysis) : 'null',
       eegSQIData: eegSQIData ? Object.keys(eegSQIData) : 'null',
       ppgSQIData: ppgSQIData ? Object.keys(ppgSQIData) : 'null'
+    });
+
+    // ProcessedDataStore 직접 상태 확인
+    const storeState = useProcessedDataStore.getState();
+    console.log('🔍 ProcessedDataStore 직접 상태:', {
+      storeKeys: Object.keys(storeState),
+      eegAnalysis: storeState.eegAnalysis,
+      ppgAnalysis: storeState.ppgAnalysis,
+      accAnalysis: storeState.accAnalysis,
+      sqiData: storeState.sqiData,
+      eegGraphData: storeState.eegGraphData,
+      ppgGraphData: storeState.ppgGraphData
+    });
+
+    // 각 hook의 원시 데이터 확인
+    console.log('🔍 Hook 원시 데이터:', {
+      eegGraphData,
+      ppgGraphData,
+      accAnalysis,
+      eegSQIData,
+      ppgSQIData
     });
   }, [isConnected, isSensorContacted, eegGraphData, ppgGraphData, accAnalysis, eegSQIData, ppgSQIData]);
 

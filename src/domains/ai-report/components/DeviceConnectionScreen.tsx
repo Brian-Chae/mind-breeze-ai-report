@@ -258,6 +258,16 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       await systemControl.startStreaming();
       console.log('✅ Data streaming started successfully');
       
+      // 5초 후 데이터 확인
+      setTimeout(() => {
+        const storeState = require('../../../stores/processedDataStore').useProcessedDataStore.getState();
+        console.log('🔍 DeviceConnectionScreen - 5초 후 데이터 상태:', {
+          eegAnalysis: storeState.eegAnalysis,
+          ppgAnalysis: storeState.ppgAnalysis,
+          sqiData: storeState.sqiData
+        });
+      }, 5000);
+      
       // 연결 성공은 useEffect에서 isConnected 상태 변화로 처리됨
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Connection failed';
