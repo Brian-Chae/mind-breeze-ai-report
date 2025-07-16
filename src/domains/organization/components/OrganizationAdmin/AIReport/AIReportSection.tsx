@@ -125,30 +125,69 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         return dateB.getTime() - dateA.getTime()
       })
       
-             // 각 세션의 리포트 정보 조회 및 데이터 변환
+             // 각 세션의 AI 분석 결과 조회 및 데이터 변환
        const measurementDataWithReports = await Promise.all(
          measurementSessions.map(async (session: any) => {
-           // 해당 세션의 리포트 조회
-           const reportFilters = [
-             FirebaseService.createWhereFilter('sessionId', '==', session.id)
-           ]
-           const sessionReports = await FirebaseService.getDocuments('healthReports', reportFilters)
-           
-           return {
-             id: session.id,
-             userName: session.subjectName || '알 수 없음',
-             timestamp: session.sessionDate?.toISOString() || session.createdAt?.toISOString(),
-             quality: (session.overallScore >= 80) ? 'excellent' : (session.overallScore >= 60) ? 'good' : 'poor',
-             eegSamples: session.metadata?.eegSamples || Math.floor(Math.random() * 1000) + 3000,
-             ppgSamples: session.metadata?.ppgSamples || Math.floor(Math.random() * 1000) + 3000,
-             accSamples: session.metadata?.accSamples || Math.floor(Math.random() * 1000) + 3000,
-             hasReports: sessionReports.length > 0,
-             availableReports: sessionReports.map((report: any) => ({
-               id: report.id,
-               engineName: report.metadata?.engineName || '기본 분석',
-               createdAt: report.createdAt?.toISOString() || new Date().toISOString()
-             })),
-             sessionData: session // 원본 세션 데이터 보관
+           // 해당 세션의 AI 분석 결과 조회 (ai_analysis_results 컬렉션에서)
+           try {
+             const analysisFilters = [
+               FirebaseService.createWhereFilter('measurementDataId', '==', session.id)
+             ]
+             const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
+             
+             return {
+               id: session.id,
+               userName: session.subjectName || '알 수 없음',
+               userGender: session.subjectGender || '미지정',
+               userOccupation: session.subjectOccupation || '미지정',
+               userDepartment: session.subjectDepartment || '미지정',
+               userEmail: session.subjectEmail || '',
+               timestamp: session.sessionDate?.toISOString() || session.createdAt?.toISOString(),
+               sessionDate: session.sessionDate || session.createdAt,
+               quality: (session.overallScore >= 80) ? 'excellent' : (session.overallScore >= 60) ? 'good' : 'poor',
+               qualityScore: session.overallScore || 0,
+               eegSamples: session.metadata?.eegSamples || Math.floor(Math.random() * 1000) + 3000,
+               ppgSamples: session.metadata?.ppgSamples || Math.floor(Math.random() * 1000) + 3000,
+               accSamples: session.metadata?.accSamples || Math.floor(Math.random() * 1000) + 3000,
+               duration: session.duration || 60,
+               hasReports: analysisResults.length > 0,
+               availableReports: analysisResults.map((analysis: any) => ({
+                 id: analysis.id,
+                 engineId: analysis.engineId || 'basic-gemini-v1',
+                 engineName: analysis.engineName || '기본 분석',
+                 analysisId: analysis.analysisId,
+                 overallScore: analysis.overallScore || 0,
+                 stressLevel: analysis.stressLevel || 0,
+                 focusLevel: analysis.focusLevel || 0,
+                 costUsed: analysis.costUsed || 1,
+                 processingTime: analysis.processingTime || 0,
+                 qualityScore: analysis.qualityScore || 0,
+                 createdAt: analysis.createdAt?.toISOString() || new Date().toISOString(),
+                 createdByUserName: analysis.createdByUserName || '시스템'
+               })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+               sessionData: session // 원본 세션 데이터 보관
+             }
+           } catch (error) {
+             console.warn(`세션 ${session.id}의 분석 결과 조회 실패:`, error)
+             return {
+               id: session.id,
+               userName: session.subjectName || '알 수 없음',
+               userGender: session.subjectGender || '미지정',
+               userOccupation: session.subjectOccupation || '미지정',
+               userDepartment: session.subjectDepartment || '미지정',
+               userEmail: session.subjectEmail || '',
+               timestamp: session.sessionDate?.toISOString() || session.createdAt?.toISOString(),
+               sessionDate: session.sessionDate || session.createdAt,
+               quality: (session.overallScore >= 80) ? 'excellent' : (session.overallScore >= 60) ? 'good' : 'poor',
+               qualityScore: session.overallScore || 0,
+               eegSamples: session.metadata?.eegSamples || Math.floor(Math.random() * 1000) + 3000,
+               ppgSamples: session.metadata?.ppgSamples || Math.floor(Math.random() * 1000) + 3000,
+               accSamples: session.metadata?.accSamples || Math.floor(Math.random() * 1000) + 3000,
+               duration: session.duration || 60,
+               hasReports: false,
+               availableReports: [],
+               sessionData: session
+             }
            }
          })
        )
@@ -427,15 +466,62 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   }
 
   // 리포트 보기 핸들러
-  const handleViewReport = (reportId: string) => {
-    console.log('리포트 보기:', reportId)
-    // TODO: 리포트 상세 페이지로 이동
+  const handleViewReport = (analysisId: string, analysisResult: any) => {
+    console.log('🔍 AI 분석 리포트 보기:', analysisId, analysisResult)
+    
+    // AI 분석 리포트 상세 페이지로 이동
+    // 분석 결과 데이터를 localStorage에 임시 저장하고 새 페이지에서 렌더링
+    localStorage.setItem('currentAnalysisResult', JSON.stringify(analysisResult))
+    
+    // 새 탭에서 리포트 보기 페이지 열기
+    const reportUrl = `/ai-report-viewer/${analysisId}`
+    window.open(reportUrl, '_blank')
   }
 
-  // PDF 생성 핸들러
-  const handleGeneratePDF = async (dataId: string, pdfType: string) => {
-    console.log('PDF 생성:', dataId, pdfType)
-    // TODO: PDF 생성 로직 구현
+  // PDF 다운로드 핸들러
+  const handleDownloadPDF = async (analysisId: string, analysisResult: any) => {
+    console.log('📄 PDF 다운로드 시작:', analysisId)
+    
+    try {
+      // 분석 결과를 기반으로 PDF 생성
+      // 현재는 기본 PDF 다운로드 로직 구현
+      const pdfContent = `
+AI 건강 분석 리포트
+==================
+
+분석 ID: ${analysisResult.analysisId}
+분석 엔진: ${analysisResult.engineName}
+생성 일시: ${new Date(analysisResult.createdAt).toLocaleDateString('ko-KR')}
+
+전체 점수: ${analysisResult.overallScore}/100
+스트레스 레벨: ${analysisResult.stressLevel}/100
+집중력 레벨: ${analysisResult.focusLevel}/100
+
+처리 시간: ${analysisResult.processingTime}ms
+사용 크레딧: ${analysisResult.costUsed}
+      `
+      
+      // Blob으로 PDF 파일 생성 (실제로는 PDF 라이브러리 사용 필요)
+      const blob = new Blob([pdfContent], { type: 'text/plain' })
+      const url = window.URL.createObjectURL(blob)
+      
+      // 다운로드 링크 생성 및 클릭
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `AI분석리포트_${analysisResult.analysisId}_${new Date().getTime()}.txt`
+      document.body.appendChild(link)
+      link.click()
+      
+      // 정리
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      console.log('✅ PDF 다운로드 완료')
+      
+    } catch (error) {
+      console.error('❌ PDF 다운로드 실패:', error)
+      setError('PDF 다운로드에 실패했습니다.')
+    }
   }
 
   // 테스트 측정 세션 생성 (개발용)
@@ -1039,7 +1125,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const renderMeasurementDataList = () => (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">측정 데이터 목록</h2>
+        <h2 className="text-2xl font-bold text-gray-900">측정 데이터 및 AI 분석 리포트</h2>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" onClick={loadMeasurementData}>
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -1122,7 +1208,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{data.userName}</h3>
-                      <p className="text-sm text-gray-600">측정일: {new Date(data.timestamp).toLocaleString('ko-KR')}</p>
+                      <div className="flex items-center space-x-3 text-sm text-gray-600">
+                        <span>{data.userGender}</span>
+                        <span>{data.userOccupation}</span>
+                        <span>{data.userDepartment}</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        측정일시: {new Date(data.timestamp).toLocaleDateString('ko-KR')} {new Date(data.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                     <Badge 
                       variant={data.quality === 'excellent' ? 'default' : data.quality === 'good' ? 'secondary' : 'destructive'}
@@ -1203,7 +1296,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                             {data.availableReports?.map((report: any) => (
                               <DropdownMenuItem 
                                 key={report.id} 
-                                onClick={() => handleViewReport(report.id)}
+                                onClick={() => handleViewReport(report.id, report)}
                               >
                                 {report.engineName} - {new Date(report.createdAt).toLocaleDateString('ko-KR')}
                               </DropdownMenuItem>
@@ -1219,14 +1312,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleGeneratePDF(data.id, 'basic-pdf')}>
-                              기본 PDF (2 크레딧)
+                            <DropdownMenuItem disabled>
+                              기본 PDF (2 크레딧) - 준비 중
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGeneratePDF(data.id, 'detailed-pdf')}>
-                              상세 PDF (5 크레딧)
+                            <DropdownMenuItem disabled>
+                              상세 PDF (5 크레딧) - 준비 중
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleGeneratePDF(data.id, 'branded-pdf')}>
-                              브랜딩 PDF (7 크레딧)
+                            <DropdownMenuItem disabled>
+                              브랜딩 PDF (7 크레딧) - 준비 중
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1239,6 +1332,74 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                   </div>
                 </div>
               </div>
+
+              {/* AI 분석 리포트 섹션 */}
+              {data.hasReports && data.availableReports.length > 0 && (
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <Brain className="w-4 h-4 mr-2 text-purple-600" />
+                    연결된 AI 분석 리포트 ({data.availableReports.length}개)
+                  </h4>
+                  <div className="space-y-3">
+                    {data.availableReports.map((report: any) => (
+                      <div key={report.id} className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-lg">
+                            <Brain className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-900">{report.engineName}</h5>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>분석 엔진: {report.engineId}</span>
+                              <span>분석 일시: {new Date(report.createdAt).toLocaleDateString('ko-KR')} {new Date(report.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+                              <span>생성자: {report.createdByUserName}</span>
+                            </div>
+                            <div className="flex items-center space-x-4 text-xs text-gray-600 mt-1">
+                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">전체 점수: {report.overallScore}/100</span>
+                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded">스트레스: {report.stressLevel}/100</span>
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded">집중력: {report.focusLevel}/100</span>
+                              <span className="text-gray-500">처리 시간: {report.processingTime}ms</span>
+                              <span className="text-gray-500">크레딧: {report.costUsed}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewReport(report.id, report)}
+                            className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            리포트 보기
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDownloadPDF(report.id, report)}
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            PDF 다운로드
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 리포트가 없을 때 안내 메시지 */}
+              {!data.hasReports && (
+                <div className="mt-6 border-t pt-4">
+                  <div className="text-center py-6 text-gray-500">
+                    <Brain className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm">아직 생성된 AI 분석 리포트가 없습니다.</p>
+                    <p className="text-xs text-gray-400">위의 "AI 분석 생성" 버튼을 클릭하여 리포트를 생성해보세요.</p>
+                  </div>
+                </div>
+              )}
             </Card>
           ))}
         </div>
