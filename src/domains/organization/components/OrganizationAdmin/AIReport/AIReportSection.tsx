@@ -1538,7 +1538,7 @@ AI 건강 분석 리포트
           <div className="space-y-3">
             {currentItems.map((data) => {
               // 생년월일과 만 나이 계산 함수
-              const calculateAgeInfo = (birthDate: Date | string | null) => {
+              const calculateAgeInfo = (birthDate: any) => {
                 if (!birthDate) {
                   return {
                     displayText: '나이 정보 없음',
@@ -1546,8 +1546,31 @@ AI 건강 분석 리포트
                   }
                 }
                 
-                const birth = typeof birthDate === 'string' ? new Date(birthDate) : birthDate
-                if (isNaN(birth.getTime())) {
+                // 안전한 Date 객체 생성
+                let birth: Date
+                try {
+                  if (birthDate instanceof Date) {
+                    birth = birthDate
+                  } else if (typeof birthDate === 'string' || typeof birthDate === 'number') {
+                    birth = new Date(birthDate)
+                  } else {
+                    // 예상치 못한 타입의 데이터
+                    console.warn('예상치 못한 birthDate 타입:', typeof birthDate, birthDate)
+                    return {
+                      displayText: '나이 정보 없음',
+                      age: 0
+                    }
+                  }
+                  
+                  // Date 객체 유효성 검사
+                  if (!birth || isNaN(birth.getTime())) {
+                    return {
+                      displayText: '나이 정보 없음',
+                      age: 0
+                    }
+                  }
+                } catch (error) {
+                  console.warn('Date 생성 실패:', error, birthDate)
                   return {
                     displayText: '나이 정보 없음',
                     age: 0
@@ -1576,6 +1599,17 @@ AI 건강 분석 리포트
               // 세션 데이터에서 생년월일 정보 가져오기
               const sessionData = data.sessionData || {}
               const birthDate = sessionData.subjectBirthDate || null
+              
+              // 디버깅: 실제 데이터 구조 확인
+              if (birthDate) {
+                console.log('birthDate 데이터:', {
+                  value: birthDate,
+                  type: typeof birthDate,
+                  isDate: birthDate instanceof Date,
+                  toString: birthDate.toString?.()
+                })
+              }
+              
               const ageInfo = calculateAgeInfo(birthDate)
               
               const measurementDate = new Date(data.timestamp)
