@@ -14,6 +14,10 @@ import { MeasurementDataService } from '@domains/ai-report/services/MeasurementD
 import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
 import { useAIReportConfiguration } from '@domains/ai-report/hooks/useAvailableEnginesAndViewers'
 import { ReportViewerModal } from '@domains/ai-report/components'
+import { rendererRegistry } from '@domains/ai-report/core/registry/RendererRegistry'
+import { findCompatibleRenderers, getRecommendedRenderers } from '@domains/ai-report/core/utils/EngineRendererMatcher'
+import { initializeRenderers } from '@domains/ai-report/report-renderers'
+import customRendererService from '@domains/ai-report/services/CustomRendererService'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -51,8 +55,34 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   
-  // AI Report 설정을 위한 hooks (임시로 organization ID 하드코딩)
+  // AI Report 설정을 위한 organization ID (임시로 하드코딩)
   const organizationId = 'temp-org-id' // TODO: 실제 조직 ID로 교체 필요
+  
+  // 렌더러 시스템 초기화
+  useEffect(() => {
+    try {
+      initializeRenderers()
+      console.log('✅ 렌더러 시스템이 초기화되었습니다.')
+    } catch (error) {
+      console.error('❌ 렌더러 초기화 실패:', error)
+    }
+  }, [])
+
+  // 커스텀 렌더러 로드
+  useEffect(() => {
+    const loadCustomRenderers = async () => {
+      try {
+        const accessibleCustomRenderers = await customRendererService.getAccessibleRenderers(organizationId)
+        setCustomRenderers(accessibleCustomRenderers)
+        console.log('✅ 커스텀 렌더러 로드 완료:', accessibleCustomRenderers.length, '개')
+      } catch (error) {
+        console.warn('❌ 커스텀 렌더러 로드 실패:', error)
+        setCustomRenderers([])
+      }
+    }
+
+    loadCustomRenderers()
+  }, [organizationId])
   const {
     selectedEngine,
     selectedViewer,
@@ -70,6 +100,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   } = useAIReportConfiguration(organizationId)
   const [measurementDataList, setMeasurementDataList] = useState<any[]>([])
   const [loadingMeasurementData, setLoadingMeasurementData] = useState(false)
+  const [customRenderers, setCustomRenderers] = useState<any[]>([]) // B2B 커스텀 렌더러 목록
   const [reports, setReports] = useState<HealthReport[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({
     totalReports: 0,
@@ -561,29 +592,78 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     setIsViewerModalOpen(true)
   }
 
-  // 해당 엔진에 호환되는 뷰어 필터링
+    // 해당 엔진에 호환되는 뷰어 필터링 (실제 렌더러 시스템 사용)
   const getCompatibleViewers = (engineId: string) => {
-    if (!viewers) return []
-    
-    // 모든 뷰어는 범용적으로 호환 (나중에 엔진별 호환성 로직 추가 가능)
-    const compatibleViewers = [
-      {
-        id: 'universal-web-viewer',
-        name: '범용 웹 뷰어',
-        description: '모든 엔진과 호환되는 범용 웹 뷰어'
-      },
-      ...viewers.filter(viewer => 
-        viewer.compatibleEngines?.includes(engineId) || 
-        viewer.compatibleEngines?.includes('*')
-      )
-    ]
-    
-    // 중복 제거
-    const uniqueViewers = compatibleViewers.filter((viewer, index, self) => 
-      index === self.findIndex(v => v.id === viewer.id)
-    )
-    
-    return uniqueViewers
+    try {
+      // 1. 기본 렌더러 시스템에서 조회
+      const recommendedRenderers = getRecommendedRenderers(engineId)
+      const compatibleRenderers = findCompatibleRenderers(engineId)
+      const allWebRenderers = rendererRegistry.getByFormat('web')
+      
+      // 2. 기본 렌더러들 합치기
+      const baseRenderers = [
+        ...recommendedRenderers,
+        ...compatibleRenderers,
+        ...allWebRenderers
+      ]
+      
+      // 3. 기본 렌더러를 뷰어 형태로 변환
+      const baseViewers = baseRenderers
+        .filter((renderer, index, self) => 
+          index === self.findIndex(r => r.id === renderer.id)
+        )
+        .map(renderer => ({
+          id: renderer.id,
+          name: renderer.name,
+          description: renderer.description,
+          version: renderer.version,
+          costPerRender: renderer.costPerRender,
+          isRecommended: recommendedRenderers.some(r => r.id === renderer.id),
+          isCustom: false,
+          subscriptionTier: 'basic' as const
+        }))
+      
+      // 4. 커스텀 렌더러는 별도 state로 관리하여 여기서 합치기
+      const customViewers = customRenderers
+        .filter((custom: any) => 
+          custom.supportedEngines.includes(engineId) || 
+          custom.supportedEngines.includes('*')
+        )
+        .filter((custom: any) => custom.outputFormat === 'web')
+        .map((custom: any) => ({
+          id: custom.rendererId,
+          name: custom.name,
+          description: custom.description,
+          version: custom.version,
+          costPerRender: custom.creditCostPerRender,
+          isRecommended: false,
+          isCustom: true,
+          subscriptionTier: custom.subscriptionTier,
+          organizationName: custom.organizationName,
+          accessLevel: custom.accessLevel
+        }))
+      
+      // 5. 모든 뷰어 합치기 (커스텀 렌더러 우선)
+      const allViewers = [...customViewers, ...baseViewers]
+      
+      console.log(`🎯 엔진 ${engineId}용 호환 뷰어:`, allViewers.length, '개 (커스텀: ${customViewers.length}개)')
+      return allViewers
+      
+    } catch (error) {
+      console.warn('렌더러 조회 중 오류:', error)
+      
+      // 오류 발생시 기본 뷰어 반환
+      return [{
+        id: 'basic-gemini-v1-web',
+        name: '기본 웹 뷰어',
+        description: '기본 제공 웹 뷰어',
+        version: '1.0.0',
+        costPerRender: 0,
+        isRecommended: true,
+        isCustom: false,
+        subscriptionTier: 'basic' as const
+      }]
+    }
   }
 
   // 리포트 보기 핸들러 (기존 - 호환성을 위해 유지)
@@ -1579,9 +1659,40 @@ AI 건강 분석 리포트
                                          <DropdownMenuItem 
                                            key={viewer.id}
                                            onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                                           className={viewer.isRecommended ? 'bg-blue-50 hover:bg-blue-100' : ''}
                                          >
-                                           <Monitor className="w-4 h-4 mr-2" />
-                                           {viewer.name}
+                                           <div className="flex items-center justify-between w-full">
+                                             <div className="flex items-center">
+                                               <Monitor className="w-4 h-4 mr-2" />
+                                               <div className="flex flex-col">
+                                                 <span className="font-medium">{viewer.name}</span>
+                                                 <span className="text-xs text-gray-500">{viewer.description}</span>
+                                               </div>
+                                             </div>
+                                             <div className="flex items-center space-x-1">
+                                               {viewer.isRecommended && (
+                                                 <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-300">
+                                                   권장
+                                                 </Badge>
+                                               )}
+                                               {viewer.isCustom && (
+                                                 <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-300">
+                                                   B2B 전용
+                                                 </Badge>
+                                               )}
+                                               {viewer.subscriptionTier === 'enterprise' && (
+                                                 <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                                                   Enterprise
+                                                 </Badge>
+                                               )}
+                                               {viewer.costPerRender > 0 && (
+                                                 <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-300">
+                                                   {viewer.costPerRender}C
+                                                 </Badge>
+                                               )}
+                                               <span className="text-xs text-gray-400">v{viewer.version}</span>
+                                             </div>
+                                           </div>
                                          </DropdownMenuItem>
                                        ))}
                                        {getCompatibleViewers(report.engineId || 'unknown').length === 0 && (
