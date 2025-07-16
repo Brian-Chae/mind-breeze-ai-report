@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Progress } from '@ui/progress';
 import { Badge } from '@ui/badge';
 import { Alert, AlertDescription } from '@ui/alert';
-import { CheckCircle2, AlertCircle, Activity, Brain, Heart, Move3d, Clock, Zap, Wifi, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Brain, Heart, Move3d, Clock, Wifi, AlertTriangle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 // 기존 hook들 import
@@ -373,7 +373,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       )}
 
       {/* 신호 품질 요약 카드 */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
         {/* EEG 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
@@ -428,80 +428,10 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
           </CardContent>
         </Card>
 
-        {/* 전체 품질 */}
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-purple-500" />
-              전체 품질
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-700 mb-1">
-              {signalQuality.overall.toFixed(0)}%
-            </div>
-            <Badge className={getQualityStatus(signalQuality.overall).color}>
-              {getQualityStatus(signalQuality.overall).label}
-            </Badge>
-          </CardContent>
-        </Card>
+
       </div>
 
-      {/* 전체 신호 품질 프로그레스 바 */}
-      <Card className="bg-white border-gray-200 shadow-sm mb-6">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
-            <Zap className="h-5 w-5 text-yellow-500" />
-            전체 신호 품질
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* 프로그레스 바 */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">신호 품질</span>
-                <span className="text-sm font-medium text-gray-700">
-                  {signalQuality.overall.toFixed(1)}%
-                </span>
-              </div>
-              <Progress 
-                value={signalQuality.overall} 
-                className="h-3"
-              />
-            </div>
 
-            {/* 상태 메시지 */}
-            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 bg-gray-50">
-              {signalQuality.overall >= 90 ? (
-                <>
-                  <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
-                  <div>
-                    <div className="text-green-700 font-medium">
-                      측정 준비가 완료되었습니다.
-                    </div>
-                    <div className="text-gray-600 text-sm mt-1">
-                      이제 다음 단계로 진행할 수 있습니다.
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-6 w-6 text-yellow-500 flex-shrink-0" />
-                  <div>
-                    <div className="text-yellow-700 font-medium">
-                      신호 품질이 좋지 못합니다. 디바이스 착용을 확인해주세요.
-                    </div>
-                    <div className="text-gray-600 text-sm mt-1">
-                      정확한 측정을 위해 신호 품질이 90% 이상이어야 합니다.
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 실시간 신호 그래프들 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 flex-1">
