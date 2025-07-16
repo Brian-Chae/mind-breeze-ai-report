@@ -552,14 +552,14 @@ export function ReportViewerModal({
             ? 'max-w-[95vw] max-h-[95vh]' 
             : viewMode === 'mobile'
               ? '!w-[375px] !max-w-[375px] max-h-[90vh]'
-              : '!w-[1280px] !max-w-none max-h-[95vh]'
+              : '!w-[1180px] !max-w-none max-h-[95vh]'
         } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}
         style={{
           width: isFullscreen 
             ? '95vw' 
             : viewMode === 'mobile' 
               ? '375px' 
-              : '1280px',
+              : '1180px',
           maxWidth: isFullscreen 
             ? '95vw' 
             : viewMode === 'mobile' 

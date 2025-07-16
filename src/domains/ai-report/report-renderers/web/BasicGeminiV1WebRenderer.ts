@@ -13,12 +13,50 @@ import {
 } from '../../core/interfaces/IReportRenderer';
 import { AnalysisResult } from '../../core/interfaces/IAIEngine';
 
+// 상세 분석 결과 인터페이스 (엔진과 동일)
+interface DetailedAnalysisResult {
+  overallScore: number;
+  overallInterpretation: string;
+  
+  eegAnalysis: {
+    score: number;
+    interpretation: string;
+    keyFindings: string[];
+    concerns: string[];
+  };
+  
+  ppgAnalysis: {
+    score: number;
+    interpretation: string;
+    keyFindings: string[];
+    concerns: string[];
+  };
+  
+  demographicAnalysis: {
+    ageSpecific: string;
+    genderSpecific: string;
+    combinedInsights: string[];
+  };
+  
+  occupationalAnalysis: {
+    jobSpecificRisks: string[];
+    workplaceRecommendations: string[];
+    careerHealthTips: string[];
+  };
+  
+  improvementPlan: {
+    immediate: string[];
+    shortTerm: string[];
+    longTerm: string[];
+  };
+}
+
 export class BasicGeminiV1WebRenderer implements IReportRenderer {
   // 기본 정보
   readonly id = 'basic-gemini-v1-web';
   readonly name = 'Gemini V1 웹 렌더러';
-  readonly description = 'BasicGeminiV1Engine 결과를 HTML/React 형태로 렌더링하는 웹 렌더러';
-  readonly version = '1.0.0';
+  readonly description = 'BasicGeminiV1Engine 결과를 맞춤형 HTML 리포트로 렌더링하는 웹 렌더러';
+  readonly version = '1.1.0';
   readonly outputFormat: OutputFormat = 'web';
   
   // 비용 및 기능
@@ -28,7 +66,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   readonly capabilities: RendererCapabilities = {
     supportedFormats: ['web'],
     supportedLanguages: ['ko', 'en'],
-    maxContentSize: 5 * 1024 * 1024, // 5MB
+    maxContentSize: 10 * 1024 * 1024, // 10MB (더 상세한 분석으로 인해 증가)
     supportsInteractivity: true,
     supportsBranding: true,
     supportsCharts: true
@@ -126,9 +164,9 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
    */
   getTemplate(): ReportTemplate {
     return {
-      id: 'basic-web-template',
-      name: '기본 웹 템플릿',
-      description: '깔끔하고 읽기 쉬운 기본 웹 리포트 템플릿',
+      id: 'comprehensive-web-template',
+      name: '종합 건강 웹 템플릿',
+      description: '연령, 성별, 직업 특성을 고려한 맞춤형 웹 리포트 템플릿',
       supportedFormats: ['web'],
       sections: [
         {
@@ -141,28 +179,49 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         },
         {
           id: 'summary',
-          name: '요약',
+          name: '종합 요약',
           type: 'summary',
           required: true,
           customizable: false
         },
         {
-          id: 'scores',
-          name: '점수',
+          id: 'overall-scores',
+          name: '전체 점수',
           type: 'charts',
           required: true,
           customizable: true
         },
         {
-          id: 'analysis',
-          name: '상세 분석',
+          id: 'eeg-analysis',
+          name: '뇌파 분석',
           type: 'analysis',
           required: true,
           customizable: false
         },
         {
-          id: 'recommendations',
-          name: '권장사항',
+          id: 'ppg-analysis',
+          name: '맥파 분석',
+          type: 'analysis',
+          required: true,
+          customizable: false
+        },
+        {
+          id: 'demographic-analysis',
+          name: '연령/성별 분석',
+          type: 'analysis',
+          required: true,
+          customizable: false
+        },
+        {
+          id: 'occupation-analysis',
+          name: '직업 특성 분석',
+          type: 'analysis',
+          required: true,
+          customizable: false
+        },
+        {
+          id: 'improvement-plan',
+          name: '개선 계획',
           type: 'recommendations',
           required: true,
           customizable: true
@@ -203,10 +262,13 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
 <body>
     <div class="report-container">
         ${this.generateHeader(analysis, options)}
-        ${this.generateSummary(analysis, options)}
-        ${this.generateScores(analysis, options)}
-        ${this.generateAnalysis(analysis, options)}
-        ${this.generateRecommendations(analysis, options)}
+        ${this.generateOverallSummary(analysis, options)}
+        ${this.generateScoreCards(analysis, options)}
+        ${this.generateEEGAnalysis(analysis, options)}
+        ${this.generatePPGAnalysis(analysis, options)}
+        ${this.generateDemographicAnalysis(analysis, options)}
+        ${this.generateOccupationalAnalysis(analysis, options)}
+        ${this.generateImprovementPlan(analysis, options)}
         ${this.generateFooter(analysis, options)}
     </div>
     
@@ -236,47 +298,52 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
-   * 요약 생성
+   * 종합 요약 생성
    */
-  private generateSummary(analysis: AnalysisResult, options: RenderOptions): string {
+  private generateOverallSummary(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
     
     return `
     <section class="summary-section">
-        <h2>${language === 'ko' ? '분석 요약' : 'Analysis Summary'}</h2>
+        <h2>${language === 'ko' ? '종합 분석 결과' : 'Overall Analysis Result'}</h2>
         <div class="summary-content">
-            <p class="summary-text">${analysis.insights.summary}</p>
+            <p class="summary-text">${detailedAnalysis?.overallInterpretation || analysis.insights.summary}</p>
         </div>
     </section>`;
   }
 
   /**
-   * 점수 섹션 생성
+   * 점수 카드 생성
    */
-  private generateScores(analysis: AnalysisResult, options: RenderOptions): string {
+  private generateScoreCards(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
     
     const scores = [
       {
         label: language === 'ko' ? '전체 건강 점수' : 'Overall Health Score',
         value: analysis.overallScore,
-        color: this.getScoreColor(analysis.overallScore)
+        color: this.getScoreColor(analysis.overallScore),
+        subtitle: this.getScoreLabel(analysis.overallScore, language)
       },
       {
-        label: language === 'ko' ? '스트레스 수준' : 'Stress Level',
-        value: analysis.stressLevel,
-        color: this.getStressColor(analysis.stressLevel)
+        label: language === 'ko' ? '뇌파 건강 점수' : 'EEG Health Score',
+        value: detailedAnalysis?.eegAnalysis?.score || 75,
+        color: this.getScoreColor(detailedAnalysis?.eegAnalysis?.score || 75),
+        subtitle: language === 'ko' ? '정신건강 상태' : 'Mental Health Status'
       },
       {
-        label: language === 'ko' ? '집중력 수준' : 'Focus Level',
-        value: analysis.focusLevel,
-        color: this.getFocusColor(analysis.focusLevel)
+        label: language === 'ko' ? '심혈관 건강 점수' : 'Cardiovascular Health Score',
+        value: detailedAnalysis?.ppgAnalysis?.score || 80,
+        color: this.getScoreColor(detailedAnalysis?.ppgAnalysis?.score || 80),
+        subtitle: language === 'ko' ? '신체건강 상태' : 'Physical Health Status'
       }
     ];
 
     return `
     <section class="scores-section">
-        <h2>${language === 'ko' ? '건강 지표' : 'Health Metrics'}</h2>
+        <h2>${language === 'ko' ? '건강 지표 점수' : 'Health Metrics Scores'}</h2>
         <div class="scores-grid">
             ${scores.map(score => `
                 <div class="score-card">
@@ -285,6 +352,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                         ${score.value}
                         <span class="score-unit">/100</span>
                     </div>
+                    <p class="score-subtitle">${score.subtitle}</p>
                     <div class="score-bar">
                         <div class="score-fill" style="width: ${score.value}%; background-color: ${score.color}"></div>
                     </div>
@@ -295,28 +363,39 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
-   * 상세 분석 생성
+   * EEG 분석 섹션 생성
    */
-  private generateAnalysis(analysis: AnalysisResult, options: RenderOptions): string {
+  private generateEEGAnalysis(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
+    const eegAnalysis = detailedAnalysis?.eegAnalysis;
     
+    if (!eegAnalysis) return '';
+
     return `
-    <section class="analysis-section">
-        <h2>${language === 'ko' ? '상세 분석' : 'Detailed Analysis'}</h2>
+    <section class="analysis-section eeg-analysis">
+        <h2>${language === 'ko' ? '🧠 뇌파 분석 결과' : '🧠 EEG Analysis Results'}</h2>
         <div class="analysis-content">
-            <div class="analysis-text">
-                ${analysis.insights.detailedAnalysis.split('\n').map(paragraph => 
-                  paragraph.trim() ? `<p>${paragraph}</p>` : ''
-                ).join('')}
+            <div class="score-badge score-${this.getScoreLevel(eegAnalysis.score)}">
+                ${language === 'ko' ? '뇌파 건강 점수' : 'EEG Health Score'}: ${eegAnalysis.score}/100
             </div>
             
-            ${this.generateMetrics(analysis, options)}
+            <div class="analysis-text">
+                <p class="interpretation">${eegAnalysis.interpretation}</p>
+            </div>
             
-            ${analysis.insights.warnings.length > 0 ? `
-            <div class="warnings-box">
-                <h3>${language === 'ko' ? '주의사항' : 'Warnings'}</h3>
-                <ul class="warnings-list">
-                    ${analysis.insights.warnings.map(warning => `<li>${warning}</li>`).join('')}
+            <div class="findings-section">
+                <h3>${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
+                <ul class="findings-list positive">
+                    ${eegAnalysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
+                </ul>
+            </div>
+            
+            ${eegAnalysis.concerns.length > 0 ? `
+            <div class="concerns-section">
+                <h3>${language === 'ko' ? '주의사항' : 'Concerns'}</h3>
+                <ul class="concerns-list">
+                    ${eegAnalysis.concerns.map(concern => `<li>${concern}</li>`).join('')}
                 </ul>
             </div>
             ` : ''}
@@ -325,104 +404,167 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
-   * 생체 지표 생성
+   * PPG 분석 섹션 생성
    */
-  private generateMetrics(analysis: AnalysisResult, options: RenderOptions): string {
+  private generatePPGAnalysis(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
-    const metrics = analysis.metrics;
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
+    const ppgAnalysis = detailedAnalysis?.ppgAnalysis;
     
-    if (!metrics || (!metrics.eeg && !metrics.ppg && !metrics.acc)) {
-      return '';
-    }
+    if (!ppgAnalysis) return '';
 
     return `
-    <div class="metrics-section">
-        <h3>${language === 'ko' ? '생체 지표' : 'Biometric Metrics'}</h3>
-        <div class="metrics-grid">
-            ${metrics.eeg ? `
-            <div class="metric-group">
-                <h4>${language === 'ko' ? 'EEG (뇌파)' : 'EEG (Brain Waves)'}</h4>
-                <div class="metric-items">
-                    <div class="metric-item">
-                        <span class="metric-label">Alpha</span>
-                        <span class="metric-value">${metrics.eeg.alpha.toFixed(2)}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Beta</span>
-                        <span class="metric-value">${metrics.eeg.beta.toFixed(2)}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Gamma</span>
-                        <span class="metric-value">${metrics.eeg.gamma.toFixed(2)}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Theta</span>
-                        <span class="metric-value">${metrics.eeg.theta.toFixed(2)}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Delta</span>
-                        <span class="metric-value">${metrics.eeg.delta.toFixed(2)}</span>
-                    </div>
-                </div>
+    <section class="analysis-section ppg-analysis">
+        <h2>${language === 'ko' ? '❤️ 심혈관 분석 결과' : '❤️ Cardiovascular Analysis Results'}</h2>
+        <div class="analysis-content">
+            <div class="score-badge score-${this.getScoreLevel(ppgAnalysis.score)}">
+                ${language === 'ko' ? '심혈관 건강 점수' : 'Cardiovascular Health Score'}: ${ppgAnalysis.score}/100
             </div>
-            ` : ''}
             
-            ${metrics.ppg ? `
-            <div class="metric-group">
-                <h4>${language === 'ko' ? 'PPG (심박)' : 'PPG (Heart Rate)'}</h4>
-                <div class="metric-items">
-                    <div class="metric-item">
-                        <span class="metric-label">${language === 'ko' ? '심박수' : 'Heart Rate'}</span>
-                        <span class="metric-value">${metrics.ppg.heartRate} BPM</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">HRV</span>
-                        <span class="metric-value">${metrics.ppg.hrv}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">${language === 'ko' ? '스트레스 지수' : 'Stress Index'}</span>
-                        <span class="metric-value">${metrics.ppg.stressIndex}</span>
-                    </div>
-                </div>
+            <div class="analysis-text">
+                <p class="interpretation">${ppgAnalysis.interpretation}</p>
             </div>
-            ` : ''}
             
-            ${metrics.acc ? `
-            <div class="metric-group">
-                <h4>${language === 'ko' ? 'ACC (움직임)' : 'ACC (Movement)'}</h4>
-                <div class="metric-items">
-                    <div class="metric-item">
-                        <span class="metric-label">${language === 'ko' ? '움직임 수준' : 'Movement Level'}</span>
-                        <span class="metric-value">${metrics.acc.movementLevel}</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">${language === 'ko' ? '안정성' : 'Stability'}</span>
-                        <span class="metric-value">${metrics.acc.stability}</span>
-                    </div>
-                </div>
+            <div class="findings-section">
+                <h3>${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
+                <ul class="findings-list positive">
+                    ${ppgAnalysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
+                </ul>
+            </div>
+            
+            ${ppgAnalysis.concerns.length > 0 ? `
+            <div class="concerns-section">
+                <h3>${language === 'ko' ? '주의사항' : 'Concerns'}</h3>
+                <ul class="concerns-list">
+                    ${ppgAnalysis.concerns.map(concern => `<li>${concern}</li>`).join('')}
+                </ul>
             </div>
             ` : ''}
         </div>
-    </div>`;
+    </section>`;
   }
 
   /**
-   * 권장사항 생성
+   * 연령/성별 분석 섹션 생성
    */
-  private generateRecommendations(analysis: AnalysisResult, options: RenderOptions): string {
+  private generateDemographicAnalysis(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
+    const demographic = detailedAnalysis?.demographicAnalysis;
     
+    if (!demographic) return '';
+
     return `
-    <section class="recommendations-section">
-        <h2>${language === 'ko' ? '권장사항' : 'Recommendations'}</h2>
-        <div class="recommendations-content">
-            <ul class="recommendations-list">
-                ${analysis.insights.recommendations.map(recommendation => `
-                    <li class="recommendation-item">
-                        <span class="recommendation-text">${recommendation}</span>
-                    </li>
-                `).join('')}
-            </ul>
+    <section class="analysis-section demographic-analysis">
+        <h2>${language === 'ko' ? '👥 연령/성별 특성 분석' : '👥 Age/Gender Specific Analysis'}</h2>
+        <div class="analysis-content">
+            <div class="demographic-grid">
+                <div class="demographic-card">
+                    <h3>${language === 'ko' ? '연령별 특성' : 'Age-Specific Characteristics'}</h3>
+                    <p>${demographic.ageSpecific}</p>
+                </div>
+                
+                <div class="demographic-card">
+                    <h3>${language === 'ko' ? '성별 특성' : 'Gender-Specific Characteristics'}</h3>
+                    <p>${demographic.genderSpecific}</p>
+                </div>
+            </div>
+            
+            <div class="insights-section">
+                <h3>${language === 'ko' ? '복합 인사이트' : 'Combined Insights'}</h3>
+                <ul class="insights-list">
+                    ${demographic.combinedInsights.map(insight => `<li>${insight}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    </section>`;
+  }
+
+  /**
+   * 직업 특성 분석 섹션 생성
+   */
+  private generateOccupationalAnalysis(analysis: AnalysisResult, options: RenderOptions): string {
+    const language = options.language || 'ko';
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
+    const occupation = detailedAnalysis?.occupationalAnalysis;
+    
+    if (!occupation) return '';
+
+    return `
+    <section class="analysis-section occupational-analysis">
+        <h2>${language === 'ko' ? '💼 직업 특성 분석' : '💼 Occupational Analysis'}</h2>
+        <div class="analysis-content">
+            <div class="occupational-grid">
+                <div class="occupational-card risks">
+                    <h3>${language === 'ko' ? '⚠️ 직업 관련 위험 요소' : '⚠️ Job-Related Risk Factors'}</h3>
+                    <ul>
+                        ${occupation.jobSpecificRisks.map(risk => `<li>${risk}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="occupational-card recommendations">
+                    <h3>${language === 'ko' ? '🏢 직장 내 권장사항' : '🏢 Workplace Recommendations'}</h3>
+                    <ul>
+                        ${occupation.workplaceRecommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="occupational-card tips">
+                    <h3>${language === 'ko' ? '💡 직업별 건강 팁' : '💡 Career Health Tips'}</h3>
+                    <ul>
+                        ${occupation.careerHealthTips.map(tip => `<li>${tip}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>`;
+  }
+
+  /**
+   * 개선 계획 섹션 생성
+   */
+  private generateImprovementPlan(analysis: AnalysisResult, options: RenderOptions): string {
+    const language = options.language || 'ko';
+    const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
+    const plan = detailedAnalysis?.improvementPlan;
+    
+    if (!plan) return '';
+
+    return `
+    <section class="analysis-section improvement-plan">
+        <h2>${language === 'ko' ? '📈 건강 개선 계획' : '📈 Health Improvement Plan'}</h2>
+        <div class="analysis-content">
+            <div class="plan-timeline">
+                <div class="plan-card immediate">
+                    <div class="plan-header">
+                        <h3>${language === 'ko' ? '🚀 즉시 실행' : '🚀 Immediate Actions'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '오늘부터' : 'Starting Today'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${plan.immediate.map(action => `<li>${action}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="plan-card short-term">
+                    <div class="plan-header">
+                        <h3>${language === 'ko' ? '⏰ 단기 목표' : '⏰ Short-term Goals'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '1-4주' : '1-4 Weeks'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${plan.shortTerm.map(goal => `<li>${goal}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="plan-card long-term">
+                    <div class="plan-header">
+                        <h3>${language === 'ko' ? '🎯 중장기 목표' : '🎯 Long-term Goals'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '1-6개월' : '1-6 Months'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${plan.longTerm.map(goal => `<li>${goal}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
         </div>
     </section>`;
   }
@@ -447,8 +589,8 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             </p>
             <p class="disclaimer">
                 ${language === 'ko' ? 
-                  '본 분석 결과는 의학적 진단이 아닌 건강 관리 참고용입니다.' : 
-                  'This analysis is for health management reference only, not medical diagnosis.'
+                  '본 분석 결과는 의학적 진단이 아닌 건강 관리 참고용입니다. 심각한 건강 문제가 의심되는 경우 전문의와 상담하시기 바랍니다.' : 
+                  'This analysis is for health management reference only, not medical diagnosis. Please consult with a medical professional if you have serious health concerns.'
                 }
             </p>
         </div>
@@ -456,7 +598,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
-   * CSS 스타일 생성
+   * CSS 스타일 생성 (기존 것을 확장)
    */
   private getCSS(theme: string, options: RenderOptions): string {
     const primaryColor = options.brandColors?.primary || '#3B82F6';
@@ -482,13 +624,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             background-color: ${bgColor};
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            -webkit-text-size-adjust: 100%;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
         
         .report-container {
-            max-width: 800px;
+            max-width: 1024px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -546,13 +685,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             margin-bottom: 15px;
         }
         
-        h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: ${secondaryColor};
-            margin-bottom: 10px;
-        }
-        
         .summary-text {
             font-size: 1.1rem;
             line-height: 1.8;
@@ -561,7 +693,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         
         .scores-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
         }
         
@@ -571,10 +703,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             border-radius: 12px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         
@@ -593,13 +721,19 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         .score-value {
             font-size: 3rem;
             font-weight: 700;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         
         .score-unit {
             font-size: 1.2rem;
             font-weight: 400;
             opacity: 0.7;
+        }
+        
+        .score-subtitle {
+            font-size: 0.9rem;
+            color: ${secondaryColor};
+            margin-bottom: 15px;
         }
         
         .score-bar {
@@ -616,100 +750,163 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             transition: width 0.8s ease;
         }
         
-        .analysis-text p {
-            margin-bottom: 15px;
-            line-height: 1.7;
-        }
-        
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .metric-group {
-            background: ${isDark ? '#4B5563' : '#FFFFFF'};
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .metric-items {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .metric-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid ${isDark ? '#6B7280' : '#E5E7EB'};
-        }
-        
-        .metric-item:last-child {
-            border-bottom: none;
-        }
-        
-        .metric-label {
-            font-weight: 500;
-            color: ${secondaryColor};
-        }
-        
-        .metric-value {
+        .score-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
             font-weight: 600;
-            color: ${textColor};
+            margin-bottom: 20px;
         }
         
-        .warnings-box {
+        .score-badge.score-excellent {
+            background: #DEF7EC;
+            color: #047857;
+        }
+        
+        .score-badge.score-good {
+            background: #DBEAFE;
+            color: #1D4ED8;
+        }
+        
+        .score-badge.score-fair {
             background: #FEF3C7;
-            border: 1px solid #F59E0B;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        
-        .warnings-list {
-            list-style: none;
-            margin-top: 10px;
-        }
-        
-        .warnings-list li {
-            padding: 5px 0;
             color: #92400E;
         }
         
-        .warnings-list li::before {
-            content: "⚠️ ";
-            margin-right: 8px;
+        .score-badge.score-poor {
+            background: #FEE2E2;
+            color: #DC2626;
         }
         
-        .recommendations-list {
+        .interpretation {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        
+        .findings-section, .concerns-section {
+            margin: 20px 0;
+        }
+        
+        .findings-list, .concerns-list, .insights-list, .plan-list {
             list-style: none;
+            margin: 10px 0;
         }
         
-        .recommendation-item {
-            padding: 15px;
-            margin-bottom: 10px;
+        .findings-list li, .insights-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        
+        .findings-list li::before, .insights-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10B981;
+            font-weight: bold;
+        }
+        
+        .concerns-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        
+        .concerns-list li::before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+        }
+        
+        .demographic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .demographic-card {
             background: ${isDark ? '#4B5563' : '#FFFFFF'};
+            padding: 20px;
             border-radius: 8px;
             border-left: 4px solid ${accentColor};
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            min-height: 44px; /* 터치 친화적 최소 높이 */
+        }
+        
+        .occupational-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .occupational-card {
+            background: ${isDark ? '#4B5563' : '#FFFFFF'};
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .occupational-card.risks {
+            border-left: 4px solid #EF4444;
+        }
+        
+        .occupational-card.recommendations {
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .occupational-card.tips {
+            border-left: 4px solid #10B981;
+        }
+        
+        .plan-timeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .plan-card {
+            background: ${isDark ? '#4B5563' : '#FFFFFF'};
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .plan-card.immediate {
+            border-left-color: #EF4444;
+        }
+        
+        .plan-card.short-term {
+            border-left-color: #F59E0B;
+        }
+        
+        .plan-card.long-term {
+            border-left-color: #10B981;
+        }
+        
+        .plan-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
         
-        .recommendation-item::before {
-            content: "💡 ";
-            margin-right: 10px;
-        }
-        
-        .recommendation-text {
+        .plan-period {
+            font-size: 0.9rem;
+            color: ${secondaryColor};
             font-weight: 500;
-            line-height: 1.6;
+        }
+        
+        .plan-list li {
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .plan-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: ${primaryColor};
+            font-weight: bold;
         }
         
         .report-footer {
@@ -736,84 +933,13 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             font-size: 0.8rem;
             color: ${secondaryColor};
             font-style: italic;
+            line-height: 1.5;
         }
         
-        /* 모바일 (작은 화면) */
-        @media (max-width: 480px) {
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
             .report-container {
-                padding: 8px;
-                margin: 0;
-            }
-            
-            .report-header {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
-            
-            .report-title {
-                font-size: 1.5rem;
-                margin-bottom: 8px;
-            }
-            
-            .logo {
-                height: 40px;
-                margin-bottom: 10px;
-            }
-            
-            section {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
-            
-            h2 {
-                font-size: 1.3rem;
-                margin-bottom: 15px;
-            }
-            
-            .scores-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .score-card {
-                padding: 15px;
-            }
-            
-            .score-value {
-                font-size: 2rem;
-                margin-bottom: 10px;
-            }
-            
-            .metrics-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .metric-group {
-                padding: 15px;
-            }
-            
-            .recommendation-item {
-                padding: 12px;
-                margin-bottom: 8px;
-            }
-            
-            .report-meta {
-                flex-direction: column;
-                gap: 3px;
-                font-size: 0.8rem;
-            }
-            
-            .report-footer {
-                padding: 20px;
-                margin-top: 20px;
-            }
-        }
-        
-        /* 태블릿 (중간 화면) */
-        @media (min-width: 481px) and (max-width: 768px) {
-            .report-container {
-                padding: 12px;
+                padding: 10px;
             }
             
             .report-header {
@@ -825,11 +951,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 font-size: 1.8rem;
             }
             
-            .logo {
-                height: 50px;
-                margin-bottom: 15px;
-            }
-            
             section {
                 padding: 20px;
                 margin-bottom: 30px;
@@ -840,111 +961,22 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             }
             
             .scores-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 18px;
-            }
-            
-            .score-card {
-                padding: 20px;
+                grid-template-columns: 1fr;
+                gap: 15px;
             }
             
             .score-value {
                 font-size: 2.5rem;
             }
             
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 18px;
+            .demographic-grid, .occupational-grid, .plan-timeline {
+                grid-template-columns: 1fr;
+                gap: 15px;
             }
             
             .report-meta {
-                flex-direction: row;
-                justify-content: center;
-                gap: 15px;
-                flex-wrap: wrap;
-            }
-        }
-        
-        /* 데스크탑 (큰 화면) */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .report-container {
-                padding: 16px;
-            }
-            
-            .scores-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        /* 대형 데스크탑 */
-        @media (min-width: 1025px) {
-            .report-container {
-                padding: 20px;
-            }
-            
-            .scores-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .metrics-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        /* 세로/가로 모드 대응 */
-        @media (orientation: landscape) and (max-height: 600px) {
-            .report-header {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
-            
-            .report-title {
-                font-size: 1.5rem;
-            }
-            
-            section {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
-            
-            .score-value {
-                font-size: 2rem;
-            }
-        }
-        
-        /* 다크모드에서의 추가 스타일 */
-        @media (prefers-color-scheme: dark) {
-            .warnings-box {
-                background: #451A03;
-                border-color: #92400E;
-            }
-            
-            .warnings-list li {
-                color: #FBBF24;
-            }
-        }
-        
-        /* 고대비 모드 지원 */
-        @media (prefers-contrast: high) {
-            .score-card, .metric-group, .recommendation-item {
-                border: 2px solid ${isDark ? '#FFFFFF' : '#000000'};
-            }
-        }
-        
-        /* 애니메이션 감소 모드 */
-        @media (prefers-reduced-motion: reduce) {
-            .score-fill {
-                transition: none;
-            }
-            
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
+                flex-direction: column;
+                gap: 5px;
             }
         }
     `;
@@ -986,7 +1018,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             window.print();
         }
         
-        // 소셜 공유 (기본 구현)
+        // 소셜 공유
         function shareReport() {
             if (navigator.share) {
                 navigator.share({
@@ -994,7 +1026,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                     url: window.location.href
                 });
             } else {
-                // 복사 기능 fallback
                 navigator.clipboard.writeText(window.location.href);
                 alert('링크가 클립보드에 복사되었습니다.');
             }
@@ -1075,25 +1106,41 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
    * 유틸리티 메서드들
    */
   private getTitle(language: string): string {
-    return language === 'ko' ? 'AI 건강 분석 리포트' : 'AI Health Analysis Report';
+    return language === 'ko' ? 'AI 맞춤형 건강 분석 리포트' : 'AI Personalized Health Analysis Report';
   }
 
   private getScoreColor(score: number): string {
-    if (score >= 80) return '#10B981'; // 초록
+    if (score >= 85) return '#10B981'; // 초록
+    if (score >= 70) return '#3B82F6'; // 파랑
     if (score >= 60) return '#F59E0B'; // 노랑
     return '#EF4444'; // 빨강
   }
 
-  private getStressColor(stress: number): string {
-    if (stress <= 30) return '#10B981'; // 낮음 - 초록
-    if (stress <= 60) return '#F59E0B'; // 보통 - 노랑
-    return '#EF4444'; // 높음 - 빨강
+  private getScoreLevel(score: number): string {
+    if (score >= 85) return 'excellent';
+    if (score >= 70) return 'good';
+    if (score >= 60) return 'fair';
+    return 'poor';
   }
 
-  private getFocusColor(focus: number): string {
-    if (focus >= 70) return '#10B981'; // 높음 - 초록
-    if (focus >= 40) return '#F59E0B'; // 보통 - 노랑
-    return '#EF4444'; // 낮음 - 빨강
+  private getScoreLabel(score: number, language: string): string {
+    const labels = {
+      ko: {
+        excellent: '우수',
+        good: '양호',
+        fair: '보통',
+        poor: '주의'
+      },
+      en: {
+        excellent: 'Excellent',
+        good: 'Good',
+        fair: 'Fair',
+        poor: 'Poor'
+      }
+    };
+    
+    const level = this.getScoreLevel(score);
+    return labels[language as keyof typeof labels]?.[level as keyof typeof labels.ko] || level;
   }
 }
 
