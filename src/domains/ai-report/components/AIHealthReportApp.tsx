@@ -15,7 +15,9 @@ import { ReportScreen } from './ReportScreen';
 // 🔧 Firebase 저장을 위한 import 추가
 import { FirebaseService } from '../../../core/services/FirebaseService';
 import { MeasurementDataService } from '../services/MeasurementDataService';
-import { auth } from '../../../core/services/firebase';
+import { auth, storage } from '../../../core/services/firebase';
+import { signInAnonymously } from 'firebase/auth';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 // 🔧 타입 정의 추가 (누락된 타입들)
 export type AIReportStep = 'personal-info' | 'device-connection' | 'data-quality' | 'measurement' | 'analysis' | 'report';
@@ -223,14 +225,83 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
 
   const handleMeasurementComplete = useCallback(async (measurementData: AggregatedMeasurementData) => {
     try {
-      console.log('🔧 측정 완료 - Firebase 저장 시작:', measurementData);
+      console.log('🚀🚀🚀 handleMeasurementComplete 함수 호출됨!');
+      console.log('🔧 측정 데이터:', measurementData);
+      console.log('🔧 Firebase auth 상태:', auth.currentUser ? '로그인됨' : '로그인되지 않음');
+      console.log('🔧 현재 개인정보:', state.personalInfo);
       
-      // 현재 사용자 정보 가져오기 (Firebase auth 사용)
-      const currentUser = auth.currentUser;
+      // 🔧 익명 인증으로 로그인 (사용자가 로그인하지 않은 경우)
+      let currentUser = auth.currentUser;
       if (!currentUser) {
-        console.error('❌ 사용자 정보가 없어서 저장할 수 없습니다');
-        setState(prev => ({ ...prev, error: '사용자 정보가 없어서 저장할 수 없습니다' }));
-        return;
+        console.log('🔧 익명 인증으로 로그인 시도...');
+        try {
+          const userCredential = await signInAnonymously(auth);
+          currentUser = userCredential.user;
+          console.log('✅ 익명 인증 성공:', currentUser.uid);
+        } catch (authError) {
+          console.error('❌ 익명 인증 실패:', authError);
+          setState(prev => ({ ...prev, error: '인증 실패: 데이터를 저장할 수 없습니다' }));
+          return;
+        }
+      }
+
+      console.log('✅ 현재 사용자:', currentUser.uid, currentUser.isAnonymous ? '(익명)' : currentUser.email);
+
+      // 🔧 Storage에 센서 데이터 저장
+      let storageUrl = '';
+      try {
+        console.log('🔧 Storage에 센서 데이터 저장 시작...');
+        const sessionId = `measurement_${Date.now()}_${currentUser.uid.substring(0, 8)}`;
+        
+        // 센서 데이터 JSON 생성
+        const sensorData = {
+          sessionId,
+          measurementInfo: measurementData.measurementInfo,
+          rawData: {
+            eeg: {
+              summary: measurementData.eegSummary,
+              dataPoints: 60 * 256, // 가정: 256Hz 샘플링으로 1분
+              qualityScore: measurementData.eegSummary?.averageSQI || 80
+            },
+            ppg: {
+              summary: measurementData.ppgSummary,
+              dataPoints: 60 * 125, // 가정: 125Hz 샘플링으로 1분
+              qualityScore: 90
+            },
+            acc: {
+              summary: measurementData.accSummary,
+              dataPoints: 60 * 50, // 가정: 50Hz 샘플링으로 1분
+              qualityScore: 95
+            }
+          },
+          qualitySummary: measurementData.qualitySummary,
+          collectedAt: new Date().toISOString(),
+          userId: currentUser.uid,
+          subjectInfo: {
+            name: state.personalInfo?.name || '알 수 없음',
+            email: state.personalInfo?.email,
+            gender: state.personalInfo?.gender,
+            birthDate: state.personalInfo?.birthDate
+          }
+        };
+
+        // Storage 경로: measurements/{userId}/{sessionId}/sensor_data.json
+        const storagePath = `measurements/${currentUser.uid}/${sessionId}/sensor_data.json`;
+        const storageRef = ref(storage, storagePath);
+        
+        // JSON 문자열로 변환하여 업로드
+        const jsonString = JSON.stringify(sensorData, null, 2);
+        await uploadString(storageRef, jsonString, 'raw', {
+          contentType: 'application/json'
+        });
+        
+        // 다운로드 URL 얻기
+        storageUrl = await getDownloadURL(storageRef);
+        console.log('✅ Storage에 센서 데이터 저장 완료:', storageUrl);
+        
+      } catch (storageError) {
+        console.error('❌ Storage 저장 실패:', storageError);
+        // Storage 저장 실패해도 계속 진행
       }
 
       // 1. MeasurementSession 저장
@@ -242,11 +313,16 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         
         // 측정 실행자 정보
         measuredByUserId: currentUser.uid,
-        measuredByUserName: currentUser.displayName || currentUser.email,
+        measuredByUserName: currentUser.isAnonymous ? '익명 사용자' : (currentUser.displayName || currentUser.email),
+        isAnonymousUser: currentUser.isAnonymous,
         
         // 세션 정보
         sessionDate: new Date(measurementData.measurementInfo?.startTime || Date.now()),
         duration: measurementData.measurementInfo?.duration || 60,
+        
+        // 🔧 Storage URL 추가
+        storageUrl: storageUrl || null,
+        storagePath: storageUrl ? `measurements/${currentUser.uid}/${Date.now()}_${currentUser.uid.substring(0, 8)}/sensor_data.json` : null,
         
         // 분석 결과 요약
         overallScore: Math.round(measurementData.qualitySummary?.qualityPercentage || 0),
@@ -259,21 +335,35 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         reportGenerated: false
       };
 
-      const sessionId = await FirebaseService.saveMeasurementSession(sessionData);
-      console.log('✅ MeasurementSession 저장 완료:', sessionId);
+      console.log('🔧 저장할 세션 데이터:', sessionData);
+
+      let sessionId = '';
+      try {
+        sessionId = await FirebaseService.saveMeasurementSession(sessionData);
+        console.log('✅ MeasurementSession 저장 완료:', sessionId);
+      } catch (sessionError) {
+        console.error('❌ MeasurementSession 저장 실패:', sessionError);
+        console.error('❌ sessionError 상세:', sessionError instanceof Error ? sessionError.message : sessionError);
+        throw sessionError;
+      }
 
       // 2. 상세 측정 데이터 저장 (MeasurementDataService 사용)
       try {
+        console.log('🔧 MeasurementDataService 생성 시작...');
         const measurementDataService = new MeasurementDataService();
+        console.log('✅ MeasurementDataService 생성 완료');
         
         const detailedMeasurementData = {
-          sessionId,
+          sessionId: sessionId,
           userId: currentUser.uid,
           measurementDate: new Date(measurementData.measurementInfo?.startTime || Date.now()),
           duration: measurementData.measurementInfo?.duration || 60,
           
+          // 🔧 Storage 정보 추가
+          storageUrl: storageUrl || null,
+          
           deviceInfo: {
-            serialNumber: 'LINKBAND_SIMULATOR', // 실제 디바이스 연결 시 실제 값으로 변경
+            serialNumber: 'LINKBAND_SIMULATOR',
             model: 'LINK_BAND_V4' as const,
             firmwareVersion: '1.0.0',
             batteryLevel: 85
@@ -289,21 +379,21 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             attentionIndex: measurementData.eegSummary?.attentionLevel || 0,
             meditationIndex: measurementData.eegSummary?.meditationLevel || 0,
             stressIndex: measurementData.eegSummary?.stressIndex || 0,
-            fatigueIndex: (100 - (measurementData.eegSummary?.focusIndex || 50)), // 역산으로 계산
+            fatigueIndex: (100 - (measurementData.eegSummary?.focusIndex || 50)),
             
             signalQuality: measurementData.eegSummary?.averageSQI ? measurementData.eegSummary.averageSQI / 100 : 0,
-            artifactRatio: 0.1 // 기본값
+            artifactRatio: 0.1
           },
           
           ppgMetrics: {
             heartRate: measurementData.ppgSummary?.bpm || 0,
             heartRateVariability: measurementData.ppgSummary?.rmssd || 0,
-            rrIntervals: [], // 실제 RR 간격 데이터는 추가 구현 필요
+            rrIntervals: [],
             
             stressScore: measurementData.ppgSummary?.stressIndex || 0,
             autonomicBalance: measurementData.ppgSummary?.lfHfRatio || 0,
             
-            signalQuality: 0.8, // 기본값 - 실제 PPG SQI 데이터로 변경 필요
+            signalQuality: 0.8,
             motionArtifact: 0.1
           },
           
@@ -312,32 +402,36 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             movementVariability: measurementData.accSummary?.avgMovement || 0,
             postureStability: measurementData.accSummary?.stability || 0,
             movementIntensity: measurementData.accSummary?.intensity || 0,
-            posture: 'UNKNOWN' as const, // 기본값
-            movementEvents: [] // 기본값
+            posture: 'UNKNOWN' as const,
+            movementEvents: []
           },
           
           dataQuality: {
             overallScore: measurementData.qualitySummary?.qualityPercentage || 0,
             eegQuality: measurementData.eegSummary?.averageSQI || 80,
-            ppgQuality: 80, // 기본값 - 실제 PPG SQI 데이터로 변경 필요
-            motionInterference: 20, // 기본값
+            ppgQuality: 80,
+            motionInterference: 20,
             usableForAnalysis: (measurementData.qualitySummary?.qualityPercentage || 0) >= 70,
             qualityIssues: [],
             overallQuality: measurementData.qualitySummary?.qualityPercentage || 0,
-            sensorContact: true, // 기본값
+            sensorContact: true,
             signalStability: measurementData.qualitySummary?.measurementReliability === 'high' ? 1.0 : 
                             measurementData.qualitySummary?.measurementReliability === 'medium' ? 0.7 : 0.4,
-            artifactLevel: 0.1 // 기본값
+            artifactLevel: 0.1
           },
           
-          processingVersion: '1.0.0' // 필수 필드 추가
+          processingVersion: '1.0.0'
         };
+
+        console.log('🔧 저장할 상세 측정 데이터:', detailedMeasurementData);
 
         const measurementId = await measurementDataService.saveMeasurementData(detailedMeasurementData);
         console.log('✅ MeasurementData 저장 완료:', measurementId);
         
       } catch (detailError) {
-        console.error('❌ MeasurementData 저장 실패 (세션은 저장됨):', detailError);
+        console.error('❌ MeasurementData 저장 실패:', detailError);
+        console.error('❌ detailError 상세:', detailError instanceof Error ? detailError.message : detailError);
+        console.error('❌ detailError stack:', detailError instanceof Error ? detailError.stack : 'No stack');
         // 세션은 저장되었으므로 계속 진행
       }
 
@@ -346,16 +440,19 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         ...prev,
         measurementData: {
           ...measurementData,
-          sessionId, // sessionId 추가
+          sessionId: sessionId,
+          storageUrl: storageUrl,
           savedAt: new Date()
         },
       }));
       
-      console.log('✅ 측정 데이터 저장 완료 - 분석 단계로 이동');
+      console.log('✅ 측정 데이터 저장 프로세스 완료 - 분석 단계로 이동');
       navigateToStep('analysis');
       
     } catch (error) {
-      console.error('❌ 측정 데이터 저장 실패:', error);
+      console.error('❌ 전체 측정 데이터 저장 실패:', error);
+      console.error('❌ error 상세:', error instanceof Error ? error.message : error);
+      console.error('❌ error stack:', error instanceof Error ? error.stack : 'No stack');
       setState(prev => ({ 
         ...prev, 
         error: `데이터 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}` 
