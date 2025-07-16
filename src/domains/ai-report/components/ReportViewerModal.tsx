@@ -204,7 +204,7 @@ export function ReportViewerModal({
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: viewMode === 'mobile' ? 375 : 800,
+        width: viewMode === 'mobile' ? 375 : 1024,
         windowWidth: viewMode === 'mobile' ? 375 : 1200
       });
 
@@ -274,73 +274,125 @@ export function ReportViewerModal({
     if (!reportContent) return null;
 
     return (
-      <div id="report-content" className={`space-y-6 p-6 ${viewMode === 'mobile' ? 'max-w-sm mx-auto' : 'max-w-4xl mx-auto'}`}>
+      <div id="report-content" className={`${
+        viewMode === 'mobile' 
+          ? 'space-y-4 p-4 w-full' 
+          : 'space-y-6 p-6 w-[1024px] mx-auto'
+      }`}>
         {/* 헤더 정보 */}
-        <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">{reportContent.title}</h1>
+        <div className={`bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border border-gray-200 shadow-sm ${
+          viewMode === 'mobile' ? 'p-4' : 'p-6'
+        }`}>
+          <div className={`flex items-center justify-between mb-4 ${
+            viewMode === 'mobile' ? 'flex-col gap-3' : ''
+          }`}>
+            <h1 className={`font-bold text-gray-900 ${
+              viewMode === 'mobile' ? 'text-xl text-center' : 'text-2xl'
+            }`}>
+              {reportContent.title}
+            </h1>
             <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
               {reportContent.metadata.engineName}
             </Badge>
           </div>
           
-          <div className={`grid gap-4 ${
+          <div className={`grid ${
             viewMode === 'mobile' 
-              ? 'grid-cols-1' 
-              : 'grid-cols-1 md:grid-cols-3'
+              ? 'grid-cols-1 gap-3' 
+              : 'grid-cols-3 gap-6'
           }`}>
-            <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+            <div className={`text-center bg-white rounded-lg shadow-md border border-gray-200 ${
+              viewMode === 'mobile' ? 'p-4' : 'p-6'
+            }`}>
               <div className={`font-bold text-green-700 ${
-                viewMode === 'mobile' ? 'text-2xl' : 'text-3xl'
+                viewMode === 'mobile' ? 'text-2xl' : 'text-4xl'
               }`}>
                 {reportContent.overallScore}
               </div>
-              <div className="text-sm text-gray-700 font-medium">종합 점수</div>
+              <div className={`text-gray-700 font-medium ${
+                viewMode === 'mobile' ? 'text-sm' : 'text-base'
+              }`}>
+                종합 점수
+              </div>
             </div>
-            <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+            <div className={`text-center bg-white rounded-lg shadow-md border border-gray-200 ${
+              viewMode === 'mobile' ? 'p-4' : 'p-6'
+            }`}>
               <div className={`font-bold text-orange-600 ${
-                viewMode === 'mobile' ? 'text-2xl' : 'text-3xl'
+                viewMode === 'mobile' ? 'text-2xl' : 'text-4xl'
               }`}>
                 {reportContent.stressLevel}
               </div>
-              <div className="text-sm text-gray-700 font-medium">스트레스</div>
+              <div className={`text-gray-700 font-medium ${
+                viewMode === 'mobile' ? 'text-sm' : 'text-base'
+              }`}>
+                스트레스
+              </div>
             </div>
-            <div className="text-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+            <div className={`text-center bg-white rounded-lg shadow-md border border-gray-200 ${
+              viewMode === 'mobile' ? 'p-4' : 'p-6'
+            }`}>
               <div className={`font-bold text-blue-700 ${
-                viewMode === 'mobile' ? 'text-2xl' : 'text-3xl'
+                viewMode === 'mobile' ? 'text-2xl' : 'text-4xl'
               }`}>
                 {reportContent.focusLevel}
               </div>
-              <div className="text-sm text-gray-700 font-medium">집중도</div>
+              <div className={`text-gray-700 font-medium ${
+                viewMode === 'mobile' ? 'text-sm' : 'text-base'
+              }`}>
+                집중도
+              </div>
             </div>
           </div>
         </div>
 
         {/* 요약 */}
         <Card className="bg-white border border-gray-200 shadow-md">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <Brain className="w-5 h-5 text-blue-600" />
+          <CardHeader className={`bg-gray-50 border-b border-gray-200 ${
+            viewMode === 'mobile' ? 'p-4' : 'p-6'
+          }`}>
+            <CardTitle className={`flex items-center gap-2 text-gray-900 ${
+              viewMode === 'mobile' ? 'text-lg' : 'text-xl'
+            }`}>
+              <Brain className={`text-blue-600 ${
+                viewMode === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'
+              }`} />
               분석 요약
             </CardTitle>
           </CardHeader>
-          <CardContent className="bg-white p-6">
-            <p className="text-gray-800 leading-relaxed text-base">{reportContent.summary}</p>
+          <CardContent className={`bg-white ${
+            viewMode === 'mobile' ? 'p-4' : 'p-6'
+          }`}>
+            <p className={`text-gray-800 leading-relaxed ${
+              viewMode === 'mobile' ? 'text-sm' : 'text-base'
+            }`}>
+              {reportContent.summary}
+            </p>
           </CardContent>
         </Card>
 
         {/* 상세 분석 */}
         <Card className="bg-white border border-gray-200 shadow-md">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <FileText className="w-5 h-5 text-green-600" />
+          <CardHeader className={`bg-gray-50 border-b border-gray-200 ${
+            viewMode === 'mobile' ? 'p-4' : 'p-6'
+          }`}>
+            <CardTitle className={`flex items-center gap-2 text-gray-900 ${
+              viewMode === 'mobile' ? 'text-lg' : 'text-xl'
+            }`}>
+              <FileText className={`text-green-600 ${
+                viewMode === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'
+              }`} />
               상세 분석 결과
             </CardTitle>
           </CardHeader>
-          <CardContent className="bg-white p-6">
+          <CardContent className={`bg-white ${
+            viewMode === 'mobile' ? 'p-4' : 'p-6'
+          }`}>
             <div className="prose max-w-none text-gray-800">
               <div 
-                className="leading-relaxed"
+                className={`leading-relaxed ${
+                  viewMode === 'mobile' ? 'text-sm' : 'text-base'
+                }`}
                 style={{
                   color: '#374151',
                   lineHeight: '1.75'
@@ -348,8 +400,8 @@ export function ReportViewerModal({
                 dangerouslySetInnerHTML={{ 
                   __html: reportContent.detailedAnalysis
                     .replace(/\n/g, '<br>')
-                    .replace(/### /g, '<h3 style="color: #1f2937; font-weight: 600; margin: 1rem 0 0.5rem 0; font-size: 1.1rem;">')
-                    .replace(/## /g, '<h2 style="color: #111827; font-weight: 700; margin: 1.5rem 0 0.75rem 0; font-size: 1.25rem;">')
+                    .replace(/### /g, `<h3 style="color: #1f2937; font-weight: 600; margin: 1rem 0 0.5rem 0; font-size: ${viewMode === 'mobile' ? '1rem' : '1.1rem'};">`)
+                    .replace(/## /g, `<h2 style="color: #111827; font-weight: 700; margin: 1.5rem 0 0.75rem 0; font-size: ${viewMode === 'mobile' ? '1.1rem' : '1.25rem'};">`)
                     .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f2937;">$1</strong>')
                     .replace(/- /g, '• ')
                 }} 
@@ -360,17 +412,25 @@ export function ReportViewerModal({
 
         {/* 메타데이터 */}
         <Card className="bg-white border border-gray-200 shadow-md">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <Settings className="w-5 h-5 text-gray-600" />
+          <CardHeader className={`bg-gray-50 border-b border-gray-200 ${
+            viewMode === 'mobile' ? 'p-4' : 'p-6'
+          }`}>
+            <CardTitle className={`flex items-center gap-2 text-gray-900 ${
+              viewMode === 'mobile' ? 'text-lg' : 'text-xl'
+            }`}>
+              <Settings className={`text-gray-600 ${
+                viewMode === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'
+              }`} />
               분석 정보
             </CardTitle>
           </CardHeader>
-          <CardContent className="bg-white p-6">
-            <div className={`grid gap-4 text-sm ${
+          <CardContent className={`bg-white ${
+            viewMode === 'mobile' ? 'p-4' : 'p-6'
+          }`}>
+            <div className={`grid gap-4 ${
               viewMode === 'mobile' 
-                ? 'grid-cols-1' 
-                : 'grid-cols-1 md:grid-cols-3'
+                ? 'grid-cols-1 text-xs' 
+                : 'grid-cols-1 md:grid-cols-3 text-sm'
             }`}>
               <div>
                 <span className="font-semibold text-gray-700">분석 일시:</span>
@@ -445,8 +505,8 @@ export function ReportViewerModal({
         isFullscreen 
           ? 'max-w-[95vw] max-h-[95vh]' 
           : viewMode === 'mobile'
-            ? 'max-w-md max-h-[90vh] w-[95vw]'
-            : 'max-w-4xl max-h-[90vh]'
+            ? 'w-[375px] max-h-[90vh]'
+            : 'w-[1200px] max-h-[90vh]'
       } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}>
         <DialogHeader className="flex-shrink-0 pb-4 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between">
