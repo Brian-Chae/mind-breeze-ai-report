@@ -325,6 +325,8 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
     }
   }, [isGoodQuality, isMonitoring, mode]);
 
+
+
   // 측정 데이터 수집 함수
   const collectMeasurementData = useCallback((): AggregatedMeasurementData => {
     // 현재 시간
@@ -435,7 +437,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
       return () => clearInterval(timer);
     }
-  }, [isMeasuring, onMeasurementComplete, onQualityConfirmed, collectMeasurementData]);
+  }, [isMeasuring]); // 의존성 배열 최소화
 
   // 품질 상태 확인 함수
   const getQualityStatus = (quality: number) => {
