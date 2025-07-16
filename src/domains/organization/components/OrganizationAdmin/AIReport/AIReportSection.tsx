@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -13,6 +13,7 @@ import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
 import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
 import { useAIReportConfiguration } from '@domains/ai-report/hooks/useAvailableEnginesAndViewers'
+import { ReportViewerModal } from '@domains/ai-report/components'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -91,6 +92,12 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  
+  // 리포트 뷰어 모달 상태
+  const [isViewerModalOpen, setIsViewerModalOpen] = useState(false)
+  const [selectedReportForView, setSelectedReportForView] = useState<any>(null)
+  const [selectedViewerId, setSelectedViewerId] = useState<string>('')
+  const [selectedViewerName, setSelectedViewerName] = useState<string>('')
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(measurementDataList.length / itemsPerPage)
@@ -523,17 +530,43 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     }
   }
 
-  // 리포트 보기 핸들러
+  // 리포트 뷰어 선택 및 모달 열기
+  const handleViewReportWithViewer = (report: any, viewerId: string, viewerName: string) => {
+    setSelectedReportForView(report)
+    setSelectedViewerId(viewerId)
+    setSelectedViewerName(viewerName)
+    setIsViewerModalOpen(true)
+  }
+
+  // 해당 엔진에 호환되는 뷰어 필터링
+  const getCompatibleViewers = (engineId: string) => {
+    if (!viewers) return []
+    
+    // 모든 뷰어는 범용적으로 호환 (나중에 엔진별 호환성 로직 추가 가능)
+    const compatibleViewers = [
+      {
+        id: 'universal-web-viewer',
+        name: '범용 웹 뷰어',
+        description: '모든 엔진과 호환되는 범용 웹 뷰어'
+      },
+      ...viewers.filter(viewer => 
+        viewer.compatibleEngines?.includes(engineId) || 
+        viewer.compatibleEngines?.includes('*')
+      )
+    ]
+    
+    // 중복 제거
+    const uniqueViewers = compatibleViewers.filter((viewer, index, self) => 
+      index === self.findIndex(v => v.id === viewer.id)
+    )
+    
+    return uniqueViewers
+  }
+
+  // 리포트 보기 핸들러 (기존 - 호환성을 위해 유지)
   const handleViewReport = (analysisId: string, analysisResult: any) => {
-    console.log('🔍 AI 분석 리포트 보기:', analysisId, analysisResult)
-    
-    // AI 분석 리포트 상세 페이지로 이동
-    // 분석 결과 데이터를 localStorage에 임시 저장하고 새 페이지에서 렌더링
-    localStorage.setItem('currentAnalysisResult', JSON.stringify(analysisResult))
-    
-    // 새 탭에서 리포트 보기 페이지 열기
-    const reportUrl = `/ai-report-viewer/${analysisId}`
-    window.open(reportUrl, '_blank')
+    // 기본 뷰어로 바로 열기
+    handleViewReportWithViewer(analysisResult, 'universal-web-viewer', '범용 웹 뷰어')
   }
 
   // PDF 다운로드 핸들러
@@ -1507,15 +1540,37 @@ AI 건강 분석 리포트
                                  </div>
                                  
                                  <div className="flex items-center space-x-2 ml-4">
-                                   <Button 
-                                     size="sm" 
-                                     variant="outline"
-                                     onClick={() => handleViewReport(report.id, report)}
-                                     className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs px-3 py-1.5 font-medium"
-                                   >
-                                     <Eye className="w-3 h-3 mr-1" />
-                                     리포트보기
-                                   </Button>
+                                   {/* 리포트 뷰어 선택 드롭다운 */}
+                                   <DropdownMenu>
+                                     <DropdownMenuTrigger asChild>
+                                       <Button 
+                                         size="sm" 
+                                         variant="outline"
+                                         className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs px-3 py-1.5 font-medium"
+                                       >
+                                         <Eye className="w-3 h-3 mr-1" />
+                                         리포트보기
+                                       </Button>
+                                     </DropdownMenuTrigger>
+                                     <DropdownMenuContent>
+                                       {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
+                                         <DropdownMenuItem 
+                                           key={viewer.id}
+                                           onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                                         >
+                                           <Monitor className="w-4 h-4 mr-2" />
+                                           {viewer.name}
+                                         </DropdownMenuItem>
+                                       ))}
+                                       {getCompatibleViewers(report.engineId || 'unknown').length === 0 && (
+                                         <DropdownMenuItem disabled>
+                                           <AlertCircle className="w-4 h-4 mr-2" />
+                                           사용 가능한 뷰어가 없습니다
+                                         </DropdownMenuItem>
+                                       )}
+                                     </DropdownMenuContent>
+                                   </DropdownMenu>
+                                   
                                    <Button 
                                      size="sm" 
                                      variant="outline"
@@ -1781,6 +1836,15 @@ AI 건강 분석 리포트
     <div className="p-6">
       {renderTabs()}
       {renderContent()}
+      
+      {/* 리포트 뷰어 모달 */}
+      <ReportViewerModal
+        isOpen={isViewerModalOpen}
+        onClose={() => setIsViewerModalOpen(false)}
+        report={selectedReportForView}
+        viewerId={selectedViewerId}
+        viewerName={selectedViewerName}
+      />
     </div>
   )
 } 
