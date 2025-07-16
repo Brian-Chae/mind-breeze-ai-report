@@ -278,7 +278,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* EEG 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
               <Brain className="h-4 w-4 text-blue-500" />
               EEG 신호
             </CardTitle>
@@ -296,7 +296,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* PPG 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
               <Heart className="h-4 w-4 text-red-500" />
               PPG 신호
             </CardTitle>
@@ -314,7 +314,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* ACC 상태 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
               <Move3d className="h-4 w-4 text-green-500" />
               움직임 상태
             </CardTitle>
@@ -332,7 +332,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* 전체 품질 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
               <Activity className="h-4 w-4 text-purple-500" />
               전체 품질
             </CardTitle>
@@ -351,7 +351,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       {/* 전체 신호 품질 프로그레스 바 */}
       <Card className="bg-white border-gray-200 shadow-sm mb-6">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
             <Zap className="h-5 w-5 text-yellow-500" />
             전체 신호 품질
           </CardTitle>
@@ -409,7 +409,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* EEG 신호 그래프 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
               <Brain className="h-5 w-5 text-blue-500" />
               EEG 뇌파 신호 (FP1, FP2)
             </CardTitle>
@@ -509,7 +509,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* PPG 신호 그래프 */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
               <Heart className="h-5 w-5 text-red-500" />
               PPG 심박 신호 (IR, Red)
             </CardTitle>
@@ -609,7 +609,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         {/* ACC 움직임 그래프 */}
         <Card className="bg-white border-gray-200 shadow-sm lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
               <Move3d className="h-5 w-5 text-green-500" />
               움직임 총량 (가속도계)
             </CardTitle>
@@ -635,7 +635,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       {isMonitoring && isConnected && (
         <Card className="bg-white border-gray-200 shadow-sm mb-6">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg text-gray-700 flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-500" />
               신호 품질 안정화 확인 중... ({qualityTimer}/10초)
             </CardTitle>
