@@ -10,6 +10,7 @@ import { FirebaseService } from '@core/services/FirebaseService'
 import creditManagementService from '@domains/organization/services/CreditManagementService'
 import measurementUserManagementService from '@domains/individual/services/MeasurementUserManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
+import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -162,6 +163,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         throw new Error('인증 정보가 없습니다.')
       }
 
+      const eegSamples = Math.floor(Math.random() * 1000) + 3000
+      const ppgSamples = Math.floor(Math.random() * 1000) + 3000
+      const accSamples = Math.floor(Math.random() * 1000) + 3000
+
       const testSessionData = {
         // 측정 대상자 정보
         subjectName: `테스트사용자${Math.floor(Math.random() * 100)}`,
@@ -185,9 +190,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         
         // 메타데이터
         metadata: {
-          eegSamples: Math.floor(Math.random() * 1000) + 3000,
-          ppgSamples: Math.floor(Math.random() * 1000) + 3000,
-          accSamples: Math.floor(Math.random() * 1000) + 3000,
+          eegSamples,
+          ppgSamples,
+          accSamples,
           deviceModel: 'LinkBand 4.0',
           softwareVersion: '1.0.0'
         },
@@ -197,10 +202,124 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         reportGenerated: false
       }
 
+      // 1. 측정 세션 생성
       const sessionId = await FirebaseService.saveMeasurementSession(testSessionData)
       console.log('✅ 테스트 측정 세션 생성 완료:', sessionId)
+
+      // 2. 실제 측정 데이터 및 분석 결과 생성
+      const measurementDataService = new MeasurementDataService()
       
-      // 데이터 새로고침
+      // 실제 EEG 분석 결과 생성
+      const eegMetrics = {
+        // 주파수 밴드 파워 (정규화된 값)
+        delta: Math.random() * 0.3 + 0.1, // 0.1-0.4
+        theta: Math.random() * 0.25 + 0.15, // 0.15-0.4
+        alpha: Math.random() * 0.3 + 0.2, // 0.2-0.5
+        beta: Math.random() * 0.2 + 0.15, // 0.15-0.35
+        gamma: Math.random() * 0.1 + 0.05, // 0.05-0.15
+        
+        // 파생 지표들 (0-100)
+        attentionIndex: Math.floor(Math.random() * 40) + 60, // 60-100
+        meditationIndex: Math.floor(Math.random() * 50) + 40, // 40-90
+        stressIndex: Math.floor(Math.random() * 60) + 20, // 20-80
+        fatigueIndex: Math.floor(Math.random() * 50) + 10, // 10-60
+        
+        // 신호 품질 (0-1)
+        signalQuality: Math.random() * 0.2 + 0.8, // 0.8-1.0
+        artifactRatio: Math.random() * 0.15, // 0-0.15
+        
+        // 원시 데이터 경로 (향후 구현)
+        rawDataPath: `sessions/${sessionId}/eeg-raw.json`,
+        processedDataPath: `sessions/${sessionId}/eeg-processed.json`
+      }
+
+      // 실제 PPG 분석 결과 생성
+      const baseHR = Math.floor(Math.random() * 30) + 70 // 70-100 BPM
+      const ppgMetrics = {
+        // 심박 관련
+        heartRate: baseHR,
+        heartRateVariability: Math.floor(Math.random() * 40) + 20, // 20-60 ms
+        rrIntervals: Array.from({ length: 100 }, () => 
+          Math.floor(Math.random() * 200) + (60000 / baseHR - 100)
+        ),
+        
+        // 혈압 추정 (선택적)
+        systolicBP: Math.floor(Math.random() * 30) + 110, // 110-140
+        diastolicBP: Math.floor(Math.random() * 20) + 70, // 70-90
+        
+        // 스트레스 지표
+        stressScore: Math.floor(Math.random() * 60) + 20, // 20-80
+        autonomicBalance: Math.random() * 2 + 0.5, // 0.5-2.5 (LF/HF ratio)
+        
+        // 신호 품질
+        signalQuality: Math.random() * 0.2 + 0.8, // 0.8-1.0
+        motionArtifact: Math.random() * 0.1, // 0-0.1
+        
+        // 원시 데이터 경로
+        rawDataPath: `sessions/${sessionId}/ppg-raw.json`,
+        processedDataPath: `sessions/${sessionId}/ppg-processed.json`
+      }
+
+      // 실제 ACC 분석 결과 생성
+      const accMetrics = {
+        // 활동 수준
+        activityLevel: Math.floor(Math.random() * 40) + 30, // 30-70
+        movementIntensity: Math.random() * 0.4 + 0.1, // 0.1-0.5
+        
+        // 자세 정보
+        posture: ['SITTING', 'STANDING', 'LYING', 'MOVING', 'UNKNOWN'][Math.floor(Math.random() * 5)] as 'SITTING' | 'STANDING' | 'LYING' | 'MOVING' | 'UNKNOWN',
+        postureStability: Math.random() * 0.2 + 0.8, // 0.8-1.0
+        
+        // 움직임 패턴
+        stepCount: Math.floor(Math.random() * 100) + 50, // 50-150 steps
+        movementEvents: Array.from({ length: Math.floor(Math.random() * 5) + 3 }, (_, i) => ({
+          timestamp: Math.floor(Math.random() * 300000), // 0-5분 사이
+          intensity: Math.random() * 0.5 + 0.2, // 0.2-0.7
+          duration: Math.floor(Math.random() * 5000) + 1000 // 1-6초
+        })),
+        
+        // 원시 데이터 경로
+        rawDataPath: `sessions/${sessionId}/acc-raw.json`
+      }
+
+      // 전체 데이터 품질 평가
+      const dataQuality = {
+        overallScore: Math.floor(Math.random() * 20) + 80, // 80-100
+        eegQuality: Math.floor(eegMetrics.signalQuality * 100),
+        ppgQuality: Math.floor(ppgMetrics.signalQuality * 100),
+        motionInterference: Math.floor(Math.random() * 15) + 5, // 5-20 (낮을수록 좋음)
+        usableForAnalysis: true,
+        qualityIssues: [] as string[]
+      }
+
+      // 3. MeasurementData 저장
+      const measurementData = {
+        sessionId,
+        organizationId: currentContext.organization.id,
+        userId: currentContext.user.id,
+        
+        measurementDate: new Date(),
+        duration: 300,
+        
+        deviceInfo: {
+          serialNumber: `LB4-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          model: 'LINK_BAND_V4' as const,
+          firmwareVersion: '2.1.0',
+          batteryLevel: Math.floor(Math.random() * 30) + 70 // 70-100%
+        },
+        
+        eegMetrics,
+        ppgMetrics,
+        accMetrics,
+        dataQuality,
+        
+        processingVersion: '1.0.0'
+      }
+
+      const measurementDataId = await measurementDataService.saveMeasurementData(measurementData)
+      console.log('✅ 측정 데이터 저장 완료:', measurementDataId)
+      
+      // 4. 데이터 새로고침
       await loadMeasurementData()
       
     } catch (error) {
