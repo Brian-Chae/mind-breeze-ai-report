@@ -107,118 +107,132 @@ export function ReportViewerModal({
     setError(null);
     
     try {
-      // 실제로는 Firebase에서 리포트 데이터를 가져와야 함
-      // 지금은 시뮬레이션 데이터 사용
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
+      if (actualRenderer && actualRenderer.id === 'basic-gemini-v1-web') {
+        console.log('🎯 BasicGeminiV1WebRenderer 사용하여 리포트 렌더링');
+        
+        // 실제 렌더러를 사용해서 HTML 생성
+        const renderOptions = {
+          language: 'ko',
+          webOptions: {
+            theme: 'light',
+            interactive: true
+          }
+        };
+        
+        // Mock 분석 결과 데이터 (실제로는 Firebase에서 가져와야 함)
+        const mockAnalysisResult = {
+          overallScore: 78,
+          insights: {
+            summary: "전반적인 건강 상태가 양호하며, 스트레스 수준은 보통입니다."
+          },
+          rawData: {
+            detailedAnalysis: {
+              overallScore: 78,
+              overallInterpretation: "전반적으로 건강한 상태를 유지하고 있으며, 몇 가지 개선 영역이 있습니다.",
+              
+              eegAnalysis: {
+                score: 75,
+                interpretation: "뇌파 분석 결과 집중력과 이완 상태가 전반적으로 양호합니다.",
+                keyFindings: [
+                  "알파파 활동이 안정적으로 유지됨",
+                  "집중 상태에서 베타파 증가 패턴 확인",
+                  "명상 시 세타파 활동 증가"
+                ],
+                concerns: [
+                  "스트레스 상황에서 일시적인 고주파 활동 증가"
+                ]
+              },
+              
+              ppgAnalysis: {
+                score: 82,
+                interpretation: "심혈관 건강 상태가 우수하며, 자율신경계 균형이 양호합니다.",
+                keyFindings: [
+                  "안정적인 심박변이도 패턴",
+                  "정상 범위의 혈관 탄력성",
+                  "적절한 자율신경계 반응"
+                ],
+                concerns: []
+              },
+              
+              demographicAnalysis: {
+                ageSpecific: "연령대 평균보다 우수한 건강 지표를 보여줍니다.",
+                genderSpecific: "성별 특성을 고려한 분석 결과 정상 범위 내에 있습니다.",
+                combinedInsights: [
+                  "연령과 성별을 고려했을 때 건강한 상태",
+                  "지속적인 관리를 통해 현재 상태 유지 권장"
+                ]
+              },
+              
+              occupationalAnalysis: {
+                jobSpecificRisks: [
+                  "장시간 앉아서 일하는 직업 특성상 혈액순환 저하 위험",
+                  "컴퓨터 작업으로 인한 눈의 피로 증가"
+                ],
+                workplaceRecommendations: [
+                  "1시간마다 5-10분 휴식 및 스트레칭",
+                  "업무 환경의 조명 개선"
+                ],
+                careerHealthTips: [
+                  "정기적인 건강검진",
+                  "업무 스트레스 관리 방법 습득"
+                ]
+              },
+              
+              improvementPlan: {
+                immediate: [
+                  "규칙적인 깊은 호흡 연습",
+                  "충분한 수분 섭취"
+                ],
+                shortTerm: [
+                  "주 3회 이상 규칙적인 운동",
+                  "스트레스 관리 기법 학습"
+                ],
+                longTerm: [
+                  "생활 패턴 개선",
+                  "정기적인 건강 모니터링"
+                ]
+              }
+            }
+          }
+        };
+        
+        // 실제 렌더러로 HTML 생성
+        const renderedReport = await actualRenderer.render(mockAnalysisResult, renderOptions);
+        
+        setReportContent({
+          htmlContent: renderedReport.content,
+          isRawHTML: true,
+          metadata: {
+            analysisDate: new Date().toLocaleDateString(),
+            engineName: 'BasicGeminiV1',
+            processingTime: `${renderedReport.renderTime}ms`,
+            dataQuality: '우수',
+            rendererId: renderedReport.rendererId
+          }
+        });
+        
+      } else {
+        // 기본 mock 데이터 사용 (다른 렌더러들)
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
+        
+        const mockReportContent = {
+          title: (report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트'),
+          summary: "전반적인 건강 상태가 양호하며, 스트레스 수준은 보통입니다.",
+          overallScore: 78,
+          stressLevel: 45,
+          focusLevel: 82,
+          detailedAnalysis: `기본 뷰어 - 상세 분석 내용...`,
+          metadata: {
+            analysisDate: new Date().toLocaleDateString(),
+            engineName: report?.engineName || '기본 분석',
+            processingTime: `${report?.processingTime || 3.2}초`,
+            dataQuality: '우수'
+          }
+        };
+        
+        setReportContent(mockReportContent);
+      }
       
-      const mockReportContent = {
-        title: (report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트'),
-        summary: "전반적인 건강 상태가 양호하며, 스트레스 수준은 보통입니다.",
-        overallScore: 78,
-        stressLevel: 45,
-        focusLevel: 82,
-        detailedAnalysis: `
-## 종합 분석 결과
-
-### 🧠 뇌파 분석
-- **집중도**: 82점 (우수)
-- **스트레스**: 45점 (보통)
-- **안정도**: 76점 (양호)
-
-### ❤️ 심박 분석  
-- **평균 심박수**: 72 BPM (정상)
-- **심박 변이도**: 42ms (양호)
-- **자율신경균형**: 안정적
-
-### 🏃‍♂️ 활동 분석
-- **움직임 수준**: 보통
-- **자세 안정성**: 85점 (우수)
-
-## 개선 권장사항
-
-1. **스트레스 관리**
-   - 규칙적인 명상이나 깊은 호흡 연습
-   - 충분한 휴식과 수면
-
-2. **집중력 향상** 
-   - 집중력이 좋은 상태를 유지하기 위한 규칙적인 운동
-   - 적절한 업무-휴식 균형
-
-3. **전반적 건강**
-   - 현재 상태가 양호하므로 현재 생활습관 유지
-   - 정기적인 건강 체크 권장
-
-## 추가 분석 데이터
-
-### 상세 지표
-- **Delta파**: 15%
-- **Theta파**: 20%  
-- **Alpha파**: 35%
-- **Beta파**: 25%
-- **Gamma파**: 5%
-
-
-### 측정 데이터 목록
-
-<table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #e5e7eb;">
-<thead>
-<tr style="background-color: #f9fafb;">
-<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: left;">측정 시간</th>
-<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">심박수 (BPM)</th>
-<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">스트레스 지수</th>
-<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">집중도</th>
-<th style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">데이터 품질</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:00-00:15</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">74</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">42</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">78</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">우수</td>
-</tr>
-<tr style="background-color: #fafafa;">
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:15-00:30</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">71</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">46</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">81</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">우수</td>
-</tr>
-<tr>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:30-00:45</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">73</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">43</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">84</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">양호</td>
-</tr>
-<tr style="background-color: #fafafa;">
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb;">00:45-01:00</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">70</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">47</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">85</td>
-<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center;">우수</td>
-</tr>
-</tbody>
-</table>
-
-### 시계열 데이터
-측정 기간 동안의 변화 패턴이 안정적으로 유지되었습니다.
-        `,
-        recommendations: [
-          "규칙적인 명상이나 깊은 호흡 연습을 통한 스트레스 관리",
-          "집중력 유지를 위한 규칙적인 운동",
-          "현재 생활습관 유지 및 정기적인 건강 체크"
-        ],
-        metadata: {
-          analysisDate: new Date().toLocaleDateString(),
-          engineName: report?.engineName || '기본 분석',
-          processingTime: `${report?.processingTime || 3.2}초`,
-          dataQuality: '우수'
-        }
-      };
-      
-      setReportContent(mockReportContent);
     } catch (error) {
       console.error('리포트 로드 실패:', error);
       setError('리포트를 불러오는 중 오류가 발생했습니다.');
@@ -497,8 +511,19 @@ export function ReportViewerModal({
   };
 
   const renderBasicGeminiViewer = () => {
-    // BasicGemini 전용 뷰어 (더 상세한 분석 표시)
-    return renderUniversalWebViewer(); // 지금은 동일하게 처리
+    // BasicGemini 전용 뷰어 (복잡한 리포트 렌더러 사용)
+    if (reportContent?.isRawHTML && reportContent?.htmlContent) {
+      return (
+        <div 
+          id="report-content" 
+          className="w-full"
+          dangerouslySetInnerHTML={{ __html: reportContent.htmlContent }}
+        />
+      );
+    }
+    
+    // 일반 뷰어로 fallback
+    return renderUniversalWebViewer();
   };
 
   const renderReportContent = () => {
