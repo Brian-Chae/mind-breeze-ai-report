@@ -469,18 +469,50 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         measurementDate: measurementData.measurementDate
       })
 
-      // 2. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
+      // 2. 세션 데이터에서 개인 정보 추출
+      console.log('👤 개인 정보 추출 중...')
+      const targetMeasurementData = measurementDataList.find(data => data.id === dataId)
+      const sessionData = targetMeasurementData?.sessionData || {}
+      
+      // 개인 정보 구성 (AI 엔진이 기대하는 형식)
+      const personalInfo = {
+        name: sessionData.subjectName || targetMeasurementData?.userName || '알 수 없음',
+        age: sessionData.subjectAge || 30, // 기본값 30세 (향후 실제 나이 수집 필요)
+        gender: (sessionData.subjectGender === 'FEMALE' ? 'female' : 'male') as 'male' | 'female',
+        occupation: sessionData.subjectOccupation || targetMeasurementData?.userOccupation || 'office_worker'
+      }
+      
+      // AI 엔진이 기대하는 전체 데이터 구조 구성
+      const aiAnalysisData = {
+        personalInfo,
+        measurementData: {
+          eegMetrics: measurementData.eegMetrics || {},
+          ppgMetrics: measurementData.ppgMetrics || {},
+          qualityMetrics: measurementData.dataQuality ? {
+            signalQuality: measurementData.dataQuality.overallScore / 100,
+            measurementDuration: measurementData.duration || 60
+          } : {
+            signalQuality: 0.8,
+            measurementDuration: 60
+          }
+        }
+      }
+      
+      console.log('👤 구성된 개인 정보:', personalInfo)
+      console.log('📊 구성된 측정 데이터 구조:', Object.keys(aiAnalysisData.measurementData))
+
+      // 3. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
       console.log('🤖 AI 엔진 초기화 중...')
       const aiEngine = new BasicGeminiV1Engine()
 
-      // 3. 데이터 검증
+      // 4. 데이터 검증
       console.log('✅ 데이터 검증 중...')
-      const validation = await aiEngine.validate(measurementData)
+      const validation = await aiEngine.validate(aiAnalysisData)
       if (!validation.isValid) {
         throw new Error(`데이터 검증 실패: ${validation.errors.join(', ')}`)
       }
 
-      // 4. AI 분석 실행
+      // 5. AI 분석 실행
       console.log('🧠 AI 분석 실행 중...')
       const analysisOptions = {
         outputLanguage: 'ko' as const,
@@ -488,7 +520,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         includeDetailedMetrics: true
       }
       
-      const analysisResult = await aiEngine.analyze(measurementData, analysisOptions)
+      const analysisResult = await aiEngine.analyze(aiAnalysisData, analysisOptions)
       console.log('✅ AI 분석 완료:', analysisResult)
 
       // 5. 분석 결과 저장
@@ -1505,8 +1537,47 @@ AI 건강 분석 리포트
           {/* 컴팩트한 리스트 */}
           <div className="space-y-3">
             {currentItems.map((data) => {
-              // 나이 계산 (임시로 랜덤 값 사용)
-              const age = Math.floor(Math.random() * 40) + 25
+              // 생년월일과 만 나이 계산 함수
+              const calculateAgeInfo = (birthDate: Date | string | null) => {
+                if (!birthDate) {
+                  return {
+                    displayText: '나이 정보 없음',
+                    age: 0
+                  }
+                }
+                
+                const birth = typeof birthDate === 'string' ? new Date(birthDate) : birthDate
+                if (isNaN(birth.getTime())) {
+                  return {
+                    displayText: '나이 정보 없음',
+                    age: 0
+                  }
+                }
+                
+                const today = new Date()
+                let age = today.getFullYear() - birth.getFullYear()
+                const monthDiff = today.getMonth() - birth.getMonth()
+                
+                // 생일이 지나지 않았으면 1살 빼기
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                  age--
+                }
+                
+                const year = birth.getFullYear()
+                const month = birth.getMonth() + 1
+                const day = birth.getDate()
+                
+                return {
+                  displayText: `${year}년 ${month}월 ${day}일생 (만 ${age}세)`,
+                  age: age
+                }
+              }
+              
+              // 세션 데이터에서 생년월일 정보 가져오기
+              const sessionData = data.sessionData || {}
+              const birthDate = sessionData.subjectBirthDate || null
+              const ageInfo = calculateAgeInfo(birthDate)
+              
               const measurementDate = new Date(data.timestamp)
               
               return (
@@ -1523,7 +1594,7 @@ AI 건강 분석 리포트
                           
                           <div className="text-center">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {age}세
+                              {ageInfo.displayText}
                             </span>
                           </div>
                           
