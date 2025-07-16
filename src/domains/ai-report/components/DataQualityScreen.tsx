@@ -23,9 +23,10 @@ interface DataQualityScreenProps {
   onQualityConfirmed: () => void;
   onBack: () => void;
   onError: (error: string) => void;
+  onModeChange?: (mode: 'quality' | 'measurement') => void;
 }
 
-export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQualityScreenProps) {
+export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeChange }: DataQualityScreenProps) {
   const [qualityTimer, setQualityTimer] = useState(0);
   const [isMonitoring, setIsMonitoring] = useState(true);
   
@@ -307,6 +308,8 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             clearInterval(timer);
             // 안정화 완료 시 측정 모드로 전환
             setMode('measurement');
+            // 상위 앱에 모드 변경 알림
+            onModeChange?.('measurement');
             return prev;
           }
           return prev + 1;
@@ -730,38 +733,61 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs text-gray-600">
-                <span>진행률</span>
-                <span>
-                  {mode === 'quality' 
-                    ? `${Math.round((qualityTimer / 10) * 100)}%`
-                    : `${Math.round((measurementTimer / 60) * 100)}%`
-                  }
-                </span>
+            {mode === 'measurement' && isMeasuring ? (
+              /* 측정 모드일 때 큰 타이머 표시 */
+              <div className="text-center py-8">
+                <div className="text-6xl font-bold text-blue-600 mb-4">
+                  {String(Math.floor((60 - measurementTimer) / 60)).padStart(2, '0')}:
+                  {String((60 - measurementTimer) % 60).padStart(2, '0')}
+                </div>
+                <div className="text-lg text-gray-600 mb-4">
+                  측정 진행 중
+                </div>
+                <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${(measurementTimer / 60) * 100}%` }}
+                  />
+                </div>
+                <div className="text-sm text-gray-500 mt-2">
+                  {Math.round((measurementTimer / 60) * 100)}% 완료
+                </div>
               </div>
-              <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
-                  style={{ 
-                    width: mode === 'quality' 
-                      ? `${(qualityTimer / 10) * 100}%`
-                      : `${(measurementTimer / 60) * 100}%`
-                  }}
-                />
+            ) : (
+              /* 기존 진행 표시 */
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs text-gray-600">
+                  <span>진행률</span>
+                  <span>
+                    {mode === 'quality' 
+                      ? `${Math.round((qualityTimer / 10) * 100)}%`
+                      : `${Math.round((measurementTimer / 60) * 100)}%`
+                    }
+                  </span>
+                </div>
+                <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                    style={{ 
+                      width: mode === 'quality' 
+                        ? `${(qualityTimer / 10) * 100}%`
+                        : `${(measurementTimer / 60) * 100}%`
+                    }}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 text-center">
+                  {mode === 'quality' ? (
+                    qualityTimer < 10 
+                      ? `안정적인 신호 대기 중... ${10 - qualityTimer}초 남음`
+                      : '신호 안정화 완료!'
+                  ) : (
+                    isMeasuring
+                      ? `측정 진행 중... ${60 - measurementTimer}초 남음`
+                      : '측정을 시작하려면 버튼을 눌러주세요'
+                  )}
+                </div>
               </div>
-              <div className="text-xs text-gray-500 text-center">
-                {mode === 'quality' ? (
-                  qualityTimer < 10 
-                    ? `안정적인 신호 대기 중... ${10 - qualityTimer}초 남음`
-                    : '신호 안정화 완료!'
-                ) : (
-                  isMeasuring
-                    ? `측정 진행 중... ${60 - measurementTimer}초 남음`
-                    : '측정을 시작하려면 버튼을 눌러주세요'
-                )}
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}

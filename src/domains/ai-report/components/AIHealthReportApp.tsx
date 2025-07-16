@@ -150,6 +150,17 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
     navigateToStep('measurement');
   }, [navigateToStep]);
 
+  const handleDataQualityModeChange = useCallback((mode: 'quality' | 'measurement') => {
+    // DataQualityScreen에서 measurement 모드로 전환될 때 단계 표시만 변경
+    if (mode === 'measurement' && state.currentStep === 'data-quality') {
+      setState(prev => ({
+        ...prev,
+        currentStep: 'measurement'
+      }));
+      // URL은 변경하지 않고 내부 상태만 변경
+    }
+  }, [state.currentStep]);
+
   const handleMeasurementComplete = useCallback((measurementData: AggregatedMeasurementData) => {
     setState(prev => ({
       ...prev,
@@ -218,6 +229,29 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             onQualityConfirmed={handleDataQualityConfirmed}
             onBack={handleBack}
             onError={handleError}
+            onModeChange={handleDataQualityModeChange}
+          />
+        );
+        
+      case 'measurement':
+        // DataQualityScreen에서 measurement 모드로 전환된 경우 계속 DataQualityScreen 표시
+        if (state.currentStep === 'measurement' && !state.measurementData) {
+          return (
+            <DataQualityScreen
+              onQualityConfirmed={handleDataQualityConfirmed}
+              onBack={handleBack}
+              onError={handleError}
+              onModeChange={handleDataQualityModeChange}
+            />
+          );
+        }
+        // 정상적인 measurement 단계인 경우 MeasurementScreen 표시
+        return (
+          <MeasurementScreen
+            onComplete={handleMeasurementComplete}
+            onBack={handleBack}
+            onError={handleError}
+            progress={state.measurementProgress}
           />
         );
       
