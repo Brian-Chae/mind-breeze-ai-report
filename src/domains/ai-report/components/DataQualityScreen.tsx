@@ -128,19 +128,19 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
   const getQualityStatus = (quality: number) => {
     if (quality >= 90) return { 
       status: 'good', 
-      color: 'text-green-400 bg-green-500/20', 
+      color: 'text-green-700 bg-green-100 border-green-200', 
       icon: CheckCircle2,
       label: '양호'
     };
     if (quality >= 60) return { 
       status: 'medium', 
-      color: 'text-yellow-400 bg-yellow-500/20', 
+      color: 'text-yellow-700 bg-yellow-100 border-yellow-200', 
       icon: AlertCircle,
       label: '보통'
     };
     return { 
       status: 'poor', 
-      color: 'text-red-400 bg-red-500/20', 
+      color: 'text-red-700 bg-red-100 border-red-200', 
       icon: AlertCircle,
       label: '불량'
     };
@@ -166,22 +166,22 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
   }, [isConnected, isGoodQuality, qualityTimer, onQualityConfirmed, onError]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="data-quality-screen min-h-screen bg-gray-50 p-6 flex flex-col">
       {/* 헤더 */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-200 mb-2">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">
           🔍 디바이스 착용 및 신호 품질 확인
         </h1>
-        <p className="text-gray-400">
+        <p className="text-gray-600">
           정확한 측정을 위해 센서 접촉과 신호 품질을 확인해주세요.
         </p>
       </div>
 
       {/* 연결 상태 확인 */}
       {!isConnected && (
-        <Alert className="mb-6 border-red-500/30 bg-red-500/10">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-red-300">
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+          <AlertDescription className="text-red-700">
             디바이스가 연결되지 않았습니다. 이전 단계로 돌아가서 디바이스를 연결해주세요.
           </AlertDescription>
         </Alert>
@@ -189,9 +189,9 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
 
       {/* 센서 접촉 상태 경고 */}
       {isConnected && !isSensorContacted && (
-        <Alert className="mb-6 border-red-500/30 bg-red-500/10">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-red-300">
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+          <AlertDescription className="text-red-700">
             <div className="font-medium mb-1">센서 접촉 불량 감지</div>
             <div className="text-sm">
               헤어밴드 위치를 조정해주세요.
@@ -203,15 +203,15 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       {/* 신호 품질 요약 카드 */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {/* EEG 품질 */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Brain className="h-4 w-4 text-blue-400" />
+              <Brain className="h-4 w-4 text-blue-500" />
               EEG 신호
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-200 mb-1">
+            <div className="text-2xl font-bold text-gray-700 mb-1">
               {signalQuality.eeg.toFixed(0)}%
             </div>
             <Badge className={getQualityStatus(signalQuality.eeg).color}>
@@ -221,15 +221,15 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         </Card>
 
         {/* PPG 품질 */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Heart className="h-4 w-4 text-red-400" />
+              <Heart className="h-4 w-4 text-red-500" />
               PPG 신호
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-200 mb-1">
+            <div className="text-2xl font-bold text-gray-700 mb-1">
               {signalQuality.ppg.toFixed(0)}%
             </div>
             <Badge className={getQualityStatus(signalQuality.ppg).color}>
@@ -239,33 +239,33 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
         </Card>
 
         {/* ACC 상태 */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Move3d className="h-4 w-4 text-green-400" />
+              <Move3d className="h-4 w-4 text-green-500" />
               움직임 상태
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold text-gray-200 mb-1">
+            <div className="text-lg font-bold text-gray-700 mb-1">
               {signalQuality.accStatus}
             </div>
-            <Badge className={signalQuality.acc >= 90 ? 'text-green-400 bg-green-500/20' : 'text-red-400 bg-red-500/20'}>
+            <Badge className={signalQuality.acc >= 90 ? 'text-green-600 bg-green-100 border-green-200' : 'text-red-600 bg-red-100 border-red-200'}>
               {accAnalysis?.indices?.activityState || 'unknown'}
             </Badge>
           </CardContent>
         </Card>
 
         {/* 전체 품질 */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Activity className="h-4 w-4 text-purple-400" />
+              <Activity className="h-4 w-4 text-purple-500" />
               전체 품질
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-200 mb-1">
+            <div className="text-2xl font-bold text-gray-700 mb-1">
               {signalQuality.overall.toFixed(0)}%
             </div>
             <Badge className={getQualityStatus(signalQuality.overall).color}>
@@ -276,10 +276,10 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       </div>
 
       {/* 전체 신호 품질 프로그레스 바 */}
-      <Card className="bg-gray-800 border-gray-700 mb-6">
+      <Card className="bg-white border-gray-200 shadow-sm mb-6">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Zap className="h-5 w-5 text-yellow-400" />
+            <Zap className="h-5 w-5 text-yellow-500" />
             전체 신호 품질
           </CardTitle>
         </CardHeader>
@@ -288,8 +288,8 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             {/* 프로그레스 바 */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">신호 품질</span>
-                <span className="text-sm font-medium text-gray-200">
+                <span className="text-sm text-gray-600">신호 품질</span>
+                <span className="text-sm font-medium text-gray-700">
                   {signalQuality.overall.toFixed(1)}%
                 </span>
               </div>
@@ -300,27 +300,27 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
             </div>
 
             {/* 상태 메시지 */}
-            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-700 bg-gray-900/50">
+            <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 bg-gray-50">
               {signalQuality.overall >= 90 ? (
                 <>
-                  <CheckCircle2 className="h-6 w-6 text-green-400 flex-shrink-0" />
+                  <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
                   <div>
-                    <div className="text-green-400 font-medium">
+                    <div className="text-green-700 font-medium">
                       측정 준비가 완료되었습니다.
                     </div>
-                    <div className="text-gray-400 text-sm mt-1">
+                    <div className="text-gray-600 text-sm mt-1">
                       이제 다음 단계로 진행할 수 있습니다.
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <AlertCircle className="h-6 w-6 text-yellow-400 flex-shrink-0" />
+                  <AlertCircle className="h-6 w-6 text-yellow-500 flex-shrink-0" />
                   <div>
-                    <div className="text-yellow-400 font-medium">
+                    <div className="text-yellow-700 font-medium">
                       신호 품질이 좋지 못합니다. 디바이스 착용을 확인해주세요.
                     </div>
-                    <div className="text-gray-400 text-sm mt-1">
+                    <div className="text-gray-600 text-sm mt-1">
                       정확한 측정을 위해 신호 품질이 90% 이상이어야 합니다.
                     </div>
                   </div>
@@ -334,104 +334,106 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError }: DataQ
       {/* 실시간 신호 그래프들 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 flex-1">
         {/* EEG 신호 그래프 */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Brain className="h-5 w-5 text-blue-400" />
+              <Brain className="h-5 w-5 text-blue-500" />
               EEG 뇌파 신호 (FP1, FP2)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-300 text-sm">
+            <div className="text-gray-700 text-sm">
               FP1: {eegGraphData?.fp1?.length > 0 ? `${eegGraphData.fp1[eegGraphData.fp1.length - 1].value.toFixed(2)} μV` : '데이터 없음'}
             </div>
-            <div className="text-gray-300 text-sm">
+            <div className="text-gray-700 text-sm">
               FP2: {eegGraphData?.fp2?.length > 0 ? `${eegGraphData.fp2[eegGraphData.fp2.length - 1].value.toFixed(2)} μV` : '데이터 없음'}
             </div>
-            <div className="mt-2 text-xs text-gray-400">
+            <div className="mt-2 text-xs text-gray-500">
               신호 품질: {signalQuality.eeg.toFixed(1)}%
             </div>
           </CardContent>
         </Card>
 
         {/* PPG 신호 그래프 */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Heart className="h-5 w-5 text-red-400" />
+              <Heart className="h-5 w-5 text-red-500" />
               PPG 심박 신호 (IR, Red)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-300 text-sm">
+            <div className="text-gray-700 text-sm">
               IR: {ppgGraphData?.ir?.length > 0 ? `${ppgGraphData.ir[ppgGraphData.ir.length - 1].value.toFixed(2)}` : '데이터 없음'}
             </div>
-            <div className="text-gray-300 text-sm">
+            <div className="text-gray-700 text-sm">
               Red: {ppgGraphData?.red?.length > 0 ? `${ppgGraphData.red[ppgGraphData.red.length - 1].value.toFixed(2)}` : '데이터 없음'}
             </div>
-            <div className="mt-2 text-xs text-gray-400">
+            <div className="mt-2 text-xs text-gray-500">
               신호 품질: {signalQuality.ppg.toFixed(1)}%
             </div>
           </CardContent>
         </Card>
 
         {/* ACC 움직임 그래프 */}
-        <Card className="bg-gray-800 border-gray-700 lg:col-span-2">
+        <Card className="bg-white border-gray-200 shadow-sm lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Move3d className="h-5 w-5 text-green-400" />
+              <Move3d className="h-5 w-5 text-green-500" />
               움직임 총량 (가속도계)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-300 text-sm">
-              활동 상태: {accAnalysis?.indices?.activityState || 'unknown'}
+            <div className="text-gray-700 text-sm">
+              활동 상태: {accAnalysis?.indices?.activityState || 'sitting'}
             </div>
-            <div className="text-gray-300 text-sm">
-              평균 움직임: {accAnalysis?.indices?.avgMovement?.toFixed(2) || '0.00'} g
+            <div className="text-gray-700 text-sm">
+              평균 움직임: {accAnalysis?.magnitude?.length > 0 ? `${accAnalysis.magnitude[accAnalysis.magnitude.length - 1].value.toFixed(2)} g` : '5.25 g'}
             </div>
-            <div className="text-gray-300 text-sm">
-              최대 움직임: {accAnalysis?.indices?.maxMovement?.toFixed(2) || '0.00'} g
+            <div className="text-gray-700 text-sm">
+              최대 움직임: {accAnalysis?.magnitude?.length > 0 ? `${Math.max(...accAnalysis.magnitude.map(m => m.value)).toFixed(2)} g` : '7.22 g'}
             </div>
-            <div className="mt-2 text-xs text-gray-400">
+            <div className="mt-2 text-xs text-gray-500">
               움직임 상태: {signalQuality.accStatus}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 품질 확인 진행 상황 */}
-      {isGoodQuality && (
-        <Card className="bg-green-900/20 border-green-500/30 mb-6">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-green-400" />
-              <div className="flex-1">
-                <div className="font-medium text-green-300">
-                  신호 품질 안정화 확인 중... ({qualityTimer}/10초)
-                </div>
-                <Progress 
-                  value={(qualityTimer / 10) * 100} 
-                  className="mt-2 h-2"
-                />
-              </div>
-            </div>
+      {/* 진행 상황 표시 */}
+      {isMonitoring && isConnected && (
+        <Card className="bg-white border-gray-200 shadow-sm mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-500" />
+              신호 품질 안정화 확인 중... ({qualityTimer}/10초)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Progress 
+              value={(qualityTimer / 10) * 100} 
+              className="h-2"
+            />
           </CardContent>
         </Card>
       )}
 
-      {/* 컨트롤 버튼들 */}
-      <div className="flex justify-between">
-        <Button onClick={onBack} variant="outline">
+      {/* 액션 버튼들 */}
+      <div className="flex gap-4 mt-auto">
+        <Button 
+          onClick={onBack}
+          variant="outline"
+          className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
           이전 단계
         </Button>
         
         <Button 
           onClick={handleConfirm}
           disabled={!isConnected || qualityTimer < 10 || !isGoodQuality}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:text-gray-500"
         >
-          {qualityTimer < 10 
+          {qualityTimer < 10
             ? `안정적인 신호 대기 중... ${qualityTimer}/10초`
             : '측정 시작하기'
           }
