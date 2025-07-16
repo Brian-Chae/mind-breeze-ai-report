@@ -80,13 +80,19 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         return
       }
 
-      // 조직의 측정 세션 데이터 조회
+      // 조직의 측정 세션 데이터 조회 (복합 인덱스 에러 방지를 위해 orderBy 제거)
       const filters = [
-        FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id),
-        FirebaseService.createOrderByFilter('sessionDate', 'desc')
+        FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id)
       ]
       
       const measurementSessions = await FirebaseService.getMeasurementSessions(filters)
+      
+      // 클라이언트에서 sessionDate로 정렬 (최신순)
+      measurementSessions.sort((a, b) => {
+        const dateA = a.sessionDate || a.createdAt
+        const dateB = b.sessionDate || b.createdAt
+        return dateB.getTime() - dateA.getTime()
+      })
       
              // 각 세션의 리포트 정보 조회 및 데이터 변환
        const measurementDataWithReports = await Promise.all(
