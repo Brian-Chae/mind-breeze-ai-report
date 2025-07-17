@@ -1837,7 +1837,7 @@ AI 건강 분석 리포트
             </div>
           </div>
           <div className="space-y-3">
-            <div className="flex items-baseline space-x-2">
+            <div className="flex justify-between items-baseline">
               <p className="text-xs text-gray-500">오늘</p>
               <p className="text-3xl font-bold text-gray-900">{calculateStats.todayMeasurements.toLocaleString()}</p>
             </div>
@@ -1863,7 +1863,7 @@ AI 건강 분석 리포트
             </div>
           </div>
           <div className="space-y-3">
-            <div className="flex items-baseline space-x-2">
+            <div className="flex justify-between items-baseline">
               <p className="text-xs text-gray-500">오늘</p>
               <p className="text-3xl font-bold text-gray-900">{calculateStats.todayReports.toLocaleString()}</p>
             </div>
@@ -1889,7 +1889,7 @@ AI 건강 분석 리포트
             </div>
           </div>
           <div className="space-y-3">
-            <div className="flex items-baseline space-x-2">
+            <div className="flex justify-between items-baseline">
               <p className="text-xs text-gray-500">오늘</p>
               <p className="text-3xl font-bold text-gray-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
             </div>
