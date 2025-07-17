@@ -870,6 +870,13 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             font-weight: 600;
         }
         
+        .plan-description {
+            font-size: 0.8rem;
+            color: ${textColor};
+            line-height: 1.4;
+            margin-top: 8px;
+        }
+        
         /* 푸터 */
         .report-footer {
             text-align: center;

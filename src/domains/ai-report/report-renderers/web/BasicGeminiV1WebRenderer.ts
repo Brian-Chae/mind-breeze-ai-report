@@ -1562,6 +1562,8 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             padding: 8px 0;
             padding-left: 20px;
             position: relative;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
         
         .plan-list li::before {
@@ -1570,6 +1572,13 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             left: 0;
             color: ${primaryColor};
             font-weight: bold;
+        }
+
+        .plan-description {
+            font-size: 0.95rem;
+            color: ${textColor};
+            line-height: 1.5;
+            margin-top: 10px;
         }
 
         /* 분석 내용 섹션 스타일 */
