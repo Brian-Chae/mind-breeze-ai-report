@@ -886,82 +886,24 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   private generateFooter(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
     const organizationName = options.organizationName || 'Mind Breeze';
-    const currentDate = new Date().toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US');
-    const currentTime = new Date().toLocaleTimeString(language === 'ko' ? 'ko-KR' : 'en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const footerContent = options.organizationName ? 
+      `${organizationName} AI Report System` : 
+      'Mind Breeze AI Report System';
     
     return `
     <footer class="report-footer">
-        <div class="footer-background"></div>
         <div class="footer-content">
-            <div class="footer-header">
-                <div class="footer-logo">
-                    <div class="logo-icon">🧠</div>
-                    <div class="logo-text">
-                        <h3 class="footer-brand">${organizationName}</h3>
-                        <p class="footer-tagline">${language === 'ko' ? 'AI 건강 분석 리포트' : 'AI Health Analysis Report'}</p>
-                    </div>
-                </div>
-                <div class="footer-badge">
-                    <span class="badge-icon">✨</span>
-                    <span class="badge-text">${language === 'ko' ? 'AI 분석 완료' : 'AI Analysis Complete'}</span>
-                </div>
-            </div>
-            
-            <div class="footer-details">
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <span class="detail-icon">📅</span>
-                        <div class="detail-content">
-                            <span class="detail-label">${language === 'ko' ? '분석 날짜' : 'Analysis Date'}</span>
-                            <span class="detail-value">${currentDate}</span>
-                        </div>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-icon">⏰</span>
-                        <div class="detail-content">
-                            <span class="detail-label">${language === 'ko' ? '분석 시간' : 'Analysis Time'}</span>
-                            <span class="detail-value">${currentTime}</span>
-                        </div>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-icon">⚡</span>
-                        <div class="detail-content">
-                            <span class="detail-label">${language === 'ko' ? '처리 시간' : 'Processing Time'}</span>
-                            <span class="detail-value">${analysis.processingTime}ms</span>
-                        </div>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-icon">🔍</span>
-                        <div class="detail-content">
-                            <span class="detail-label">${language === 'ko' ? '분석 ID' : 'Analysis ID'}</span>
-                            <span class="detail-value">${analysis.analysisId}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="footer-disclaimer">
-                <div class="disclaimer-icon">⚕️</div>
-                <p class="disclaimer-text">
-                    ${language === 'ko' ? 
-                      '본 분석 결과는 의학적 진단이 아닌 건강 관리 참고용입니다. 심각한 건강 문제가 의심되는 경우 전문의와 상담하시기 바랍니다.' : 
-                      'This analysis is for health management reference only, not medical diagnosis. Please consult with a medical professional if you have serious health concerns.'
-                    }
-                </p>
-            </div>
-            
-            <div class="footer-bottom">
-                <div class="footer-copyright">
-                    © ${new Date().getFullYear()} ${organizationName}. ${language === 'ko' ? '모든 권리 보유.' : 'All rights reserved.'}
-                </div>
-                <div class="footer-version">
-                    <span class="version-label">${language === 'ko' ? '버전' : 'Version'}</span>
-                    <span class="version-number">1.0.0</span>
-                </div>
-            </div>
+            <p class="footer-text">${footerContent}</p>
+            <p class="footer-meta">
+                ${language === 'ko' ? '분석 시간' : 'Analysis Time'}: ${analysis.processingTime}ms | 
+                ${language === 'ko' ? '분석 ID' : 'Analysis ID'}: ${analysis.analysisId}
+            </p>
+            <p class="disclaimer">
+                ${language === 'ko' ? 
+                  '본 분석 결과는 의학적 진단이 아닌 건강 관리 참고용입니다. 심각한 건강 문제가 의심되는 경우 전문의와 상담하시기 바랍니다.' : 
+                  'This analysis is for health management reference only, not medical diagnosis. Please consult with a medical professional if you have serious health concerns.'
+                }
+            </p>
         </div>
     </footer>`;
   }
@@ -1665,206 +1607,30 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         }
         
         .report-footer {
-            position: relative;
-            margin-top: 60px;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        }
-        
-        .footer-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, ${primaryColor}15, ${accentColor || '#10B981'}15);
-            backdrop-filter: blur(10px);
-        }
-        
-        .footer-content {
-            position: relative;
+            text-align: center;
+            padding: 30px;
             background: ${cardBg};
-            padding: 40px;
-            border: 1px solid ${borderColor};
+            border-radius: 12px;
+            margin-top: 40px;
         }
         
-        .footer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid ${borderColor};
-        }
-        
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .logo-icon {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, ${primaryColor}, ${accentColor || '#10B981'});
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-        }
-        
-        .logo-text h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: ${textColor};
-            margin: 0;
-            line-height: 1.2;
-        }
-        
-        .footer-tagline {
-            font-size: 0.9rem;
-            color: ${secondaryColor};
-            margin: 4px 0 0 0;
-            font-weight: 500;
-        }
-        
-        .footer-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, ${primaryColor}20, ${accentColor || '#10B981'}20);
-            padding: 12px 20px;
-            border-radius: 25px;
-            border: 1px solid ${primaryColor}30;
-        }
-        
-        .badge-icon {
-            font-size: 1.2rem;
-            animation: sparkle 2s ease-in-out infinite;
-        }
-        
-        @keyframes sparkle {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1) rotate(180deg); }
-        }
-        
-        .badge-text {
-            font-size: 0.85rem;
+        .footer-text {
             font-weight: 600;
             color: ${primaryColor};
+            margin-bottom: 10px;
         }
         
-        .footer-details {
-            margin-bottom: 30px;
-        }
-        
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        
-        .detail-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: ${isDark ? '#374151' : '#F8FAFC'};
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid ${borderColor};
-            transition: all 0.3s ease;
-        }
-        
-        .detail-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-color: ${primaryColor}40;
-        }
-        
-        .detail-icon {
-            font-size: 1.3rem;
-            flex-shrink: 0;
-        }
-        
-        .detail-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        
-        .detail-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: ${secondaryColor};
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .detail-value {
+        .footer-meta {
             font-size: 0.9rem;
-            font-weight: 600;
-            color: ${textColor};
+            color: ${secondaryColor};
+            margin-bottom: 10px;
         }
         
-        .footer-disclaimer {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            background: linear-gradient(135deg, #FEF3C7, #FFFBEB);
-            border: 1px solid #FDE68A;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .disclaimer-icon {
-            font-size: 1.5rem;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        
-        .disclaimer-text {
-            font-size: 0.85rem;
-            color: #92400E;
-            line-height: 1.6;
-            margin: 0;
-            font-weight: 500;
-        }
-        
-        .footer-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 20px;
-            border-top: 1px solid ${borderColor};
-        }
-        
-        .footer-copyright {
+        .disclaimer {
             font-size: 0.8rem;
             color: ${secondaryColor};
-            font-weight: 500;
-        }
-        
-        .footer-version {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: ${isDark ? '#4B5563' : '#F3F4F6'};
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid ${borderColor};
-        }
-        
-        .version-label {
-            font-size: 0.75rem;
-            color: ${secondaryColor};
-            font-weight: 600;
-        }
-        
-        .version-number {
-            font-size: 0.75rem;
-            color: ${primaryColor};
-            font-weight: 700;
+            font-style: italic;
+            line-height: 1.5;
         }
         
         /* 모바일 반응형 - 대폭 개선 */

@@ -900,206 +900,35 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             font-weight: 600;
         }
         
-        /* 푸터 - 모바일 최적화 */
+        /* 푸터 */
         .report-footer {
-            position: relative;
-            margin-top: 40px;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        }
-        
-        .footer-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, ${primaryColor}10, ${accentColor}10);
-        }
-        
-        .footer-content {
-            position: relative;
+            text-align: center;
+            padding: 20px 16px;
             background: ${cardBg};
-            padding: 24px 16px;
+            border-radius: 12px;
+            margin-top: 30px;
             border: 1px solid ${borderColor};
         }
         
-        .footer-header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid ${borderColor};
+        .footer-text {
+            font-weight: 600;
+            color: ${primaryColor};
+            margin-bottom: 8px;
+            font-size: 0.9rem;
         }
         
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo-icon {
-            font-size: 2rem;
-            background: linear-gradient(135deg, ${primaryColor}, ${accentColor});
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .logo-text h3 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: ${textColor};
-            margin: 0;
-            line-height: 1.2;
-        }
-        
-        .footer-tagline {
+        .footer-meta {
             font-size: 0.8rem;
             color: ${secondaryColor};
-            margin: 2px 0 0 0;
-            font-weight: 500;
+            margin-bottom: 8px;
+            line-height: 1.4;
         }
         
-        .footer-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, ${primaryColor}15, ${accentColor}15);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid ${primaryColor}20;
-        }
-        
-        .badge-icon {
-            font-size: 1rem;
-            animation: sparkle 2s ease-in-out infinite;
-        }
-        
-        @keyframes sparkle {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.05) rotate(180deg); }
-        }
-        
-        .badge-text {
+        .disclaimer {
             font-size: 0.75rem;
-            font-weight: 600;
-            color: ${primaryColor};
-        }
-        
-        .footer-details {
-            margin-bottom: 20px;
-        }
-        
-        .detail-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        
-        .detail-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: ${isDark ? '#374151' : '#F8FAFC'};
-            padding: 12px 10px;
-            border-radius: 10px;
-            border: 1px solid ${borderColor};
-        }
-        
-        .detail-icon {
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-        
-        .detail-content {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            min-width: 0;
-        }
-        
-        .detail-label {
-            font-size: 0.65rem;
-            font-weight: 600;
             color: ${secondaryColor};
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        
-        .detail-value {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: ${textColor};
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .footer-disclaimer {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            background: linear-gradient(135deg, #FEF3C7, #FFFBEB);
-            border: 1px solid #FDE68A;
-            border-radius: 10px;
-            padding: 16px 12px;
-            margin-bottom: 16px;
-        }
-        
-        .disclaimer-icon {
-            font-size: 1.2rem;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-        
-        .disclaimer-text {
-            font-size: 0.75rem;
-            color: #92400E;
+            font-style: italic;
             line-height: 1.5;
-            margin: 0;
-            font-weight: 500;
-        }
-        
-        .footer-bottom {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-            padding-top: 16px;
-            border-top: 1px solid ${borderColor};
-        }
-        
-        .footer-copyright {
-            font-size: 0.7rem;
-            color: ${secondaryColor};
-            font-weight: 500;
-            text-align: center;
-        }
-        
-        .footer-version {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: ${isDark ? '#4B5563' : '#F3F4F6'};
-            padding: 4px 10px;
-            border-radius: 16px;
-            border: 1px solid ${borderColor};
-        }
-        
-        .version-label {
-            font-size: 0.7rem;
-            color: ${secondaryColor};
-            font-weight: 600;
-        }
-        
-        .version-number {
-            font-size: 0.7rem;
-            color: ${primaryColor};
-            font-weight: 700;
         }
         
         .footer-info {
