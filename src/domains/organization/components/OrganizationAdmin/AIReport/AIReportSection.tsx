@@ -1827,26 +1827,26 @@ AI 건강 분석 리포트
       </div>
 
       {/* 현황 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* 측정 데이터수 카드 */}
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">측정 데이터수</h3>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <Activity className="w-6 h-6 text-gray-600" />
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-gray-900">측정 데이터수</h3>
+            <div className="p-2 bg-gray-50 rounded-lg">
+              <Activity className="w-5 h-5 text-gray-600" />
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <p className="text-sm text-gray-500 mb-2">오늘</p>
-              <p className="text-4xl font-bold text-gray-900">{calculateStats.todayMeasurements.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mb-1">오늘</p>
+              <p className="text-3xl font-bold text-gray-900">{calculateStats.todayMeasurements.toLocaleString()}</p>
             </div>
             <div className="pt-2 border-t border-gray-100">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
                 <span>전체</span>
                 <span className="font-medium">{calculateStats.totalMeasurements.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-xs text-gray-600">
                 <span>이번주</span>
                 <span className="font-medium">{calculateStats.thisWeekMeasurements.toLocaleString()}</span>
               </div>
@@ -1855,24 +1855,24 @@ AI 건강 분석 리포트
         </Card>
 
         {/* 리포트 수 카드 */}
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">리포트 수</h3>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <FileText className="w-6 h-6 text-gray-600" />
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-gray-900">리포트 수</h3>
+            <div className="p-2 bg-gray-50 rounded-lg">
+              <FileText className="w-5 h-5 text-gray-600" />
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <p className="text-sm text-gray-500 mb-2">오늘</p>
-              <p className="text-4xl font-bold text-gray-900">{calculateStats.todayReports.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mb-1">오늘</p>
+              <p className="text-3xl font-bold text-gray-900">{calculateStats.todayReports.toLocaleString()}</p>
             </div>
             <div className="pt-2 border-t border-gray-100">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
                 <span>전체</span>
                 <span className="font-medium">{calculateStats.totalReports.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-xs text-gray-600">
                 <span>이번주</span>
                 <span className="font-medium">{calculateStats.thisWeekReports.toLocaleString()}</span>
               </div>
@@ -1881,24 +1881,24 @@ AI 건강 분석 리포트
         </Card>
 
         {/* 크레딧 사용량 카드 */}
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">크레딧 사용량</h3>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <DollarSign className="w-6 h-6 text-gray-600" />
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-gray-900">크레딧 사용량</h3>
+            <div className="p-2 bg-gray-50 rounded-lg">
+              <DollarSign className="w-5 h-5 text-gray-600" />
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <p className="text-sm text-gray-500 mb-2">오늘</p>
-              <p className="text-4xl font-bold text-gray-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mb-1">오늘</p>
+              <p className="text-3xl font-bold text-gray-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
             </div>
             <div className="pt-2 border-t border-gray-100">
-              <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
                 <span>전체</span>
                 <span className="font-medium">{calculateStats.totalCreditsUsed.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-xs text-gray-600">
                 <span>이번주</span>
                 <span className="font-medium">{calculateStats.thisWeekCreditsUsed.toLocaleString()}</span>
               </div>
