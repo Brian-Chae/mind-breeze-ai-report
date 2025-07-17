@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor } from 'lucide-react'
 import { Card } from '@ui/card'
@@ -625,7 +625,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   }
 
     // 해당 엔진에 호환되는 뷰어 필터링 (실제 렌더러 시스템 사용)
-  const getCompatibleViewers = (engineId: string) => {
+  const getCompatibleViewers = useCallback((engineId: string) => {
     try {
       // 1. 기본 렌더러 시스템에서 조회
       const recommendedRenderers = getRecommendedRenderers(engineId)
@@ -678,7 +678,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       // 5. 모든 뷰어 합치기 (커스텀 렌더러 우선)
       const allViewers = [...customViewers, ...baseViewers]
       
-      console.log(`🎯 엔진 ${engineId}용 호환 뷰어:`, allViewers.length, '개 (커스텀: ${customViewers.length}개)')
+      console.log(`🎯 엔진 ${engineId}용 호환 뷰어:`, allViewers.length, `개 (커스텀: ${customViewers.length}개)`)
       return allViewers
       
     } catch (error) {
@@ -696,7 +696,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         subscriptionTier: 'basic' as const
       }]
     }
-  }
+  }, [customRenderers])
 
   // 리포트 보기 핸들러 (기존 - 호환성을 위해 유지)
   const handleViewReport = (analysisId: string, analysisResult: any) => {
@@ -1811,7 +1811,7 @@ AI 건강 분석 리포트
                                        </Button>
                                      </DropdownMenuTrigger>
                                      <DropdownMenuContent>
-                                       {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
+                                       {useMemo(() => getCompatibleViewers(report.engineId || 'unknown'), [getCompatibleViewers, report.engineId]).map(viewer => (
                                          <DropdownMenuItem 
                                            key={viewer.id}
                                            onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
@@ -1851,7 +1851,7 @@ AI 건강 분석 리포트
                                            </div>
                                          </DropdownMenuItem>
                                        ))}
-                                       {getCompatibleViewers(report.engineId || 'unknown').length === 0 && (
+                                       {useMemo(() => getCompatibleViewers(report.engineId || 'unknown'), [getCompatibleViewers, report.engineId]).length === 0 && (
                                          <DropdownMenuItem disabled>
                                            <AlertCircle className="w-4 h-4 mr-2" />
                                            사용 가능한 뷰어가 없습니다
