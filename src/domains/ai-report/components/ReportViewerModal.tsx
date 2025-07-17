@@ -442,7 +442,7 @@ export function ReportViewerModal({
       const elementHeight = Math.max(elementRect.height, reportElement.scrollHeight);
 
       // 고정된 캔버스 크기로 중앙 정렬 보장
-      const canvasWidth = viewMode === 'mobile' ? 380 : 1000; // 고정 너비 (더 작게 조정)
+      const canvasWidth = viewMode === 'mobile' ? 360 : 1100; // 고정 너비 (최적 크기로 조정)
       const canvasHeight = Math.max(elementHeight + 200, 800); // 충분한 높이
 
       // HTML을 캔버스로 변환 (고화질)
