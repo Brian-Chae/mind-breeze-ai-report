@@ -599,7 +599,7 @@ export function ReportViewerModal({
                 let isInHealthElementsSection = false;
                 let currentEl = el;
                 while (currentEl && currentEl !== clonedDoc.body) {
-                  if (currentEl.className && currentEl.className.includes('health-elements')) {
+                  if (currentEl.className && String(currentEl.className).includes('health-elements')) {
                     isInHealthElementsSection = true;
                     break;
                   }
@@ -611,11 +611,11 @@ export function ReportViewerModal({
                   textContent.includes('뇌파 건강도') || 
                   textContent.includes('맥파 건강도') || 
                   textContent.includes('스트레스 관리') || 
-                  (textContent.includes('/100') && parentElement && !parentElement.className.includes('gauge')) ||
+                  (textContent.includes('/100') && parentElement && !String(parentElement.className || '').includes('gauge')) ||
                   textContent.includes('% 위험도')
                 )) {
                   // 배지가 아닌 텍스트만 이동 (배지는 이미 위에서 처리됨)
-                  if (!className.includes('badge') && !className.includes('chip')) {
+                  if (!String(className || '').includes('badge') && !String(className || '').includes('chip')) {
                     el.style.transform = 'translateY(-4px)';
                   }
                 }
