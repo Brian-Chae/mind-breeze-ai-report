@@ -536,13 +536,26 @@ export function ReportViewerModal({
                   el.style.overflow = 'visible';
                 }
                 
-                // Badge/Chip 요소의 텍스트 중앙정렬 처리 (간단 버전)
+                // Badge/Chip 요소의 텍스트 중앙정렬 처리 (강력한 버전)
                 const className = (el.className && typeof el.className === 'string') ? el.className : '';
                 if (className && (className.includes('badge') || className.includes('chip'))) {
-                  el.style.lineHeight = '1.2';
-                  el.style.verticalAlign = 'middle';
-                  el.style.paddingTop = '2px';
-                  el.style.paddingBottom = '2px';
+                  // 현재 높이 저장
+                  const currentHeight = el.offsetHeight;
+                  const currentPadding = window.getComputedStyle(el).padding;
+                  
+                  // cssText로 강제 스타일 적용
+                  const originalCssText = el.style.cssText;
+                  el.style.cssText = `
+                    ${originalCssText}
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
+                    vertical-align: middle;
+                    text-align: center;
+                    box-sizing: border-box;
+                    ${currentHeight > 0 ? `height: ${currentHeight}px; min-height: ${currentHeight}px;` : ''}
+                  `;
                 }
               }
             });
