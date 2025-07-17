@@ -556,7 +556,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         name: sessionData.subjectName || targetMeasurementData?.userName || '알 수 없음',
         age: calculatedAge,
         gender: (sessionData.subjectGender === 'FEMALE' ? 'female' : 'male') as 'male' | 'female',
-        occupation: sessionData.subjectOccupation || targetMeasurementData?.userOccupation || 'office_worker'
+        occupation: sessionData.subjectOccupation || targetMeasurementData?.userOccupation || 'office_worker',
+        // 🎯 공유 링크를 위한 생년월일 추가
+        birthDate: sessionData.subjectBirthDate ? 
+          (sessionData.subjectBirthDate.toDate ? 
+            sessionData.subjectBirthDate.toDate().toISOString().split('T')[0] : // Firestore Timestamp -> YYYY-MM-DD
+            new Date(sessionData.subjectBirthDate).toISOString().split('T')[0]   // Date -> YYYY-MM-DD
+          ) : 
+          null
       }
       
       // AI 엔진이 기대하는 전체 데이터 구조 구성
@@ -733,29 +740,60 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       // 리포트에서 개인정보 가져오기
       const subjectName = report.personalInfo?.name || report.createdByUserName || '익명'
       
-      // 생년월일 확인 - sessionData에서 가져오기
+      // 생년월일 확인 - 여러 소스에서 시도
       let subjectBirthDate = null
-      if (report.measurementDataId) {
+      
+      console.log('🔍 생년월일 검색 시작:', {
+        reportId: report.id,
+        measurementDataId: report.measurementDataId,
+        personalInfo: report.personalInfo,
+        hasPersonalInfo: !!report.personalInfo,
+        personalInfoKeys: report.personalInfo ? Object.keys(report.personalInfo) : []
+      })
+      
+      // 1. personalInfo에서 먼저 확인
+      if (report.personalInfo?.birthDate) {
         try {
+          subjectBirthDate = new Date(report.personalInfo.birthDate)
+          console.log('✅ personalInfo에서 생년월일 찾음:', subjectBirthDate)
+        } catch (error) {
+          console.warn('personalInfo.birthDate 파싱 실패:', error)
+        }
+      }
+      
+      // 2. personalInfo에 없으면 sessionData에서 가져오기
+      if (!subjectBirthDate && report.measurementDataId) {
+        try {
+          console.log('📊 measurement_sessions에서 조회 시작:', report.measurementDataId)
           const measurementDoc = await FirebaseService.getDocument('measurement_sessions', report.measurementDataId) as any
+          console.log('📊 measurementDoc 조회 결과:', measurementDoc)
+          
           const sessionData = measurementDoc?.sessionData
+          console.log('📊 sessionData:', sessionData)
+          console.log('📊 sessionData.subjectBirthDate:', sessionData?.subjectBirthDate)
           
           if (sessionData?.subjectBirthDate) {
             // Firestore Timestamp인 경우 변환
             subjectBirthDate = sessionData.subjectBirthDate.toDate ? 
               sessionData.subjectBirthDate.toDate() : 
               new Date(sessionData.subjectBirthDate)
+            console.log('✅ sessionData에서 생년월일 찾음:', subjectBirthDate)
+          } else {
+            console.warn('⚠️ sessionData에 subjectBirthDate가 없음')
           }
         } catch (error) {
-          console.warn('측정 데이터에서 생년월일 조회 실패:', error)
+          console.warn('❌ 측정 데이터에서 생년월일 조회 실패:', error)
         }
       }
 
-      // 생년월일이 없으면 기본값 사용 (1990-01-01)
-      if (!subjectBirthDate) {
-        subjectBirthDate = new Date('1990-01-01')
-        console.warn('생년월일을 찾을 수 없어 기본값 사용:', subjectBirthDate)
-      }
+             // 3. 여전히 없으면 에러 처리
+       if (!subjectBirthDate) {
+         console.warn('❌ 생년월일을 찾을 수 없음 - 이전 버전 리포트일 가능성')
+         console.warn('💡 리포트 전체 구조:', report)
+         throw new Error('이 리포트는 생년월일 정보가 없어 공유할 수 없습니다. 새로운 분석을 다시 실행해주세요.')
+       } else {
+         console.log('🎉 최종 선택된 생년월일:', subjectBirthDate)
+       }
 
       // 공유 링크 생성
       const shareableReport = await reportSharingService.createShareableLink(
