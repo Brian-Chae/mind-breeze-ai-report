@@ -1184,6 +1184,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             font-size: 0.875rem;
             font-weight: 500;
             color: ${textColor};
+            transform: translateY(-1px);
         }
 
         .element-badge {
@@ -1197,6 +1198,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             font-size: 0.875rem;
             font-weight: 700;
             color: ${textColor};
+            transform: translateY(-1px);
         }
 
         .progress-container {

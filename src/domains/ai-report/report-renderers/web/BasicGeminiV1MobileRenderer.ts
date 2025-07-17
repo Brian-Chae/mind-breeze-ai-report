@@ -545,6 +545,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             font-size: 0.9rem;
             font-weight: 600;
             color: ${textColor};
+            transform: translateY(-1px);
         }
         
         .element-badge {
@@ -573,6 +574,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             font-size: 0.9rem;
             font-weight: 600;
             color: ${textColor};
+            transform: translateY(-1px);
         }
         
         /* 아이템 설명 */

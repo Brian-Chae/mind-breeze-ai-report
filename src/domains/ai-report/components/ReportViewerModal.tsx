@@ -565,7 +565,7 @@ export function ReportViewerModal({
                        span.textContent = textNode.textContent;
                        span.style.cssText = `
                          display: inline-block;
-                         transform: translateY(-3px);
+                         transform: translateY(-6px);
                          line-height: 1;
                          margin-top: -2px;
                        `;
