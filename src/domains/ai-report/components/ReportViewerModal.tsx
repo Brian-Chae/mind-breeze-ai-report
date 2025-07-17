@@ -463,10 +463,24 @@ export function ReportViewerModal({
           const clonedBody = clonedDoc.body;
           if (clonedBody) {
             clonedBody.style.margin = '0';
-            clonedBody.style.padding = '20px';
+            clonedBody.style.padding = '0';
             clonedBody.style.boxSizing = 'border-box';
             clonedBody.style.overflow = 'visible';
             clonedBody.style.minHeight = 'auto';
+            clonedBody.style.display = 'flex';
+            clonedBody.style.justifyContent = 'center';
+            clonedBody.style.alignItems = 'flex-start';
+            clonedBody.style.width = '100%';
+            
+            // report-content 요소 중앙 정렬 강화
+            const reportContent = clonedDoc.getElementById('report-content');
+            if (reportContent) {
+              reportContent.style.margin = '0 auto';
+              reportContent.style.padding = viewMode === 'mobile' ? '20px' : '40px';
+              reportContent.style.maxWidth = viewMode === 'mobile' ? '375px' : '1024px';
+              reportContent.style.width = '100%';
+              reportContent.style.boxSizing = 'border-box';
+            }
             
             // 모든 텍스트 요소의 line-height 보정
             const allElements = clonedBody.querySelectorAll('*');
