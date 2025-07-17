@@ -608,10 +608,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                     eegAnalysis.score, 
                     false
                 )}
-                <div class="chart-container">
-                    <h4>${language === 'ko' ? '주파수 대역별 분석' : 'Frequency Band Analysis'}</h4>
-                    ${this.generateEEGChart(eegAnalysis)}
-                </div>
             </div>
             
             <div class="analysis-content-section">
@@ -661,10 +657,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                     ppgAnalysis.score, 
                     false
                 )}
-                <div class="chart-container">
-                    <h4>${language === 'ko' ? '심박변이도 분석' : 'Heart Rate Variability Analysis'}</h4>
-                    ${this.generatePPGChart(ppgAnalysis)}
-                </div>
             </div>
             
             <div class="analysis-content-section">
@@ -1628,57 +1620,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             line-height: 1.5;
         }
 
-        /* 차트 컨테이너 스타일 */
-        .chart-container {
-            background: ${cardBg};
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-            border: 1px solid ${borderColor};
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
 
-        .chart-container h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: ${textColor};
-            margin-bottom: 15px;
-        }
-
-        /* SVG 차트 스타일 */
-        .chart-container svg {
-            max-width: 100%;
-            height: auto;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
-        }
-
-        /* 차트 애니메이션 */
-        .eeg-bar {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-origin: bottom;
-        }
-
-        .eeg-bar:hover {
-            opacity: 0.9;
-            transform: translateY(-2px) scale(1.05);
-        }
-
-        .ppg-circle {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .ppg-circle:hover {
-            opacity: 0.9;
-            stroke-width: 10;
-        }
-
-        /* 차트 컨테이너 호버 효과 */
-        .chart-container:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            transition: all 0.3s ease;
-        }
         
         .report-footer {
             text-align: center;
@@ -2648,133 +2590,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     return labels[language as keyof typeof labels]?.[level as keyof typeof labels.ko] || level;
   }
 
-  /**
-   * EEG 차트 생성 (주파수 대역별 막대 그래프)
-   */
-  private generateEEGChart(eegAnalysis: any): string {
-    // 실제 분석 점수를 기반으로 한 추정 주파수 대역 데이터
-    const baseScore = eegAnalysis.score || 70;
-    
-    const bands = {
-      'Delta': eegAnalysis.bands?.delta || (baseScore * 0.6 + Math.random() * 20),
-      'Theta': eegAnalysis.bands?.theta || (baseScore * 0.8 + Math.random() * 15),
-      'Alpha': eegAnalysis.bands?.alpha || (baseScore * 0.9 + Math.random() * 10),
-      'Beta': eegAnalysis.bands?.beta || (baseScore * 1.1 + Math.random() * 15),
-      'Gamma': eegAnalysis.bands?.gamma || (baseScore * 0.5 + Math.random() * 25)
-    };
-    
-    const maxValue = Math.max(...Object.values(bands));
-    const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#feca57'];
-    
-    let bars = '';
-    let labels = '';
-    let gradients = '';
-    
-    Object.entries(bands).forEach(([band, value], index) => {
-      const height = (value / maxValue) * 120; // 최대 높이 120px
-      const x = index * 48 + 20;
-      const y = 140 - height;
-      const gradientId = `eegGradient${index}`;
-      
-      const baseColor = colors[index];
-      const lightColor = this.lightenColor(baseColor, 20);
-      
-      gradients += `
-        <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:${lightColor};stop-opacity:1" />
-          <stop offset="100%" style="stop-color:${baseColor};stop-opacity:1" />
-        </linearGradient>
-      `;
-      
-      bars += `<rect x="${x}" y="${y}" width="40" height="${height}" fill="url(#${gradientId})" rx="6" class="eeg-bar" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>`;
-      labels += `<text x="${x + 20}" y="160" text-anchor="middle" font-size="12" font-weight="500" fill="#4A5568">${band}</text>`;
-    });
-    
-    return `
-      <svg width="280" height="180" viewBox="0 0 280 180">
-        <defs>
-          ${gradients}
-        </defs>
-        ${bars}
-        ${labels}
-        <text x="140" y="20" text-anchor="middle" font-size="14" font-weight="600" fill="#2D3748">주파수 대역별 분석</text>
-      </svg>
-    `;
-  }
 
-  /**
-   * PPG 차트 생성 (심박변이도 도넛 차트)
-   */
-  private generatePPGChart(ppgAnalysis: any): string {
-    const baseScore = ppgAnalysis.score || 75;
-    
-    const hrv = ppgAnalysis.hrv || (baseScore * 0.9 + Math.random() * 20);
-    const stress = ppgAnalysis.stress || (100 - baseScore * 0.8 + Math.random() * 15);
-    
-    const radius = 40;
-    const circumference = 2 * Math.PI * radius;
-    const hrvOffset = circumference - (hrv / 100) * circumference;
-    const stressOffset = circumference - (stress / 100) * circumference;
-    
-    return `
-      <svg width="280" height="180" viewBox="0 0 280 180">
-        <defs>
-          <linearGradient id="ppgGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
-            <stop offset="50%" style="stop-color:#00f2fe;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#43e97b;stop-opacity:1" />
-          </linearGradient>
-          <linearGradient id="ppgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
-            <stop offset="50%" style="stop-color:#fee140;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#feca57;stop-opacity:1" />
-          </linearGradient>
-          <filter id="circleShadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.1)"/>
-          </filter>
-        </defs>
-        
-        <text x="140" y="20" text-anchor="middle" font-size="14" font-weight="600" fill="#2D3748">심박변이도 분석</text>
-        
-        <!-- HRV Circle -->
-        <g transform="translate(90, 90)">
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="8"/>
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient1)" stroke-width="8"
-                  stroke-dasharray="${circumference}" stroke-dashoffset="${hrvOffset}" 
-                  stroke-linecap="round" transform="rotate(-90)" 
-                  filter="url(#circleShadow)" class="ppg-circle"/>
-          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="700" fill="#2d3748">${Math.round(hrv)}</text>
-          <text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="600" fill="#4a5568">HRV 점수</text>
-        </g>
-        
-        <!-- Stress Circle -->
-        <g transform="translate(190, 90)">
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="8"/>
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient2)" stroke-width="8"
-                  stroke-dasharray="${circumference}" stroke-dashoffset="${stressOffset}" 
-                  stroke-linecap="round" transform="rotate(-90)" 
-                  filter="url(#circleShadow)" class="ppg-circle"/>
-          <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="700" fill="#2d3748">${Math.round(stress)}</text>
-          <text x="0" y="-30" text-anchor="middle" font-size="12" font-weight="600" fill="#4a5568">스트레스</text>
-        </g>
-      </svg>
-    `;
-  }
-
-  /**
-   * 색상을 밝게 만드는 헬퍼 함수
-   */
-  private lightenColor(color: string, percent: number): string {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) + amt;
-    const G = (num >> 8 & 0x00FF) + amt;
-    const B = (num & 0x0000FF) + amt;
-    
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-  }
 }
 
 export default BasicGeminiV1WebRenderer; 

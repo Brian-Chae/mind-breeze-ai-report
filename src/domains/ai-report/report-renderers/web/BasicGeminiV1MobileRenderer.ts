@@ -574,27 +574,6 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             color: ${textColor};
         }
         
-        /* 차트 컨테이너 */
-        .chart-container {
-            background: ${cardBg};
-            border-radius: 12px;
-            padding: 16px;
-            margin: 16px 0;
-            text-align: center;
-            min-height: 160px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid ${borderColor};
-        }
-
-        .chart-container h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: ${textColor};
-            margin-bottom: 12px;
-        }
-        
         /* 아이템 설명 */
         .item-description {
             font-size: 14px;
@@ -673,61 +652,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
         }
-        
-        .chart-placeholder {
-            color: ${secondaryColor};
-            font-size: 12px;
-            font-style: italic;
-        }
-        
-        /* 차트 범례 */
-        .chart-legend {
-            margin-top: 8px;
-            text-align: center;
-        }
-        
-        .legend-title {
-            font-size: 10px;
-            color: ${secondaryColor};
-            font-weight: 500;
-            text-align: center;
-        }
-        
 
-        
-        /* SVG 차트 스타일 */
-        .chart-container svg {
-            max-width: 100%;
-            height: auto;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
-        }
-        
-        /* 차트 애니메이션 */
-        .eeg-bar {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-origin: bottom;
-        }
-        
-        .eeg-bar:active {
-            opacity: 0.9;
-            transform: translateY(-1px) scale(1.02);
-        }
-        
-        .ppg-circle {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .ppg-circle:active {
-            opacity: 0.9;
-            stroke-width: 10;
-        }
-        
-        /* 차트 컨테이너 터치 효과 */
-        .chart-container:active {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-            transition: all 0.2s ease;
-        }
         
         /* 분석 섹션 */
         .analysis-section {
@@ -1274,143 +1199,14 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     }
   }
 
-  /**
-   * EEG 차트 생성 (주파수 대역별 막대 그래프)
-   */
-  private generateEEGChart(eegAnalysis: any): string {
-    // 실제 분석 점수를 기반으로 한 추정 주파수 대역 데이터
-    const baseScore = eegAnalysis.score || 70;
-    
-    const bands = {
-      'Delta': eegAnalysis.bands?.delta || (baseScore * 0.6 + Math.random() * 20),
-      'Theta': eegAnalysis.bands?.theta || (baseScore * 0.8 + Math.random() * 15),
-      'Alpha': eegAnalysis.bands?.alpha || (baseScore * 0.9 + Math.random() * 10),
-      'Beta': eegAnalysis.bands?.beta || (baseScore * 1.1 + Math.random() * 15),
-      'Gamma': eegAnalysis.bands?.gamma || (baseScore * 0.5 + Math.random() * 25)
-    };
-    
-    const maxValue = Math.max(...Object.values(bands));
-    // 웹 렌더러와 조화로운 세련된 색상 팔레트
-    const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#feca57'];
-    
-    let bars = '';
-    let labels = '';
-    let gradients = '';
-    
-    Object.entries(bands).forEach(([band, value], index) => {
-      const height = (value / maxValue) * 60; // 최대 높이 60px
-      const x = index * 24 + 10;
-      const y = 70 - height;
-      const gradientId = `eegGradient${index}`;
-      
-      // 각 막대별 그라데이션 생성
-      const baseColor = colors[index];
-      const lightColor = this.lightenColor(baseColor, 20);
-      
-      gradients += `
-        <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:${lightColor};stop-opacity:1" />
-          <stop offset="100%" style="stop-color:${baseColor};stop-opacity:1" />
-        </linearGradient>
-      `;
-      
-      bars += `<rect x="${x}" y="${y}" width="20" height="${height}" fill="url(#${gradientId})" rx="3" class="eeg-bar" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>`;
-      labels += `<text x="${x + 10}" y="85" text-anchor="middle" font-size="9" font-weight="500" fill="#4A5568">${band}</text>`;
-    });
-    
-    return `
-      <svg width="140" height="90" viewBox="0 0 140 90">
-        <defs>
-          ${gradients}
-        </defs>
-        ${bars}
-        ${labels}
-      </svg>
-    `;
-  }
 
-  /**
-   * PPG 차트 생성 (심박수 변이도 도넛 차트)
-   */
-  private generatePPGChart(ppgAnalysis: any): string {
-    const baseScore = ppgAnalysis.score || 75;
-    
-    // 실제 분석 점수를 기반으로 한 추정 HRV 및 스트레스 데이터
-    const hrv = ppgAnalysis.hrv || (baseScore * 0.9 + Math.random() * 20); // HRV 점수
-    const stress = ppgAnalysis.stress || (100 - baseScore * 0.8 + Math.random() * 15); // 스트레스 점수 (역관계)
-    
-    const radius = 25;
-    const circumference = 2 * Math.PI * radius;
-    const hrvOffset = circumference - (hrv / 100) * circumference;
-    const stressOffset = circumference - (stress / 100) * circumference;
-    
-    return `
-      <svg width="140" height="90" viewBox="0 0 140 90">
-        <defs>
-          <!-- HRV 그라데이션 (활력적인 청록색) -->
-          <linearGradient id="ppgGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
-            <stop offset="50%" style="stop-color:#00f2fe;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#43e97b;stop-opacity:1" />
-          </linearGradient>
-          <!-- 스트레스 그라데이션 (따뜻한 핑크-오렌지) -->
-          <linearGradient id="ppgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
-            <stop offset="50%" style="stop-color:#fee140;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#feca57;stop-opacity:1" />
-          </linearGradient>
-          <!-- 그림자 효과 -->
-          <filter id="circleShadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.1)"/>
-          </filter>
-        </defs>
-        
-        <!-- HRV Circle -->
-        <g transform="translate(35, 45)">
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="5"/>
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient1)" stroke-width="5"
-                  stroke-dasharray="${circumference}" stroke-dashoffset="${hrvOffset}" 
-                  stroke-linecap="round" transform="rotate(-90)" 
-                  filter="url(#circleShadow)" class="ppg-circle"/>
-          <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="700" fill="#2d3748">${Math.round(hrv)}</text>
-          <text x="0" y="-16" text-anchor="middle" font-size="8" font-weight="600" fill="#4a5568">HRV</text>
-        </g>
-        
-        <!-- Stress Circle -->
-        <g transform="translate(105, 45)">
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="5"/>
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient2)" stroke-width="5"
-                  stroke-dasharray="${circumference}" stroke-dashoffset="${stressOffset}" 
-                  stroke-linecap="round" transform="rotate(-90)" 
-                  filter="url(#circleShadow)" class="ppg-circle"/>
-          <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="700" fill="#2d3748">${Math.round(stress)}</text>
-          <text x="0" y="-16" text-anchor="middle" font-size="8" font-weight="600" fill="#4a5568">스트레스</text>
-        </g>
-      </svg>
-    `;
-  }
-
-  /**
-   * 색상을 밝게 만드는 헬퍼 함수
-   */
-  private lightenColor(color: string, percent: number): string {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) + amt;
-    const G = (num >> 8 & 0x00FF) + amt;
-    const B = (num & 0x0000FF) + amt;
-    
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-  }
 
   /**
    * 모바일 자바스크립트
    */
   private getMobileJavaScript(options: RenderOptions): string {
     return `
-        // 모바일 터치 이벤트 및 차트 애니메이션 최적화
+        // 모바일 터치 이벤트 최적화
         document.addEventListener('DOMContentLoaded', function() {
             // 스크롤 성능 최적화
             let ticking = false;
@@ -1438,49 +1234,6 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
                 item.addEventListener('touchend', function() {
                     this.style.transform = 'scale(1)';
                 });
-            });
-            
-            // 차트 애니메이션
-            const animateCharts = () => {
-                // EEG 막대 그래프 애니메이션
-                const eegBars = document.querySelectorAll('svg rect');
-                eegBars.forEach((bar, index) => {
-                    bar.style.transform = 'scaleY(0)';
-                    bar.style.transformOrigin = 'bottom';
-                    bar.style.transition = 'transform 0.6s ease';
-                    
-                    setTimeout(() => {
-                        bar.style.transform = 'scaleY(1)';
-                    }, index * 100);
-                });
-                
-                // PPG 원형 차트 애니메이션
-                const circles = document.querySelectorAll('svg circle[stroke-dasharray]');
-                circles.forEach((circle, index) => {
-                    const dasharray = circle.getAttribute('stroke-dasharray');
-                    circle.setAttribute('stroke-dashoffset', dasharray);
-                    circle.style.transition = 'stroke-dashoffset 1s ease';
-                    
-                    setTimeout(() => {
-                        const finalOffset = circle.getAttribute('stroke-dashoffset');
-                        circle.setAttribute('stroke-dashoffset', finalOffset);
-                    }, 300 + index * 200);
-                });
-            };
-            
-            // Intersection Observer로 차트가 화면에 보일 때 애니메이션 실행
-            const chartObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        setTimeout(animateCharts, 200);
-                        chartObserver.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.3 });
-            
-            const chartContainers = document.querySelectorAll('.chart-container');
-            chartContainers.forEach(container => {
-                chartObserver.observe(container);
             });
         });
     `;
