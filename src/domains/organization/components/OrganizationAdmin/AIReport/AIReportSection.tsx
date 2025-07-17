@@ -1967,6 +1967,12 @@ AI 건강 분석 리포트
                           {data.userOccupation}
                         </Badge>
                       )}
+                      
+                      {data.userDepartment && data.userDepartment !== '미지정' && (
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          {data.userDepartment}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   
