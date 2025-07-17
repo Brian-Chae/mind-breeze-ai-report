@@ -56,6 +56,7 @@ interface ReportStats {
 export default function AIReportSection({ subSection, onNavigate }: AIReportSectionProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedEngineFilter, setSelectedEngineFilter] = useState('all')
   
   // AI Report 설정을 위한 organization ID (임시로 하드코딩)
   const organizationId = 'temp-org-id' // TODO: 실제 조직 ID로 교체 필요
@@ -153,12 +154,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [creatingShareLinks, setCreatingShareLinks] = useState<{[reportId: string]: boolean}>({})
   const [shareSuccess, setShareSuccess] = useState<{[reportId: string]: string}>({})
   const [shareError, setShareError] = useState<{[reportId: string]: string}>({})
-  
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(measurementDataList.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentItems = measurementDataList.slice(startIndex, endIndex)
   
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
@@ -1670,28 +1665,68 @@ AI 건강 분석 리포트
     </div>
   )
 
-  // 통계 계산 함수
+  // 분석 엔진 목록 추출
+  const availableEngines = useMemo(() => {
+    const engines = new Set<string>()
+    measurementDataList.forEach(data => {
+      data.availableReports?.forEach((report: any) => {
+        if (report.engineId) {
+          engines.add(report.engineId)
+        }
+      })
+    })
+    return Array.from(engines).sort()
+  }, [measurementDataList])
+
+  // 필터링된 데이터
+  const filteredMeasurementData = useMemo(() => {
+    return measurementDataList.filter(data => {
+      // 검색어 필터
+      const matchesSearch = searchQuery === '' || 
+        data.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        new Date(data.timestamp).toLocaleDateString('ko-KR').includes(searchQuery)
+      
+      // 엔진 필터
+      const matchesEngine = selectedEngineFilter === 'all' || 
+        data.availableReports?.some((report: any) => report.engineId === selectedEngineFilter)
+      
+      return matchesSearch && matchesEngine
+    })
+  }, [measurementDataList, searchQuery, selectedEngineFilter])
+
+  // 페이지네이션 계산 (필터링된 데이터 기준)
+  const totalPages = Math.ceil(filteredMeasurementData.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentItems = filteredMeasurementData.slice(startIndex, endIndex)
+
+  // 필터나 검색어가 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedEngineFilter])
+
+  // 통계 계산 함수 (필터링된 데이터 기준)
   const calculateStats = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // 총 측정 데이터 수
+    // 총 측정 데이터 수 (전체 데이터 기준)
     const totalMeasurements = measurementDataList.length
 
-    // 총 발행된 리포트 수
+    // 총 발행된 리포트 수 (전체 데이터 기준)
     const totalReports = measurementDataList.reduce((sum, data) => {
       return sum + (data.availableReports?.length || 0)
     }, 0)
 
-    // 오늘 측정한 데이터 수
+    // 오늘 측정한 데이터 수 (전체 데이터 기준)
     const todayMeasurements = measurementDataList.filter(data => {
       const measurementDate = new Date(data.timestamp)
       return measurementDate >= today && measurementDate < tomorrow
     }).length
 
-    // 오늘 발행된 리포트 수
+    // 오늘 발행된 리포트 수 (전체 데이터 기준)
     const todayReports = measurementDataList.reduce((sum, data) => {
       const todayReportsForData = (data.availableReports || []).filter((report: any) => {
         const reportDate = new Date(report.createdAt)
@@ -1700,7 +1735,7 @@ AI 건강 분석 리포트
       return sum + todayReportsForData
     }, 0)
 
-    // 총 크레딧 사용량
+    // 총 크레딧 사용량 (전체 데이터 기준)
     const totalCreditsUsed = measurementDataList.reduce((sum, data) => {
       const dataCredits = (data.availableReports || []).reduce((reportSum: number, report: any) => {
         return reportSum + (report.costUsed || 0)
@@ -1708,7 +1743,7 @@ AI 건강 분석 리포트
       return sum + dataCredits
     }, 0)
 
-    // 오늘 사용한 크레딧 사용량
+    // 오늘 사용한 크레딧 사용량 (전체 데이터 기준)
     const todayCreditsUsed = measurementDataList.reduce((sum, data) => {
       const todayCreditsForData = (data.availableReports || [])
         .filter((report: any) => {
@@ -1845,11 +1880,19 @@ AI 건강 분석 리포트
           <option value="week">최근 7일</option>
           <option value="month">최근 30일</option>
         </select>
-        <select className="px-3 py-2 border border-gray-300 rounded-md">
-          <option value="all">전체 품질</option>
-          <option value="excellent">우수</option>
-          <option value="good">양호</option>
-          <option value="poor">불량</option>
+        <select 
+          className="px-3 py-2 border border-gray-300 rounded-md"
+          value={selectedEngineFilter}
+          onChange={(e) => setSelectedEngineFilter(e.target.value)}
+        >
+          <option value="all">전체 엔진</option>
+          {availableEngines.map(engineId => (
+            <option key={engineId} value={engineId}>
+              {engineId === 'basic-gemini-v1' ? '기본 Gemini V1' : 
+               engineId === 'advanced-gpt-4' ? '고급 GPT-4' : 
+               engineId}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -1858,16 +1901,21 @@ AI 건강 분석 리포트
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           <span className="ml-2 text-gray-600">측정 데이터를 불러오는 중...</span>
         </div>
-      ) : measurementDataList.length === 0 ? (
+      ) : filteredMeasurementData.length === 0 ? (
         <Card className="p-8 bg-white border border-gray-200">
           <div className="flex flex-col items-center space-y-4">
             <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl">
               <Activity className="w-8 h-8 text-blue-600" />
             </div>
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">측정 데이터가 없습니다</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {measurementDataList.length === 0 ? '측정 데이터가 없습니다' : '필터 조건에 맞는 데이터가 없습니다'}
+              </h3>
               <p className="text-gray-600 mb-4">
-                {error ? error : '아직 생성된 측정 세션이 없습니다. 먼저 측정을 진행하거나 테스트 데이터를 생성해보세요.'}
+                {measurementDataList.length === 0 
+                  ? (error ? error : '아직 생성된 측정 세션이 없습니다. 먼저 측정을 진행하거나 테스트 데이터를 생성해보세요.')
+                  : '검색어나 필터 조건을 변경해보세요.'
+                }
               </p>
               {process.env.NODE_ENV === 'development' && (
                 <Button 
@@ -1889,7 +1937,7 @@ AI 건강 분석 리포트
               <div className="flex items-center space-x-3">
                 <h3 className="text-lg font-semibold text-gray-800">측정 데이터 목록</h3>
                 <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium text-sm">
-                  총 {measurementDataList.length}개 중 {Math.min(itemsPerPage, currentItems.length)}개 표시
+                  총 {filteredMeasurementData.length}개 중 {Math.min(itemsPerPage, currentItems.length)}개 표시
                 </span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600">
