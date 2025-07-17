@@ -854,7 +854,7 @@ export function ReportViewerModal({
               )}
             </div>
             
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 justify-end">
               {/* 뷰 모드 전환 버튼 */}
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                 <Button
