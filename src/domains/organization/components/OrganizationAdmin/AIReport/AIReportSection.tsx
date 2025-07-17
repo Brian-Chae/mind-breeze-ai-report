@@ -419,17 +419,36 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                 batteryLevel: 85
               },
               eegMetrics: {
-                delta: 0.25, theta: 0.30, alpha: 0.35, beta: 0.40, gamma: 0.15,
+                delta: { value: 0.25 }, 
+                theta: { value: 0.30 }, 
+                alpha: { value: 0.35 }, 
+                beta: { value: 0.40 }, 
+                gamma: { value: 0.15 },
+                focusIndex: { value: sessionData.focusLevel ? Math.min(Math.max(sessionData.focusLevel * 3, 1.8), 2.4) : 2.1 },
+                relaxationIndex: { value: sessionData.relaxationLevel ? sessionData.relaxationLevel : 0.20 },
+                stressIndex: { value: sessionData.stressLevel ? Math.min(Math.max(sessionData.stressLevel * 5, 0.3), 7.0) : 3.5 },
+                hemisphericBalance: { value: 0.02 },
+                cognitiveLoad: { value: sessionData.stressLevel ? Math.min(Math.max(sessionData.stressLevel * 1.5, 0.3), 0.8) : 0.5 },
+                emotionalStability: { value: 0.7 },
+                totalPower: { value: 950 },
                 attentionIndex: sessionData.focusLevel ? sessionData.focusLevel * 100 : 75,
                 meditationIndex: sessionData.relaxationLevel ? sessionData.relaxationLevel * 100 : 70,
-                stressIndex: sessionData.stressLevel ? sessionData.stressLevel * 100 : 30,
                 fatigueIndex: 40,
-                signalQuality: 0.8, artifactRatio: 0.1
+                signalQuality: 0.8, 
+                artifactRatio: 0.1
               },
               ppgMetrics: {
-                heartRate: 70, heartRateVariability: 45,
-                rrIntervals: [], stressScore: sessionData.stressLevel ? sessionData.stressLevel * 100 : 30,
-                autonomicBalance: 0.8, signalQuality: 0.8, motionArtifact: 0.1
+                heartRate: { value: 72 },
+                rmssd: { value: 30 },
+                sdnn: { value: 50 },
+                lfHfRatio: { value: 2.5 },
+                spo2: { value: 98 },
+                heartRateVariability: 45,
+                rrIntervals: [], 
+                stressScore: sessionData.stressLevel ? sessionData.stressLevel * 100 : 30,
+                autonomicBalance: 0.8, 
+                signalQuality: 0.8, 
+                motionArtifact: 0.1
               },
               accMetrics: {
                 activityLevel: 20, movementVariability: 15,
