@@ -596,6 +596,77 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             text-align: left;
         }
         
+        /* 주요 발견사항 - Chip/Badge 스타일 */
+        .key-findings-section {
+            margin: 16px 0;
+        }
+        
+        .findings-grid {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            margin-top: 12px !important;
+        }
+        
+        .finding-item {
+            display: inline-flex !important;
+            align-items: center !important;
+            background: linear-gradient(135deg, #FEF3C7, #FFFBEB) !important;
+            border: none !important;
+            border-radius: 16px !important;
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #8B5A00 !important;
+            line-height: 1.2 !important;
+            max-width: fit-content !important;
+            margin: 0 !important;
+            gap: 6px !important;
+            box-shadow: 0 2px 6px rgba(251, 191, 36, 0.15) !important;
+            transition: all 0.2s ease !important;
+            white-space: nowrap !important;
+        }
+        
+        .finding-item:nth-child(2n) {
+            background: linear-gradient(135deg, #E0F2FE, #F0F9FF) !important;
+            color: #0369A1 !important;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15) !important;
+        }
+        
+        .finding-item:nth-child(3n) {
+            background: linear-gradient(135deg, #F0FDF4, #ECFDF5) !important;
+            color: #166534 !important;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15) !important;
+        }
+        
+        .finding-item:nth-child(4n) {
+            background: linear-gradient(135deg, #FDF2F8, #FCE7F3) !important;
+            color: #BE185D !important;
+            box-shadow: 0 2px 6px rgba(236, 72, 153, 0.15) !important;
+        }
+        
+        .finding-item:active {
+            transform: scale(0.95) !important;
+        }
+        
+        .finding-icon {
+            font-size: 14px !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .finding-text {
+            font-size: 13px !important;
+            color: inherit !important;
+            line-height: 1.2 !important;
+            margin: 0 !important;
+            font-weight: 600 !important;
+            max-width: 180px !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        
         .chart-placeholder {
             color: ${secondaryColor};
             font-size: 12px;
@@ -1086,56 +1157,112 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
   private generateDemographicAnalysisItem(demographicAnalysis: any, language: string): string {
     const title = language === 'ko' ? '개인 특성 분석' : 'Demographic Analysis';
     
-    return `
-    <div class="plan-card long-term">
-        <div class="plan-header">
-            <h3>👤 ${title}</h3>
-        </div>
-        ${demographicAnalysis.ageSpecific ? `
-        <div class="item-description" style="margin-bottom: 12px;"><strong>연령별 특성:</strong> ${demographicAnalysis.ageSpecific}</div>
-        ` : ''}
-        ${demographicAnalysis.genderSpecific ? `
-        <div class="item-description" style="margin-bottom: 12px;"><strong>성별 특성:</strong> ${demographicAnalysis.genderSpecific}</div>
-        ` : ''}
-        ${demographicAnalysis.combinedInsights?.length ? `
-        <div>
-            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">종합 인사이트</h4>
+    let content = `
+    <div class="plan-timeline">
+        <div class="plan-header" style="margin-bottom: 16px;">
+            <h3 style="font-size: 1.1rem;">👤 ${title}</h3>
+        </div>`;
+
+    // 연령별 특성 카드 (주황색 테두리 - short-term)
+    if (demographicAnalysis.ageSpecific) {
+      content += `
+        <div class="plan-card short-term">
+            <div class="plan-header">
+                <h3>🎂 연령별 특성</h3>
+                <div class="plan-period">연령대</div>
+            </div>
+            <div class="item-description">${demographicAnalysis.ageSpecific}</div>
+        </div>`;
+    }
+
+    // 성별 특성 카드 (초록색 테두리 - long-term)
+    if (demographicAnalysis.genderSpecific) {
+      content += `
+        <div class="plan-card long-term">
+            <div class="plan-header">
+                <h3>🚻 성별 특성</h3>
+                <div class="plan-period">성별</div>
+            </div>
+            <div class="item-description">${demographicAnalysis.genderSpecific}</div>
+        </div>`;
+    }
+
+    // 종합 인사이트 카드 (빨간색 테두리 - immediate)
+    if (demographicAnalysis.combinedInsights?.length) {
+      content += `
+        <div class="plan-card immediate">
+            <div class="plan-header">
+                <h3>💡 종합 인사이트</h3>
+                <div class="plan-period">핵심</div>
+            </div>
             <ul class="plan-list">
                 ${demographicAnalysis.combinedInsights.map((insight: string) => `<li>${insight}</li>`).join('')}
             </ul>
-        </div>
-        ` : ''}
-    </div>`;
+        </div>`;
+    }
+
+    content += `</div>`;
+    
+    return content;
   }
 
   /**
    * 직업적 분석 아이템 생성
    */
   private generateOccupationalAnalysisItem(occupationalAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '직업별 건강 팁' : 'Occupational Health Tips';
+    const title = language === 'ko' ? '직업별 건강 분석' : 'Occupational Health Analysis';
     
-    return `
-    <div class="plan-card immediate">
-        <div class="plan-header">
-            <h3>💼 ${title}</h3>
-        </div>
-        ${occupationalAnalysis.jobSpecificRisks?.length ? `
-        <div style="margin-bottom: 16px;">
-            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">직업적 위험 요소</h4>
+    let content = `
+    <div class="plan-timeline">
+        <div class="plan-header" style="margin-bottom: 16px;">
+            <h3 style="font-size: 1.1rem;">💼 ${title}</h3>
+        </div>`;
+
+    // 직업적 위험 요소 카드 (빨간색 테두리 - immediate)
+    if (occupationalAnalysis.jobSpecificRisks?.length) {
+      content += `
+        <div class="plan-card immediate">
+            <div class="plan-header">
+                <h3>⚠️ 직업적 위험 요소</h3>
+                <div class="plan-period">주의필요</div>
+            </div>
             <ul class="plan-list">
                 ${occupationalAnalysis.jobSpecificRisks.map((risk: string) => `<li>${risk}</li>`).join('')}
             </ul>
-        </div>
-        ` : ''}
-        ${occupationalAnalysis.workplaceRecommendations?.length ? `
-        <div>
-            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">직장 내 권장사항</h4>
+        </div>`;
+    }
+
+    // 직장 내 권장사항 카드 (주황색 테두리 - short-term)
+    if (occupationalAnalysis.workplaceRecommendations?.length) {
+      content += `
+        <div class="plan-card short-term">
+            <div class="plan-header">
+                <h3>🏢 직장 내 권장사항</h3>
+                <div class="plan-period">실천</div>
+            </div>
             <ul class="plan-list">
                 ${occupationalAnalysis.workplaceRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
             </ul>
-        </div>
-        ` : ''}
-    </div>`;
+        </div>`;
+    }
+
+    // 직업별 건강 팁 카드 (초록색 테두리 - long-term)
+    if (occupationalAnalysis.careerHealthTips?.length) {
+      content += `
+        <div class="plan-card long-term">
+            <div class="plan-header">
+                <h3>💪 직업별 건강 팁</h3>
+                <div class="plan-period">장기관리</div>
+            </div>
+            <ul class="plan-list">
+                ${occupationalAnalysis.careerHealthTips.map((tip: string) => `<li>${tip}</li>`).join('')}
+            </ul>
+        </div>`;
+    }
+
+    content += `</div>`;
+    
+    return content;
   }
 
   /**
