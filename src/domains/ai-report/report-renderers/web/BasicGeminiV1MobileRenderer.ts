@@ -272,9 +272,9 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         }
         
         .report-container {
-            max-width: 100%;
-            margin: 0;
-            padding: 16px;
+            max-width: 375px;
+            margin: 0 auto;
+            padding: 20px;
             width: 100%;
             box-sizing: border-box;
             overflow-x: hidden;
@@ -284,7 +284,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         .report-header {
             text-align: center;
             margin-bottom: 24px;
-            padding: 20px 16px;
+            padding: 20px;
             background: linear-gradient(135deg, ${primaryColor}, ${accentColor});
             color: white;
             border-radius: 12px;
@@ -315,7 +315,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         /* 섹션 공통 스타일 */
         section {
             background: ${cardBg};
-            padding: 20px 16px;
+            padding: 20px;
             margin-bottom: 16px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -350,7 +350,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         
         .score-card {
             background: ${isDark ? '#374151' : '#F8FAFC'};
-            padding: 16px;
+            padding: 20px;
             border-radius: 10px;
             text-align: center;
             border: 1px solid ${borderColor};
@@ -663,7 +663,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         .score-chart-section {
             background: ${isDark ? '#374151' : '#F9FAFB'};
             border-radius: 12px;
-            padding: 16px;
+            padding: 20px;
             margin-bottom: 16px;
             border: 1px solid ${borderColor};
         }
@@ -686,7 +686,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
 
         .findings-section {
             margin: 16px 0;
-            padding: 16px;
+            padding: 20px;
             background: ${cardBg};
             border-radius: 8px;
             border-left: 4px solid #10B981;
@@ -694,7 +694,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
 
         .concerns-section {
             margin: 16px 0;
-            padding: 16px;
+            padding: 20px;
             background: ${cardBg};
             border-radius: 8px;
             border-left: 4px solid #EF4444;
@@ -802,7 +802,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         
         .demographic-card, .occupational-card {
             background: ${cardBg};
-            padding: 16px;
+            padding: 20px;
             border-radius: 8px;
             border: 1px solid ${borderColor};
         }
@@ -823,7 +823,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         
         .plan-card {
             background: ${cardBg};
-            padding: 16px;
+            padding: 20px;
             border-radius: 8px;
             border-left: 4px solid;
         }
@@ -888,7 +888,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         /* 푸터 */
         .report-footer {
             text-align: center;
-            padding: 20px 16px;
+            padding: 20px;
             background: ${cardBg};
             border-radius: 12px;
             margin-top: 30px;
