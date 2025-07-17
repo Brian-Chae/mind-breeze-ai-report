@@ -145,8 +145,8 @@ export function ReportViewerModal({
     setError(null);
     
     try {
-      if (actualRenderer && actualRenderer.id === 'basic-gemini-v1-web') {
-        console.log('🎯 BasicGeminiV1WebRenderer 사용하여 리포트 렌더링');
+      if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
+        console.log(`🎯 ${actualRenderer.name} 사용하여 리포트 렌더링`);
         
         // 실제 렌더러를 사용해서 HTML 생성
         const renderOptions = {
@@ -600,7 +600,7 @@ export function ReportViewerModal({
                   overflowWrap: 'break-word'
                 }}
                 dangerouslySetInnerHTML={{ 
-                  __html: reportContent.detailedAnalysis
+                  __html: (reportContent.detailedAnalysis || '')
                     .replace(/\n/g, '<br>')
                     .replace(/### /g, `<h3 style="color: #1f2937; font-weight: 600; margin: 1rem 0 0.5rem 0; font-size: ${viewMode === 'mobile' ? '0.9rem' : '1.1rem'}; word-wrap: break-word;">`)
                     .replace(/## /g, `<h2 style="color: #111827; font-weight: 700; margin: 1.5rem 0 0.75rem 0; font-size: ${viewMode === 'mobile' ? '1rem' : '1.25rem'}; word-wrap: break-word;">`)
@@ -662,6 +662,19 @@ export function ReportViewerModal({
           className="w-full"
           dangerouslySetInnerHTML={{ __html: reportContent.htmlContent }}
         />
+      );
+    }
+    
+    // 모바일 렌더러인 경우 적절한 안내 메시지 표시
+    if (actualRenderer?.id === 'basic-gemini-v1-mobile') {
+      return (
+        <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-blue-200 shadow-sm">
+          <div className="text-center">
+            <Smartphone className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+            <p className="text-blue-700 font-semibold mb-2">모바일 최적화 리포트 준비 중</p>
+            <p className="text-gray-600 text-sm">모바일에 최적화된 리포트를 생성하고 있습니다.</p>
+          </div>
+        </div>
       );
     }
     
