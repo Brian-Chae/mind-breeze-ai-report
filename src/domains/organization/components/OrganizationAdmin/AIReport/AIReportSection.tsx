@@ -155,6 +155,22 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [shareSuccess, setShareSuccess] = useState<{[reportId: string]: string}>({})
   const [shareError, setShareError] = useState<{[reportId: string]: string}>({})
   
+  // 이메일 복사 상태
+  const [copiedEmails, setCopiedEmails] = useState<{[dataId: string]: boolean}>({})
+  
+  // 이메일 복사 핸들러
+  const handleEmailCopy = async (dataId: string, email: string) => {
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopiedEmails(prev => ({ ...prev, [dataId]: true }));
+      setTimeout(() => {
+        setCopiedEmails(prev => ({ ...prev, [dataId]: false }));
+      }, 2000);
+    } catch (err) {
+      console.error('클립보드 복사 실패:', err);
+    }
+  }
+  
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -2028,7 +2044,21 @@ AI 건강 분석 리포트
                             <User className="w-4 h-4 text-blue-500" />
                             <span className="font-semibold text-gray-900">{data.userName}</span>
                             
-                            {/* 개인정보 Badge들 */}
+                            {/* 이메일 - 이름 바로 옆에 복사 가능하게 */}
+                            {data.userEmail && (
+                              <div 
+                                className="flex items-center space-x-1 cursor-pointer bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded border border-blue-200 transition-colors"
+                                onClick={() => handleEmailCopy(data.id, data.userEmail)}
+                                title="클릭하여 이메일 복사"
+                              >
+                                <span className="text-xs text-blue-700 font-medium">
+                                  {copiedEmails[data.id] ? '복사됨!' : data.userEmail}
+                                </span>
+                                <Copy className="w-3 h-3 text-blue-600" />
+                              </div>
+                            )}
+                            
+                            {/* 나머지 개인정보 Badge들 */}
                             <div className="flex items-center space-x-2 ml-4">
                               {/* 나이 Badge */}
                               {data.userAge && (
@@ -2055,13 +2085,6 @@ AI 건강 분석 리포트
                               {data.userDepartment && data.userDepartment !== '미지정' && (
                                 <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
                                   {data.userDepartment}
-                                </Badge>
-                              )}
-                              
-                              {/* 이메일 Badge */}
-                              {data.userEmail && (
-                                <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200">
-                                  {data.userEmail}
                                 </Badge>
                               )}
                             </div>
