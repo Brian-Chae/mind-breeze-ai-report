@@ -1976,12 +1976,18 @@ AI 건강 분석 리포트
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-3">
-                    <div className="text-sm text-gray-500">
-                      측정일시: {new Date(data.timestamp).toLocaleDateString('ko-KR')} {new Date(data.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                  <div className="flex items-center space-x-6">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">측정일시</div>
+                      <div className="text-sm text-gray-700">
+                        {new Date(data.timestamp).toLocaleDateString('ko-KR')} {new Date(data.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      생성자: {data.sessionData?.measuredByUserName || '시스템'}
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-1">생성자</div>
+                      <div className="text-sm text-gray-700">
+                        {data.sessionData?.measuredByUserName || '시스템'}
+                      </div>
                     </div>
                     <Button 
                       className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
