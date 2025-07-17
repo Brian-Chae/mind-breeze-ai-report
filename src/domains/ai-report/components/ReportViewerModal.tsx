@@ -588,11 +588,6 @@ export function ReportViewerModal({
                 if (className && (className.includes('element-label') || className.includes('element-value'))) {
                   el.style.transform = 'translateY(-4px)';
                 }
-
-                // 뇌파 건강도 텍스트만 5px 아래로 이동 (PNG 출력용)
-                if (el.textContent && el.textContent.includes('뇌파 건강도')) {
-                  el.style.transform = 'translateY(5px)';
-                }
                 
                 // 건강 요소별 현황에서 뇌파 건강도 "보통" 배지만 아래로 5px 이동 (PNG 출력용)
                 let isInEEGHealthSection = false;
