@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { 
   Dialog, 
@@ -21,7 +20,8 @@ import { selectBestRenderer } from '../core/utils/EngineRendererMatcher';
 import { 
   Brain, 
   Eye, 
-  Download, 
+  Download,
+  Camera, 
   Maximize2,
   Minimize2,
   RefreshCw,
@@ -435,71 +435,39 @@ export function ReportViewerModal({
 
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
-        scale: 2, // 고화질을 위한 스케일 증가
+        scale: 3, // 더 높은 해상도로 설정
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
         width: viewMode === 'mobile' ? 375 : 1024,
-        windowWidth: viewMode === 'mobile' ? 375 : 1200
+        windowWidth: viewMode === 'mobile' ? 375 : 1200,
+        scrollX: 0,
+        scrollY: 0,
+        height: reportElement.scrollHeight // 전체 높이 캡처
       });
 
-      // PDF 생성
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      // A4 크기 계산
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth - 20; // 여백 10mm씩
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let position = 10; // 상단 여백
-
-      // 이미지가 페이지를 넘어가면 페이지 분할
-      if (imgHeight <= pageHeight - 20) {
-        // 한 페이지에 모두 들어감
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      } else {
-        // 여러 페이지로 분할
-        let remainingHeight = imgHeight;
-        let sourceY = 0;
-        
-        while (remainingHeight > 0) {
-          const pageContentHeight = pageHeight - 20; // 상하 여백
-          const currentPageHeight = Math.min(remainingHeight, pageContentHeight);
-          
-          // 현재 페이지에 이미지 추가
-          pdf.addImage(
-            imgData, 
-            'PNG', 
-            10, 
-            10, 
-            imgWidth, 
-            currentPageHeight
-          );
-          
-          remainingHeight -= currentPageHeight;
-          sourceY += currentPageHeight;
-          
-          if (remainingHeight > 0) {
-            pdf.addPage();
-          }
-        }
-      }
-
-      // PDF 다운로드
-      const fileName = `AI_건강분석_리포트_${report?.userName || '사용자'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
+      // 이미지 다운로드
+      const fileName = `AI_건강분석_리포트_${report?.userName || '사용자'}_${new Date().toISOString().split('T')[0]}.png`;
       
-      console.log('✅ PDF 다운로드 완료:', fileName);
+      // Canvas를 Blob으로 변환하여 다운로드
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          console.log('✅ 이미지 다운로드 완료:', fileName);
+        }
+      }, 'image/png', 1.0); // 최고 품질로 PNG 저장
       
     } catch (error) {
-      console.error('❌ PDF 생성 실패:', error);
-      alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('❌ 이미지 생성 실패:', error);
+      alert('이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsDownloading(false);
     }
@@ -899,22 +867,22 @@ export function ReportViewerModal({
                 </Button>
               </div>
 
-              {/* PDF 다운로드 버튼 */}
+              {/* 이미지 저장 버튼 */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleDownloadReport}
                 disabled={isDownloading}
                 className="flex items-center gap-1 px-2 py-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50"
-                title="PDF 다운로드"
+                title="이미지로 저장"
               >
                 {isDownloading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Download className="w-4 h-4" />
+                  <Camera className="w-4 h-4" />
                 )}
                 <span className="hidden sm:inline">
-                  {isDownloading ? 'PDF 생성중...' : 'PDF'}
+                  {isDownloading ? '생성중...' : '저장'}
                 </span>
               </Button>
               
