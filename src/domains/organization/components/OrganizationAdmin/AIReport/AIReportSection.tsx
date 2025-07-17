@@ -111,7 +111,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     averageQuality: 0,
     successRate: 0
   })
-  const [measurementUsers, setMeasurementUsers] = useState<any[]>([])
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [creditService] = useState(creditManagementService)
@@ -166,7 +166,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   useEffect(() => {
     loadReportData()
-    loadMeasurementUsers()
     loadMeasurementData()
     
     // Cleanup: 컴포넌트 unmount 시 모든 타이머 정리
@@ -1235,23 +1234,7 @@ AI 건강 분석 리포트
     }
   }
 
-  const loadMeasurementUsers = async () => {
-    try {
-      // 권한 체크
-      if (!enterpriseAuthService.hasPermission('measurement_users.view.all') && 
-          !enterpriseAuthService.hasPermission('measurement_users.view.own')) {
-        console.warn('측정 대상자 조회 권한이 없습니다.')
-        setMeasurementUsers([])
-        return
-      }
 
-      const users = await measurementService.getMeasurementUsers({})
-      setMeasurementUsers(users)
-    } catch (error) {
-      console.error('측정 사용자 로드 실패:', error)
-      setMeasurementUsers([])
-    }
-  }
 
   const handleGenerateReport = async (userId: string, reportType: string) => {
     try {
@@ -1432,34 +1415,20 @@ AI 건강 분석 리포트
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">대상 사용자</label>
-              <select className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all">
-                <option value="">사용자 선택</option>
-                {measurementUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.displayName}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">분석 기간</label>
-              <div className="grid grid-cols-2 gap-3">
-                <Input type="date" className="focus:ring-2 focus:ring-gray-500 focus:border-transparent" />
-                <Input type="date" className="focus:ring-2 focus:ring-gray-500 focus:border-transparent" />
-              </div>
-            </div>
+
             <Button 
               className="w-full bg-purple-600 text-white hover:bg-purple-700 h-12"
               disabled={loading || configLoading || !selectedEngine || !selectedViewer}
               onClick={async () => {
                 const validation = await validateConfiguration();
                 if (validation.isValid) {
-                  // TODO: 실제 리포트 생성 로직 구현
                   console.log('리포트 생성 시작:', {
                     engine: selectedEngine,
                     viewer: selectedViewer,
                     pdfViewer: selectedPDFViewer
                   });
+                  // AI 리포트 생성 페이지로 이동
+                  navigate('/ai-report/personal-info');
                 } else {
                   alert(validation.message);
                 }
