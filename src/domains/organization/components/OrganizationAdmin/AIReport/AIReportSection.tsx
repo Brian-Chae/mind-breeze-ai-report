@@ -1811,7 +1811,7 @@ AI 건강 분석 리포트
                                        </Button>
                                      </DropdownMenuTrigger>
                                      <DropdownMenuContent>
-                                       {useMemo(() => getCompatibleViewers(report.engineId || 'unknown'), [getCompatibleViewers, report.engineId]).map(viewer => (
+                                       {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
                                          <DropdownMenuItem 
                                            key={viewer.id}
                                            onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
@@ -1851,7 +1851,7 @@ AI 건강 분석 리포트
                                            </div>
                                          </DropdownMenuItem>
                                        ))}
-                                       {useMemo(() => getCompatibleViewers(report.engineId || 'unknown'), [getCompatibleViewers, report.engineId]).length === 0 && (
+                                       {getCompatibleViewers(report.engineId || 'unknown').length === 0 && (
                                          <DropdownMenuItem disabled>
                                            <AlertCircle className="w-4 h-4 mr-2" />
                                            사용 가능한 뷰어가 없습니다

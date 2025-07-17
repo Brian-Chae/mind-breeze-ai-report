@@ -72,3 +72,8 @@ jspm_packages/
 
 # Yarn Integrity file
 .yarn-integrity
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
