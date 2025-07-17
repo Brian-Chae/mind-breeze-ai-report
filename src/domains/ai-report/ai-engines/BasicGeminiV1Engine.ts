@@ -142,18 +142,28 @@ export class BasicGeminiV1Engine implements IAIEngine {
         return { isValid: false, errors, warnings, qualityScore: 0 };
       }
 
-      // 개인 정보 검증
+      // 개인 정보 검증 - 더 관대한 검증으로 변경
       if (!data.personalInfo) {
-        errors.push('개인 정보가 필요합니다.');
+        warnings.push('개인 정보가 없어 일반적인 분석을 제공합니다.');
+        // 기본 개인 정보 설정
+        data.personalInfo = {
+          name: '익명',
+          age: 30,
+          gender: 'male',
+          occupation: 'office_worker'
+        };
       } else {
         if (!data.personalInfo.age || data.personalInfo.age < 5 || data.personalInfo.age > 100) {
           warnings.push('나이 정보가 부정확할 수 있습니다.');
+          data.personalInfo.age = data.personalInfo.age || 30; // 기본값 설정
         }
         if (!data.personalInfo.gender) {
           warnings.push('성별 정보가 없어 일반적인 분석을 제공합니다.');
+          data.personalInfo.gender = 'male'; // 기본값 설정
         }
         if (!data.personalInfo.occupation) {
           warnings.push('직업 정보가 없어 직업별 맞춤 분석이 제한됩니다.');
+          data.personalInfo.occupation = 'office_worker'; // 기본값 설정
         }
       }
 

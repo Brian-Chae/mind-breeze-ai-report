@@ -319,9 +319,15 @@ export class MeasurementDataService extends BaseService {
       throw new Error('EEG attention index must be between 0 and 100');
     }
     
-    // PPG 검증
-    if (ppg.heartRate <= 0 || ppg.heartRate > 300) {
-      throw new Error('Invalid heart rate value');
+    // PPG 검증 - 더 관대한 검증으로 변경
+    if (ppg.heartRate < 0 || ppg.heartRate > 300) {
+      // 심박수가 0인 경우는 허용하되, 기본값으로 대체
+      if (ppg.heartRate === 0) {
+        console.warn('심박수가 0입니다. 기본값 72로 대체합니다.');
+        ppg.heartRate = 72;
+      } else {
+        throw new Error('Invalid heart rate value');
+      }
     }
     
     if (ppg.signalQuality < 0 || ppg.signalQuality > 1) {

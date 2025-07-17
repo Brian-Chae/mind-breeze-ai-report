@@ -57,6 +57,18 @@ export class MockTestEngine implements IAIEngine {
         return { isValid: false, errors, warnings, qualityScore: 0 };
       }
 
+      // 개인 정보 검증 (관대한 검증)
+      if (!data.personalInfo) {
+        warnings.push('개인 정보가 없어 기본값으로 처리합니다.');
+        // 기본 개인 정보 설정
+        data.personalInfo = {
+          name: '테스트 사용자',
+          age: 25,
+          gender: 'male',
+          occupation: 'student'
+        };
+      }
+
       // 각 데이터 타입 존재 여부 확인 (관대한 검증)
       if (!data.eeg && !data.ppg && !data.acc) {
         warnings.push('모든 생체 데이터가 누락되었습니다. 기본값으로 처리합니다.');

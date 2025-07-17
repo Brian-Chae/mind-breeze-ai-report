@@ -105,9 +105,20 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
     setAnalysisStatus('데이터 검증 중...');
 
     try {
-      // 1. 데이터 검증
+      // 1. 데이터 검증 - personalInfo 포함하여 전달
       setAnalysisProgress(10);
-      const validationResult = await selectedEngine.validate(measurementData);
+      const dataForValidation = {
+        ...measurementData,
+        personalInfo: {
+          name: personalInfo.name,
+          age: personalInfo.birthDate ? new Date().getFullYear() - personalInfo.birthDate.getFullYear() : 30,
+          gender: personalInfo.gender === 'MALE' ? 'male' : personalInfo.gender === 'FEMALE' ? 'female' : 'male',
+          occupation: personalInfo.occupation || 'office_worker'
+        },
+        measurementData
+      };
+      
+      const validationResult = await selectedEngine.validate(dataForValidation);
       
       if (!validationResult.isValid) {
         throw new Error(`데이터 검증 실패: ${validationResult.errors.join(', ')}`);
@@ -127,7 +138,7 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
         includeDetailedMetrics: true
       };
 
-      const analysisResult = await selectedEngine.analyze(measurementData, analysisOptions);
+      const analysisResult = await selectedEngine.analyze(dataForValidation, analysisOptions);
       
       setAnalysisProgress(80);
       setAnalysisStatus('결과 처리 중...');
