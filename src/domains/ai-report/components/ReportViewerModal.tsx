@@ -605,10 +605,10 @@ export function ReportViewerModal({
                   )) {
                     el.style.transform = 'translateY(0px)';
                     
-                    // 배경 안의 체크표시 텍스트도 함께 위로 이동 (-6px → -11px)
+                    // 배경 안의 체크표시 텍스트 위치 조정 (-11px → -9px)
                     const checkIcon = el.querySelector('span');
                     if (checkIcon && checkIcon.textContent && checkIcon.textContent.includes('✓')) {
-                      checkIcon.style.transform = 'translateY(-11px)';
+                      checkIcon.style.transform = 'translateY(-9px)';
                     }
                   }
                   
@@ -617,10 +617,10 @@ export function ReportViewerModal({
                     el.style.transform = 'translateY(0px)';
                     el.style.position = 'relative';
                     
-                    // 내부 텍스트도 함께 위로 이동
+                    // 내부 텍스트 위치 조정 (-11px → -9px)
                     if (el.textContent && el.textContent.includes('✓')) {
                       const originalText = el.textContent;
-                      el.innerHTML = `<span style="transform: translateY(-11px); display: inline-block;">${originalText}</span>`;
+                      el.innerHTML = `<span style="transform: translateY(-9px); display: inline-block;">${originalText}</span>`;
                     }
                   }
                   
