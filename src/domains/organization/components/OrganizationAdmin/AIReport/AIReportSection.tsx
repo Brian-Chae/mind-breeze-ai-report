@@ -57,6 +57,8 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEngineFilter, setSelectedEngineFilter] = useState('all')
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest') // 정렬 옵션
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all') // 기간 필터
   
   // AI Report 설정을 위한 organization ID (임시로 하드코딩)
   const organizationId = 'temp-org-id' // TODO: 실제 조직 ID로 교체 필요
@@ -1764,21 +1766,58 @@ AI 건강 분석 리포트
     return Array.from(engines).sort()
   }, [measurementDataList])
 
-  // 필터링된 데이터
+  // 필터링 및 정렬된 데이터
   const filteredMeasurementData = useMemo(() => {
-    return measurementDataList.filter(data => {
-      // 검색어 필터
-      const matchesSearch = searchQuery === '' || 
-        data.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        new Date(data.timestamp).toLocaleDateString('ko-KR').includes(searchQuery)
-      
-      // 엔진 필터
-      const matchesEngine = selectedEngineFilter === 'all' || 
-        data.availableReports?.some((report: any) => report.engineId === selectedEngineFilter)
-      
-      return matchesSearch && matchesEngine
-    })
-  }, [measurementDataList, searchQuery, selectedEngineFilter])
+    const now = new Date()
+    
+    // 기간 필터 계산
+    const getDateFilterRange = () => {
+      switch (dateFilter) {
+        case 'today':
+          const todayStart = new Date(now)
+          todayStart.setHours(0, 0, 0, 0)
+          return todayStart
+        case 'week':
+          const weekStart = new Date(now)
+          weekStart.setDate(now.getDate() - 7)
+          weekStart.setHours(0, 0, 0, 0)
+          return weekStart
+        case 'month':
+          const monthStart = new Date(now)
+          monthStart.setDate(now.getDate() - 30)
+          monthStart.setHours(0, 0, 0, 0)
+          return monthStart
+        default:
+          return null
+      }
+    }
+    
+    const dateFilterStart = getDateFilterRange()
+    
+    return measurementDataList
+      .filter(data => {
+        // 검색어 필터
+        const matchesSearch = searchQuery === '' || 
+          data.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          new Date(data.timestamp).toLocaleDateString('ko-KR').includes(searchQuery)
+        
+        // 엔진 필터
+        const matchesEngine = selectedEngineFilter === 'all' || 
+          data.availableReports?.some((report: any) => report.engineId === selectedEngineFilter)
+        
+        // 기간 필터
+        const matchesDate = !dateFilterStart || new Date(data.timestamp) >= dateFilterStart
+        
+        return matchesSearch && matchesEngine && matchesDate
+      })
+      .sort((a, b) => {
+        // 정렬: 최신순 또는 오래된 순
+        const dateA = new Date(a.timestamp).getTime()
+        const dateB = new Date(b.timestamp).getTime()
+        
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+      })
+  }, [measurementDataList, searchQuery, selectedEngineFilter, sortOrder, dateFilter])
 
   // 페이지네이션 계산 (필터링된 데이터 기준)
   const totalPages = Math.ceil(filteredMeasurementData.length / itemsPerPage)
@@ -1789,7 +1828,7 @@ AI 건강 분석 리포트
   // 필터나 검색어가 변경되면 첫 페이지로 이동
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedEngineFilter])
+  }, [searchQuery, selectedEngineFilter, sortOrder, dateFilter])
 
   // 통계 계산 함수 (필터링된 데이터 기준)
   const calculateStats = useMemo(() => {
@@ -1908,7 +1947,7 @@ AI 건강 분석 리포트
         </div>
       </div>
 
-      {/* 검색 섹션 */}
+      {/* 검색 및 필터 섹션 */}
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -1919,6 +1958,28 @@ AI 건강 분석 리포트
             className="pl-10"
           />
         </div>
+        
+        {/* 정렬 옵션 */}
+        <select 
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="newest">최신순</option>
+          <option value="oldest">오래된 순</option>
+        </select>
+        
+        {/* 기간 필터 */}
+        <select 
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="all">전체 기간</option>
+          <option value="today">오늘</option>
+          <option value="week">지난 1주일</option>
+          <option value="month">지난 1개월</option>
+        </select>
       </div>
 
       {loadingMeasurementData ? (
