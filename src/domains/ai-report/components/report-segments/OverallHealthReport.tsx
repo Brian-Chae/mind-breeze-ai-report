@@ -83,12 +83,12 @@ const OverallHealthReport: React.FC<OverallHealthReportProps> = ({
       <div className="space-y-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700" style={{ transform: 'translateY(-5px)' }}>{label}</span>
+            <span className="text-sm font-medium text-gray-700">{label}</span>
             <Badge className={`text-xs px-2 py-1 ${status.color}`}>
               {status.label}
             </Badge>
           </div>
-          <span className="text-sm font-bold text-gray-900" style={{ transform: 'translateY(-5px)' }}>
+          <span className="text-sm font-bold text-gray-900">
             {Math.round(value)}{isRisk ? '% 위험도' : '/100'}
           </span>
         </div>
