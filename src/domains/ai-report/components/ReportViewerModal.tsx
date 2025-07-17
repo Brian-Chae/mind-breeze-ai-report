@@ -433,17 +433,24 @@ export function ReportViewerModal({
         throw new Error('리포트 콘텐츠를 찾을 수 없습니다.');
       }
 
+      // 실제 요소 크기 감지
+      const elementRect = reportElement.getBoundingClientRect();
+      const elementWidth = Math.max(elementRect.width, reportElement.scrollWidth);
+      const elementHeight = Math.max(elementRect.height, reportElement.scrollHeight);
+
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
-        scale: 3, // 더 높은 해상도로 설정
+        scale: 2, // 해상도는 조금 낮춰서 안정성 확보
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: viewMode === 'mobile' ? 375 : 1024,
-        windowWidth: viewMode === 'mobile' ? 375 : 1200,
+        width: elementWidth + 50, // 여유 공간 추가
+        height: elementHeight + 50, // 여유 공간 추가
+        windowWidth: Math.max(elementWidth + 100, 1400), // 충분한 너비 확보
         scrollX: 0,
         scrollY: 0,
-        height: reportElement.scrollHeight // 전체 높이 캡처
+        x: 0,
+        y: 0
       });
 
       // 이미지 다운로드
