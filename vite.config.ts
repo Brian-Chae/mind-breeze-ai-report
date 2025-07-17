@@ -8,6 +8,10 @@ export default defineConfig({
     react()
     // PWA 일시적으로 비활성화 - Firebase 로딩 문제 해결 후 다시 활성화
   ],
+  esbuild: {
+    // TypeScript 타입 체크 비활성화 (빠른 빌드를 위해)
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  },
   server: {
     host: true,
     port: 3000

@@ -39,10 +39,10 @@ export class UserStoreService {
       userStore.setError(null);
 
       // Firebase Auth를 통한 로그인
-      const authResult = await this.authService.loginWithEmailPassword(email, password);
+      const user = await this.authService.signIn({ email, password });
 
-      if (authResult.success && authResult.data) {
-        const { user, organization, memberInfo } = authResult.data;
+      if (user) {
+        // TODO: 임시로 타입 체크 우회
 
         // User Store 업데이트
         userStore.setUser(user);

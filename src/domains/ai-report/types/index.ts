@@ -440,3 +440,61 @@ export type AIReportErrorCode =
   | 'STORAGE_ERROR'
   | 'PERMISSION_DENIED'
   | 'RATE_LIMIT_EXCEEDED'; 
+
+// ============================================================================
+// Device Connection Types
+// ============================================================================
+
+export interface DeviceConnectionStatus {
+  isConnected: boolean;
+  isConnecting: boolean;
+  connectionAttempts: number;
+  lastConnectionAttempt?: Date;
+  connectionError?: string;
+  deviceInfo?: {
+    name: string;
+    address: string;
+    rssi?: number;
+    batteryLevel?: number;
+  };
+}
+
+// ============================================================================
+// Measurement Progress Types
+// ============================================================================
+
+export interface MeasurementProgress {
+  currentPhase: 'preparing' | 'measuring' | 'processing' | 'completed';
+  progressPercentage: number;
+  elapsedTime: number;
+  totalTime: number;
+  currentActivity?: string;
+  qualityMetrics?: {
+    eegQuality: number;
+    ppgQuality: number;
+    accQuality: number;
+  };
+}
+
+export interface AggregatedMeasurementData {
+  sessionId: string;
+  totalDuration: number;
+  eegSummary: {
+    averageAttention: number;
+    averageMeditation: number;
+    stressLevel: number;
+    qualityScore: number;
+  };
+  ppgSummary: {
+    averageHeartRate: number;
+    heartRateVariability: number;
+    qualityScore: number;
+  };
+  accSummary: {
+    movementLevel: number;
+    stabilityScore: number;
+    qualityScore: number;
+  };
+  overallQuality: number;
+  timestamp: Date;
+} 

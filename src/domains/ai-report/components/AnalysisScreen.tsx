@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
-import { Button } from '@ui/button';
-import { Activity, Loader, Sparkles, Settings, Brain } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Button } from '@shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Brain, Activity, Settings, Sparkles, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import measurementUserIntegrationService from '@domains/individual/services/MeasurementUserIntegrationService';
+import measurementUserManagementService from '@domains/individual/services/MeasurementUserManagementService';
 
 // 타입들을 AIHealthReportApp에서 임포트
 type PersonalInfo = {
@@ -27,6 +29,7 @@ type AggregatedMeasurementData = {
 type AIAnalysisResponse = {
   reportId: string;
   personalInfo: PersonalInfo;
+  measurementUserId?: string | null; // 🔥 MeasurementUser ID 추가
   analysisResults: {
     mentalHealthScore: number;
     physicalHealthScore: number;
@@ -102,11 +105,29 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
 
     setState('analyzing');
     setAnalysisProgress(0);
-    setAnalysisStatus('데이터 검증 중...');
+    setAnalysisStatus('사용자 정보 처리 중...');
 
     try {
       console.log('🔍 AI 분석 시작 - 원본 measurementData:', measurementData);
       console.log('🔍 AI 분석 시작 - personalInfo:', personalInfo);
+
+      // 🔥 0. MeasurementUser 찾기/생성 및 연결
+      let measurementUserId: string | null = null;
+      if (personalInfo && personalInfo.email) {
+        try {
+          measurementUserId = await measurementUserIntegrationService.findOrCreateMeasurementUser(
+            personalInfo,
+            'default' // organizationId는 서비스 내부에서 처리
+          );
+          console.log('✅ MeasurementUser 연결 완료:', measurementUserId);
+        } catch (error) {
+          console.error('⚠️ MeasurementUser 연결 실패:', error);
+          // MeasurementUser 연결 실패해도 분석은 계속 진행
+        }
+      }
+
+      setAnalysisProgress(5);
+      setAnalysisStatus('데이터 검증 중...');
 
       // 1. 측정 데이터를 AI 엔진이 기대하는 형식으로 변환
       setAnalysisProgress(10);
@@ -229,6 +250,7 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
       const formattedResult: AIAnalysisResponse = {
         reportId: analysisResult.analysisId,
         personalInfo,
+        measurementUserId, // 🔥 MeasurementUser ID 추가
         analysisResults: {
           mentalHealthScore: analysisResult.overallScore,
           physicalHealthScore: Math.round((analysisResult.overallScore + (100 - analysisResult.stressLevel)) / 2),
