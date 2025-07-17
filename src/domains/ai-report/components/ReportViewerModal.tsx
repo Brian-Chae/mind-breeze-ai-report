@@ -654,17 +654,7 @@ export function ReportViewerModal({
       return (
         <div 
           id="report-content" 
-          className={`w-full max-w-full overflow-hidden ${
-            viewMode === 'mobile' 
-              ? 'mobile-report-container' 
-              : 'desktop-report-container'
-          }`}
-          style={{
-            maxWidth: '100%',
-            overflowX: 'hidden',
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word'
-          }}
+          className="w-full"
           dangerouslySetInnerHTML={{ __html: reportContent.htmlContent }}
         />
       );
@@ -724,19 +714,19 @@ export function ReportViewerModal({
           isFullscreen 
             ? 'max-w-[95vw] max-h-[95vh]' 
             : viewMode === 'mobile'
-              ? '!w-[375px] !max-w-[375px] max-h-[90vh]'
+              ? '!w-[390px] !max-w-[390px] max-h-[90vh]'
               : '!w-[1180px] !max-w-none max-h-[95vh]'
         } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}
         style={{
           width: isFullscreen 
             ? '95vw' 
             : viewMode === 'mobile' 
-              ? '375px' 
+              ? '390px' 
               : '1180px',
           maxWidth: isFullscreen 
             ? '95vw' 
             : viewMode === 'mobile' 
-              ? '375px' 
+              ? '390px' 
               : 'none'
         }}
       >
@@ -824,12 +814,8 @@ export function ReportViewerModal({
         {/* 스크롤 가능한 콘텐츠 영역 */}
         <div 
           className={`flex-1 overflow-y-auto bg-gray-50 ${
-            viewMode === 'mobile' ? 'overflow-x-hidden' : 'pr-2'
+            viewMode === 'mobile' ? 'px-1' : 'pr-2'
           }`}
-          style={{
-            maxWidth: '100%',
-            overflowX: 'hidden'
-          }}
         >
           {renderReportContent()}
         </div>

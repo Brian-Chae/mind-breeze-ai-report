@@ -903,6 +903,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 30px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .personal-info-grid {
@@ -910,24 +914,46 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-top: 15px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .info-item {
             display: flex;
             flex-direction: column;
             gap: 5px;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .info-label {
             font-size: 0.875rem;
             color: ${isDark ? '#9CA3AF' : '#6B7280'};
             font-weight: 500;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .info-value {
             font-size: 0.875rem;
             color: ${textColor};
             font-weight: 600;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* 점수 요약 섹션 */
+        .score-summary-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         /* 메인 그리드 */
@@ -1470,26 +1496,83 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         /* 모바일 반응형 - 대폭 개선 */
         @media (max-width: 768px) {
             .report-container {
-                padding: 16px;
-                max-width: 100%;
+                padding: 12px;
+                max-width: 360px;
                 width: 100%;
                 overflow-x: hidden;
             }
             
-            /* 모든 컨테이너와 카드 요소들의 폭 제한 */
-            * {
-                max-width: 100%;
-                box-sizing: border-box;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
+            /* 모든 컨테이너와 카드 요소들의 폭 제한 - 더 강력한 제약 */
+            *, *::before, *::after {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+            }
+            
+            /* 섹션과 카드들의 강제 제약 */
+            section, .section, .card, .score-card, .health-score-section,
+            .health-elements-section, .risk-analysis-section, .personal-info-section {
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow-x: hidden !important;
+                margin: 0 0 16px 0 !important;
+                padding: 12px !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* 그리드 레이아웃 강제 1열 변환 */
+            .summary-main-grid, .demographic-grid, .occupational-grid, 
+            .plan-timeline, .scores-grid, .health-elements-grid, 
+            .risk-elements-grid, .findings-grid, .personal-info-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            /* 개별 카드들 */
+            .demographic-card, .occupational-card, .plan-card, .score-card,
+            .health-element, .finding-item, .info-item {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 0 8px 0 !important;
+                padding: 12px !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            
+            /* 텍스트 요소들 강제 제약 */
+            h1, h2, h3, h4, h5, h6, p, div, span, li, td, th {
+                max-width: 100% !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                hyphens: auto !important;
+            }
+            
+            /* 차트와 게이지 */
+            .gauge-chart, .chart-container, .score-gauge-container {
+                width: 100% !important;
+                max-width: 120px !important;
+                height: auto !important;
+                margin: 0 auto 12px auto !important;
+                overflow: hidden !important;
+            }
+            
+            .gauge-chart svg {
+                width: 120px !important;
+                height: 120px !important;
+                max-width: 100% !important;
             }
             
             /* 테이블이나 차트가 있는 경우 */
             table, .chart-container, .data-table {
-                width: 100%;
-                overflow-x: auto;
-                display: block;
-                white-space: nowrap;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: auto !important;
+                display: block !important;
+                white-space: nowrap !important;
             }
             
             .report-header {
@@ -1527,32 +1610,43 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 margin-bottom: 12px;
             }
             
-            /* 개인정보 그리드 모바일 최적화 */
+            /* 개인정보 그리드 모바일 최적화 - 더 강화 */
             .personal-info-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                margin-bottom: 20px;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-bottom: 16px !important;
             }
             
             .info-item {
-                padding: 12px;
-                border-radius: 8px;
-                background: rgba(0, 0, 0, 0.02);
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 8px !important;
+                border-radius: 6px !important;
+                background: rgba(0, 0, 0, 0.02) !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
             }
             
             .info-label {
-                font-size: 0.8rem;
-                font-weight: 600;
-                display: block;
-                margin-bottom: 4px;
-                color: #666;
+                font-size: 0.75rem !important;
+                font-weight: 600 !important;
+                display: block !important;
+                margin-bottom: 3px !important;
+                color: #666 !important;
+                max-width: 100% !important;
+                word-break: break-word !important;
             }
             
             .info-value {
-                font-size: 0.9rem;
-                font-weight: 500;
-                display: block;
-                color: #333;
+                font-size: 0.85rem !important;
+                font-weight: 500 !important;
+                display: block !important;
+                color: #333 !important;
+                max-width: 100% !important;
+                word-break: break-word !important;
             }
             
             /* 점수 게이지 모바일 최적화 */
@@ -1621,41 +1715,74 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 line-height: 1.4;
             }
             
-            /* 분석 콘텐츠 */
+            /* 분석 콘텐츠 - 강화 */
             .analysis-content {
-                padding: 16px;
-                max-width: 100%;
-                overflow-x: hidden;
+                padding: 12px !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow-x: hidden !important;
+                overflow-y: visible !important;
+                box-sizing: border-box !important;
             }
             
             .markdown-content {
-                font-size: 0.9rem;
-                line-height: 1.6;
-                max-width: 100%;
-                overflow-x: hidden;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
+                font-size: 0.85rem !important;
+                line-height: 1.5 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow-x: hidden !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                box-sizing: border-box !important;
             }
             
-            /* 긴 텍스트와 링크 처리 */
-            .markdown-content p, .markdown-content div, .markdown-content span {
-                max-width: 100%;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                hyphens: auto;
+            /* 긴 텍스트와 링크 처리 - 강화 */
+            .markdown-content p, .markdown-content div, .markdown-content span,
+            .markdown-content h1, .markdown-content h2, .markdown-content h3,
+            .markdown-content h4, .markdown-content h5, .markdown-content h6 {
+                max-width: 100% !important;
+                width: 100% !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                hyphens: auto !important;
+                box-sizing: border-box !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
             }
             
             .markdown-content a {
-                word-break: break-all;
-                max-width: 100%;
+                word-break: break-all !important;
+                max-width: 100% !important;
+                overflow-wrap: break-word !important;
             }
             
-            /* 코드 블록이나 긴 문자열 */
+            /* 코드 블록이나 긴 문자열 - 강화 */
             .markdown-content pre, .markdown-content code {
-                max-width: 100%;
-                overflow-x: auto;
-                white-space: pre-wrap;
-                word-wrap: break-word;
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow-x: auto !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* 리스트 아이템 */
+            .markdown-content ul, .markdown-content ol {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding-left: 16px !important;
+                margin: 8px 0 !important;
+                box-sizing: border-box !important;
+            }
+            
+            .markdown-content li {
+                max-width: 100% !important;
+                width: calc(100% - 16px) !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                margin-bottom: 4px !important;
+                font-size: 0.8rem !important;
+                line-height: 1.4 !important;
             }
             
             .markdown-content h2 {
@@ -1732,31 +1859,48 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             }
         }
         
-        /* 추가 소형 모바일 최적화 */
+                 /* 추가 소형 모바일 최적화 - 강화 */
         @media (max-width: 480px) {
             .report-container {
-                padding: 12px;
+                padding: 8px !important;
+                width: 100% !important;
+                max-width: 340px !important;
+                overflow-x: hidden !important;
             }
             
             .report-header {
-                padding: 20px 16px;
+                padding: 16px 12px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
             }
             
             .report-title {
-                font-size: 1.5rem;
+                font-size: 1.4rem !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
             }
             
             section {
-                padding: 16px 12px;
+                padding: 12px 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
             }
             
             h2 {
-                font-size: 1.25rem;
+                font-size: 1.2rem !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
             }
             
-            .personal-info-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
+            .personal-info-grid, .score-summary-section .personal-info-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
             }
             
             .gauge-chart {
