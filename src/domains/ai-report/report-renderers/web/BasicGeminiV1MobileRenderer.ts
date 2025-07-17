@@ -12,6 +12,7 @@ import {
   RendererCapabilities 
 } from '../../core/interfaces/IReportRenderer';
 import { AnalysisResult } from '../../core/interfaces/IAIEngine';
+import { BasicGeminiV1WebRenderer } from './BasicGeminiV1WebRenderer';
 
 // 상세 분석 결과 인터페이스 (웹 렌더러와 동일)
 interface DetailedAnalysisResult {
@@ -89,7 +90,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
       }
 
       // 모바일 최적화 HTML 생성
-      const htmlContent = this.generateMobileHTML(analysis, options);
+      const htmlContent = await this.generateMobileHTML(analysis, options);
       
       const renderTime = Date.now() - startTime;
 
@@ -199,39 +200,43 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
   }
 
   /**
-   * 모바일 최적화 HTML 생성
+   * 모바일 최적화 HTML 생성 (웹 렌더러 기반)
    */
-  private generateMobileHTML(analysis: AnalysisResult, options: RenderOptions): string {
+  private async generateMobileHTML(analysis: AnalysisResult, options: RenderOptions): Promise<string> {
+    // 웹 렌더러 인스턴스 생성
+    const webRenderer = new BasicGeminiV1WebRenderer();
+    
+    // 웹 렌더러로 HTML 생성
+    const webResult = await webRenderer.render(analysis, options);
+    
+    // content를 string으로 변환
+    const webHTMLContent = typeof webResult.content === 'string' 
+      ? webResult.content 
+      : webResult.content.toString();
+    
+    // HTML에서 CSS 부분만 모바일용으로 교체
+    const mobileHTML = this.convertWebToMobileHTML(webHTMLContent, options);
+    
+    return mobileHTML;
+  }
+
+  /**
+   * 웹 HTML을 모바일용으로 변환
+   */
+  private convertWebToMobileHTML(webHTML: string, options: RenderOptions): string {
     const theme = options.webOptions?.theme || 'light';
-    const language = options.language || 'ko';
-    const organizationName = options.organizationName || 'Mind Breeze';
     
-    return `
-<!DOCTYPE html>
-<html lang="${language}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="theme-color" content="${options.brandColors?.primary || '#3B82F6'}">
-    <title>${this.getTitle(language)} - ${organizationName}</title>
-    <style>
-        ${this.getMobileCSS(theme, options)}
-    </style>
-</head>
-<body>
-    <div class="mobile-report-container">
-        ${this.generateMobileHeader(analysis, options)}
-        ${this.generateMobileScoreSummary(analysis, options)}
-        ${this.generateMobileAnalysisList(analysis, options)}
-        ${this.generateMobileFooter(analysis, options)}
-    </div>
+    // 웹 렌더러의 CSS를 모바일 CSS로 교체
+    const mobileHTML = webHTML.replace(
+      /<style>[\s\S]*?<\/style>/,
+      `<style>${this.getMobileCSS(theme, options)}</style>`
+    );
     
-    <script>
-        ${this.getMobileJavaScript(options)}
-    </script>
-</body>
-</html>`;
+    // viewport 메타 태그를 모바일에 최적화
+    return mobileHTML.replace(
+      /<meta name="viewport"[^>]*>/,
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">'
+    );
   }
 
   /**
@@ -266,220 +271,278 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             overflow-x: hidden;
         }
         
-        .mobile-report-container {
+        .report-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 16px;
             width: 100%;
-            min-height: 100vh;
-            padding: 0;
-            background-color: ${bgColor};
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
         
-        /* 모바일 헤더 */
-        .mobile-header {
+        /* 헤더 */
+        .report-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 20px 16px;
             background: linear-gradient(135deg, ${primaryColor}, ${accentColor});
             color: white;
-            padding: 20px 16px;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
-        .mobile-header .logo {
+        .report-header .logo {
             height: 32px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
         
-        .mobile-header .title {
-            font-size: 18px;
+        .report-title {
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            color: white;
+        }
+        
+        .report-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        /* 섹션 공통 스타일 */
+        section {
+            background: ${cardBg};
+            padding: 20px 16px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid ${borderColor};
+        }
+        
+        section h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: ${textColor};
+            margin-bottom: 16px;
             line-height: 1.3;
         }
         
-        .mobile-header .subtitle {
-            font-size: 12px;
-            opacity: 0.9;
-            font-weight: 400;
+        section h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: ${textColor};
+            margin-bottom: 12px;
         }
         
-        /* 점수 요약 섹션 */
-        .score-summary {
-            background: ${cardBg};
-            padding: 20px 16px;
-            margin: 0;
-            border-bottom: 1px solid ${borderColor};
-        }
-        
-        .overall-score {
-            text-align: center;
+        /* 점수 카드 섹션 */
+        .scores-section {
             margin-bottom: 20px;
         }
         
-        .score-circle {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 12px;
+        .scores-grid {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-            position: relative;
+            flex-direction: column;
+            gap: 12px;
         }
         
-        .score-circle.excellent {
-            background: linear-gradient(135deg, #10B981, #059669);
-        }
-        
-        .score-circle.good {
-            background: linear-gradient(135deg, #3B82F6, #2563EB);
-        }
-        
-        .score-circle.average {
-            background: linear-gradient(135deg, #F59E0B, #D97706);
-        }
-        
-        .score-circle.poor {
-            background: linear-gradient(135deg, #EF4444, #DC2626);
+        .score-card {
+            background: ${isDark ? '#374151' : '#F8FAFC'};
+            padding: 16px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid ${borderColor};
         }
         
         .score-label {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: ${secondaryColor};
+            margin-bottom: 8px;
+        }
+        
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .score-unit {
+            font-size: 1rem;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+        
+        .score-subtitle {
+            font-size: 0.8rem;
+            color: ${secondaryColor};
+            margin-bottom: 10px;
+        }
+        
+        .score-bar {
+            width: 100%;
+            height: 6px;
+            background: ${isDark ? '#6B7280' : '#E5E7EB'};
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .score-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+        
+        /* 종합 요약 그리드 */
+        .summary-main-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        /* 건강 점수 섹션 */
+        .health-score-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .score-gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .gauge-chart {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        
+        .gauge-chart svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .gauge-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .gauge-value {
+            font-size: 1.8rem;
+            font-weight: 700;
             color: ${textColor};
-            margin-bottom: 4px;
+        }
+        
+        .gauge-max {
+            font-size: 0.9rem;
+            color: ${secondaryColor};
+        }
+        
+        .score-status {
+            text-align: center;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .status-good {
+            background: #DCFCE7;
+            color: #166534;
+        }
+        
+        .status-medium {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .status-bad {
+            background: #FEE2E2;
+            color: #991B1B;
         }
         
         .score-description {
-            font-size: 12px;
+            font-size: 0.85rem;
             color: ${secondaryColor};
-            line-height: 1.4;
+            line-height: 1.5;
+            margin-top: 8px;
         }
         
-        /* 분석 리스트 */
-        .analysis-list {
-            background: ${bgColor};
-            padding: 0;
-        }
-        
-        .analysis-item {
-            background: ${cardBg};
-            margin: 8px 16px;
+        /* 건강 요소별 현황 */
+        .health-elements-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
             border-radius: 12px;
-            padding: 16px;
-            border: 1px solid ${borderColor};
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
         }
         
-        .analysis-item:first-child {
-            margin-top: 16px;
-        }
-        
-        .analysis-item:last-child {
-            margin-bottom: 16px;
-        }
-        
-        .item-header {
+        .health-elements-grid {
             display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid ${borderColor};
-        }
-        
-        .item-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            font-size: 16px;
-            color: white;
-        }
-        
-        .item-icon.eeg {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-        }
-        
-        .item-icon.ppg {
-            background: linear-gradient(135deg, #ff416c, #ff4757);
-            box-shadow: 0 2px 8px rgba(255, 65, 108, 0.3);
-        }
-        
-        .item-icon.demographic {
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
-        }
-        
-        .item-icon.occupation {
-            background: linear-gradient(135deg, #fa709a, #fee140);
-            box-shadow: 0 2px 8px rgba(250, 112, 154, 0.3);
-        }
-        
-        .item-icon.improvement {
-            background: linear-gradient(135deg, #a8edea, #fed6e3);
-            box-shadow: 0 2px 8px rgba(168, 237, 234, 0.3);
-        }
-        
-        .item-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: ${textColor};
-            line-height: 1.3;
-        }
-        
-        .item-score {
-            margin-left: auto;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            color: white;
-        }
-        
-        .item-content {
+            flex-direction: column;
+            gap: 12px;
             margin-top: 12px;
         }
         
-        .item-description {
-            font-size: 13px;
-            color: ${textColor};
-            line-height: 1.5;
-            margin-bottom: 12px;
+        .risk-elements-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
         }
         
-        .findings-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .health-element {
+            background: ${cardBg};
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid ${borderColor};
         }
         
-        .findings-list li {
-            font-size: 12px;
-            color: ${secondaryColor};
-            padding: 6px 0;
-            padding-left: 16px;
-            position: relative;
-            border-bottom: 1px solid ${borderColor};
-            line-height: 1.4;
+        .element-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
         
-        .findings-list li:last-child {
-            border-bottom: none;
+        .element-label-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         
-        .findings-list li:before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: ${primaryColor};
+        .element-label {
+            font-size: 0.9rem;
             font-weight: 600;
+            color: ${textColor};
+        }
+        
+        .element-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .element-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: ${textColor};
         }
         
         /* 차트 컨테이너 */
@@ -549,30 +612,159 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             transition: all 0.3s ease;
         }
         
-        /* 개선 계획 특별 스타일 */
-        .improvement-goals {
-            margin-top: 12px;
+        /* 분석 섹션 */
+        .analysis-section {
+            margin-bottom: 20px;
         }
         
-        .goal-category {
+        .analysis-content {
+            padding: 0;
+        }
+        
+        .markdown-content {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: ${textColor};
+        }
+        
+        .markdown-content h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: ${textColor};
+            margin: 16px 0 8px 0;
+        }
+        
+        .markdown-content h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: ${textColor};
+            margin: 12px 0 6px 0;
+        }
+        
+        .markdown-content p {
+            margin-bottom: 8px;
+        }
+        
+        .markdown-content ul, .markdown-content ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .markdown-content li {
+            margin-bottom: 4px;
+            line-height: 1.5;
+        }
+        
+        .markdown-content strong {
+            font-weight: 600;
+            color: ${textColor};
+        }
+        
+        /* 개인 정보 그리드 */
+        .personal-info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .info-item {
+            padding: 8px 12px;
+            background: ${isDark ? '#4B5563' : '#F3F4F6'};
+            border-radius: 8px;
+            border: 1px solid ${borderColor};
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: ${secondaryColor};
+            margin-bottom: 2px;
+        }
+        
+        .info-value {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: ${textColor};
+        }
+        
+        /* 인구통계학적/직업적 분석 */
+        .demographic-grid, .occupational-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .demographic-card, .occupational-card {
+            background: ${cardBg};
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid ${borderColor};
+        }
+        
+        .demographic-card h4, .occupational-card h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: ${textColor};
+            margin-bottom: 8px;
+        }
+        
+        /* 개선 계획 */
+        .plan-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .plan-card {
+            background: ${cardBg};
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .plan-card.immediate {
+            border-left-color: #EF4444;
+        }
+        
+        .plan-card.short-term {
+            border-left-color: #F59E0B;
+        }
+        
+        .plan-card.long-term {
+            border-left-color: #10B981;
+        }
+        
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
         }
         
-        .goal-category-title {
-            font-size: 13px;
+        .plan-header h3 {
+            font-size: 0.9rem;
             font-weight: 600;
-            color: ${primaryColor};
-            margin-bottom: 6px;
+            color: ${textColor};
+            margin: 0;
         }
         
-        .goal-list {
+        .plan-period {
+            font-size: 0.75rem;
+            color: ${secondaryColor};
+            background: ${isDark ? '#4B5563' : '#F3F4F6'};
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .plan-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
         
-        .goal-list li {
-            font-size: 12px;
+        .plan-list li {
+            font-size: 0.8rem;
             color: ${textColor};
             padding: 4px 0;
             padding-left: 16px;
@@ -580,31 +772,98 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             line-height: 1.4;
         }
         
-        .goal-list li:before {
-            content: '✓';
+        .plan-list li:before {
+            content: '•';
             position: absolute;
             left: 0;
-            color: ${accentColor};
+            color: ${primaryColor};
             font-weight: 600;
         }
         
         /* 푸터 */
-        .mobile-footer {
+        .report-footer {
             background: ${cardBg};
             padding: 16px;
             text-align: center;
             border-top: 1px solid ${borderColor};
             margin-top: 20px;
+            border-radius: 0 0 12px 12px;
         }
         
-        .footer-text {
-            font-size: 11px;
+        .footer-disclaimer {
+            font-size: 0.75rem;
+            color: ${secondaryColor};
+            line-height: 1.5;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+        
+        .footer-info {
+            font-size: 0.7rem;
             color: ${secondaryColor};
             line-height: 1.4;
         }
         
-        .footer-text strong {
+        .footer-info strong {
             color: ${textColor};
+        }
+        
+        /* 진행률 바 (progress-container 등) */
+        .progress-container {
+            position: relative;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: ${isDark ? '#4B5563' : '#E5E7EB'};
+            margin: 6px 0;
+        }
+        
+        .progress-track {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .progress-marker {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: ${textColor};
+            border-radius: 1px;
+            transform: translateX(-50%);
+        }
+        
+        .progress-divider {
+            position: absolute;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: white;
+        }
+        
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 0.65rem;
+            color: ${secondaryColor};
+        }
+        
+        .health-segment, .risk-segment {
+            height: 100%;
+        }
+        
+        .health-segment.bad, .risk-segment.bad {
+            background: #FCA5A5;
+        }
+        
+        .health-segment.medium, .risk-segment.medium {
+            background: #FCD34D;
+        }
+        
+        .health-segment.good, .risk-segment.good {
+            background: #86EFAC;
         }
         
         /* 스크롤 최적화 */
@@ -625,20 +884,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     `;
   }
 
-  /**
-   * 모바일 헤더 생성
-   */
-  private generateMobileHeader(analysis: AnalysisResult, options: RenderOptions): string {
-    const organizationName = options.organizationName || 'Mind Breeze';
-    const language = options.language || 'ko';
-    
-    return `
-    <header class="mobile-header">
-        ${options.organizationLogo ? `<img src="${options.organizationLogo}" alt="${organizationName}" class="logo">` : ''}
-        <div class="title">${this.getTitle(language)}</div>
-        <div class="subtitle">${new Date(analysis.timestamp).toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US')}</div>
-    </header>`;
-  }
+
 
   /**
    * 모바일 점수 요약 생성
