@@ -9,7 +9,7 @@ import { ReportViewerModal } from '@domains/ai-report/components/ReportViewerMod
 import reportSharingService, { ShareableReport, ShareLinkAuth } from '@domains/ai-report/services/ReportSharingService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/core/services/firebase';
-import { Loader2, Calendar, Shield, User, Clock, Eye } from 'lucide-react';
+import { Loader2, Calendar, Shield, User, Clock, Eye, AlertCircle } from 'lucide-react';
 
 interface SharedReportPageProps {}
 
@@ -140,11 +140,14 @@ export function SharedReportPage({}: SharedReportPageProps) {
   // 로딩 화면
   if (step === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-            <p className="text-gray-600">리포트 정보를 확인하고 있습니다...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-lg border-0">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">리포트 확인 중</h3>
+            <p className="text-gray-600 text-center">리포트 정보를 확인하고 있습니다...</p>
           </CardContent>
         </Card>
       </div>
@@ -154,86 +157,115 @@ export function SharedReportPage({}: SharedReportPageProps) {
   // 인증 화면
   if (step === 'auth') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Shield className="h-6 w-6 text-blue-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-lg">
+          {/* 상단 헤더 */}
+          <div className="text-center mb-8">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
+              <Shield className="h-10 w-10 text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold">AI 건강 분석 리포트</CardTitle>
-            <CardDescription>
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">AI 건강 분석 리포트</h1>
+            <p className="text-gray-600 text-lg">
               리포트 열람을 위해 본인 확인이 필요합니다
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-6">
-            {/* 리포트 정보 */}
-            {shareableReport && (
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="h-4 w-4" />
-                  <span>분석 대상: {shareableReport.subjectName}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span>생성일: {formatDate(shareableReport.createdAt)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Eye className="h-4 w-4" />
-                  <span>{formatAccessInfo(shareableReport.accessCount, shareableReport.maxAccessCount)}</span>
-                </div>
-              </div>
-            )}
+            </p>
+          </div>
 
-            {/* 인증 폼 */}
-            <div className="space-y-4">
-                             <div className="space-y-2">
-                 <label htmlFor="birthDate" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                   <Calendar className="h-4 w-4" />
-                   생년월일 확인
-                 </label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  placeholder="YYYY-MM-DD"
-                  disabled={isAuthenticating || isLoadingReport}
-                />
-                <p className="text-sm text-gray-500">
-                  분석 대상자의 생년월일을 입력해주세요
-                </p>
-              </div>
-
-              {authError && (
-                <Alert variant="destructive">
-                  <AlertDescription>{authError}</AlertDescription>
-                </Alert>
+          <Card className="shadow-xl border-0">
+            <CardContent className="p-8 space-y-6">
+              {/* 리포트 정보 */}
+              {shareableReport && (
+                <div className="bg-blue-50 rounded-xl p-6 space-y-4 border border-blue-100">
+                  <h3 className="font-semibold text-gray-900 text-lg mb-3">리포트 정보</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">분석 대상</span>
+                        <p className="font-medium text-gray-900">{shareableReport.subjectName}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">생성일</span>
+                        <p className="font-medium text-gray-900">{formatDate(shareableReport.createdAt)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Eye className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">열람 현황</span>
+                        <p className="font-medium text-gray-900">{formatAccessInfo(shareableReport.accessCount, shareableReport.maxAccessCount)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
 
-              <Button 
-                onClick={handleAuthenticate}
-                disabled={!birthDate || isAuthenticating || isLoadingReport}
-                className="w-full"
-              >
-                {isAuthenticating || isLoadingReport ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isAuthenticating ? '인증 중...' : '리포트 로딩 중...'}
-                  </>
-                ) : (
-                  '리포트 열람하기'
-                )}
-              </Button>
-            </div>
+              {/* 인증 폼 */}
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <label htmlFor="birthDate" className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                      <Calendar className="h-3 w-3 text-green-600" />
+                    </div>
+                    생년월일 확인
+                  </label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    placeholder="YYYY-MM-DD"
+                    disabled={isAuthenticating || isLoadingReport}
+                    className="h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                  />
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    분석 대상자의 생년월일을 입력해주세요
+                  </p>
+                </div>
 
-            {/* 안내 문구 */}
-            <div className="text-center text-sm text-gray-500 border-t pt-4">
-              <p>본 리포트는 개인정보보호를 위해 생년월일 확인이 필요합니다.</p>
-              <p className="mt-1">문제가 있으시면 리포트 발송자에게 문의해주세요.</p>
-            </div>
-          </CardContent>
-        </Card>
+                {authError && (
+                  <Alert variant="destructive" className="border-red-200 bg-red-50">
+                    <AlertDescription className="text-red-800">{authError}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button 
+                  onClick={handleAuthenticate}
+                  disabled={!birthDate || isAuthenticating || isLoadingReport}
+                  className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold shadow-lg"
+                >
+                  {isAuthenticating || isLoadingReport ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      {isAuthenticating ? '인증 중...' : '리포트 로딩 중...'}
+                    </>
+                  ) : (
+                    '리포트 열람하기'
+                  )}
+                </Button>
+              </div>
+
+              {/* 안내 문구 */}
+              <div className="text-center pt-6 border-t border-gray-200">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600 font-medium">개인정보보호를 위한 본인 확인</p>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    본 리포트는 개인정보보호를 위해 생년월일 확인이 필요합니다.<br />
+                    문제가 있으시면 리포트 발송자에게 문의해주세요.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -255,24 +287,30 @@ export function SharedReportPage({}: SharedReportPageProps) {
 
   // 오류 화면
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl font-bold text-red-600">오류 발생</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
+            <AlertCircle className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">오류 발생</h1>
+          <p className="text-gray-600">
             {authError || '알 수 없는 오류가 발생했습니다.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={() => navigate('/')}
-            variant="outline"
-            className="w-full"
-          >
-            홈으로 돌아가기
-          </Button>
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+
+        <Card className="shadow-xl border-0">
+          <CardContent className="p-6 text-center">
+            <Button 
+              onClick={() => navigate('/')}
+              variant="outline"
+              className="w-full h-12 text-lg border-2 border-gray-300 hover:bg-gray-50"
+            >
+              홈으로 돌아가기
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
