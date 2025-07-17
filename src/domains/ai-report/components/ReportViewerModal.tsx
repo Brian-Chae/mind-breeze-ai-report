@@ -150,9 +150,9 @@ export function ReportViewerModal({
         
         // 📊 디버깅: 실제 report 구조 확인
         console.log('🔍 실제 report 전체 구조:', report);
-        console.log('🔍 report.analysisResults:', report?.analysisResults);
+        console.log('🔍 report.insights:', report?.insights);
         console.log('🔍 report.rawData:', report?.rawData);
-        console.log('🔍 insights.detailedAnalysis 타입:', typeof report?.analysisResults?.detailedAnalysis);
+        console.log('🔍 insights.detailedAnalysis 타입:', typeof report?.insights?.detailedAnalysis);
         console.log('🔍 rawData.detailedAnalysis 타입:', typeof report?.rawData?.detailedAnalysis);
         console.log('🔍 rawData.detailedAnalysis 내용:', report?.rawData?.detailedAnalysis);
         
@@ -168,7 +168,9 @@ export function ReportViewerModal({
             stressLevel: report.stressLevel || 45,
             focusLevel: report.focusLevel || 82,
             insights: {
-              summary: report.analysisResults?.recommendations?.join(' ') || "분석 결과를 확인하세요."
+              summary: report.insights?.summary || "분석 결과를 확인하세요.",
+              detailedAnalysis: report.insights?.detailedAnalysis || '',
+              recommendations: report.insights?.recommendations || []
             },
             metrics: report.metrics || {},
             processingTime: report.processingTime || 1000,
@@ -178,22 +180,37 @@ export function ReportViewerModal({
           };
           console.log('✅ rawData.detailedAnalysis 객체 직접 사용:', report.rawData.detailedAnalysis);
           
-        } else if (report?.analysisResults?.detailedAnalysis && typeof report.analysisResults.detailedAnalysis === 'string') {
+        } else if (report?.insights?.detailedAnalysis && typeof report.insights.detailedAnalysis === 'string') {
           // 문자열로 저장된 상세 분석 결과를 파싱하여 사용 (fallback)
           try {
-            const parsedDetailedAnalysis = JSON.parse(report.analysisResults.detailedAnalysis);
+            // insights.detailedAnalysis는 이미 마크다운 문자열이므로 그대로 사용
             actualAnalysisResult = {
-              overallScore: report.analysisResults.mentalHealthScore || 78,
+              engineId: report.engineId || 'basic-gemini-v1',
+              engineVersion: report.engineVersion || '1.1.0',
+              timestamp: report.timestamp || new Date().toISOString(),
+              analysisId: report.analysisId || 'unknown',
+              overallScore: report.overallScore || 78,
+              stressLevel: report.stressLevel || 45,
+              focusLevel: report.focusLevel || 82,
               insights: {
-                summary: report.analysisResults.recommendations?.join(' ') || "분석 결과를 확인하세요."
+                summary: report.insights?.summary || "분석 결과를 확인하세요.",
+                detailedAnalysis: report.insights.detailedAnalysis,
+                recommendations: report.insights?.recommendations || []
               },
+              metrics: report.metrics || {},
+              processingTime: report.processingTime || 1000,
               rawData: {
-                detailedAnalysis: parsedDetailedAnalysis
+                detailedAnalysis: {
+                  // 마크다운을 구조화된 데이터로 변환하는 대신 기본값 제공
+                  overallScore: report.overallScore || 78,
+                  overallInterpretation: report.insights.summary || "전반적인 건강 상태를 확인하세요.",
+                  markdownContent: report.insights.detailedAnalysis
+                }
               }
             };
-            console.log('✅ 파싱된 실제 분석 결과 사용:', parsedDetailedAnalysis);
+            console.log('✅ insights.detailedAnalysis 문자열 사용:', report.insights.detailedAnalysis);
           } catch (parseError) {
-            console.warn('⚠️ 분석 결과 파싱 실패, null 설정:', parseError);
+            console.warn('⚠️ 분석 결과 처리 실패, null 설정:', parseError);
             actualAnalysisResult = null;
           }
         } else {

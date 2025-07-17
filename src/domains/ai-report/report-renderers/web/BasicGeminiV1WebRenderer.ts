@@ -18,33 +18,36 @@ interface DetailedAnalysisResult {
   overallScore: number;
   overallInterpretation: string;
   
-  eegAnalysis: {
+  // 🎯 마크다운 콘텐츠 지원 (옵셔널)
+  markdownContent?: string;
+  
+  eegAnalysis?: {
     score: number;
     interpretation: string;
     keyFindings: string[];
     concerns: string[];
   };
   
-  ppgAnalysis: {
+  ppgAnalysis?: {
     score: number;
     interpretation: string;
     keyFindings: string[];
     concerns: string[];
   };
   
-  demographicAnalysis: {
+  demographicAnalysis?: {
     ageSpecific: string;
     genderSpecific: string;
     combinedInsights: string[];
   };
   
-  occupationalAnalysis: {
+  occupationalAnalysis?: {
     jobSpecificRisks: string[];
     workplaceRecommendations: string[];
     careerHealthTips: string[];
   };
   
-  improvementPlan: {
+  improvementPlan?: {
     immediate: string[];
     shortTerm: string[];
     longTerm: string[];
@@ -298,11 +301,62 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
+   * 마크다운 기반 요약 생성
+   */
+  private generateMarkdownSummary(analysis: AnalysisResult, markdownContent: string, options: RenderOptions): string {
+    const language = options.language || 'ko';
+    
+    // 마크다운을 HTML로 변환 (간단한 변환)
+    const htmlContent = markdownContent
+      .replace(/## (.*)/g, '<h2>$1</h2>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/• (.*)/g, '<li>$1</li>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    
+    return `
+    <section class="summary-section">
+        <h2>${language === 'ko' ? '종합 건강 개요' : 'Overall Health Overview'}</h2>
+        
+        <!-- 개인 정보 요약 -->
+        <div class="personal-info-section">
+            <h3 class="subsection-title">${language === 'ko' ? '분석 대상 정보' : 'Analysis Subject Information'}</h3>
+            <div class="personal-info-grid">
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '전체 점수:' : 'Overall Score:'}</span>
+                    <span class="info-value">${analysis.overallScore}/100</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '집중력:' : 'Focus Level:'}</span>
+                    <span class="info-value">${analysis.focusLevel || 0}/100</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '스트레스:' : 'Stress Level:'}</span>
+                    <span class="info-value">${analysis.stressLevel || 0}/100</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 분석 결과 내용 -->
+        <div class="analysis-content">
+            <div class="markdown-content">
+                <p>${htmlContent}</p>
+            </div>
+        </div>
+    </section>`;
+  }
+
+  /**
    * 종합 요약 생성 (복잡한 구조)
    */
   private generateOverallSummary(analysis: AnalysisResult, options: RenderOptions): string {
     const language = options.language || 'ko';
     const detailedAnalysis = analysis.rawData?.detailedAnalysis as DetailedAnalysisResult;
+    
+    // 🎯 마크다운 콘텐츠가 있는 경우 해당 콘텐츠를 사용
+    if (detailedAnalysis?.markdownContent) {
+      return this.generateMarkdownSummary(analysis, detailedAnalysis.markdownContent, options);
+    }
     
     return `
     <section class="summary-section">
@@ -381,7 +435,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         </div>
 
         <!-- 주요 발견사항 -->
-        ${detailedAnalysis?.eegAnalysis?.keyFindings?.length > 0 ? `
+        ${detailedAnalysis?.eegAnalysis?.keyFindings && detailedAnalysis.eegAnalysis.keyFindings.length > 0 ? `
         <div class="key-findings-section">
             <h3 class="subsection-title">${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
             <div class="findings-grid">
