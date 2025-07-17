@@ -1994,191 +1994,24 @@ AI 건강 분석 리포트
             </div>
             
             {/* 컬럼 헤더 */}
-            <div className="grid grid-cols-6 gap-6 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300 pb-2">
+            <div className="grid grid-cols-1 gap-6 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300 pb-2">
               <div>사용자 정보</div>
-              <div className="text-center">나이</div>
-              <div className="text-center">성별</div>
-              <div className="text-center">직업</div>
-              <div className="text-center">측정일시</div>
-              <div className="text-center">생성자</div>
             </div>
           </div>
 
           {/* 컴팩트한 리스트 */}
           <div className="space-y-3">
             {currentItems.map((data) => {
-              // 생년월일과 만 나이 계산 함수
-              const calculateAgeInfo = (birthDate: any) => {
-                if (!birthDate) {
-                  return {
-                    displayText: '나이 정보 없음',
-                    birthDateText: '나이 정보 없음',
-                    ageText: '',
-                    age: 0
-                  }
-                }
-                
-                // 안전한 Date 객체 생성
-                let birth: Date
-                let year: number, month: number, day: number
-                
-                try {
-                  if (birthDate instanceof Date) {
-                    birth = birthDate
-                    year = birth.getFullYear()
-                    month = birth.getMonth() + 1
-                    day = birth.getDate()
-                  } else if (birthDate && typeof birthDate === 'object' && 'seconds' in birthDate) {
-                    // Firestore Timestamp 객체 처리
-                    if (typeof birthDate.toDate === 'function') {
-                      // toDate() 메소드가 있는 경우
-                      birth = birthDate.toDate()
-                    } else {
-                      // seconds 값으로 Date 생성
-                      birth = new Date(birthDate.seconds * 1000)
-                    }
-                    year = birth.getFullYear()
-                    month = birth.getMonth() + 1
-                    day = birth.getDate()
-                  } else if (typeof birthDate === 'string') {
-                    // 한국어 날짜 형태 파싱: "1984년 4월 24일 오전 9시 0분 0초 UTC+9"
-                    const koreanDateMatch = birthDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/)
-                    
-                    if (koreanDateMatch) {
-                      year = parseInt(koreanDateMatch[1])
-                      month = parseInt(koreanDateMatch[2])
-                      day = parseInt(koreanDateMatch[3])
-                      birth = new Date(year, month - 1, day) // month는 0부터 시작
-                    } else {
-                      // 일반적인 날짜 형태 시도
-                      birth = new Date(birthDate)
-                      if (isNaN(birth.getTime())) {
-                        console.warn('날짜 파싱 실패:', birthDate)
-                        return {
-                          displayText: '나이 정보 없음',
-                          birthDateText: '나이 정보 없음',
-                          ageText: '',
-                          age: 0
-                        }
-                      }
-                      year = birth.getFullYear()
-                      month = birth.getMonth() + 1
-                      day = birth.getDate()
-                    }
-                  } else if (typeof birthDate === 'number') {
-                    birth = new Date(birthDate)
-                    year = birth.getFullYear()
-                    month = birth.getMonth() + 1
-                    day = birth.getDate()
-                  } else {
-                    // 예상치 못한 타입의 데이터
-                    console.warn('예상치 못한 birthDate 타입:', typeof birthDate, birthDate)
-                    return {
-                      displayText: '나이 정보 없음',
-                      birthDateText: '나이 정보 없음',
-                      ageText: '',
-                      age: 0
-                    }
-                  }
-                  
-                  // Date 객체 유효성 검사
-                  if (!birth || isNaN(birth.getTime())) {
-                    return {
-                      displayText: '나이 정보 없음',
-                      birthDateText: '나이 정보 없음',
-                      ageText: '',
-                      age: 0
-                    }
-                  }
-                } catch (error) {
-                  console.warn('Date 생성 실패:', error, birthDate)
-                  return {
-                    displayText: '나이 정보 없음',
-                    birthDateText: '나이 정보 없음',
-                    ageText: '',
-                    age: 0
-                  }
-                }
-                
-                const today = new Date()
-                let age = today.getFullYear() - birth.getFullYear()
-                const monthDiff = today.getMonth() - birth.getMonth()
-                
-                // 생일이 지나지 않았으면 1살 빼기
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                  age--
-                }
-                
-                return {
-                  displayText: `${year}년 ${month}월 ${day}일생`,
-                  birthDateText: `${year}년 ${month}월 ${day}일생`,
-                  ageText: `만 ${age}세`,
-                  age: age
-                }
-              }
-              
-              // 세션 데이터에서 생년월일 정보 가져오기
-              const sessionData = data.sessionData || {}
-              const birthDate = sessionData.subjectBirthDate || null
-              
-
-              const ageInfo = calculateAgeInfo(birthDate)
-              
-              const measurementDate = new Date(data.timestamp)
-              
               return (
                 <div key={data.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all duration-200 pb-4">
                   {/* 메인 정보 행 - 테이블 형태 */}
                   <div className="p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center flex-1">
-                        <div className="grid grid-cols-6 gap-6 flex-1 items-center">
+                        <div className="grid grid-cols-1 gap-6 flex-1 items-center">
                           <div className="flex items-center space-x-2">
                             <User className="w-4 h-4 text-blue-500" />
                             <span className="font-semibold text-gray-900">{data.userName}</span>
-                          </div>
-                          
-                          <div className="text-center">
-                            <div className="space-y-1">
-                              {ageInfo.ageText && (
-                                <div>
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {ageInfo.ageText}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="text-xs text-gray-600">
-                                {ageInfo.birthDateText}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-center">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              data.userGender === 'MALE' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-pink-100 text-pink-800'
-                            }`}>
-                              {data.userGender === 'MALE' ? '남성' : '여성'}
-                            </span>
-                          </div>
-                          
-                          <div className="text-center">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {data.userOccupation}
-                            </span>
-                          </div>
-                          
-                          <div className="text-sm text-gray-600">
-                            <div className="font-medium">측정일시</div>
-                            <div className="text-xs text-gray-500">
-                              {measurementDate.toLocaleDateString('ko-KR')} {measurementDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </div>
-                          
-                          <div className="text-sm text-gray-600">
-                            <div className="font-medium">생성자</div>
-                            <div className="text-xs text-gray-500">{data.userName}</div>
                           </div>
                         </div>
                       </div>
