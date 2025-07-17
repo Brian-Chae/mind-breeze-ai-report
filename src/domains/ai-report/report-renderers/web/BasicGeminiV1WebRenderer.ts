@@ -601,8 +601,13 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     <section class="analysis-section eeg-analysis">
         <h2>${language === 'ko' ? '🧠 뇌파 분석 결과' : '🧠 EEG Analysis Results'}</h2>
         <div class="analysis-content">
-            <div class="score-badge score-${this.getScoreLevel(eegAnalysis.score)}">
-                ${language === 'ko' ? '뇌파 건강 점수' : 'EEG Health Score'}: ${eegAnalysis.score}/100
+            <!-- 뇌파 건강 점수 그래프 -->
+            <div class="score-chart-section">
+                ${this.generateHealthElement(
+                    language === 'ko' ? '뇌파 건강도' : 'EEG Health', 
+                    eegAnalysis.score, 
+                    false
+                )}
             </div>
             
             <div class="analysis-text">
@@ -642,8 +647,13 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     <section class="analysis-section ppg-analysis">
         <h2>${language === 'ko' ? '❤️ 심혈관 분석 결과' : '❤️ Cardiovascular Analysis Results'}</h2>
         <div class="analysis-content">
-            <div class="score-badge score-${this.getScoreLevel(ppgAnalysis.score)}">
-                ${language === 'ko' ? '심혈관 건강 점수' : 'Cardiovascular Health Score'}: ${ppgAnalysis.score}/100
+            <!-- 심혈관 건강 점수 그래프 -->
+            <div class="score-chart-section">
+                ${this.generateHealthElement(
+                    language === 'ko' ? '심혈관 건강도' : 'Cardiovascular Health', 
+                    ppgAnalysis.score, 
+                    false
+                )}
             </div>
             
             <div class="analysis-text">
@@ -895,6 +905,25 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             background: ${cardBg};
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 분석 섹션 */
+        .analysis-section {
+            background: ${cardBg};
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            border: 1px solid ${isDark ? '#6B7280' : '#E5E7EB'};
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 점수 차트 섹션 */
+        .score-chart-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid ${isDark ? '#4B5563' : '#E5E7EB'};
         }
 
         /* 개인 정보 섹션 */

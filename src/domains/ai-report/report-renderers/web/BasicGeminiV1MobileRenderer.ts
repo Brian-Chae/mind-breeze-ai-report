@@ -646,6 +646,15 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             margin-bottom: 20px;
         }
         
+        /* 점수 차트 섹션 */
+        .score-chart-section {
+            background: ${isDark ? '#374151' : '#F9FAFB'};
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid ${borderColor};
+        }
+        
         .analysis-content {
             padding: 0;
         }
