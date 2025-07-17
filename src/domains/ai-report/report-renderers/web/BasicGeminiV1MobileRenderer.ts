@@ -588,41 +588,11 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             border: 1px solid ${borderColor};
         }
         
-        /* 아이템 헤더 */
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid ${borderColor};
-        }
-        
-        /* 아이템 제목 */
-        .item-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: ${textColor};
-            flex: 1;
-        }
-        
-        /* 아이템 점수 */
-        .item-score {
-            font-size: 14px;
-            font-weight: 700;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            min-width: 60px;
-            text-align: center;
-        }
-        
         /* 아이템 설명 */
         .item-description {
             font-size: 14px;
             line-height: 1.5;
             color: ${secondaryColor};
-            margin-bottom: 12px;
             text-align: left;
         }
         
@@ -645,35 +615,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             text-align: center;
         }
         
-        /* 주요 발견사항 섹션 */
-        .findings-section {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid ${borderColor};
-        }
-        
-        .findings-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .findings-list li {
-            padding: 6px 0;
-            font-size: 13px;
-            line-height: 1.4;
-            color: ${textColor};
-            position: relative;
-            padding-left: 16px;
-        }
-        
-        .findings-list li::before {
-            content: "•";
-            color: ${primaryColor};
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
+
         
         /* SVG 차트 스타일 */
         .chart-container svg {
@@ -999,7 +941,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         }
         
         /* 터치 최적화 */
-        .analysis-item {
+        .plan-card {
             touch-action: pan-y;
         }
         
@@ -1080,25 +1022,26 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
    * EEG 분석 아이템 생성
    */
   private generateEEGAnalysisItem(eegAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '🧠 뇌파 건강도' : '🧠 EEG Health';
+    const title = language === 'ko' ? '뇌파 건강도' : 'EEG Health';
     const scoreClass = this.getScoreClass(eegAnalysis.score);
     
     return `
-    <div class="chart-container">
-        <div class="item-header">
-            <div class="item-title">${title}</div>
-            <div class="item-score ${scoreClass}">${Math.round(eegAnalysis.score)}/100</div>
+    <div class="plan-card immediate">
+        <div class="plan-header">
+            <h3>🧠 ${title}</h3>
+            <div class="plan-period">${Math.round(eegAnalysis.score)}/100</div>
         </div>
-        <div class="item-description">${eegAnalysis.interpretation}</div>
-        <div style="text-align: center;">
+        <div class="item-description" style="margin-bottom: 16px;">${eegAnalysis.interpretation}</div>
+        <div style="text-align: center; margin-bottom: 16px;">
             ${this.generateEEGChart(eegAnalysis)}
             <div class="chart-legend">
                 <div class="legend-title">주파수 대역별 활성도</div>
             </div>
         </div>
         ${eegAnalysis.keyFindings?.length ? `
-        <div class="findings-section">
-            <ul class="findings-list">
+        <div>
+            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">주요 발견사항</h4>
+            <ul class="plan-list">
                 ${eegAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
             </ul>
         </div>
@@ -1110,25 +1053,26 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
    * PPG 분석 아이템 생성
    */
   private generatePPGAnalysisItem(ppgAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '❤️ 심혈관 건강도' : '❤️ Cardiovascular Health';
+    const title = language === 'ko' ? '심혈관 건강도' : 'Cardiovascular Health';
     const scoreClass = this.getScoreClass(ppgAnalysis.score);
     
     return `
-    <div class="chart-container">
-        <div class="item-header">
-            <div class="item-title">${title}</div>
-            <div class="item-score ${scoreClass}">${Math.round(ppgAnalysis.score)}/100</div>
+    <div class="plan-card short-term">
+        <div class="plan-header">
+            <h3>❤️ ${title}</h3>
+            <div class="plan-period">${Math.round(ppgAnalysis.score)}/100</div>
         </div>
-        <div class="item-description">${ppgAnalysis.interpretation}</div>
-        <div style="text-align: center;">
+        <div class="item-description" style="margin-bottom: 16px;">${ppgAnalysis.interpretation}</div>
+        <div style="text-align: center; margin-bottom: 16px;">
             ${this.generatePPGChart(ppgAnalysis)}
             <div class="chart-legend">
                 <div class="legend-title">심박변이도 & 스트레스 지수</div>
             </div>
         </div>
         ${ppgAnalysis.keyFindings?.length ? `
-        <div class="findings-section">
-            <ul class="findings-list">
+        <div>
+            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">주요 발견사항</h4>
+            <ul class="plan-list">
                 ${ppgAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
             </ul>
         </div>
@@ -1143,26 +1087,24 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     const title = language === 'ko' ? '개인 특성 분석' : 'Demographic Analysis';
     
     return `
-    <div class="analysis-item">
-        <div class="item-header">
-            <div class="item-icon demographic">👤</div>
-            <div class="item-title">${title}</div>
+    <div class="plan-card long-term">
+        <div class="plan-header">
+            <h3>👤 ${title}</h3>
         </div>
-        <div class="item-content">
-            ${demographicAnalysis.ageSpecific ? `
-            <div class="item-description"><strong>연령별 특성:</strong> ${demographicAnalysis.ageSpecific}</div>
-            ` : ''}
-            ${demographicAnalysis.genderSpecific ? `
-            <div class="item-description"><strong>성별 특성:</strong> ${demographicAnalysis.genderSpecific}</div>
-            ` : ''}
-            ${demographicAnalysis.combinedInsights?.length ? `
-            <div class="findings-section">
-                <ul class="findings-list">
-                    ${demographicAnalysis.combinedInsights.map((insight: string) => `<li>${insight}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
+        ${demographicAnalysis.ageSpecific ? `
+        <div class="item-description" style="margin-bottom: 12px;"><strong>연령별 특성:</strong> ${demographicAnalysis.ageSpecific}</div>
+        ` : ''}
+        ${demographicAnalysis.genderSpecific ? `
+        <div class="item-description" style="margin-bottom: 12px;"><strong>성별 특성:</strong> ${demographicAnalysis.genderSpecific}</div>
+        ` : ''}
+        ${demographicAnalysis.combinedInsights?.length ? `
+        <div>
+            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">종합 인사이트</h4>
+            <ul class="plan-list">
+                ${demographicAnalysis.combinedInsights.map((insight: string) => `<li>${insight}</li>`).join('')}
+            </ul>
         </div>
+        ` : ''}
     </div>`;
   }
 
@@ -1170,32 +1112,29 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
    * 직업적 분석 아이템 생성
    */
   private generateOccupationalAnalysisItem(occupationalAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '직업적 건강 분석' : 'Occupational Analysis';
+    const title = language === 'ko' ? '직업별 건강 팁' : 'Occupational Health Tips';
     
     return `
-    <div class="analysis-item">
-        <div class="item-header">
-            <div class="item-icon occupation">💼</div>
-            <div class="item-title">${title}</div>
+    <div class="plan-card immediate">
+        <div class="plan-header">
+            <h3>💼 ${title}</h3>
         </div>
-        <div class="item-content">
-            ${occupationalAnalysis.jobSpecificRisks?.length ? `
-            <div class="findings-section">
-                <div class="goal-category-title">직업적 위험 요소</div>
-                <ul class="findings-list">
-                    ${occupationalAnalysis.jobSpecificRisks.map((risk: string) => `<li>${risk}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
-            ${occupationalAnalysis.workplaceRecommendations?.length ? `
-            <div class="findings-section">
-                <div class="goal-category-title">직장 내 권장사항</div>
-                <ul class="findings-list">
-                    ${occupationalAnalysis.workplaceRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
+        ${occupationalAnalysis.jobSpecificRisks?.length ? `
+        <div style="margin-bottom: 16px;">
+            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">직업적 위험 요소</h4>
+            <ul class="plan-list">
+                ${occupationalAnalysis.jobSpecificRisks.map((risk: string) => `<li>${risk}</li>`).join('')}
+            </ul>
         </div>
+        ` : ''}
+        ${occupationalAnalysis.workplaceRecommendations?.length ? `
+        <div>
+            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">직장 내 권장사항</h4>
+            <ul class="plan-list">
+                ${occupationalAnalysis.workplaceRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
     </div>`;
   }
 
@@ -1203,42 +1142,46 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
    * 개선 계획 아이템 생성
    */
   private generateImprovementPlanItem(improvementPlan: any, language: string): string {
-    const title = language === 'ko' ? '개선 계획' : 'Improvement Plan';
+    const title = language === 'ko' ? '건강 개선 계획' : 'Health Improvement Plan';
     
     return `
-    <div class="analysis-item">
-        <div class="item-header">
-            <div class="item-icon improvement">🎯</div>
-            <div class="item-title">${title}</div>
+    <div class="plan-timeline">
+        <div class="plan-header" style="margin-bottom: 16px;">
+            <h3 style="font-size: 1.1rem;">📈 ${title}</h3>
         </div>
-        <div class="item-content">
-            <div class="improvement-goals">
-                ${improvementPlan.immediate?.length ? `
-                <div class="goal-category">
-                    <div class="goal-category-title">즉시 실행</div>
-                    <ul class="goal-list">
-                        ${improvementPlan.immediate.map((action: string) => `<li>${action}</li>`).join('')}
-                    </ul>
-                </div>
-                ` : ''}
-                ${improvementPlan.shortTerm?.length ? `
-                <div class="goal-category">
-                    <div class="goal-category-title">단기 목표 (1-4주)</div>
-                    <ul class="goal-list">
-                        ${improvementPlan.shortTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
-                    </ul>
-                </div>
-                ` : ''}
-                ${improvementPlan.longTerm?.length ? `
-                <div class="goal-category">
-                    <div class="goal-category-title">장기 목표 (1-6개월)</div>
-                    <ul class="goal-list">
-                        ${improvementPlan.longTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
-                    </ul>
-                </div>
-                ` : ''}
+        ${improvementPlan.immediate?.length ? `
+        <div class="plan-card immediate">
+            <div class="plan-header">
+                <h3>🚀 즉시 실행</h3>
+                <div class="plan-period">오늘부터</div>
             </div>
+            <ul class="plan-list">
+                ${improvementPlan.immediate.map((action: string) => `<li>${action}</li>`).join('')}
+            </ul>
         </div>
+        ` : ''}
+        ${improvementPlan.shortTerm?.length ? `
+        <div class="plan-card short-term">
+            <div class="plan-header">
+                <h3>🎯 단기 목표</h3>
+                <div class="plan-period">1-4주</div>
+            </div>
+            <ul class="plan-list">
+                ${improvementPlan.shortTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
+        ${improvementPlan.longTerm?.length ? `
+        <div class="plan-card long-term">
+            <div class="plan-header">
+                <h3>🎊 중장기 목표</h3>
+                <div class="plan-period">1-6개월</div>
+            </div>
+            <ul class="plan-list">
+                ${improvementPlan.longTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
     </div>`;
   }
 
@@ -1475,7 +1418,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             });
             
             // 터치 피드백
-            const items = document.querySelectorAll('.analysis-item');
+            const items = document.querySelectorAll('.plan-card');
             items.forEach(item => {
                 item.addEventListener('touchstart', function() {
                     this.style.transform = 'scale(0.98)';
