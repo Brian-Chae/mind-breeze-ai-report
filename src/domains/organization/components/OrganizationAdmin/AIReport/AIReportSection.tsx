@@ -552,6 +552,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         engineName: aiEngine.name,
         engineVersion: aiEngine.version,
         analysisId: analysisResult.analysisId,
+        timestamp: analysisResult.timestamp,
         
         // 분석 결과
         overallScore: analysisResult.overallScore,
@@ -559,6 +560,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         focusLevel: analysisResult.focusLevel,
         insights: analysisResult.insights,
         metrics: analysisResult.metrics,
+        rawData: analysisResult.rawData, // 🎯 rawData 추가 (detailedAnalysis 포함)
         
         // 메타 정보
         processingTime: analysisResult.processingTime,

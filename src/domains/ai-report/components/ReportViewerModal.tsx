@@ -110,10 +110,10 @@ export function ReportViewerModal({
 
   // 리포트 데이터 로드
   useEffect(() => {
-    if (isOpen && report) {
+    if (isOpen && report && actualRenderer) {
       loadReportContent();
     }
-  }, [isOpen, report, viewerId]);
+  }, [isOpen, report, viewerId, actualRenderer]);
 
   // report 유효성 재검증
   useEffect(() => {
@@ -150,8 +150,10 @@ export function ReportViewerModal({
         
         // 📊 디버깅: 실제 report 구조 확인
         console.log('🔍 실제 report 전체 구조:', report);
+        console.log('🔍 report의 모든 키:', Object.keys(report || {}));
         console.log('🔍 report.insights:', report?.insights);
         console.log('🔍 report.rawData:', report?.rawData);
+        console.log('🔍 report.analysisResults:', report?.analysisResults);
         console.log('🔍 insights.detailedAnalysis 타입:', typeof report?.insights?.detailedAnalysis);
         console.log('🔍 rawData.detailedAnalysis 타입:', typeof report?.rawData?.detailedAnalysis);
         console.log('🔍 rawData.detailedAnalysis 내용:', report?.rawData?.detailedAnalysis);
@@ -214,9 +216,38 @@ export function ReportViewerModal({
             actualAnalysisResult = null;
           }
         } else {
-          // 둘 다 없으면 null 설정하여 fallback 데이터 사용
-          console.warn('⚠️ detailedAnalysis 데이터를 찾을 수 없음, fallback 사용');
-          actualAnalysisResult = null;
+          // 둘 다 없으면 기존 저장된 데이터에서 기본 정보라도 사용
+          console.warn('⚠️ detailedAnalysis 데이터를 찾을 수 없음, 기본 데이터 사용');
+          
+          // 기본 필드들이라도 있다면 활용
+          if (report.overallScore || report.insights?.summary) {
+            actualAnalysisResult = {
+              engineId: report.engineId || 'basic-gemini-v1',
+              engineVersion: report.engineVersion || '1.1.0',
+              timestamp: report.timestamp || new Date().toISOString(),
+              analysisId: report.analysisId || 'unknown',
+              overallScore: report.overallScore || 78,
+              stressLevel: report.stressLevel || 45,
+              focusLevel: report.focusLevel || 82,
+              insights: {
+                summary: report.insights?.summary || "분석 결과를 확인하세요.",
+                detailedAnalysis: report.insights?.detailedAnalysis || '',
+                recommendations: report.insights?.recommendations || []
+              },
+              metrics: report.metrics || {},
+              processingTime: report.processingTime || 1000,
+              rawData: {
+                detailedAnalysis: {
+                  overallScore: report.overallScore || 78,
+                  overallInterpretation: "기존 저장된 데이터를 기반으로 표시하고 있습니다.",
+                  markdownContent: `## 분석 결과\n전체 점수: ${report.overallScore || 78}점\n집중력: ${report.focusLevel || 0}점\n스트레스: ${report.stressLevel || 0}점\n\n기존 저장된 데이터에서 상세 분석 결과를 찾을 수 없습니다.`
+                }
+              }
+            };
+            console.log('✅ 기본 데이터로 구성:', actualAnalysisResult);
+          } else {
+            actualAnalysisResult = null;
+          }
         }
         
         // 실제 데이터가 없으면 fallback mock 데이터 사용
