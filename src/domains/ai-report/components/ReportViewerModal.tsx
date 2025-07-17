@@ -589,7 +589,7 @@ export function ReportViewerModal({
                   el.style.transform = 'translateY(-4px)';
                 }
                 
-                // 주요 발견사항 카드 내 원형 배경만 아래로 6px 이동 (PNG 출력용)
+                // 주요 발견사항 카드 전체 요소들을 위로 5px 이동 (PNG 출력용)
                 const parentContainer = el.closest('div[class*="border-green-200"]') || 
                                       el.closest('div[class*="border-l-green"]') ||
                                       el.closest('.key-findings-card') ||
@@ -597,32 +597,45 @@ export function ReportViewerModal({
                                       el.closest('.findings-grid');
                 
                 if (parentContainer) {
-                  // React 컴포넌트 - 체크표시 원형 배경만 아래로 이동
+                  // React 컴포넌트 - 체크표시 원형 배경 위로 이동 (6px 아래 → 1px 아래)
                   if (className && (
                     className.includes('bg-green-500') && 
                     className.includes('rounded-full') && 
                     className.includes('flex')
                   )) {
-                    el.style.transform = 'translateY(6px)';
+                    el.style.transform = 'translateY(1px)';
                     
-                    // 배경 안의 체크표시 텍스트는 위로 이동시켜서 원래 위치 유지
+                    // 배경 안의 체크표시 텍스트도 함께 위로 이동 (-6px → -11px)
                     const checkIcon = el.querySelector('span');
                     if (checkIcon && checkIcon.textContent && checkIcon.textContent.includes('✓')) {
-                      checkIcon.style.transform = 'translateY(-6px)';
+                      checkIcon.style.transform = 'translateY(-11px)';
                     }
                   }
                   
-                  // HTML 렌더러 - 체크표시 원형 배경만 아래로 이동 (.finding-icon)
+                  // HTML 렌더러 - 체크표시 원형 배경 위로 이동
                   if (className && className.includes('finding-icon')) {
-                    // 배경만 아래로 이동하고, 텍스트는 상대적으로 위로 이동
-                    el.style.transform = 'translateY(6px)';
+                    el.style.transform = 'translateY(1px)';
                     el.style.position = 'relative';
                     
-                    // 내부 텍스트를 위로 이동
+                    // 내부 텍스트도 함께 위로 이동
                     if (el.textContent && el.textContent.includes('✓')) {
                       const originalText = el.textContent;
-                      el.innerHTML = `<span style="transform: translateY(-6px); display: inline-block;">${originalText}</span>`;
+                      el.innerHTML = `<span style="transform: translateY(-11px); display: inline-block;">${originalText}</span>`;
                     }
+                  }
+                  
+                  // React 컴포넌트 - 주요 발견사항 텍스트도 위로 5px 이동
+                  if (el.tagName === 'P' && className && (
+                    className.includes('text-green-800') || 
+                    className.includes('font-medium') ||
+                    className.includes('leading-relaxed')
+                  )) {
+                    el.style.transform = 'translateY(-5px)';
+                  }
+                  
+                  // HTML 렌더러 - 주요 발견사항 텍스트도 위로 5px 이동
+                  if (className && className.includes('finding-text')) {
+                    el.style.transform = 'translateY(-5px)';
                   }
                 }
                 
