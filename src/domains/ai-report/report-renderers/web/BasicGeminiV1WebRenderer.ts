@@ -911,9 +911,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             text-align: center;
             margin-bottom: 40px;
             padding: 30px;
-            background: ${cardBg};
+            background: linear-gradient(135deg, ${primaryColor}, ${accentColor});
+            color: white;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         .logo {
@@ -924,7 +925,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         .report-title {
             font-size: 2.5rem;
             font-weight: 700;
-            color: ${primaryColor};
+            color: white;
             margin-bottom: 10px;
         }
         
@@ -932,7 +933,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             display: flex;
             justify-content: center;
             gap: 20px;
-            color: ${secondaryColor};
+            color: rgba(255, 255, 255, 0.9);
             font-size: 0.9rem;
         }
         
