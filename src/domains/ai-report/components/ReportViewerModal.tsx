@@ -483,8 +483,8 @@ export function ReportViewerModal({
             // report-content 요소 정확한 중앙정렬
             const reportContent = clonedDoc.getElementById('report-content');
             if (reportContent) {
-              // 캔버스 크기에 맞춰 콘텐츠 크기 조정
-              const contentWidth = viewMode === 'mobile' ? (canvasWidth - 20) : (canvasWidth - 80);
+              // 캔버스 크기에 맞춰 콘텐츠 크기 조정 (중앙정렬 최적화)
+              const contentWidth = viewMode === 'mobile' ? (canvasWidth - 40) : (canvasWidth - 120);
               const contentPadding = viewMode === 'mobile' ? '10px' : '40px';
               
               reportContent.style.cssText = `
