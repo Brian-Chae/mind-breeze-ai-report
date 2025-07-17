@@ -1973,6 +1973,16 @@ AI 건강 분석 리포트
                           {data.userDepartment}
                         </Badge>
                       )}
+                      
+                      {data.userEmail && data.userEmail !== '' && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleEmailCopy(data.id, data.userEmail)}
+                        >
+                          {copiedEmails[data.id] ? '복사됨!' : data.userEmail}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   
@@ -1981,12 +1991,6 @@ AI 건강 분석 리포트
                       <div className="text-xs text-gray-500 mb-1">측정일시</div>
                       <div className="text-sm text-gray-700">
                         {new Date(data.timestamp).toLocaleDateString('ko-KR')} {new Date(data.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">생성자</div>
-                      <div className="text-sm text-gray-700">
-                        {data.sessionData?.measuredByUserName || '시스템'}
                       </div>
                     </div>
                     <Button 
