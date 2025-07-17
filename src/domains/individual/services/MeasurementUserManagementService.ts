@@ -467,6 +467,37 @@ class MeasurementUserManagementService {
   }
 
   /**
+   * 리포트 ID를 사용자의 reportIds에 추가
+   */
+  async addReportId(userId: string, reportId: string): Promise<void> {
+    try {
+      const existing = await this.getMeasurementUser(userId);
+      if (!existing) {
+        throw new Error('사용자를 찾을 수 없습니다.');
+      }
+
+      const updatedReportIds = [...(existing.reportIds || [])];
+      if (!updatedReportIds.includes(reportId)) {
+        updatedReportIds.push(reportId);
+      }
+
+      const updateData = {
+        reportIds: updatedReportIds,
+        lastReportDate: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date())
+      };
+
+      await updateDoc(doc(db, this.collectionName, userId), updateData);
+      
+      console.log('✅ 리포트 ID 추가 완료:', { userId, reportId });
+
+    } catch (error) {
+      console.error('❌ 리포트 ID 추가 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 접속 링크 생성
    */
   generateAccessLink(accessToken: string): string {

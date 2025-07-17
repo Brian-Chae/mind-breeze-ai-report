@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FirebaseService } from '@core/services/FirebaseService'
 import creditManagementService from '@domains/organization/services/CreditManagementService'
 import measurementUserManagementService from '@domains/individual/services/MeasurementUserManagementService'
+import measurementUserIntegrationService from '@domains/individual/services/MeasurementUserIntegrationService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
 import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
@@ -611,8 +612,34 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       console.log('💾 분석 결과 저장 중...')
       const currentContext = enterpriseAuthService.getCurrentContext()
       
+      // 🔥 MeasurementUser 찾기/생성
+      let measurementUserId: string | null = null;
+      if (personalInfo && sessionData.subjectEmail) {
+        try {
+          // personalInfo를 PersonalInfo 형식으로 변환
+          const convertedPersonalInfo = {
+            name: personalInfo.name,
+            email: sessionData.subjectEmail,
+            gender: personalInfo.gender === 'female' ? 'FEMALE' as const : 'MALE' as const,
+            birthDate: personalInfo.birthDate ? new Date(personalInfo.birthDate) : undefined,
+            occupation: personalInfo.occupation,
+            department: sessionData.subjectDepartment
+          };
+          
+          measurementUserId = await measurementUserIntegrationService.findOrCreateMeasurementUser(
+            convertedPersonalInfo,
+            currentContext.organization?.id
+          );
+          console.log('✅ MeasurementUser 연결 완료:', measurementUserId);
+        } catch (error) {
+          console.error('⚠️ MeasurementUser 연결 실패:', error);
+          // MeasurementUser 연결 실패해도 분석 결과는 저장
+        }
+      }
+      
       const analysisRecord = {
         measurementDataId: dataId,
+        measurementUserId, // 🔥 MeasurementUser ID 추가
         engineId: aiEngine.id,
         engineName: aiEngine.name,
         engineVersion: aiEngine.version,
@@ -646,6 +673,17 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       const analysisId = await FirebaseService.addDocument('ai_analysis_results', analysisRecord)
       console.log('✅ 분석 결과 저장 완료:', analysisId)
       console.log('💾 저장된 분석 레코드의 personalInfo:', analysisRecord.personalInfo)
+
+      // 🔥 MeasurementUser의 reportIds 업데이트
+      if (measurementUserId) {
+        try {
+          await measurementUserManagementService.addReportId(measurementUserId, analysisId);
+          console.log('✅ MeasurementUser reportIds 업데이트 완료');
+        } catch (error) {
+          console.error('⚠️ MeasurementUser reportIds 업데이트 실패:', error);
+          // reportIds 업데이트 실패해도 분석 결과는 유지
+        }
+      }
 
       // 6. 크레딧 차감
       if (currentContext.organization && analysisResult.costUsed > 0) {
