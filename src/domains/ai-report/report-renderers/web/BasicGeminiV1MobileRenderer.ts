@@ -625,6 +625,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             font-weight: bold !important;
             flex-shrink: 0 !important;
             margin-top: 1px !important;
+            transform: translateY(-6px) !important;
         }
         
         .finding-text {
@@ -636,6 +637,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             flex: 1 !important;
             word-wrap: break-word !important;
             overflow-wrap: break-word !important;
+            transform: translateY(-6px) !important;
         }
 
         
