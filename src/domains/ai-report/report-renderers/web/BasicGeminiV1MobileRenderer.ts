@@ -403,23 +403,28 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         }
         
         .item-icon.eeg {
-            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
         
         .item-icon.ppg {
-            background: linear-gradient(135deg, #EF4444, #DC2626);
+            background: linear-gradient(135deg, #ff416c, #ff4757);
+            box-shadow: 0 2px 8px rgba(255, 65, 108, 0.3);
         }
         
         .item-icon.demographic {
-            background: linear-gradient(135deg, #06B6D4, #0891B2);
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
         }
         
         .item-icon.occupation {
-            background: linear-gradient(135deg, #F59E0B, #D97706);
+            background: linear-gradient(135deg, #fa709a, #fee140);
+            box-shadow: 0 2px 8px rgba(250, 112, 154, 0.3);
         }
         
         .item-icon.improvement {
-            background: linear-gradient(135deg, #10B981, #059669);
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            box-shadow: 0 2px 8px rgba(168, 237, 234, 0.3);
         }
         
         .item-title {
@@ -513,18 +518,35 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         .chart-container svg {
             max-width: 100%;
             height: auto;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+            border-radius: 8px;
         }
         
-        /* 차트 애니메이션 */
-        .chart-container svg rect,
-        .chart-container svg circle {
+        /* 차트 애니메이션 및 상호작용 */
+        .chart-container svg .eeg-bar {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: bottom;
+        }
+        
+        .chart-container svg .eeg-bar:hover {
+            opacity: 0.9;
+            transform: translateY(-2px) scale(1.05);
+        }
+        
+        .chart-container svg .ppg-circle {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .chart-container svg .ppg-circle:hover {
+            opacity: 0.9;
+            stroke-width: 6;
+        }
+        
+        /* 차트 컨테이너 호버 효과 */
+        .chart-container:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
-        }
-        
-        .chart-container svg rect:hover {
-            opacity: 0.8;
-            transform: translateY(-2px);
         }
         
         /* 개선 계획 특별 스타일 */
@@ -691,7 +713,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     return `
     <div class="analysis-item">
         <div class="item-header">
-            <div class="item-icon eeg">🧠</div>
+            <div class="item-icon eeg">⚡</div>
             <div class="item-title">${title}</div>
             <div class="item-score ${scoreClass}">${Math.round(eegAnalysis.score)}</div>
         </div>
@@ -724,7 +746,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     return `
     <div class="analysis-item">
         <div class="item-header">
-            <div class="item-icon ppg">❤️</div>
+            <div class="item-icon ppg">💓</div>
             <div class="item-title">${title}</div>
             <div class="item-score ${scoreClass}">${Math.round(ppgAnalysis.score)}</div>
         </div>
@@ -949,26 +971,38 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     };
     
     const maxValue = Math.max(...Object.values(bands));
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
+    // 웹 렌더러와 조화로운 세련된 색상 팔레트
+    const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#feca57'];
     
     let bars = '';
     let labels = '';
+    let gradients = '';
+    
     Object.entries(bands).forEach(([band, value], index) => {
       const height = (value / maxValue) * 60; // 최대 높이 60px
       const x = index * 24 + 10;
       const y = 70 - height;
+      const gradientId = `eegGradient${index}`;
       
-      bars += `<rect x="${x}" y="${y}" width="20" height="${height}" fill="${colors[index]}" rx="2"/>`;
-      labels += `<text x="${x + 10}" y="85" text-anchor="middle" font-size="8" fill="#666">${band}</text>`;
+      // 각 막대별 그라데이션 생성
+      const baseColor = colors[index];
+      const lightColor = this.lightenColor(baseColor, 20);
+      
+      gradients += `
+        <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:${lightColor};stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${baseColor};stop-opacity:1" />
+        </linearGradient>
+      `;
+      
+      bars += `<rect x="${x}" y="${y}" width="20" height="${height}" fill="url(#${gradientId})" rx="3" class="eeg-bar" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1))"/>`;
+      labels += `<text x="${x + 10}" y="85" text-anchor="middle" font-size="9" font-weight="500" fill="#4A5568">${band}</text>`;
     });
     
     return `
       <svg width="140" height="90" viewBox="0 0 140 90">
         <defs>
-          <linearGradient id="eegGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-          </linearGradient>
+          ${gradients}
         </defs>
         ${bars}
         ${labels}
@@ -994,37 +1028,62 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     return `
       <svg width="140" height="90" viewBox="0 0 140 90">
         <defs>
-          <linearGradient id="ppgGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#ee5a52;stop-opacity:1" />
+          <!-- HRV 그라데이션 (활력적인 청록색) -->
+          <linearGradient id="ppgGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#00f2fe;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#43e97b;stop-opacity:1" />
           </linearGradient>
-          <linearGradient id="ppgGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#44a08d;stop-opacity:1" />
+          <!-- 스트레스 그라데이션 (따뜻한 핑크-오렌지) -->
+          <linearGradient id="ppgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#fee140;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#feca57;stop-opacity:1" />
           </linearGradient>
+          <!-- 그림자 효과 -->
+          <filter id="circleShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.1)"/>
+          </filter>
         </defs>
         
         <!-- HRV Circle -->
         <g transform="translate(35, 45)">
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#f0f0f0" stroke-width="4"/>
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient1)" stroke-width="4"
+          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient1)" stroke-width="5"
                   stroke-dasharray="${circumference}" stroke-dashoffset="${hrvOffset}" 
-                  stroke-linecap="round" transform="rotate(-90)"/>
-          <text x="0" y="3" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">${Math.round(hrv)}</text>
-          <text x="0" y="-15" text-anchor="middle" font-size="7" fill="#666">HRV</text>
+                  stroke-linecap="round" transform="rotate(-90)" 
+                  filter="url(#circleShadow)" class="ppg-circle"/>
+          <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="700" fill="#2d3748">${Math.round(hrv)}</text>
+          <text x="0" y="-16" text-anchor="middle" font-size="8" font-weight="600" fill="#4a5568">HRV</text>
         </g>
         
         <!-- Stress Circle -->
         <g transform="translate(105, 45)">
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#f0f0f0" stroke-width="4"/>
-          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient2)" stroke-width="4"
+          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+          <circle cx="0" cy="0" r="${radius}" fill="none" stroke="url(#ppgGradient2)" stroke-width="5"
                   stroke-dasharray="${circumference}" stroke-dashoffset="${stressOffset}" 
-                  stroke-linecap="round" transform="rotate(-90)"/>
-          <text x="0" y="3" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">${Math.round(stress)}</text>
-          <text x="0" y="-15" text-anchor="middle" font-size="7" fill="#666">스트레스</text>
+                  stroke-linecap="round" transform="rotate(-90)" 
+                  filter="url(#circleShadow)" class="ppg-circle"/>
+          <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="700" fill="#2d3748">${Math.round(stress)}</text>
+          <text x="0" y="-16" text-anchor="middle" font-size="8" font-weight="600" fill="#4a5568">스트레스</text>
         </g>
       </svg>
     `;
+  }
+
+  /**
+   * 색상을 밝게 만드는 헬퍼 함수
+   */
+  private lightenColor(color: string, percent: number): string {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
   }
 
   /**
