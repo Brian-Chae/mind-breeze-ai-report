@@ -543,7 +543,7 @@ export function ReportViewerModal({
                   const currentHeight = el.offsetHeight;
                   const currentPadding = window.getComputedStyle(el).padding;
                   
-                                     // cssText로 강제 스타일 적용 + 텍스트 물리적 위치 조정
+                                     // 배지 컨테이너는 기본 flexbox만, 텍스트만 강제로 위로 이동
                    const originalCssText = el.style.cssText;
                    el.style.cssText = `
                      ${originalCssText}
@@ -554,12 +554,10 @@ export function ReportViewerModal({
                      vertical-align: middle;
                      text-align: center;
                      box-sizing: border-box;
-                     transform: translateY(-1px);
-                     font-size: ${window.getComputedStyle(el).fontSize};
                      ${currentHeight > 0 ? `height: ${currentHeight}px; min-height: ${currentHeight}px;` : ''}
                    `;
                    
-                   // 텍스트 노드에 직접 위치 조정 적용
+                   // 텍스트만 강제로 위로 이동
                    const textNodes = Array.from(el.childNodes).filter((node: any) => node.nodeType === Node.TEXT_NODE);
                    textNodes.forEach((textNode: any) => {
                      if (textNode.textContent && textNode.textContent.trim()) {
@@ -567,8 +565,9 @@ export function ReportViewerModal({
                        span.textContent = textNode.textContent;
                        span.style.cssText = `
                          display: inline-block;
-                         transform: translateY(-1px);
+                         transform: translateY(-3px);
                          line-height: 1;
+                         margin-top: -2px;
                        `;
                        el.replaceChild(span, textNode);
                      }
