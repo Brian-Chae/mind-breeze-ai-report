@@ -301,6 +301,61 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
+   * 개인 정보 추출 헬퍼
+   */
+  private getPersonalInfo(analysis: AnalysisResult, field: string): string | null {
+    // rawData.personalInfo 또는 root level personalInfo에서 추출
+    const personalInfo = (analysis as any).personalInfo || analysis.rawData?.personalInfo;
+    return personalInfo?.[field] || null;
+  }
+
+  /**
+   * 성별 라벨 변환
+   */
+  private getGenderLabel(gender: string | null, language: string): string | null {
+    if (!gender) return null;
+    
+    if (language === 'ko') {
+      return gender === 'male' ? '남성' : gender === 'female' ? '여성' : gender;
+    } else {
+      return gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : gender;
+    }
+  }
+
+  /**
+   * 직업 라벨 변환
+   */
+  private getOccupationLabel(occupation: string | null, language: string): string | null {
+    if (!occupation) return null;
+    
+    const occupationMap = {
+      ko: {
+        'office_worker': '사무직',
+        'developer': '개발자',
+        'teacher': '교사',
+        'student': '학생',
+        'healthcare': '의료진',
+        'manager': '관리자',
+        'sales': '영업',
+        'other': '기타'
+      },
+      en: {
+        'office_worker': 'Office Worker',
+        'developer': 'Developer',
+        'teacher': 'Teacher',
+        'student': 'Student',
+        'healthcare': 'Healthcare',
+        'manager': 'Manager',
+        'sales': 'Sales',
+        'other': 'Other'
+      }
+    };
+    
+    const langMap = language === 'ko' ? occupationMap.ko : occupationMap.en;
+    return langMap[occupation as keyof typeof langMap] || occupation;
+  }
+
+  /**
    * 마크다운 기반 요약 생성
    */
   private generateMarkdownSummary(analysis: AnalysisResult, markdownContent: string, options: RenderOptions): string {
@@ -321,6 +376,29 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         <!-- 개인 정보 요약 -->
         <div class="personal-info-section">
             <h3 class="subsection-title">${language === 'ko' ? '분석 대상 정보' : 'Analysis Subject Information'}</h3>
+            <div class="personal-info-grid">
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '이름:' : 'Name:'}</span>
+                    <span class="info-value">${this.getPersonalInfo(analysis, 'name') || (language === 'ko' ? '익명' : 'Anonymous')}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '나이:' : 'Age:'}</span>
+                    <span class="info-value">${this.getPersonalInfo(analysis, 'age') || '-'}${language === 'ko' ? '세' : ' years'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '성별:' : 'Gender:'}</span>
+                    <span class="info-value">${this.getGenderLabel(this.getPersonalInfo(analysis, 'gender'), language) || '-'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">${language === 'ko' ? '직업:' : 'Occupation:'}</span>
+                    <span class="info-value">${this.getOccupationLabel(this.getPersonalInfo(analysis, 'occupation'), language) || '-'}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 점수 요약 -->
+        <div class="score-summary-section">
+            <h3 class="subsection-title">${language === 'ko' ? '건강 점수 요약' : 'Health Score Summary'}</h3>
             <div class="personal-info-grid">
                 <div class="info-item">
                     <span class="info-label">${language === 'ko' ? '전체 점수:' : 'Overall Score:'}</span>
@@ -368,19 +446,19 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             <div class="personal-info-grid">
                 <div class="info-item">
                     <span class="info-label">${language === 'ko' ? '이름:' : 'Name:'}</span>
-                    <span class="info-value">${language === 'ko' ? '익명' : 'Anonymous'}</span>
+                    <span class="info-value">${this.getPersonalInfo(analysis, 'name') || (language === 'ko' ? '익명' : 'Anonymous')}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">${language === 'ko' ? '나이:' : 'Age:'}</span>
-                    <span class="info-value">-${language === 'ko' ? '세' : ' years'}</span>
+                    <span class="info-value">${this.getPersonalInfo(analysis, 'age') || '-'}${language === 'ko' ? '세' : ' years'}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">${language === 'ko' ? '성별:' : 'Gender:'}</span>
-                    <span class="info-value">-</span>
+                    <span class="info-value">${this.getGenderLabel(this.getPersonalInfo(analysis, 'gender'), language) || '-'}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">${language === 'ko' ? '직업:' : 'Occupation:'}</span>
-                    <span class="info-value">-</span>
+                    <span class="info-value">${this.getOccupationLabel(this.getPersonalInfo(analysis, 'occupation'), language) || '-'}</span>
                 </div>
             </div>
         </div>

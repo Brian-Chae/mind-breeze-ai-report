@@ -246,6 +246,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                  engineName: analysis.engineName || '기본 분석',
                  analysisId: analysis.analysisId,
                  timestamp: analysis.timestamp,
+                 personalInfo: analysis.personalInfo, // 🎯 개인 정보 추가
                  overallScore: analysis.overallScore || 0,
                  stressLevel: analysis.stressLevel || 0,
                  focusLevel: analysis.focusLevel || 0,
@@ -557,6 +558,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         engineVersion: aiEngine.version,
         analysisId: analysisResult.analysisId,
         timestamp: analysisResult.timestamp,
+        
+        // 🎯 개인 정보 추가 (렌더러에서 사용)
+        personalInfo: personalInfo,
         
         // 분석 결과
         overallScore: analysisResult.overallScore,
