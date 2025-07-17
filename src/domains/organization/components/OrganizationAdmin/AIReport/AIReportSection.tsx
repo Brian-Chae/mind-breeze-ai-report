@@ -241,6 +241,23 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
              ]
              const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
              
+             // 담당자 정보 조회
+             let managerInfo = null;
+             if (session.measuredByUserId || session.measurementByUserId) {
+               try {
+                 const managerId = session.measuredByUserId || session.measurementByUserId;
+                 const managerDoc = await FirebaseService.getDocument('users', managerId) as any;
+                 if (managerDoc && managerDoc.id) {
+                   managerInfo = {
+                     name: managerDoc.displayName || managerDoc.name || '알 수 없음',
+                     department: managerDoc.department || '미지정'
+                   };
+                 }
+               } catch (error) {
+                 console.warn(`담당자 정보 조회 실패 (ID: ${session.measuredByUserId || session.measurementByUserId}):`, error);
+               }
+             }
+             
              // 나이 계산
              let calculatedAge = session.subjectAge;
              if (!calculatedAge && session.subjectBirthDate) {
@@ -273,6 +290,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                userOccupation: session.subjectOccupation || '미지정',
                userDepartment: session.subjectDepartment || '미지정',
                userEmail: session.subjectEmail || '',
+               managerInfo: managerInfo,
                timestamp: session.sessionDate?.toISOString() || session.createdAt?.toISOString(),
                sessionDate: session.sessionDate || session.createdAt,
                quality: (session.overallScore >= 80) ? 'excellent' : (session.overallScore >= 60) ? 'good' : 'poor',
@@ -354,6 +372,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                userOccupation: session.subjectOccupation || '미지정',
                userDepartment: session.subjectDepartment || '미지정',
                userEmail: session.subjectEmail || '',
+               managerInfo: null, // catch 블록에서는 담당자 정보 조회하지 않음
                timestamp: session.sessionDate?.toISOString() || session.createdAt?.toISOString(),
                sessionDate: session.sessionDate || session.createdAt,
                quality: (session.overallScore >= 80) ? 'excellent' : (session.overallScore >= 60) ? 'good' : 'poor',
@@ -1987,6 +2006,14 @@ AI 건강 분석 리포트
                   </div>
                   
                   <div className="flex items-center space-x-6">
+                    {data.managerInfo && (
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-1">담당자</div>
+                        <div className="text-sm text-gray-700">
+                          {data.managerInfo.name}{data.managerInfo.department !== '미지정' ? `(${data.managerInfo.department})` : ''}
+                        </div>
+                      </div>
+                    )}
                     <div className="text-center">
                       <div className="text-xs text-gray-500 mb-1">측정일시</div>
                       <div className="text-sm text-gray-700">
