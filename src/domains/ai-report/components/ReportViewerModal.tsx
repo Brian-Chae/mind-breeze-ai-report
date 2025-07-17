@@ -50,7 +50,7 @@ export function ReportViewerModal({
   viewerId,
   viewerName
 }: ReportViewerModalProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
   const [actualRenderer, setActualRenderer] = useState<any>(null);
   const [rendererName, setRendererName] = useState(viewerName || '웹 뷰어');
   const [isLoading, setIsLoading] = useState(true);
