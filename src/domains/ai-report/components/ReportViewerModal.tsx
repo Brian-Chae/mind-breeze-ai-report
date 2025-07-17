@@ -856,13 +856,17 @@ export function ReportViewerModal({
                 <Monitor className="w-5 h-5 text-blue-600" />
                 {rendererName}
               </DialogTitle>
-              <DialogDescription className="text-base text-gray-700 font-medium mt-1">
-                {(report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트')}
-              </DialogDescription>
-              {actualRenderer && (
-                <div className="text-sm text-gray-500 mt-1">
-                  {actualRenderer.description.length > 20 ? actualRenderer.description.substring(0, 20) + '...' : actualRenderer.description}
-                </div>
+              {!isFullscreen && (
+                <>
+                  <DialogDescription className="text-base text-gray-700 font-medium mt-1">
+                    {(report?.title) || (report?.engineName ? `${report.engineName} 분석 리포트` : '분석 리포트')}
+                  </DialogDescription>
+                  {actualRenderer && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      {actualRenderer.description.length > 20 ? actualRenderer.description.substring(0, 20) + '...' : actualRenderer.description}
+                    </div>
+                  )}
+                </>
               )}
             </div>
             
