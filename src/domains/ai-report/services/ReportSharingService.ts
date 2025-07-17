@@ -141,17 +141,63 @@ class ReportSharingService {
       return { success: false, errorMessage: '최대 접근 횟수를 초과했습니다.' };
     }
 
-    // 생년월일 인증
-    const providedDate = new Date(auth.birthDate);
+    // 생년월일 인증 - 더 안전한 날짜 파싱
+    let providedDate: Date;
+    try {
+      // YYYY-MM-DD 형식의 문자열을 직접 파싱
+      const [year, month, day] = auth.birthDate.split('-').map(Number);
+      providedDate = new Date(year, month - 1, day); // month는 0-based
+    } catch (error) {
+      console.error('날짜 파싱 오류:', error);
+      return { success: false, errorMessage: '올바른 날짜 형식을 입력해주세요.' };
+    }
+    
     const expectedDate = shareableReport.subjectBirthDate;
     
+    // 🔍 디버깅 로그 추가
+    console.log('🔍 생년월일 인증 디버깅:');
+    console.log('- 입력받은 birthDate:', auth.birthDate);
+    console.log('- 변환된 providedDate:', providedDate);
+    console.log('- 저장된 expectedDate:', expectedDate);
+    console.log('- providedDate 정보:', {
+      year: providedDate.getFullYear(),
+      month: providedDate.getMonth() + 1, // 0-based이므로 +1
+      date: providedDate.getDate()
+    });
+    console.log('- expectedDate 정보:', {
+      year: expectedDate.getFullYear(),
+      month: expectedDate.getMonth() + 1, // 0-based이므로 +1
+      date: expectedDate.getDate()
+    });
+    
+    // 더 안전한 날짜 비교 (시간 정보 제거하고 비교)
+    const providedYear = providedDate.getFullYear();
+    const providedMonth = providedDate.getMonth();
+    const providedDay = providedDate.getDate();
+    
+    const expectedYear = expectedDate.getFullYear();
+    const expectedMonth = expectedDate.getMonth();
+    const expectedDay = expectedDate.getDate();
+    
+    console.log('- 비교 결과:', {
+      yearMatch: providedYear === expectedYear,
+      monthMatch: providedMonth === expectedMonth,
+      dayMatch: providedDay === expectedDay
+    });
+    
     if (
-      providedDate.getFullYear() !== expectedDate.getFullYear() ||
-      providedDate.getMonth() !== expectedDate.getMonth() ||
-      providedDate.getDate() !== expectedDate.getDate()
+      providedYear !== expectedYear ||
+      providedMonth !== expectedMonth ||
+      providedDay !== expectedDay
     ) {
+      console.warn('❌ 생년월일 불일치:', {
+        provided: `${providedYear}-${(providedMonth + 1).toString().padStart(2, '0')}-${providedDay.toString().padStart(2, '0')}`,
+        expected: `${expectedYear}-${(expectedMonth + 1).toString().padStart(2, '0')}-${expectedDay.toString().padStart(2, '0')}`
+      });
       return { success: false, errorMessage: '생년월일이 일치하지 않습니다.' };
     }
+    
+    console.log('✅ 생년월일 인증 성공!');
 
     // 접근 횟수 증가
     await this.incrementAccessCount(shareToken);
