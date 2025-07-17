@@ -442,7 +442,7 @@ export function ReportViewerModal({
       const elementHeight = Math.max(elementRect.height, reportElement.scrollHeight);
 
       // 고정된 캔버스 크기로 중앙 정렬 보장
-      const canvasWidth = viewMode === 'mobile' ? 400 : 1050; // 고정 너비 (중앙정렬 최적화)
+      const canvasWidth = viewMode === 'mobile' ? 480 : 1050; // 고정 너비 (중앙정렬 최적화)
       const canvasHeight = Math.max(elementHeight + 200, 800); // 충분한 높이
 
       // HTML을 캔버스로 변환 (고화질)
@@ -480,18 +480,19 @@ export function ReportViewerModal({
               overflow: visible;
             `;
             
-            // report-content 요소 자연스러운 정렬
+            // report-content 요소 정확한 중앙정렬
             const reportContent = clonedDoc.getElementById('report-content');
             if (reportContent) {
-              const contentMaxWidth = viewMode === 'mobile' ? '380px' : '1024px';
+              // 캔버스 크기에 맞춰 콘텐츠 크기 조정
+              const contentWidth = viewMode === 'mobile' ? (canvasWidth - 20) : (canvasWidth - 80);
               const contentPadding = viewMode === 'mobile' ? '10px' : '40px';
               
               reportContent.style.cssText = `
                 position: relative;
                 margin: 0 auto;
                 padding: ${contentPadding};
-                max-width: ${contentMaxWidth};
-                width: 100%;
+                width: ${contentWidth}px;
+                max-width: none;
                 box-sizing: border-box;
                 background: transparent;
               `;
