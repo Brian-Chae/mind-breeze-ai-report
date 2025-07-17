@@ -35,6 +35,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 // Firebase 서비스 import
 import measurementUserManagementService, { MeasurementUser as FirebaseMeasurementUser, MeasurementUserStats } from '@domains/individual/services/MeasurementUserManagementService'
+import { MeasurementUserDataService } from '@domains/individual/services/MeasurementUserDataService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface UsersSectionProps {
@@ -231,11 +232,19 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
       if (enterpriseAuthService.hasPermission('measurement_users.view.all') || 
           enterpriseAuthService.hasPermission('measurement_users.view.own')) {
         try {
-          // 병렬로 데이터 로드
+          // 🔧 기본 사용자 데이터 로드 (향상된 기능은 추후 구현)
           [usersData, statsData] = await Promise.all([
             measurementUserManagementService.getMeasurementUsers({ organizationId }),
             measurementUserManagementService.getMeasurementUserStats()
           ])
+          
+          console.log('✅ 기본 사용자 데이터 로드 완료:', usersData.length, '명')
+          
+          // 🔧 TODO: 향후 MeasurementUserDataService 통합 기능 추가 예정
+          // - 부서 정보 향상
+          // - AI 분석 결과 연동
+          // - 상세 통계 정보
+          
         } catch (err) {
           console.warn('사용자 데이터 로드 실패:', err)
           // 빈 데이터로 계속 진행
@@ -255,10 +264,10 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
         phone: user.phone || '',
         age: user.age || 0,
         gender: user.gender === 'MALE' ? 'male' : user.gender === 'FEMALE' ? 'female' : 'male',
-        department: '미지정', // Firebase 데이터에 부서 정보 없음
+        department: '미지정', // 🔧 기본값 사용 (향후 향상 예정)
         joinDate: user.createdAt?.toLocaleDateString() || '',
         lastMeasurement: user.lastMeasurementDate?.toLocaleDateString() || '측정 기록 없음',
-        measurementCount: user.measurementCount,
+        measurementCount: user.measurementCount || 0,
         reportCount: user.reportIds?.length || 0,
         status: user.isActive ? 'active' : 'inactive'
       }))
