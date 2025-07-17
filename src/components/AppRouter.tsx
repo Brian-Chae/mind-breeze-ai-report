@@ -81,10 +81,21 @@ const AppRouter = () => {
       ];
       
       const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
+      const shouldRedirect = ['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath);
       
-      if (['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath) && !isPublicPath) {
+      console.log('🔍 리다이렉션 체크:', {
+        currentPath,
+        publicPaths,
+        isPublicPath,
+        shouldRedirect,
+        finalShouldRedirect: shouldRedirect && !isPublicPath
+      });
+      
+      if (shouldRedirect && !isPublicPath) {
         console.log('🔄 리디렉션 실행:', currentPath, '→', redirectPath);
         navigate(redirectPath);
+      } else {
+        console.log('✅ 리다이렉션 스킵:', { currentPath, isPublicPath, shouldRedirect });
       }
     } else {
       console.log('🔄 로그인되지 않은 사용자:', currentPath);
