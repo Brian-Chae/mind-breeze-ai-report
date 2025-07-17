@@ -2483,7 +2483,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <span class="element-label">${label}</span>
                 <span class="element-badge ${status}">${statusLabel}</span>
             </div>
-            <span class="element-value">${Math.round(clampedValue)}${isRisk ? '% 위험도' : '/100'}</span>
+            <span class="element-value">${Math.round(clampedValue)}${isRisk ? '%' : '/100'}</span>
         </div>
         <div class="progress-container">
             <div class="progress-track">
