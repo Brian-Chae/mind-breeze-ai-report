@@ -70,8 +70,19 @@ const AppRouter = () => {
         shouldRedirect: ['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath)
       });
       
-      // 임시로 모든 경로에서 /admin으로 리디렉션 (테스트용)
-      if (['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath)) {
+      // 특정 경로에서만 리디렉션 수행 (공개 페이지들은 제외)
+      const publicPaths = [
+        '/shared-report/',
+        '/measurement-access',
+        '/organization-signup-selection',
+        '/organization-registration',
+        '/organization-registration-success',
+        '/organization-join'
+      ];
+      
+      const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
+      
+      if (['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath) && !isPublicPath) {
         console.log('🔄 리디렉션 실행:', currentPath, '→', redirectPath);
         navigate(redirectPath);
       }
