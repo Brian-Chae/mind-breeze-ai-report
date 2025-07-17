@@ -1830,7 +1830,7 @@ AI 건강 분석 리포트
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* 측정 데이터수 카드 */}
         <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-base font-semibold text-gray-900">측정 데이터수</h3>
             <div className="p-2 bg-gray-50 rounded-lg">
               <Activity className="w-5 h-5 text-gray-600" />
@@ -1856,7 +1856,7 @@ AI 건강 분석 리포트
 
         {/* 리포트 수 카드 */}
         <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-base font-semibold text-gray-900">리포트 수</h3>
             <div className="p-2 bg-gray-50 rounded-lg">
               <FileText className="w-5 h-5 text-gray-600" />
@@ -1882,7 +1882,7 @@ AI 건강 분석 리포트
 
         {/* 크레딧 사용량 카드 */}
         <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-base font-semibold text-gray-900">크레딧 사용량</h3>
             <div className="p-2 bg-gray-50 rounded-lg">
               <DollarSign className="w-5 h-5 text-gray-600" />
