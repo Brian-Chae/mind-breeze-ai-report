@@ -182,13 +182,13 @@ export function EngineSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader className="pb-4">
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2 text-gray-900">
             <Sparkles className="w-5 h-5 text-blue-500" />
             AI 분석 엔진 선택
           </DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogDescription className="text-base text-gray-600">
             측정된 데이터를 분석할 AI 엔진을 선택하세요. 각 엔진마다 다른 분석 방식과 비용이 적용됩니다.
           </DialogDescription>
         </DialogHeader>
@@ -230,7 +230,7 @@ export function EngineSelectionModal({
               return (
                 <Card 
                   key={engine.id} 
-                  className={`cursor-pointer transition-all duration-200 ${
+                  className={`cursor-pointer transition-all duration-200 bg-white ${
                     isSelected 
                       ? 'ring-2 ring-blue-500 border-blue-500 shadow-md' 
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
@@ -241,7 +241,7 @@ export function EngineSelectionModal({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <CardTitle className="text-lg font-semibold">
+                          <CardTitle className="text-lg font-semibold text-gray-900">
                             {engine.name}
                           </CardTitle>
                           
@@ -264,7 +264,7 @@ export function EngineSelectionModal({
                           </Badge>
                         </div>
                         
-                        <p className="text-sm text-gray-600 leading-relaxed">
+                        <p className="text-sm text-gray-700 leading-relaxed">
                           {engine.description}
                         </p>
                       </div>
