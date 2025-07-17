@@ -469,7 +469,7 @@ export function ReportViewerModal({
             // body 완전 초기화 및 중앙 정렬 설정
             clonedBody.style.cssText = `
               margin: 0;
-              padding: 0;
+              padding: 0 0 0 10px;
               width: ${canvasWidth}px;
               height: ${canvasHeight}px;
               background: #ffffff;
