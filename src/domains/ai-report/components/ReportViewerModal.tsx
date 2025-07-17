@@ -433,6 +433,9 @@ export function ReportViewerModal({
         throw new Error('리포트 콘텐츠를 찾을 수 없습니다.');
       }
 
+      // 폰트 로딩 대기 (텍스트 렌더링 품질 향상)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // 실제 요소 크기 감지
       const elementRect = reportElement.getBoundingClientRect();
       const elementWidth = Math.max(elementRect.width, reportElement.scrollWidth);
@@ -440,17 +443,42 @@ export function ReportViewerModal({
 
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
-        scale: 2, // 해상도는 조금 낮춰서 안정성 확보
+        scale: 2,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: elementWidth + 50, // 여유 공간 추가
-        height: elementHeight + 50, // 여유 공간 추가
-        windowWidth: Math.max(elementWidth + 100, 1400), // 충분한 너비 확보
+        width: elementWidth + 100, // 더 큰 여유 공간
+        height: elementHeight + 100, // 더 큰 여유 공간  
+        windowWidth: Math.max(elementWidth + 200, 1600), // 더 넓은 윈도우
+        windowHeight: Math.max(elementHeight + 200, 1200), // 윈도우 높이 설정
         scrollX: 0,
         scrollY: 0,
         x: 0,
-        y: 0
+        y: 0,
+        foreignObjectRendering: false, // 호환성 개선
+        removeContainer: true, // 임시 컨테이너 제거
+        imageTimeout: 5000, // 이미지 로딩 대기 시간
+        onclone: (clonedDoc) => {
+          // 복제된 문서에서 스타일 최적화
+          const clonedBody = clonedDoc.body;
+          if (clonedBody) {
+            clonedBody.style.margin = '0';
+            clonedBody.style.padding = '20px';
+            clonedBody.style.boxSizing = 'border-box';
+            clonedBody.style.overflow = 'visible';
+            clonedBody.style.minHeight = 'auto';
+            
+            // 모든 텍스트 요소의 line-height 보정
+            const allElements = clonedBody.querySelectorAll('*');
+            allElements.forEach((el: any) => {
+              if (el.style) {
+                el.style.lineHeight = 'normal';
+                el.style.textRendering = 'optimizeLegibility';
+                el.style.fontKerning = 'normal';
+              }
+            });
+          }
+        }
       });
 
       // 이미지 다운로드
