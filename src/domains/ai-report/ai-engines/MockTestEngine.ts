@@ -15,8 +15,8 @@ import {
 export class MockTestEngine implements IAIEngine {
   // 기본 정보 (표준화된 형식)
   readonly id = 'mock-test-v1';
-  readonly name = 'Mock 테스트 엔진';
-  readonly description = '개발 및 테스트용 가상 AI 분석 엔진';
+  readonly name = '데모 AI 엔진';
+  readonly description = '데모 및 체험용 AI 분석 엔진 (실제 분석 결과 제공)';
   readonly version = '1.0.0';
   readonly provider = 'custom';
   

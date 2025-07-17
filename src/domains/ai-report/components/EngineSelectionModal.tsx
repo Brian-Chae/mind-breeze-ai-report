@@ -81,6 +81,16 @@ export function EngineSelectionModal({
       // 등록된 모든 엔진 조회
       const allEngines = aiEngineRegistry.getAll();
       
+      // 디버깅 로그
+      console.log('🔍 Available engines:', allEngines.length);
+      console.log('🔍 Engine details:', allEngines.map(e => ({ id: e.id, name: e.name, provider: e.provider })));
+      
+      if (allEngines.length === 0) {
+        console.warn('⚠️ No engines registered! Checking registry state...');
+        const stats = aiEngineRegistry.getStats();
+        console.log('📊 Registry stats:', stats);
+      }
+      
       // 엔진별 호환성 및 추천도 계산
       const engineInfos: EngineDisplayInfo[] = allEngines.map(engine => {
         const metadata = aiEngineRegistry.getMetadata(engine.id);
@@ -200,7 +210,15 @@ export function EngineSelectionModal({
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 text-gray-600">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-              엔진 목록을 불러오는 중...
+              AI 엔진 목록을 불러오는 중...
+            </div>
+          </div>
+        ) : engines.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-gray-500">
+              <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-orange-500" />
+              <p className="text-lg font-medium mb-2">사용 가능한 AI 엔진이 없습니다</p>
+              <p className="text-sm">시스템 관리자에게 문의하세요.</p>
             </div>
           </div>
         ) : (
@@ -349,7 +367,11 @@ export function EngineSelectionModal({
 
         {/* 하단 버튼 */}
         <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-          <Button variant="outline" onClick={onClose}>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
             취소
           </Button>
           
@@ -364,14 +386,18 @@ export function EngineSelectionModal({
             <Button 
               onClick={handleSelect} 
               disabled={!selectedEngine || !engines.find(e => e.engine.id === selectedEngine.id)?.isAffordable}
-              className="min-w-[120px]"
+              className={`min-w-[120px] ${
+                selectedEngine && engines.find(e => e.engine.id === selectedEngine.id)?.isAffordable
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              }`}
             >
               {selectedEngine ? (
                 <>
                   선택 ({selectedEngine.costPerAnalysis} 크레딧)
                 </>
               ) : (
-                '엔진 선택'
+                'AI 엔진 선택'
               )}
             </Button>
           </div>

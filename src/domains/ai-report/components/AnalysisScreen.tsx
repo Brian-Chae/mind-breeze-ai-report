@@ -241,19 +241,25 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
 
       {/* 분석 시작 버튼 */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} className="border-gray-300 text-gray-700 hover:bg-gray-50">
           뒤로
         </Button>
         
         <div className="flex items-center gap-3">
           {!selectedEngine && (
-            <Button onClick={() => setIsModalOpen(true)}>
-              엔진 선택
+            <Button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              AI 엔진 선택
             </Button>
           )}
           
           {selectedEngine && (
-            <Button onClick={startAnalysis} className="flex items-center gap-2">
+            <Button 
+              onClick={startAnalysis} 
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+            >
               <Activity className="w-4 h-4" />
               AI 분석 시작
             </Button>
