@@ -695,7 +695,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStepIndex === 0}
-                className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-white border-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
               >
                 이전
               </Button>
@@ -703,7 +703,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
               <Button
                 variant="outline"
                 onClick={onClose}
-                className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="px-6 py-2 bg-white border-2 border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-500"
               >
                 취소
               </Button>

@@ -365,11 +365,18 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
       </div>
 
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button 
+          variant="outline" 
+          onClick={onBack}
+          className="px-6 py-2 bg-white border-2 border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-500"
+        >
           뒤로
         </Button>
         
-        <Button onClick={() => setState('engine-selection')}>
+        <Button 
+          onClick={() => setState('engine-selection')}
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white border-0"
+        >
           다시 시도
         </Button>
       </div>
