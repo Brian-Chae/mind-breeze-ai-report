@@ -436,23 +436,36 @@ export function ReportViewerModal({
       // 폰트 로딩 대기 (텍스트 렌더링 품질 향상)
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 실제 요소 크기 감지 (정확한 높이 계산)
+      // 실제 요소 크기 감지 (간단하고 정확한 방법)
       const elementRect = reportElement.getBoundingClientRect();
       const elementWidth = Math.max(elementRect.width, reportElement.scrollWidth);
       
-      // 더 정확한 높이 계산 (모든 자식 요소 포함)
-      const allElements = reportElement.querySelectorAll('*');
-      let maxBottom = 0;
-      allElements.forEach(el => {
-        const rect = el.getBoundingClientRect();
-        const relativeBottom = rect.bottom - elementRect.top;
-        maxBottom = Math.max(maxBottom, relativeBottom);
+      // 간단하고 정확한 높이 계산
+      const elementHeight = Math.max(
+        reportElement.offsetHeight,
+        reportElement.scrollHeight,
+        elementRect.height
+      );
+      
+      // 디버깅: 높이 정보 출력
+      console.log('📏 높이 정보:', {
+        offsetHeight: reportElement.offsetHeight,
+        scrollHeight: reportElement.scrollHeight,
+        rectHeight: elementRect.height,
+        finalElementHeight: elementHeight
       });
-      const elementHeight = Math.max(elementRect.height, reportElement.scrollHeight, maxBottom);
 
       // 고정된 캔버스 크기로 중앙 정렬 보장
       const canvasWidth = viewMode === 'mobile' ? 480 : 1050; // 고정 너비 (중앙정렬 최적화)
-      const canvasHeight = Math.max(elementHeight + 50, 600); // 하단 여백 최소화
+      const canvasHeight = elementHeight + 20; // 최소한의 여백만 추가
+      
+      // 디버깅: 캔버스 크기 정보 출력
+      console.log('📐 캔버스 크기:', {
+        canvasWidth,
+        canvasHeight,
+        viewMode,
+        heightDifference: canvasHeight - elementHeight
+      });
 
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
@@ -523,28 +536,13 @@ export function ReportViewerModal({
                   el.style.overflow = 'visible';
                 }
                 
-                // Badge/Chip 요소의 텍스트 중앙정렬 처리 (개선)
+                // Badge/Chip 요소의 텍스트 중앙정렬 처리 (간단 버전)
                 const className = (el.className && typeof el.className === 'string') ? el.className : '';
-                if (className && (className.includes('badge') || className.includes('chip') || 
-                    className.includes('inline-flex') || className.includes('items-center'))) {
-                  el.style.display = 'inline-flex';
-                  el.style.alignItems = 'center';
-                  el.style.justifyContent = 'center';
-                  el.style.lineHeight = '1';
+                if (className && (className.includes('badge') || className.includes('chip'))) {
+                  el.style.lineHeight = '1.2';
                   el.style.verticalAlign = 'middle';
-                  el.style.padding = '4px 8px';
-                  el.style.margin = '0';
-                  el.style.boxSizing = 'border-box';
-                  
-                  // 내부 텍스트 노드 직접 처리
-                  if (el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE) {
-                    const wrapper = clonedDoc.createElement('span');
-                    wrapper.style.lineHeight = '1';
-                    wrapper.style.display = 'block';
-                    wrapper.textContent = el.firstChild.textContent;
-                    el.removeChild(el.firstChild);
-                    el.appendChild(wrapper);
-                  }
+                  el.style.paddingTop = '2px';
+                  el.style.paddingBottom = '2px';
                 }
               }
             });
