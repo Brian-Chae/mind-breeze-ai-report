@@ -1737,10 +1737,194 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 font-size: 1.1rem;
             }
             
-            .markdown-content h3 {
-                font-size: 1rem;
-            }
-        }
+                         .markdown-content h3 {
+                 font-size: 1rem;
+             }
+         }
+         
+         /* 초소형 모바일 최적화 (iPhone 5/SE 등) */
+         @media (max-width: 320px) {
+             .report-container {
+                 padding: 8px;
+             }
+             
+             .report-header {
+                 padding: 16px 12px;
+                 margin-bottom: 16px;
+             }
+             
+             .report-title {
+                 font-size: 1.3rem;
+                 line-height: 1.2;
+             }
+             
+             .report-meta {
+                 font-size: 0.75rem;
+             }
+             
+             section {
+                 padding: 12px 8px;
+                 margin-bottom: 12px;
+             }
+             
+             h2 {
+                 font-size: 1.1rem;
+                 margin-bottom: 12px;
+             }
+             
+             h3.subsection-title {
+                 font-size: 0.95rem;
+                 margin-bottom: 8px;
+             }
+             
+             /* 개인정보 그리드 - 1열 고정 */
+             .personal-info-grid {
+                 grid-template-columns: 1fr;
+                 gap: 8px;
+                 margin-bottom: 16px;
+             }
+             
+             .info-item {
+                 padding: 8px;
+                 border-radius: 6px;
+             }
+             
+             .info-label {
+                 font-size: 0.7rem;
+                 margin-bottom: 2px;
+             }
+             
+             .info-value {
+                 font-size: 0.8rem;
+             }
+             
+             /* 초소형 점수 게이지 */
+             .gauge-chart {
+                 width: 100px;
+                 height: 100px;
+                 margin: 0 auto 12px;
+             }
+             
+             .gauge-chart svg {
+                 width: 100px;
+                 height: 100px;
+             }
+             
+             .gauge-value {
+                 font-size: 1.3rem;
+                 font-weight: 700;
+             }
+             
+             .gauge-max {
+                 font-size: 0.7rem;
+             }
+             
+             .score-description {
+                 font-size: 0.75rem;
+                 line-height: 1.3;
+             }
+             
+             /* 점수 카드 */
+             .score-card {
+                 padding: 12px;
+                 border-radius: 8px;
+             }
+             
+             .score-title {
+                 font-size: 0.8rem;
+                 margin-bottom: 6px;
+             }
+             
+             .score-value {
+                 font-size: 1.3rem;
+                 margin-bottom: 4px;
+             }
+             
+             .score-bar {
+                 height: 4px;
+                 margin-bottom: 6px;
+             }
+             
+             .score-status {
+                 font-size: 0.7rem;
+             }
+             
+             .status-badge {
+                 font-size: 0.65rem;
+                 padding: 3px 6px;
+                 margin-bottom: 6px;
+             }
+             
+             /* 분석 콘텐츠 */
+             .analysis-content {
+                 padding: 12px;
+             }
+             
+             .markdown-content {
+                 font-size: 0.8rem;
+                 line-height: 1.5;
+             }
+             
+             .markdown-content h2 {
+                 font-size: 1rem;
+                 margin: 16px 0 8px;
+             }
+             
+             .markdown-content h3 {
+                 font-size: 0.9rem;
+                 margin: 12px 0 6px;
+             }
+             
+             .markdown-content p {
+                 margin-bottom: 8px;
+             }
+             
+             .markdown-content ul, .markdown-content ol {
+                 margin: 6px 0;
+                 padding-left: 16px;
+             }
+             
+             .markdown-content li {
+                 margin-bottom: 4px;
+                 font-size: 0.75rem;
+                 line-height: 1.4;
+             }
+             
+             /* 타임라인 */
+             .timeline-item {
+                 padding: 10px;
+                 border-radius: 6px;
+                 border-left: 3px solid ${primaryColor};
+             }
+             
+             .timeline-title {
+                 font-size: 0.8rem;
+                 margin-bottom: 4px;
+             }
+             
+             .timeline-description {
+                 font-size: 0.7rem;
+                 line-height: 1.3;
+             }
+             
+             /* 권장사항 */
+             .recommendation-item {
+                 padding: 8px;
+                 margin-bottom: 6px;
+                 border-radius: 6px;
+                 font-size: 0.75rem;
+                 line-height: 1.3;
+             }
+             
+             /* 주의사항 */
+             .disclaimer {
+                 font-size: 0.65rem;
+                 padding: 8px;
+                 border-radius: 6px;
+                 margin-top: 16px;
+                 line-height: 1.4;
+             }
+         }
     `;
   }
 
