@@ -70,11 +70,16 @@ const AppRouter = () => {
         shouldRedirect: ['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath)
       });
       
-      // 특정 경로에서만 리디렉션 수행 (공개 페이지들은 제외)
+      // 공유 리포트 페이지는 절대 리다이렉션하지 않음
+      if (currentPath.includes('/shared-report/')) {
+        console.log('🔒 공유 리포트 페이지 - 리다이렉션 완전 차단:', currentPath);
+        return;
+      }
+      
+      // 기타 공개 페이지들 체크
       const publicPaths = [
-        '/shared-report/',
         '/measurement-access',
-        '/organization-signup-selection',
+        '/organization-signup-selection', 
         '/organization-registration',
         '/organization-registration-success',
         '/organization-join'
