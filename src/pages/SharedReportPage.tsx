@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Label } from '../../components/ui/label';
+// import { Label } from '../../components/ui/label'; // 패키지 의존성 문제로 제거
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
 import { ReportViewerModal } from '@domains/ai-report/components/ReportViewerModal';
 import reportSharingService, { ShareableReport, ShareLinkAuth } from '@domains/ai-report/services/ReportSharingService';
@@ -187,11 +187,11 @@ export function SharedReportPage({}: SharedReportPageProps) {
 
             {/* 인증 폼 */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="birthDate" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  생년월일 확인
-                </Label>
+                             <div className="space-y-2">
+                 <label htmlFor="birthDate" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                   <Calendar className="h-4 w-4" />
+                   생년월일 확인
+                 </label>
                 <Input
                   id="birthDate"
                   type="date"
