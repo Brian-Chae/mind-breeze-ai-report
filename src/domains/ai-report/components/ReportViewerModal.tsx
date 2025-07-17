@@ -599,15 +599,30 @@ export function ReportViewerModal({
                 if (parentContainer) {
                   // React 컴포넌트 - 체크표시 원형 배경만 아래로 이동
                   if (className && (
-                    className.includes('bg-green-500') || 
-                    (className.includes('rounded-full') && className.includes('flex'))
-                  ) && el.textContent && el.textContent.includes('✓')) {
+                    className.includes('bg-green-500') && 
+                    className.includes('rounded-full') && 
+                    className.includes('flex')
+                  )) {
                     el.style.transform = 'translateY(6px)';
+                    
+                    // 배경 안의 체크표시 텍스트는 위로 이동시켜서 원래 위치 유지
+                    const checkIcon = el.querySelector('span');
+                    if (checkIcon && checkIcon.textContent && checkIcon.textContent.includes('✓')) {
+                      checkIcon.style.transform = 'translateY(-6px)';
+                    }
                   }
                   
                   // HTML 렌더러 - 체크표시 원형 배경만 아래로 이동 (.finding-icon)
                   if (className && className.includes('finding-icon')) {
+                    // 배경만 아래로 이동하고, 텍스트는 상대적으로 위로 이동
                     el.style.transform = 'translateY(6px)';
+                    el.style.position = 'relative';
+                    
+                    // 내부 텍스트를 위로 이동
+                    if (el.textContent && el.textContent.includes('✓')) {
+                      const originalText = el.textContent;
+                      el.innerHTML = `<span style="transform: translateY(-6px); display: inline-block;">${originalText}</span>`;
+                    }
                   }
                 }
                 
