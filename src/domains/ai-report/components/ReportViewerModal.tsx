@@ -434,7 +434,7 @@ export function ReportViewerModal({
       }
 
       // 폰트 로딩 대기 (텍스트 렌더링 품질 향상)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // 실제 요소 크기 감지
       const elementRect = reportElement.getBoundingClientRect();
@@ -498,13 +498,21 @@ export function ReportViewerModal({
               `;
             }
             
-            // 모든 텍스트 요소의 line-height 보정
+            // 텍스트 렌더링 품질 개선 (최소한)
             const allElements = clonedBody.querySelectorAll('*');
             allElements.forEach((el: any) => {
               if (el.style) {
-                el.style.lineHeight = 'normal';
+                el.style.lineHeight = '1.6';
                 el.style.textRendering = 'optimizeLegibility';
                 el.style.fontKerning = 'normal';
+                el.style.webkitFontSmoothing = 'antialiased';
+                el.style.mozOsxFontSmoothing = 'grayscale';
+                
+                // 텍스트 컨테이너 높이 자동 조정
+                if (el.textContent && el.textContent.trim()) {
+                  el.style.height = 'auto';
+                  el.style.overflow = 'visible';
+                }
               }
             });
           }
