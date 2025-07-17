@@ -585,75 +585,57 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             text-align: left;
         }
         
-        /* 주요 발견사항 - Chip/Badge 스타일 */
+        /* 주요 발견사항 - 카드 스타일 */
         .key-findings-section {
             margin: 16px 0;
         }
         
         .findings-grid {
             display: flex !important;
-            flex-wrap: wrap !important;
+            flex-direction: column !important;
             gap: 8px !important;
             margin-top: 12px !important;
         }
         
         .finding-item {
-            display: inline-flex !important;
-            align-items: center !important;
-            background: linear-gradient(135deg, #FEF3C7, #FFFBEB) !important;
-            border: none !important;
-            border-radius: 16px !important;
-            padding: 8px 12px !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            color: #8B5A00 !important;
-            line-height: 1.2 !important;
-            max-width: fit-content !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            background: #F0FDF4 !important;
+            border: 1px solid #BBF7D0 !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+            gap: 10px !important;
+            border-left: 4px solid #22C55E !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
             margin: 0 !important;
-            gap: 6px !important;
-            box-shadow: 0 2px 6px rgba(251, 191, 36, 0.15) !important;
-            transition: all 0.2s ease !important;
-            white-space: nowrap !important;
-        }
-        
-        .finding-item:nth-child(2n) {
-            background: linear-gradient(135deg, #E0F2FE, #F0F9FF) !important;
-            color: #0369A1 !important;
-            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15) !important;
-        }
-        
-        .finding-item:nth-child(3n) {
-            background: linear-gradient(135deg, #F0FDF4, #ECFDF5) !important;
-            color: #166534 !important;
-            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15) !important;
-        }
-        
-        .finding-item:nth-child(4n) {
-            background: linear-gradient(135deg, #FDF2F8, #FCE7F3) !important;
-            color: #BE185D !important;
-            box-shadow: 0 2px 6px rgba(236, 72, 153, 0.15) !important;
-        }
-        
-        .finding-item:active {
-            transform: scale(0.95) !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
         }
         
         .finding-icon {
-            font-size: 14px !important;
-            margin: 0 !important;
+            width: 18px !important;
+            height: 18px !important;
+            background: #22C55E !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: white !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
             flex-shrink: 0 !important;
+            margin-top: 1px !important;
         }
         
         .finding-text {
-            font-size: 13px !important;
-            color: inherit !important;
-            line-height: 1.2 !important;
+            font-size: 12px !important;
+            color: #166534 !important;
+            line-height: 1.4 !important;
             margin: 0 !important;
-            font-weight: 600 !important;
-            max-width: 180px !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
+            font-weight: 500 !important;
+            flex: 1 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
         }
 
         

@@ -295,10 +295,13 @@ const OverallHealthReport: React.FC<OverallHealthReportProps> = ({
             {analysisResult?.overallHealth?.keyFindings && (
               <div className="mt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">주요 발견사항</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-3">
                   {analysisResult.overallHealth.keyFindings.slice(0, 4).map((finding: string, index: number) => (
-                    <div key={index} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="text-sm text-yellow-800">{finding}</p>
+                    <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4 border-l-4 border-l-green-500 flex items-start gap-3">
+                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-xs font-bold">✓</span>
+                      </div>
+                      <p className="text-sm text-green-800 font-medium leading-relaxed">{finding}</p>
                     </div>
                   ))}
                 </div>

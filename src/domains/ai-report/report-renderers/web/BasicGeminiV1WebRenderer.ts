@@ -528,7 +528,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             <div class="findings-grid">
                 ${detailedAnalysis.eegAnalysis.keyFindings.slice(0, 4).map((finding: string) => `
                     <div class="finding-item">
-                        <div class="finding-icon">⚠️</div>
+                        <div class="finding-icon">✓</div>
                         <p class="finding-text">${finding}</p>
                     </div>
                 `).join('')}
@@ -1270,37 +1270,49 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             color: ${secondaryColor};
         }
 
-        /* 주요 발견사항 */
+        /* 주요 발견사항 - 카드 스타일 */
         .key-findings-section {
             margin-top: 30px;
         }
 
         .findings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             margin-top: 15px;
         }
 
         .finding-item {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            background: ${isDark ? '#FEF3C7' : '#FFFBEB'};
-            border: 1px solid ${isDark ? '#F59E0B' : '#FDE68A'};
+            gap: 12px;
+            background: ${isDark ? '#F0FDF4' : '#F0FDF4'};
+            border: 1px solid ${isDark ? '#BBF7D0' : '#BBF7D0'};
             border-radius: 8px;
-            padding: 15px;
+            padding: 16px;
+            border-left: 4px solid #22C55E;
         }
 
         .finding-icon {
-            font-size: 1.25rem;
+            width: 20px;
+            height: 20px;
+            background: #22C55E;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
             flex-shrink: 0;
+            margin-top: 2px;
         }
 
         .finding-text {
             font-size: 0.875rem;
-            color: ${isDark ? '#92400E' : '#78350F'};
+            color: ${isDark ? '#166534' : '#166534'};
             line-height: 1.5;
+            font-weight: 500;
         }
 
         .subsection-title {
