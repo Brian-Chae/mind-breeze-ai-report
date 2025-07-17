@@ -704,7 +704,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card short-term">
                     <div class="plan-header">
                         <h3>🎂 ${language === 'ko' ? '연령별 특성' : 'Age-Specific Characteristics'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '연령대' : 'Age Group'}</span>
                     </div>
                     <div class="plan-description">${demographic.ageSpecific}</div>
                 </div>
@@ -714,7 +713,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card long-term">
                     <div class="plan-header">
                         <h3>🚻 ${language === 'ko' ? '성별 특성' : 'Gender-Specific Characteristics'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '성별' : 'Gender'}</span>
                     </div>
                     <div class="plan-description">${demographic.genderSpecific}</div>
                 </div>
@@ -724,7 +722,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card immediate">
                     <div class="plan-header">
                         <h3>💡 ${language === 'ko' ? '종합 인사이트' : 'Combined Insights'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '핵심' : 'Key Points'}</span>
                     </div>
                     <ul class="plan-list">
                         ${demographic.combinedInsights.map(insight => `<li>${insight}</li>`).join('')}
