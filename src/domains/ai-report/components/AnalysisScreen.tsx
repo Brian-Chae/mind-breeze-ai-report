@@ -205,10 +205,9 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
                   <p className="text-sm text-gray-600">{selectedEngine.description}</p>
                 </div>
                 <Button 
-                  variant="outline" 
                   size="sm"
                   onClick={() => setIsModalOpen(true)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0"
                 >
                   <Settings className="w-4 h-4" />
                   변경
