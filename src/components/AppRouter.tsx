@@ -26,6 +26,8 @@ import enterpriseAuthService from '@domains/organization/services/EnterpriseAuth
 import { AIHealthReportApp } from '@domains/ai-report/components/AIHealthReportApp';
 // Shared Report Page import 추가
 import { SharedReportPage } from '../pages/SharedReportPage';
+// AI Report Renderers 초기화
+import { initializeRenderers } from '@domains/ai-report/report-renderers';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
@@ -33,6 +35,16 @@ const AppRouter = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showWelcome, setShowWelcome] = useState(false);
+
+  // 렌더러 초기화 (앱 시작 시 한 번만 실행)
+  useEffect(() => {
+    try {
+      initializeRenderers();
+      console.log('✅ 렌더러 초기화 완료');
+    } catch (error) {
+      console.error('❌ 렌더러 초기화 실패:', error);
+    }
+  }, []);
 
   useEffect(() => {
     if (loading) return;

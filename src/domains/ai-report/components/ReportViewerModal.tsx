@@ -57,7 +57,14 @@ export function ReportViewerModal({
   const [error, setError] = useState<string | null>(null);
   const [reportContent, setReportContent] = useState<any>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+  // 모바일 기기 자동 감지
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return isMobile ? 'mobile' : 'desktop';
+    }
+    return 'desktop';
+  });
   
   // 실제 렌더러 찾기 (viewMode에 따라 모바일/웹 렌더러 선택)
   useEffect(() => {
@@ -76,14 +83,23 @@ export function ReportViewerModal({
         // 🎯 viewMode에 따라 적절한 렌더러 선택
         let targetRenderer = null;
         
+        console.log('🔍 렌더러 선택 시작 - engineId:', engineId, 'viewMode:', viewMode);
+        console.log('🔍 사용 가능한 렌더러 ID들:', allRenderers.map(r => r.id));
+        
         // 1. engineId가 basic-gemini-v1이면 viewMode에 따라 렌더러 선택
         if (engineId === 'basic-gemini-v1') {
           if (viewMode === 'mobile') {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-mobile');
-            console.log('🔍 basic-gemini-v1-mobile 렌더러 선택:', targetRenderer);
+            console.log('🔍 모바일 렌더러 선택 시도:', targetRenderer);
+            console.log('🔍 모바일 렌더러 존재 여부:', !!targetRenderer);
+            if (targetRenderer) {
+              console.log('✅ 모바일 렌더러 선택 성공:', targetRenderer.id, targetRenderer.name);
+            } else {
+              console.error('❌ 모바일 렌더러 찾을 수 없음');
+            }
           } else {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
-            console.log('🔍 basic-gemini-v1-web 렌더러 선택:', targetRenderer);
+            console.log('🔍 웹 렌더러 선택:', targetRenderer?.id, targetRenderer?.name);
           }
         }
         
