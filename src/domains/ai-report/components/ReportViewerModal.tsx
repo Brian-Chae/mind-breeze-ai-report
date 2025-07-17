@@ -480,11 +480,11 @@ export function ReportViewerModal({
               overflow: visible;
             `;
             
-            // report-content 요소 완전 중앙 정렬
+            // report-content 요소 자연스러운 정렬
             const reportContent = clonedDoc.getElementById('report-content');
             if (reportContent) {
-              const contentMaxWidth = viewMode === 'mobile' ? '375px' : '1024px';
-              const contentPadding = viewMode === 'mobile' ? '20px' : '40px';
+              const contentMaxWidth = viewMode === 'mobile' ? '380px' : '1024px';
+              const contentPadding = viewMode === 'mobile' ? '10px' : '40px';
               
               reportContent.style.cssText = `
                 position: relative;
@@ -494,8 +494,6 @@ export function ReportViewerModal({
                 width: 100%;
                 box-sizing: border-box;
                 background: transparent;
-                left: 50%;
-                transform: translateX(-50%);
               `;
             }
             
