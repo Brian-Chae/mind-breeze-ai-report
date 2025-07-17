@@ -498,10 +498,40 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       const targetMeasurementData = measurementDataList.find(data => data.id === dataId)
       const sessionData = targetMeasurementData?.sessionData || {}
       
+      // 🔍 디버깅: 세션 데이터 상세 확인
+      console.log('🔍 targetMeasurementData:', targetMeasurementData)
+      console.log('🔍 sessionData 전체:', sessionData)
+      console.log('🔍 sessionData.subjectName:', sessionData.subjectName)
+      console.log('🔍 sessionData.subjectAge:', sessionData.subjectAge)
+      console.log('🔍 sessionData.subjectBirthDate:', sessionData.subjectBirthDate)
+      console.log('🔍 sessionData.subjectGender:', sessionData.subjectGender)
+      console.log('🔍 sessionData.subjectOccupation:', sessionData.subjectOccupation)
+      
+      // 나이 계산 로직 개선
+      let calculatedAge = sessionData.subjectAge || 30; // 기본값
+      
+      // subjectAge가 없지만 생년월일이 있다면 나이 계산
+      if (!sessionData.subjectAge && sessionData.subjectBirthDate) {
+        try {
+          const birthDate = new Date(sessionData.subjectBirthDate)
+          const today = new Date()
+          calculatedAge = today.getFullYear() - birthDate.getFullYear()
+          
+          // 생일이 지났는지 확인하여 정확한 만 나이 계산
+          if (today.getMonth() < birthDate.getMonth() || 
+              (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+            calculatedAge--
+          }
+          console.log('✅ 생년월일로부터 계산된 나이:', calculatedAge)
+        } catch (error) {
+          console.warn('⚠️ 생년월일 파싱 실패:', error)
+        }
+      }
+      
       // 개인 정보 구성 (AI 엔진이 기대하는 형식)
       const personalInfo = {
         name: sessionData.subjectName || targetMeasurementData?.userName || '알 수 없음',
-        age: sessionData.subjectAge || 30, // 기본값 30세 (향후 실제 나이 수집 필요)
+        age: calculatedAge,
         gender: (sessionData.subjectGender === 'FEMALE' ? 'female' : 'male') as 'male' | 'female',
         occupation: sessionData.subjectOccupation || targetMeasurementData?.userOccupation || 'office_worker'
       }
