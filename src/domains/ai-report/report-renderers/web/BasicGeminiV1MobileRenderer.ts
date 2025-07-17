@@ -1244,15 +1244,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     
     let content = '<div class="analysis-list">';
     
-    // EEG 분석
-    if (detailedResult?.eegAnalysis) {
-      content += this.generateEEGAnalysisItem(detailedResult.eegAnalysis, language);
-    }
-    
-    // PPG 분석
-    if (detailedResult?.ppgAnalysis) {
-      content += this.generatePPGAnalysisItem(detailedResult.ppgAnalysis, language);
-    }
+
     
     // 개선 계획
     if (detailedResult?.improvementPlan) {
@@ -1263,67 +1255,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     return content;
   }
 
-  /**
-   * EEG 분석 아이템 생성
-   */
-  private generateEEGAnalysisItem(eegAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '뇌파 건강도' : 'EEG Health';
-    const scoreClass = this.getScoreClass(eegAnalysis.score);
-    
-    return `
-    <div class="plan-card immediate">
-        <div class="plan-header">
-            <h3>🧠 ${title}</h3>
-            <div class="plan-period">${Math.round(eegAnalysis.score)}/100</div>
-        </div>
-        <div class="item-description" style="margin-bottom: 16px;">${eegAnalysis.interpretation}</div>
-        <div style="text-align: center; margin-bottom: 16px;">
-            ${this.generateEEGChart(eegAnalysis)}
-            <div class="chart-legend">
-                <div class="legend-title">주파수 대역별 활성도</div>
-            </div>
-        </div>
-        ${eegAnalysis.keyFindings?.length ? `
-        <div>
-            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">주요 발견사항</h4>
-            <ul class="plan-list">
-                ${eegAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
-            </ul>
-        </div>
-        ` : ''}
-    </div>`;
-  }
 
-  /**
-   * PPG 분석 아이템 생성
-   */
-  private generatePPGAnalysisItem(ppgAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '심혈관 건강도' : 'Cardiovascular Health';
-    const scoreClass = this.getScoreClass(ppgAnalysis.score);
-    
-    return `
-    <div class="plan-card short-term">
-        <div class="plan-header">
-            <h3>❤️ ${title}</h3>
-            <div class="plan-period">${Math.round(ppgAnalysis.score)}/100</div>
-        </div>
-        <div class="item-description" style="margin-bottom: 16px;">${ppgAnalysis.interpretation}</div>
-        <div style="text-align: center; margin-bottom: 16px;">
-            ${this.generatePPGChart(ppgAnalysis)}
-            <div class="chart-legend">
-                <div class="legend-title">심박변이도 & 스트레스 지수</div>
-            </div>
-        </div>
-        ${ppgAnalysis.keyFindings?.length ? `
-        <div>
-            <h4 style="font-size: 0.9rem; margin: 0 0 8px 0; color: var(--text-color);">주요 발견사항</h4>
-            <ul class="plan-list">
-                ${ppgAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
-            </ul>
-        </div>
-        ` : ''}
-    </div>`;
-  }
 
 
 

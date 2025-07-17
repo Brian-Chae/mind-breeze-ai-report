@@ -601,34 +601,57 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     <section class="analysis-section eeg-analysis">
         <h2>${language === 'ko' ? '🧠 뇌파 분석 결과' : '🧠 EEG Analysis Results'}</h2>
         <div class="analysis-content">
-            <!-- 뇌파 건강 점수 그래프 -->
-            <div class="score-chart-section">
-                ${this.generateHealthElement(
-                    language === 'ko' ? '뇌파 건강도' : 'EEG Health', 
-                    eegAnalysis.score, 
-                    false
-                )}
+            <div class="plan-timeline">
+                <!-- 뇌파 건강도 점수 카드 -->
+                <div class="plan-card immediate">
+                    <div class="plan-header">
+                        <h3>📊 ${language === 'ko' ? '뇌파 건강도' : 'EEG Health Score'}</h3>
+                        <span class="plan-period">${Math.round(eegAnalysis.score)}/100</span>
+                    </div>
+                    <div class="score-chart-section">
+                        ${this.generateHealthElement(
+                            language === 'ko' ? '뇌파 건강도' : 'EEG Health', 
+                            eegAnalysis.score, 
+                            false
+                        )}
+                    </div>
+                </div>
+                
+                <!-- 분석 해석 카드 -->
+                <div class="plan-card short-term">
+                    <div class="plan-header">
+                        <h3>🔍 ${language === 'ko' ? '분석 결과' : 'Analysis Results'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '해석' : 'Interpretation'}</span>
+                    </div>
+                    <div class="plan-description">${eegAnalysis.interpretation}</div>
+                </div>
+                
+                <!-- 주요 발견사항 카드 -->
+                ${eegAnalysis.keyFindings?.length ? `
+                <div class="plan-card long-term">
+                    <div class="plan-header">
+                        <h3>✅ ${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '긍정적' : 'Positive'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${eegAnalysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                <!-- 주의사항 카드 -->
+                ${eegAnalysis.concerns?.length ? `
+                <div class="plan-card immediate">
+                    <div class="plan-header">
+                        <h3>⚠️ ${language === 'ko' ? '주의사항' : 'Concerns'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '주의필요' : 'Attention Required'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${eegAnalysis.concerns.map(concern => `<li>${concern}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
             </div>
-            
-            <div class="analysis-text">
-                <p class="interpretation">${eegAnalysis.interpretation}</p>
-            </div>
-            
-            <div class="findings-section">
-                <h3>${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
-                <ul class="findings-list positive">
-                    ${eegAnalysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
-                </ul>
-            </div>
-            
-            ${eegAnalysis.concerns.length > 0 ? `
-            <div class="concerns-section">
-                <h3>${language === 'ko' ? '주의사항' : 'Concerns'}</h3>
-                <ul class="concerns-list">
-                    ${eegAnalysis.concerns.map(concern => `<li>${concern}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
         </div>
     </section>`;
   }
@@ -647,34 +670,57 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     <section class="analysis-section ppg-analysis">
         <h2>${language === 'ko' ? '❤️ 심혈관 분석 결과' : '❤️ Cardiovascular Analysis Results'}</h2>
         <div class="analysis-content">
-            <!-- 심혈관 건강 점수 그래프 -->
-            <div class="score-chart-section">
-                ${this.generateHealthElement(
-                    language === 'ko' ? '심혈관 건강도' : 'Cardiovascular Health', 
-                    ppgAnalysis.score, 
-                    false
-                )}
+            <div class="plan-timeline">
+                <!-- 심혈관 건강도 점수 카드 -->
+                <div class="plan-card short-term">
+                    <div class="plan-header">
+                        <h3>💓 ${language === 'ko' ? '심혈관 건강도' : 'Cardiovascular Health Score'}</h3>
+                        <span class="plan-period">${Math.round(ppgAnalysis.score)}/100</span>
+                    </div>
+                    <div class="score-chart-section">
+                        ${this.generateHealthElement(
+                            language === 'ko' ? '심혈관 건강도' : 'Cardiovascular Health', 
+                            ppgAnalysis.score, 
+                            false
+                        )}
+                    </div>
+                </div>
+                
+                <!-- 분석 해석 카드 -->
+                <div class="plan-card long-term">
+                    <div class="plan-header">
+                        <h3>🔍 ${language === 'ko' ? '분석 결과' : 'Analysis Results'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '해석' : 'Interpretation'}</span>
+                    </div>
+                    <div class="plan-description">${ppgAnalysis.interpretation}</div>
+                </div>
+                
+                <!-- 주요 발견사항 카드 -->
+                ${ppgAnalysis.keyFindings?.length ? `
+                <div class="plan-card long-term">
+                    <div class="plan-header">
+                        <h3>✅ ${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '긍정적' : 'Positive'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${ppgAnalysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                <!-- 주의사항 카드 -->
+                ${ppgAnalysis.concerns?.length ? `
+                <div class="plan-card immediate">
+                    <div class="plan-header">
+                        <h3>⚠️ ${language === 'ko' ? '주의사항' : 'Concerns'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '주의필요' : 'Attention Required'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${ppgAnalysis.concerns.map(concern => `<li>${concern}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
             </div>
-            
-            <div class="analysis-text">
-                <p class="interpretation">${ppgAnalysis.interpretation}</p>
-            </div>
-            
-            <div class="findings-section">
-                <h3>${language === 'ko' ? '주요 발견사항' : 'Key Findings'}</h3>
-                <ul class="findings-list positive">
-                    ${ppgAnalysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
-                </ul>
-            </div>
-            
-            ${ppgAnalysis.concerns.length > 0 ? `
-            <div class="concerns-section">
-                <h3>${language === 'ko' ? '주의사항' : 'Concerns'}</h3>
-                <ul class="concerns-list">
-                    ${ppgAnalysis.concerns.map(concern => `<li>${concern}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
         </div>
     </section>`;
   }
