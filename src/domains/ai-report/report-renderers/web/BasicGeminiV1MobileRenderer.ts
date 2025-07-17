@@ -1091,7 +1091,6 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         <div class="plan-card immediate">
             <div class="plan-header">
                 <h3>🚀 즉시 실행</h3>
-                <div class="plan-period">오늘부터</div>
             </div>
             <ul class="plan-list">
                 ${improvementPlan.immediate.map((action: string) => `<li>${action}</li>`).join('')}
@@ -1102,7 +1101,6 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         <div class="plan-card short-term">
             <div class="plan-header">
                 <h3>🎯 단기 목표</h3>
-                <div class="plan-period">1-4주</div>
             </div>
             <ul class="plan-list">
                 ${improvementPlan.shortTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
@@ -1113,7 +1111,6 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         <div class="plan-card long-term">
             <div class="plan-header">
                 <h3>🎊 중장기 목표</h3>
-                <div class="plan-period">1-6개월</div>
             </div>
             <ul class="plan-list">
                 ${improvementPlan.longTerm.map((goal: string) => `<li>${goal}</li>`).join('')}

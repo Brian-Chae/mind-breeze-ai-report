@@ -752,7 +752,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card immediate">
                     <div class="plan-header">
                         <h3>⚠️ ${language === 'ko' ? '직업적 위험 요소' : 'Job-Related Risk Factors'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '주의필요' : 'Attention Required'}</span>
                     </div>
                     <ul class="plan-list">
                         ${occupation.jobSpecificRisks.map(risk => `<li>${risk}</li>`).join('')}
@@ -764,7 +763,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card short-term">
                     <div class="plan-header">
                         <h3>🏢 ${language === 'ko' ? '직장 내 권장사항' : 'Workplace Recommendations'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '실천' : 'Practice'}</span>
                     </div>
                     <ul class="plan-list">
                         ${occupation.workplaceRecommendations.map(rec => `<li>${rec}</li>`).join('')}
@@ -776,7 +774,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card long-term">
                     <div class="plan-header">
                         <h3>💪 ${language === 'ko' ? '직업별 건강 팁' : 'Career Health Tips'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '장기관리' : 'Long-term Care'}</span>
                     </div>
                     <ul class="plan-list">
                         ${occupation.careerHealthTips.map(tip => `<li>${tip}</li>`).join('')}
@@ -806,7 +803,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card immediate">
                     <div class="plan-header">
                         <h3>${language === 'ko' ? '🚀 즉시 실행' : '🚀 Immediate Actions'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '오늘부터' : 'Starting Today'}</span>
                     </div>
                     <ul class="plan-list">
                         ${plan.immediate.map(action => `<li>${action}</li>`).join('')}
@@ -816,7 +812,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card short-term">
                     <div class="plan-header">
                         <h3>${language === 'ko' ? '⏰ 단기 목표' : '⏰ Short-term Goals'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '1-4주' : '1-4 Weeks'}</span>
                     </div>
                     <ul class="plan-list">
                         ${plan.shortTerm.map(goal => `<li>${goal}</li>`).join('')}
@@ -826,7 +821,6 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 <div class="plan-card long-term">
                     <div class="plan-header">
                         <h3>${language === 'ko' ? '🎯 중장기 목표' : '🎯 Long-term Goals'}</h3>
-                        <span class="plan-period">${language === 'ko' ? '1-6개월' : '1-6 Months'}</span>
                     </div>
                     <ul class="plan-list">
                         ${plan.longTerm.map(goal => `<li>${goal}</li>`).join('')}
