@@ -2023,6 +2023,21 @@ AI 건강 분석 리포트
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        
+                        {/* 측정 데이터 삭제 버튼 */}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleOpenDeleteMeasurementDataConfirm(data.id, data.userName, data.availableReports?.length || 0)}
+                          disabled={deletingMeasurementData[data.id]}
+                          className="text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          {deletingMeasurementData[data.id] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -2203,23 +2218,7 @@ AI 건강 분석 리포트
                      </div>
                    )}
 
-                  {/* 측정 데이터 삭제 버튼 */}
-                  <div className="flex items-center justify-center mt-0">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleOpenDeleteMeasurementDataConfirm(data.id, data.userName, data.availableReports?.length || 0)}
-                      disabled={deletingMeasurementData[data.id]}
-                      className="text-red-600 border-red-300 hover:bg-red-50 text-xs px-3 py-1.5 font-medium"
-                    >
-                      {deletingMeasurementData[data.id] ? (
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3 h-3 mr-1" />
-                      )}
-                      {deletingMeasurementData[data.id] ? '삭제 중...' : '측정 데이터 삭제'}
-                    </Button>
-                  </div>
+
                 </div>
               )
             })}
