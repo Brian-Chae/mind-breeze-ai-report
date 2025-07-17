@@ -24,6 +24,8 @@ import OrganizationAdminApp from '@domains/organization/components/OrganizationA
 import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
 // AI Report App import 추가
 import { AIHealthReportApp } from '@domains/ai-report/components/AIHealthReportApp';
+// Shared Report Page import 추가
+import { SharedReportPage } from '../pages/SharedReportPage';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
@@ -160,6 +162,9 @@ const AppRouter = () => {
       <Route path="/" element={<LandingPage onEnterApp={() => {}} />} />
       <Route path="/login" element={<LoginPage onNavigate={(page) => navigate(page === 'home' ? '/welcome' : `/${page}`)} />} />
       <Route path="/signup" element={<SignupPage onNavigate={(page) => navigate(page === 'home' ? '/welcome' : `/${page}`)} />} />
+      
+      {/* 공유 리포트 라우트 - 인증 불필요 */}
+      <Route path="/shared-report/:shareToken" element={<SharedReportPage />} />
       
       {/* 조직 관련 라우트 */}
       <Route path="/organization-signup-selection" element={<CompanySignupSelectionPage />} />

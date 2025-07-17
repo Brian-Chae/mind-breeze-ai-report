@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -18,6 +18,7 @@ import { rendererRegistry } from '@domains/ai-report/core/registry/RendererRegis
 import { findCompatibleRenderers, getRecommendedRenderers } from '@domains/ai-report/core/utils/EngineRendererMatcher'
 import { initializeRenderers } from '@domains/ai-report/report-renderers'
 import customRendererService from '@domains/ai-report/services/CustomRendererService'
+import reportSharingService from '@domains/ai-report/services/ReportSharingService'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -146,6 +147,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     dataUserName: '',
     reportCount: 0
   })
+  
+  // 공유 관련 상태
+  const [creatingShareLinks, setCreatingShareLinks] = useState<{[reportId: string]: boolean}>({})
+  const [shareSuccess, setShareSuccess] = useState<{[reportId: string]: string}>({})
+  const [shareError, setShareError] = useState<{[reportId: string]: string}>({})
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(measurementDataList.length / itemsPerPage)
@@ -700,6 +706,114 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     setSelectedViewerId(viewerId)
     setSelectedViewerName(viewerName)
     setIsViewerModalOpen(true)
+  }
+
+  // 공유 링크 생성
+  const handleCreateShareLink = async (report: any) => {
+    if (!report) {
+      console.error('유효하지 않은 리포트 데이터입니다.')
+      return
+    }
+
+    const reportId = report.id
+    setCreatingShareLinks(prev => ({ ...prev, [reportId]: true }))
+    setShareError(prev => {
+      const newState = { ...prev }
+      delete newState[reportId]
+      return newState
+    })
+
+    try {
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      
+      if (!currentContext.organization?.id || !currentContext.user?.id) {
+        throw new Error('조직 또는 사용자 정보를 찾을 수 없습니다.')
+      }
+
+      // 리포트에서 개인정보 가져오기
+      const subjectName = report.personalInfo?.name || report.createdByUserName || '익명'
+      
+      // 생년월일 확인 - sessionData에서 가져오기
+      let subjectBirthDate = null
+      if (report.measurementDataId) {
+        try {
+          const measurementDoc = await FirebaseService.getDocument('measurement_sessions', report.measurementDataId) as any
+          const sessionData = measurementDoc?.sessionData
+          
+          if (sessionData?.subjectBirthDate) {
+            // Firestore Timestamp인 경우 변환
+            subjectBirthDate = sessionData.subjectBirthDate.toDate ? 
+              sessionData.subjectBirthDate.toDate() : 
+              new Date(sessionData.subjectBirthDate)
+          }
+        } catch (error) {
+          console.warn('측정 데이터에서 생년월일 조회 실패:', error)
+        }
+      }
+
+      // 생년월일이 없으면 기본값 사용 (1990-01-01)
+      if (!subjectBirthDate) {
+        subjectBirthDate = new Date('1990-01-01')
+        console.warn('생년월일을 찾을 수 없어 기본값 사용:', subjectBirthDate)
+      }
+
+      // 공유 링크 생성
+      const shareableReport = await reportSharingService.createShareableLink(
+        reportId,
+        currentContext.organization.id,
+        currentContext.user.id,
+        currentContext.user.displayName || 'Unknown',
+        subjectName,
+        subjectBirthDate,
+        {
+          expiryDays: 30,
+          maxAccessCount: 100
+        }
+      )
+
+      const shareUrl = reportSharingService.generateShareUrl(shareableReport.shareToken)
+      
+      // 클립보드에 복사
+      await navigator.clipboard.writeText(shareUrl)
+      
+      setShareSuccess(prev => ({ 
+        ...prev, 
+        [reportId]: shareUrl 
+      }))
+
+      console.log('✅ 공유 링크 생성 완료:', shareUrl)
+
+      // 3초 후 성공 메시지 제거
+      setTimeout(() => {
+        setShareSuccess(prev => {
+          const newState = { ...prev }
+          delete newState[reportId]
+          return newState
+        })
+      }, 3000)
+
+    } catch (error) {
+      console.error('공유 링크 생성 실패:', error)
+      setShareError(prev => ({ 
+        ...prev, 
+        [reportId]: error instanceof Error ? error.message : '공유 링크 생성에 실패했습니다.' 
+      }))
+
+      // 5초 후 에러 메시지 제거
+      setTimeout(() => {
+        setShareError(prev => {
+          const newState = { ...prev }
+          delete newState[reportId]
+          return newState
+        })
+      }, 5000)
+    } finally {
+      setCreatingShareLinks(prev => {
+        const newState = { ...prev }
+        delete newState[reportId]
+        return newState
+      })
+    }
   }
 
     // 해당 엔진에 호환되는 뷰어 필터링 (실제 렌더러 시스템 사용)
@@ -1876,6 +1990,41 @@ AI 건강 분석 리포트
                                  </div>
                                  
                                  <div className="flex items-center space-x-2 ml-4">
+                                   {/* 공유 버튼 */}
+                                   <div className="relative">
+                                     <Button
+                                       size="sm"
+                                       variant="outline"
+                                       onClick={() => handleCreateShareLink(report)}
+                                       disabled={creatingShareLinks[report.id]}
+                                       className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-3 py-1.5 font-medium"
+                                     >
+                                       {creatingShareLinks[report.id] ? (
+                                         <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                       ) : (
+                                         <Share2 className="w-3 h-3 mr-1" />
+                                       )}
+                                       공유링크
+                                     </Button>
+                                     
+                                     {/* 공유 성공 메시지 */}
+                                     {shareSuccess[report.id] && (
+                                       <div className="absolute top-full left-0 mt-1 p-2 bg-green-100 border border-green-300 rounded text-xs text-green-800 whitespace-nowrap z-10">
+                                         <div className="flex items-center gap-1">
+                                           <Copy className="w-3 h-3" />
+                                           링크가 클립보드에 복사되었습니다!
+                                         </div>
+                                       </div>
+                                     )}
+                                     
+                                     {/* 공유 에러 메시지 */}
+                                     {shareError[report.id] && (
+                                       <div className="absolute top-full left-0 mt-1 p-2 bg-red-100 border border-red-300 rounded text-xs text-red-800 whitespace-nowrap z-10 max-w-xs">
+                                         {shareError[report.id]}
+                                       </div>
+                                     )}
+                                   </div>
+
                                    {/* 리포트 뷰어 선택 드롭다운 */}
                                    <DropdownMenu>
                                      <DropdownMenuTrigger asChild>
