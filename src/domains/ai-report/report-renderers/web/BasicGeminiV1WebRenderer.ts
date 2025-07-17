@@ -1581,7 +1581,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         .findings-section {
             margin: 20px 0;
             padding: 20px;
-            background: ${isDark ? '#065F46' : '#ECFDF5'};
+            background: ${cardBg};
             border-radius: 8px;
             border-left: 4px solid #10B981;
         }
@@ -1589,7 +1589,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
         .concerns-section {
             margin: 20px 0;
             padding: 20px;
-            background: ${isDark ? '#7F1D1D' : '#FEF2F2'};
+            background: ${cardBg};
             border-radius: 8px;
             border-left: 4px solid #EF4444;
         }
@@ -1602,7 +1602,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
 
         .findings-list li {
             padding: 8px 0;
-            color: ${isDark ? '#D1FAE5' : '#047857'};
+            color: #047857;
             font-size: 0.95rem;
             line-height: 1.5;
         }
@@ -1615,7 +1615,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
 
         .concerns-list li {
             padding: 8px 0;
-            color: ${isDark ? '#FEE2E2' : '#DC2626'};
+            color: #DC2626;
             font-size: 0.95rem;
             line-height: 1.5;
         }
