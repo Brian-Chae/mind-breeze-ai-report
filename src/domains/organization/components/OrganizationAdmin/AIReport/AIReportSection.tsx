@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -1700,11 +1700,34 @@ AI 건강 분석 리포트
       return sum + todayReportsForData
     }, 0)
 
+    // 총 크레딧 사용량
+    const totalCreditsUsed = measurementDataList.reduce((sum, data) => {
+      const dataCredits = (data.availableReports || []).reduce((reportSum: number, report: any) => {
+        return reportSum + (report.costUsed || 0)
+      }, 0)
+      return sum + dataCredits
+    }, 0)
+
+    // 오늘 사용한 크레딧 사용량
+    const todayCreditsUsed = measurementDataList.reduce((sum, data) => {
+      const todayCreditsForData = (data.availableReports || [])
+        .filter((report: any) => {
+          const reportDate = new Date(report.createdAt)
+          return reportDate >= today && reportDate < tomorrow
+        })
+        .reduce((reportSum: number, report: any) => {
+          return reportSum + (report.costUsed || 0)
+        }, 0)
+      return sum + todayCreditsForData
+    }, 0)
+
     return {
       totalMeasurements,
       totalReports,
       todayMeasurements,
-      todayReports
+      todayReports,
+      totalCreditsUsed,
+      todayCreditsUsed
     }
   }, [measurementDataList])
 
@@ -1731,7 +1754,7 @@ AI 건강 분석 리포트
       </div>
 
       {/* 현황 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
@@ -1776,6 +1799,30 @@ AI 건강 분석 리포트
             </div>
             <div className="p-3 bg-orange-200 rounded-lg">
               <TrendingUp className="w-6 h-6 text-orange-700" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-emerald-600 mb-1">총 크레딧 사용량</p>
+              <p className="text-3xl font-bold text-emerald-900">{calculateStats.totalCreditsUsed.toLocaleString()}</p>
+            </div>
+            <div className="p-3 bg-emerald-200 rounded-lg">
+              <DollarSign className="w-6 h-6 text-emerald-700" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-rose-600 mb-1">오늘 사용한 크레딧</p>
+              <p className="text-3xl font-bold text-rose-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
+            </div>
+            <div className="p-3 bg-rose-200 rounded-lg">
+              <DollarSign className="w-6 h-6 text-rose-700" />
             </div>
           </div>
         </Card>
