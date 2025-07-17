@@ -129,6 +129,13 @@ export function ReportViewerModal({
     console.log('🚀 actualRenderer.id:', actualRenderer?.id);
     console.log('🚀 report 존재 여부:', !!report);
     
+    // 🔍 실제 받은 report 데이터 구조 확인
+    console.log('🔍 전체 report 데이터:', report);
+    console.log('🔍 report.personalInfo:', report?.personalInfo);
+    console.log('🔍 report.insights:', report?.insights);
+    console.log('🔍 report.rawData:', report?.rawData);
+    console.log('🔍 report.analysisResults:', report?.analysisResults);
+    
     setIsLoading(true);
     setError(null);
     
@@ -169,6 +176,7 @@ export function ReportViewerModal({
             overallScore: report.overallScore || 78,
             stressLevel: report.stressLevel || 45,
             focusLevel: report.focusLevel || 82,
+            personalInfo: report.personalInfo, // 🔥 personalInfo 추가!
             insights: {
               summary: report.insights?.summary || "분석 결과를 확인하세요.",
               detailedAnalysis: report.insights?.detailedAnalysis || '',
@@ -177,7 +185,8 @@ export function ReportViewerModal({
             metrics: report.metrics || {},
             processingTime: report.processingTime || 1000,
             rawData: {
-              detailedAnalysis: report.rawData.detailedAnalysis
+              detailedAnalysis: report.rawData.detailedAnalysis,
+              personalInfo: report.personalInfo // 🔥 rawData에도 personalInfo 추가!
             }
           };
           console.log('✅ rawData.detailedAnalysis 객체 직접 사용:', report.rawData.detailedAnalysis);
@@ -194,6 +203,7 @@ export function ReportViewerModal({
               overallScore: report.overallScore || 78,
               stressLevel: report.stressLevel || 45,
               focusLevel: report.focusLevel || 82,
+              personalInfo: report.personalInfo, // 🔥 personalInfo 추가!
               insights: {
                 summary: report.insights?.summary || "분석 결과를 확인하세요.",
                 detailedAnalysis: report.insights.detailedAnalysis,
@@ -207,7 +217,8 @@ export function ReportViewerModal({
                   overallScore: report.overallScore || 78,
                   overallInterpretation: report.insights.summary || "전반적인 건강 상태를 확인하세요.",
                   markdownContent: report.insights.detailedAnalysis
-                }
+                },
+                personalInfo: report.personalInfo // 🔥 rawData에도 personalInfo 추가!
               }
             };
             console.log('✅ insights.detailedAnalysis 문자열 사용:', report.insights.detailedAnalysis);
@@ -229,6 +240,7 @@ export function ReportViewerModal({
               overallScore: report.overallScore || 78,
               stressLevel: report.stressLevel || 45,
               focusLevel: report.focusLevel || 82,
+              personalInfo: report.personalInfo, // 🔥 personalInfo 추가!
               insights: {
                 summary: report.insights?.summary || "분석 결과를 확인하세요.",
                 detailedAnalysis: report.insights?.detailedAnalysis || '',
@@ -457,69 +469,71 @@ export function ReportViewerModal({
     return (
       <div id="report-content" className={`${
         viewMode === 'mobile' 
-          ? 'space-y-4 p-4 w-full' 
+          ? 'space-y-4 p-3 w-full max-w-full overflow-hidden' 
           : 'space-y-6 p-6 w-[1024px] mx-auto'
       }`}>
         {/* 헤더 정보 */}
         <div className={`bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border border-gray-200 shadow-sm ${
-          viewMode === 'mobile' ? 'p-4' : 'p-6'
-        }`}>
+          viewMode === 'mobile' ? 'p-3' : 'p-6'
+        } max-w-full overflow-hidden`}>
           <div className={`flex items-center justify-between mb-4 ${
             viewMode === 'mobile' ? 'flex-col gap-3' : ''
           }`}>
-            <h1 className={`font-bold text-gray-900 ${
-              viewMode === 'mobile' ? 'text-xl text-center' : 'text-2xl'
+            <h1 className={`font-bold text-gray-900 break-words ${
+              viewMode === 'mobile' ? 'text-lg text-center' : 'text-2xl'
             }`}>
               {reportContent.title}
             </h1>
-            <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
+            <Badge variant="outline" className={`text-sm bg-white text-gray-800 border-gray-300 font-medium ${
+              viewMode === 'mobile' ? 'text-xs px-2 py-1' : ''
+            }`}>
               {reportContent.metadata.engineName}
             </Badge>
           </div>
           
           <div className={`grid ${
             viewMode === 'mobile' 
-              ? 'grid-cols-1 gap-3' 
+              ? 'grid-cols-3 gap-2' 
               : 'grid-cols-3 gap-6'
           }`}>
             <div className={`text-center bg-white rounded-lg shadow-md border border-gray-200 ${
-              viewMode === 'mobile' ? 'p-4' : 'p-6'
-            }`}>
+              viewMode === 'mobile' ? 'p-3' : 'p-6'
+            } max-w-full`}>
               <div className={`font-bold text-green-700 ${
-                viewMode === 'mobile' ? 'text-2xl' : 'text-4xl'
+                viewMode === 'mobile' ? 'text-xl' : 'text-4xl'
               }`}>
                 {reportContent.overallScore}
               </div>
-              <div className={`text-gray-700 font-medium ${
-                viewMode === 'mobile' ? 'text-sm' : 'text-base'
+              <div className={`text-gray-700 font-medium break-words ${
+                viewMode === 'mobile' ? 'text-xs' : 'text-base'
               }`}>
                 종합 점수
               </div>
             </div>
             <div className={`text-center bg-white rounded-lg shadow-md border border-gray-200 ${
-              viewMode === 'mobile' ? 'p-4' : 'p-6'
-            }`}>
+              viewMode === 'mobile' ? 'p-3' : 'p-6'
+            } max-w-full`}>
               <div className={`font-bold text-orange-600 ${
-                viewMode === 'mobile' ? 'text-2xl' : 'text-4xl'
+                viewMode === 'mobile' ? 'text-xl' : 'text-4xl'
               }`}>
                 {reportContent.stressLevel}
               </div>
-              <div className={`text-gray-700 font-medium ${
-                viewMode === 'mobile' ? 'text-sm' : 'text-base'
+              <div className={`text-gray-700 font-medium break-words ${
+                viewMode === 'mobile' ? 'text-xs' : 'text-base'
               }`}>
                 스트레스
               </div>
             </div>
             <div className={`text-center bg-white rounded-lg shadow-md border border-gray-200 ${
-              viewMode === 'mobile' ? 'p-4' : 'p-6'
-            }`}>
+              viewMode === 'mobile' ? 'p-3' : 'p-6'
+            } max-w-full`}>
               <div className={`font-bold text-blue-700 ${
-                viewMode === 'mobile' ? 'text-2xl' : 'text-4xl'
+                viewMode === 'mobile' ? 'text-xl' : 'text-4xl'
               }`}>
                 {reportContent.focusLevel}
               </div>
-              <div className={`text-gray-700 font-medium ${
-                viewMode === 'mobile' ? 'text-sm' : 'text-base'
+              <div className={`text-gray-700 font-medium break-words ${
+                viewMode === 'mobile' ? 'text-xs' : 'text-base'
               }`}>
                 집중도
               </div>
@@ -528,12 +542,12 @@ export function ReportViewerModal({
         </div>
 
         {/* 요약 */}
-        <Card className="bg-white border border-gray-200 shadow-md">
+        <Card className="bg-white border border-gray-200 shadow-md max-w-full">
           <CardHeader className={`bg-gray-50 border-b border-gray-200 ${
-            viewMode === 'mobile' ? 'p-4' : 'p-6'
+            viewMode === 'mobile' ? 'p-3' : 'p-6'
           }`}>
             <CardTitle className={`flex items-center gap-2 text-gray-900 ${
-              viewMode === 'mobile' ? 'text-lg' : 'text-xl'
+              viewMode === 'mobile' ? 'text-base' : 'text-xl'
             }`}>
               <Brain className={`text-blue-600 ${
                 viewMode === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'
@@ -542,9 +556,9 @@ export function ReportViewerModal({
             </CardTitle>
           </CardHeader>
           <CardContent className={`bg-white ${
-            viewMode === 'mobile' ? 'p-4' : 'p-6'
-          }`}>
-            <p className={`text-gray-800 leading-relaxed ${
+            viewMode === 'mobile' ? 'p-3' : 'p-6'
+          } max-w-full overflow-hidden`}>
+            <p className={`text-gray-800 leading-relaxed break-words ${
               viewMode === 'mobile' ? 'text-sm' : 'text-base'
             }`}>
               {reportContent.summary}
@@ -553,12 +567,12 @@ export function ReportViewerModal({
         </Card>
 
         {/* 상세 분석 */}
-        <Card className="bg-white border border-gray-200 shadow-md">
+        <Card className="bg-white border border-gray-200 shadow-md max-w-full">
           <CardHeader className={`bg-gray-50 border-b border-gray-200 ${
-            viewMode === 'mobile' ? 'p-4' : 'p-6'
+            viewMode === 'mobile' ? 'p-3' : 'p-6'
           }`}>
             <CardTitle className={`flex items-center gap-2 text-gray-900 ${
-              viewMode === 'mobile' ? 'text-lg' : 'text-xl'
+              viewMode === 'mobile' ? 'text-base' : 'text-xl'
             }`}>
               <FileText className={`text-green-600 ${
                 viewMode === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'
@@ -567,22 +581,24 @@ export function ReportViewerModal({
             </CardTitle>
           </CardHeader>
           <CardContent className={`bg-white ${
-            viewMode === 'mobile' ? 'p-4' : 'p-6'
-          }`}>
+            viewMode === 'mobile' ? 'p-3' : 'p-6'
+          } max-w-full overflow-hidden`}>
             <div className="prose max-w-none text-gray-800">
               <div 
-                className={`leading-relaxed ${
+                className={`leading-relaxed break-words ${
                   viewMode === 'mobile' ? 'text-sm' : 'text-base'
                 }`}
                 style={{
                   color: '#374151',
-                  lineHeight: '1.75'
+                  lineHeight: '1.75',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
                 }}
                 dangerouslySetInnerHTML={{ 
                   __html: reportContent.detailedAnalysis
                     .replace(/\n/g, '<br>')
-                    .replace(/### /g, `<h3 style="color: #1f2937; font-weight: 600; margin: 1rem 0 0.5rem 0; font-size: ${viewMode === 'mobile' ? '1rem' : '1.1rem'};">`)
-                    .replace(/## /g, `<h2 style="color: #111827; font-weight: 700; margin: 1.5rem 0 0.75rem 0; font-size: ${viewMode === 'mobile' ? '1.1rem' : '1.25rem'};">`)
+                    .replace(/### /g, `<h3 style="color: #1f2937; font-weight: 600; margin: 1rem 0 0.5rem 0; font-size: ${viewMode === 'mobile' ? '0.9rem' : '1.1rem'}; word-wrap: break-word;">`)
+                    .replace(/## /g, `<h2 style="color: #111827; font-weight: 700; margin: 1.5rem 0 0.75rem 0; font-size: ${viewMode === 'mobile' ? '1rem' : '1.25rem'}; word-wrap: break-word;">`)
                     .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f2937;">$1</strong>')
                     .replace(/- /g, '• ')
                 }} 
@@ -592,12 +608,12 @@ export function ReportViewerModal({
         </Card>
 
         {/* 메타데이터 */}
-        <Card className="bg-white border border-gray-200 shadow-md">
+        <Card className="bg-white border border-gray-200 shadow-md max-w-full">
           <CardHeader className={`bg-gray-50 border-b border-gray-200 ${
-            viewMode === 'mobile' ? 'p-4' : 'p-6'
+            viewMode === 'mobile' ? 'p-3' : 'p-6'
           }`}>
             <CardTitle className={`flex items-center gap-2 text-gray-900 ${
-              viewMode === 'mobile' ? 'text-lg' : 'text-xl'
+              viewMode === 'mobile' ? 'text-base' : 'text-xl'
             }`}>
               <Settings className={`text-gray-600 ${
                 viewMode === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'
@@ -606,22 +622,22 @@ export function ReportViewerModal({
             </CardTitle>
           </CardHeader>
           <CardContent className={`bg-white ${
-            viewMode === 'mobile' ? 'p-4' : 'p-6'
-          }`}>
-            <div className={`grid gap-4 ${
+            viewMode === 'mobile' ? 'p-3' : 'p-6'
+          } max-w-full overflow-hidden`}>
+            <div className={`grid gap-3 ${
               viewMode === 'mobile' 
                 ? 'grid-cols-1 text-xs' 
                 : 'grid-cols-1 md:grid-cols-3 text-sm'
             }`}>
-              <div>
+              <div className="break-words">
                 <span className="font-semibold text-gray-700">분석 일시:</span>
                 <div className="text-gray-800 mt-1">{reportContent.metadata.analysisDate}</div>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="font-semibold text-gray-700">분석 엔진 버전:</span>
                 <div className="text-gray-800 mt-1">basic-gemini-v1</div>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="font-semibold text-gray-700">데이터 품질:</span>
                 <div className="text-gray-800 mt-1">{reportContent.metadata.dataQuality}</div>
               </div>
@@ -638,7 +654,17 @@ export function ReportViewerModal({
       return (
         <div 
           id="report-content" 
-          className="w-full"
+          className={`w-full max-w-full overflow-hidden ${
+            viewMode === 'mobile' 
+              ? 'mobile-report-container' 
+              : 'desktop-report-container'
+          }`}
+          style={{
+            maxWidth: '100%',
+            overflowX: 'hidden',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}
           dangerouslySetInnerHTML={{ __html: reportContent.htmlContent }}
         />
       );
@@ -796,7 +822,15 @@ export function ReportViewerModal({
         </DialogHeader>
 
         {/* 스크롤 가능한 콘텐츠 영역 */}
-        <div className="flex-1 overflow-y-auto pr-2 bg-gray-50">
+        <div 
+          className={`flex-1 overflow-y-auto bg-gray-50 ${
+            viewMode === 'mobile' ? 'overflow-x-hidden' : 'pr-2'
+          }`}
+          style={{
+            maxWidth: '100%',
+            overflowX: 'hidden'
+          }}
+        >
           {renderReportContent()}
         </div>
       </DialogContent>

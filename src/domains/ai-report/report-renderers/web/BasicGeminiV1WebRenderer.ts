@@ -855,6 +855,9 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             max-width: 1024px;
             margin: 0 auto;
             padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
         
         .report-header {
@@ -1469,6 +1472,24 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             .report-container {
                 padding: 16px;
                 max-width: 100%;
+                width: 100%;
+                overflow-x: hidden;
+            }
+            
+            /* 모든 컨테이너와 카드 요소들의 폭 제한 */
+            * {
+                max-width: 100%;
+                box-sizing: border-box;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+            
+            /* 테이블이나 차트가 있는 경우 */
+            table, .chart-container, .data-table {
+                width: 100%;
+                overflow-x: auto;
+                display: block;
+                white-space: nowrap;
             }
             
             .report-header {
@@ -1603,11 +1624,38 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             /* 분석 콘텐츠 */
             .analysis-content {
                 padding: 16px;
+                max-width: 100%;
+                overflow-x: hidden;
             }
             
             .markdown-content {
                 font-size: 0.9rem;
                 line-height: 1.6;
+                max-width: 100%;
+                overflow-x: hidden;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+            
+            /* 긴 텍스트와 링크 처리 */
+            .markdown-content p, .markdown-content div, .markdown-content span {
+                max-width: 100%;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
+            }
+            
+            .markdown-content a {
+                word-break: break-all;
+                max-width: 100%;
+            }
+            
+            /* 코드 블록이나 긴 문자열 */
+            .markdown-content pre, .markdown-content code {
+                max-width: 100%;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
             }
             
             .markdown-content h2 {
