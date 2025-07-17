@@ -1827,82 +1827,40 @@ AI 건강 분석 리포트
       </div>
 
       {/* 현황 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* 측정 데이터수 카드 */}
-        <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-gray-900">측정 데이터수</h3>
-            <div className="p-2 bg-gray-50 rounded-lg">
-              <Activity className="w-5 h-5 text-gray-600" />
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-baseline">
-              <p className="text-xs text-gray-500">오늘</p>
-              <p className="text-3xl font-bold text-gray-900">{calculateStats.todayMeasurements.toLocaleString()}</p>
-            </div>
-            <div className="pt-2 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>전체</span>
-                <span className="font-medium">{calculateStats.totalMeasurements.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>이번주</span>
-                <span className="font-medium">{calculateStats.thisWeekMeasurements.toLocaleString()}</span>
-              </div>
-            </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {/* 오늘 측정 데이터 */}
+        <Card className="p-4 bg-white border border-gray-200">
+          <div className="text-center">
+            <div className="text-xs text-gray-500 mb-1">오늘 측정</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{calculateStats.todayMeasurements.toLocaleString()}</div>
+            <div className="text-xs text-gray-400">새로운 측정</div>
           </div>
         </Card>
 
-        {/* 리포트 수 카드 */}
-        <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-gray-900">리포트 수</h3>
-            <div className="p-2 bg-gray-50 rounded-lg">
-              <FileText className="w-5 h-5 text-gray-600" />
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-baseline">
-              <p className="text-xs text-gray-500">오늘</p>
-              <p className="text-3xl font-bold text-gray-900">{calculateStats.todayReports.toLocaleString()}</p>
-            </div>
-            <div className="pt-2 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>전체</span>
-                <span className="font-medium">{calculateStats.totalReports.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>이번주</span>
-                <span className="font-medium">{calculateStats.thisWeekReports.toLocaleString()}</span>
-              </div>
-            </div>
+        {/* 이번주 사용량 */}
+        <Card className="p-4 bg-white border border-gray-200">
+          <div className="text-center">
+            <div className="text-xs text-gray-500 mb-1">이번주 사용량</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{calculateStats.thisWeekReports.toLocaleString()}</div>
+            <div className="text-xs text-gray-400">이번주</div>
           </div>
         </Card>
 
-        {/* 크레딧 사용량 카드 */}
-        <Card className="p-5 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-gray-900">크레딧 사용량</h3>
-            <div className="p-2 bg-gray-50 rounded-lg">
-              <DollarSign className="w-5 h-5 text-gray-600" />
-            </div>
+        {/* 평균 일일 사용량 */}
+        <Card className="p-4 bg-white border border-gray-200">
+          <div className="text-center">
+            <div className="text-xs text-gray-500 mb-1">평균 일일 사용량</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{Math.round(calculateStats.thisWeekReports / 7).toLocaleString()}</div>
+            <div className="text-xs text-gray-400">최근 7일</div>
           </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-baseline">
-              <p className="text-xs text-gray-500">오늘</p>
-              <p className="text-3xl font-bold text-gray-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
-            </div>
-            <div className="pt-2 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>전체</span>
-                <span className="font-medium">{calculateStats.totalCreditsUsed.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>이번주</span>
-                <span className="font-medium">{calculateStats.thisWeekCreditsUsed.toLocaleString()}</span>
-              </div>
-            </div>
+        </Card>
+
+        {/* 총 크레딧 사용 */}
+        <Card className="p-4 bg-white border border-gray-200">
+          <div className="text-center">
+            <div className="text-xs text-gray-500 mb-1">총 크레딧 사용</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{calculateStats.totalCreditsUsed.toLocaleString()}</div>
+            <div className="text-xs text-gray-400">누적</div>
           </div>
         </Card>
       </div>
