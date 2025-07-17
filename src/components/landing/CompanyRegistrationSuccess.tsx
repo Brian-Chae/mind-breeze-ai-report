@@ -17,6 +17,7 @@ import {
   Home
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { createOrganizationJoinUrl } from '@/core/utils';
 
 interface LocationState {
   companyCode: string;
@@ -47,7 +48,7 @@ export default function CompanyRegistrationSuccess() {
       navigator.share({
         title: 'MIND BREEZE AI 회사 코드',
         text: `우리 회사의 MIND BREEZE AI 코드는 ${companyCode}입니다. 이 코드로 참여해주세요!`,
-        url: window.location.origin + '/organization-join'
+        url: createOrganizationJoinUrl()
       });
     } else {
       const shareText = `MIND BREEZE AI 회사 코드: ${companyCode}`;

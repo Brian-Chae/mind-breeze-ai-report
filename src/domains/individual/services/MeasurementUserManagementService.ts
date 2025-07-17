@@ -23,6 +23,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@core/services/firebase';
 import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
+import { createMeasurementAccessUrl } from '@/core/utils';
 
 export interface MeasurementUser {
   id: string;
@@ -501,7 +502,7 @@ class MeasurementUserManagementService {
    * 접속 링크 생성
    */
   generateAccessLink(accessToken: string): string {
-    return `${window.location.origin}/measurement-access?token=${accessToken}`;
+    return createMeasurementAccessUrl(accessToken);
   }
 }
 

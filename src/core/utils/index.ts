@@ -86,4 +86,12 @@ export type {
 // ID 생성 시스템
 export {
   IdGenerator
-} from './IdGenerator'; 
+} from './IdGenerator';
+
+// URL 생성 시스템
+export {
+  getBaseUrl,
+  createShareUrl,
+  createMeasurementAccessUrl,
+  createOrganizationJoinUrl
+} from './UrlUtils'; 

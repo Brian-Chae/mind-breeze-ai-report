@@ -10,6 +10,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '@/core/services/firebase';
+import { createShareUrl } from '@/core/utils';
 
 export interface ShareableReport {
   shareToken: string;
@@ -309,8 +310,7 @@ class ReportSharingService {
    * 공유 링크 URL 생성
    */
   generateShareUrl(shareToken: string): string {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/shared-report/${shareToken}`;
+    return createShareUrl(shareToken);
   }
 }
 

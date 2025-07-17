@@ -18,6 +18,7 @@ import {
   updateDoc,
   Timestamp
 } from 'firebase/firestore';
+import { createMeasurementAccessUrl } from '@/core/utils';
 import { 
   UserType, 
   User as EnterpriseUser, 
@@ -932,8 +933,7 @@ class EnterpriseAuthService {
 
   // 이메일 링크 생성
   generateAccessLink(token: string): string {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/measurement-access?token=${token}`;
+    return createMeasurementAccessUrl(token);
   }
 
   // 토큰 생성
