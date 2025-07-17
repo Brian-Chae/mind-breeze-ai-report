@@ -819,22 +819,34 @@ export function ReportViewerModal({
       <DialogContent 
         className={`${
           isFullscreen 
-            ? 'max-w-[95vw] max-h-[95vh]' 
+            ? 'max-w-[100vw] max-h-[100vh] !rounded-none !m-0' 
             : viewMode === 'mobile'
               ? '!w-[390px] !max-w-[390px] max-h-[90vh]'
               : '!w-[1180px] !max-w-none max-h-[95vh]'
         } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}
         style={{
           width: isFullscreen 
-            ? '95vw' 
+            ? '100vw' 
             : viewMode === 'mobile' 
               ? '390px' 
               : '1180px',
+          height: isFullscreen 
+            ? '100vh' 
+            : undefined,
           maxWidth: isFullscreen 
-            ? '95vw' 
+            ? '100vw' 
             : viewMode === 'mobile' 
               ? '390px' 
-              : 'none'
+              : 'none',
+          maxHeight: isFullscreen 
+            ? '100vh' 
+            : undefined,
+          borderRadius: isFullscreen 
+            ? '0' 
+            : undefined,
+          margin: isFullscreen 
+            ? '0' 
+            : undefined
         }}
       >
         <DialogHeader className="flex-shrink-0 pb-4 bg-white border-b border-gray-100">
