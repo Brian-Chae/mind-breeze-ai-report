@@ -543,19 +543,36 @@ export function ReportViewerModal({
                   const currentHeight = el.offsetHeight;
                   const currentPadding = window.getComputedStyle(el).padding;
                   
-                  // cssText로 강제 스타일 적용
-                  const originalCssText = el.style.cssText;
-                  el.style.cssText = `
-                    ${originalCssText}
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    line-height: 1;
-                    vertical-align: middle;
-                    text-align: center;
-                    box-sizing: border-box;
-                    ${currentHeight > 0 ? `height: ${currentHeight}px; min-height: ${currentHeight}px;` : ''}
-                  `;
+                                     // cssText로 강제 스타일 적용 + 텍스트 물리적 위치 조정
+                   const originalCssText = el.style.cssText;
+                   el.style.cssText = `
+                     ${originalCssText}
+                     display: inline-flex;
+                     align-items: center;
+                     justify-content: center;
+                     line-height: 1;
+                     vertical-align: middle;
+                     text-align: center;
+                     box-sizing: border-box;
+                     transform: translateY(-1px);
+                     font-size: ${window.getComputedStyle(el).fontSize};
+                     ${currentHeight > 0 ? `height: ${currentHeight}px; min-height: ${currentHeight}px;` : ''}
+                   `;
+                   
+                   // 텍스트 노드에 직접 위치 조정 적용
+                   const textNodes = Array.from(el.childNodes).filter((node: any) => node.nodeType === Node.TEXT_NODE);
+                   textNodes.forEach((textNode: any) => {
+                     if (textNode.textContent && textNode.textContent.trim()) {
+                       const span = clonedDoc.createElement('span');
+                       span.textContent = textNode.textContent;
+                       span.style.cssText = `
+                         display: inline-block;
+                         transform: translateY(-1px);
+                         line-height: 1;
+                       `;
+                       el.replaceChild(span, textNode);
+                     }
+                   });
                 }
               }
             });
