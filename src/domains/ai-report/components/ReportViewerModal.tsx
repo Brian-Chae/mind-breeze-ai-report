@@ -573,6 +573,25 @@ export function ReportViewerModal({
                      }
                    });
                 }
+                
+                // 건강 요소의 라벨과 점수 텍스트 위치 조정 (배지와 정렬)
+                if (className && (className.includes('element-label') || className.includes('element-value'))) {
+                  el.style.transform = 'translateY(-4px)';
+                }
+                
+                // React 컴포넌트에서 건강 요소별 현황의 텍스트 위치 조정
+                const textContent = el.textContent ? el.textContent.trim() : '';
+                if (textContent && (
+                  textContent.includes('건강도') || 
+                  textContent.includes('스트레스') || 
+                  textContent.includes('/100') ||
+                  textContent.includes('% 위험도')
+                )) {
+                  // 배지가 아닌 텍스트만 이동 (배지는 이미 위에서 처리됨)
+                  if (!className.includes('badge') && !className.includes('chip')) {
+                    el.style.transform = 'translateY(-4px)';
+                  }
+                }
               }
             });
           }
