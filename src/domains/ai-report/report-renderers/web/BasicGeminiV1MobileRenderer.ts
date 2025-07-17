@@ -576,16 +576,54 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         
         /* 차트 컨테이너 */
         .chart-container {
-            background: ${isDark ? '#2D3748' : '#F7FAFC'};
-            border-radius: 8px;
-            padding: 12px;
-            margin: 12px 0;
-            text-align: center;
-            min-height: 110px;
+            background: ${cardBg};
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            text-align: left;
+            min-height: 160px;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid ${borderColor};
+        }
+        
+        /* 아이템 헤더 */
+        .item-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid ${borderColor};
+        }
+        
+        /* 아이템 제목 */
+        .item-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: ${textColor};
+            flex: 1;
+        }
+        
+        /* 아이템 점수 */
+        .item-score {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* 아이템 설명 */
+        .item-description {
+            font-size: 14px;
+            line-height: 1.5;
+            color: ${secondaryColor};
+            margin-bottom: 12px;
+            text-align: left;
         }
         
         .chart-placeholder {
@@ -597,6 +635,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         /* 차트 범례 */
         .chart-legend {
             margin-top: 8px;
+            text-align: center;
         }
         
         .legend-title {
@@ -604,6 +643,36 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             color: ${secondaryColor};
             font-weight: 500;
             text-align: center;
+        }
+        
+        /* 주요 발견사항 섹션 */
+        .findings-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid ${borderColor};
+        }
+        
+        .findings-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .findings-list li {
+            padding: 6px 0;
+            font-size: 13px;
+            line-height: 1.4;
+            color: ${textColor};
+            position: relative;
+            padding-left: 16px;
+        }
+        
+        .findings-list li::before {
+            content: "•";
+            color: ${primaryColor};
+            font-weight: bold;
+            position: absolute;
+            left: 0;
         }
         
         /* SVG 차트 스타일 */
@@ -1011,32 +1080,29 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
    * EEG 분석 아이템 생성
    */
   private generateEEGAnalysisItem(eegAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '뇌파(EEG) 분석' : 'EEG Analysis';
+    const title = language === 'ko' ? '🧠 뇌파 건강도' : '🧠 EEG Health';
     const scoreClass = this.getScoreClass(eegAnalysis.score);
     
     return `
-    <div class="analysis-item">
+    <div class="chart-container">
         <div class="item-header">
-            <div class="item-icon eeg">⚡</div>
             <div class="item-title">${title}</div>
-            <div class="item-score ${scoreClass}">${Math.round(eegAnalysis.score)}</div>
+            <div class="item-score ${scoreClass}">${Math.round(eegAnalysis.score)}/100</div>
         </div>
-        <div class="item-content">
-            <div class="item-description">${eegAnalysis.interpretation}</div>
-            <div class="chart-container">
-                ${this.generateEEGChart(eegAnalysis)}
-                <div class="chart-legend">
-                    <div class="legend-title">주파수 대역별 활성도</div>
-                </div>
+        <div class="item-description">${eegAnalysis.interpretation}</div>
+        <div style="text-align: center;">
+            ${this.generateEEGChart(eegAnalysis)}
+            <div class="chart-legend">
+                <div class="legend-title">주파수 대역별 활성도</div>
             </div>
-            ${eegAnalysis.keyFindings?.length ? `
-            <div class="findings-section">
-                <ul class="findings-list">
-                    ${eegAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
         </div>
+        ${eegAnalysis.keyFindings?.length ? `
+        <div class="findings-section">
+            <ul class="findings-list">
+                ${eegAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
     </div>`;
   }
 
@@ -1044,33 +1110,29 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
    * PPG 분석 아이템 생성
    */
   private generatePPGAnalysisItem(ppgAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '심박 변이도(PPG) 분석' : 'PPG Analysis';
+    const title = language === 'ko' ? '❤️ 심혈관 건강도' : '❤️ Cardiovascular Health';
     const scoreClass = this.getScoreClass(ppgAnalysis.score);
     
     return `
-    <div class="analysis-item">
+    <div class="chart-container">
         <div class="item-header">
-            <div class="item-icon ppg">💓</div>
             <div class="item-title">${title}</div>
-            <div class="item-score ${scoreClass}">${Math.round(ppgAnalysis.score)}</div>
+            <div class="item-score ${scoreClass}">${Math.round(ppgAnalysis.score)}/100</div>
         </div>
-        <div class="item-content">
-            <div class="item-description">${ppgAnalysis.interpretation}</div>
-            <div class="chart-container">
-                ${this.generatePPGChart(ppgAnalysis)}
-                <div class="chart-legend">
-                    <div class="legend-title">심박변이도 & 스트레스 지수</div>
-                </div>
+        <div class="item-description">${ppgAnalysis.interpretation}</div>
+        <div style="text-align: center;">
+            ${this.generatePPGChart(ppgAnalysis)}
+            <div class="chart-legend">
+                <div class="legend-title">심박변이도 & 스트레스 지수</div>
             </div>
-            </div>
-            ${ppgAnalysis.keyFindings?.length ? `
-            <div class="findings-section">
-                <ul class="findings-list">
-                    ${ppgAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
         </div>
+        ${ppgAnalysis.keyFindings?.length ? `
+        <div class="findings-section">
+            <ul class="findings-list">
+                ${ppgAnalysis.keyFindings.map((finding: string) => `<li>${finding}</li>`).join('')}
+            </ul>
+        </div>
+        ` : ''}
     </div>`;
   }
 
