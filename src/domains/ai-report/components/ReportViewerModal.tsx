@@ -591,12 +591,27 @@ export function ReportViewerModal({
                 
 
                 
-                // React 컴포넌트에서 건강 요소별 현황의 텍스트 위치 조정
+                // React 컴포넌트에서 건강 요소별 현황의 텍스트 위치 조정 (종합건강 점수 제외)
                 const textContent = el.textContent ? el.textContent.trim() : '';
-                if (textContent && (
-                  textContent.includes('건강도') || 
-                  textContent.includes('스트레스') || 
-                  textContent.includes('/100') ||
+                const parentElement = el.parentElement;
+                
+                // 건강 요소별 현황 섹션에 있는지 확인
+                let isInHealthElementsSection = false;
+                let currentEl = el;
+                while (currentEl && currentEl !== clonedDoc.body) {
+                  if (currentEl.className && currentEl.className.includes('health-elements')) {
+                    isInHealthElementsSection = true;
+                    break;
+                  }
+                  currentEl = currentEl.parentElement;
+                }
+                
+                // 종합건강 점수 섹션은 제외하고, 건강 요소별 현황 섹션의 텍스트만 조정
+                if (isInHealthElementsSection && textContent && (
+                  textContent.includes('뇌파 건강도') || 
+                  textContent.includes('맥파 건강도') || 
+                  textContent.includes('스트레스 관리') || 
+                  (textContent.includes('/100') && parentElement && !parentElement.className.includes('gauge')) ||
                   textContent.includes('% 위험도')
                 )) {
                   // 배지가 아닌 텍스트만 이동 (배지는 이미 위에서 처리됨)
