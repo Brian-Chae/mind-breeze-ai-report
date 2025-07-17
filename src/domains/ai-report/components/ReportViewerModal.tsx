@@ -441,45 +441,62 @@ export function ReportViewerModal({
       const elementWidth = Math.max(elementRect.width, reportElement.scrollWidth);
       const elementHeight = Math.max(elementRect.height, reportElement.scrollHeight);
 
+      // 고정된 캔버스 크기로 중앙 정렬 보장
+      const canvasWidth = viewMode === 'mobile' ? 414 : 1200; // 고정 너비
+      const canvasHeight = Math.max(elementHeight + 200, 800); // 충분한 높이
+
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
         scale: 2,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: elementWidth + 100, // 더 큰 여유 공간
-        height: elementHeight + 100, // 더 큰 여유 공간  
-        windowWidth: Math.max(elementWidth + 200, 1600), // 더 넓은 윈도우
-        windowHeight: Math.max(elementHeight + 200, 1200), // 윈도우 높이 설정
+        width: canvasWidth,
+        height: canvasHeight,
+        windowWidth: canvasWidth,
+        windowHeight: canvasHeight,
         scrollX: 0,
         scrollY: 0,
         x: 0,
         y: 0,
-        foreignObjectRendering: false, // 호환성 개선
-        removeContainer: true, // 임시 컨테이너 제거
-        imageTimeout: 5000, // 이미지 로딩 대기 시간
+        foreignObjectRendering: false,
+        removeContainer: true,
+        imageTimeout: 5000,
         onclone: (clonedDoc) => {
           // 복제된 문서에서 스타일 최적화
           const clonedBody = clonedDoc.body;
           if (clonedBody) {
-            clonedBody.style.margin = '0';
-            clonedBody.style.padding = '0';
-            clonedBody.style.boxSizing = 'border-box';
-            clonedBody.style.overflow = 'visible';
-            clonedBody.style.minHeight = 'auto';
-            clonedBody.style.display = 'flex';
-            clonedBody.style.justifyContent = 'center';
-            clonedBody.style.alignItems = 'flex-start';
-            clonedBody.style.width = '100%';
+            // body 완전 초기화 및 중앙 정렬 설정
+            clonedBody.style.cssText = `
+              margin: 0;
+              padding: 0;
+              width: ${canvasWidth}px;
+              height: ${canvasHeight}px;
+              background: #ffffff;
+              display: flex;
+              justify-content: center;
+              align-items: flex-start;
+              box-sizing: border-box;
+              overflow: visible;
+            `;
             
-            // report-content 요소 중앙 정렬 강화
+            // report-content 요소 완전 중앙 정렬
             const reportContent = clonedDoc.getElementById('report-content');
             if (reportContent) {
-              reportContent.style.margin = '0 auto';
-              reportContent.style.padding = viewMode === 'mobile' ? '20px' : '40px';
-              reportContent.style.maxWidth = viewMode === 'mobile' ? '375px' : '1024px';
-              reportContent.style.width = '100%';
-              reportContent.style.boxSizing = 'border-box';
+              const contentMaxWidth = viewMode === 'mobile' ? '375px' : '1024px';
+              const contentPadding = viewMode === 'mobile' ? '20px' : '40px';
+              
+              reportContent.style.cssText = `
+                position: relative;
+                margin: 0 auto;
+                padding: ${contentPadding};
+                max-width: ${contentMaxWidth};
+                width: 100%;
+                box-sizing: border-box;
+                background: transparent;
+                left: 50%;
+                transform: translateX(-50%);
+              `;
             }
             
             // 모든 텍스트 요소의 line-height 보정
