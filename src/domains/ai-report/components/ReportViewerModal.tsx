@@ -589,6 +589,48 @@ export function ReportViewerModal({
                   el.style.transform = 'translateY(-4px)';
                 }
                 
+                // 주요 발견사항 카드 내 체크표시와 텍스트 위로 6px 이동 (PNG 출력용)
+                const parentContainer = el.closest('div[class*="border-green-200"]') || 
+                                      el.closest('div[class*="border-l-green"]') ||
+                                      el.closest('.key-findings-card') ||
+                                      el.closest('.finding-item') ||
+                                      el.closest('.findings-grid');
+                
+                if (parentContainer) {
+                  // React 컴포넌트 - 체크표시 아이콘 (원형 배경의 ✓)
+                  if (className && (
+                    className.includes('bg-green-500') || 
+                    className.includes('rounded-full') ||
+                    (className.includes('flex') && className.includes('items-center') && className.includes('justify-center'))
+                  ) && el.textContent && el.textContent.includes('✓')) {
+                    el.style.transform = 'translateY(-6px)';
+                  }
+                  
+                  // HTML 렌더러 - 체크표시 아이콘 (.finding-icon)
+                  if (className && className.includes('finding-icon')) {
+                    el.style.transform = 'translateY(-6px)';
+                  }
+                  
+                  // 체크표시 내부의 ✓ 텍스트
+                  if (el.textContent && el.textContent.trim() === '✓') {
+                    el.style.transform = 'translateY(-6px)';
+                  }
+                  
+                  // React 컴포넌트 - 주요 발견사항 텍스트 (p 태그)
+                  if (el.tagName === 'P' && className && (
+                    className.includes('text-green-800') || 
+                    className.includes('font-medium') ||
+                    className.includes('leading-relaxed')
+                  )) {
+                    el.style.transform = 'translateY(-6px)';
+                  }
+                  
+                  // HTML 렌더러 - 주요 발견사항 텍스트 (.finding-text)
+                  if (className && className.includes('finding-text')) {
+                    el.style.transform = 'translateY(-6px)';
+                  }
+                }
+                
 
                 
                 // React 컴포넌트에서 건강 요소별 현황의 텍스트 위치 조정 (종합건강 점수 제외)
