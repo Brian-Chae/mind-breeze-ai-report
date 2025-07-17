@@ -47,9 +47,9 @@ interface DetailedAnalysisResult {
   };
   
   improvementPlan?: {
-    shortTermGoals: string[];
-    longTermGoals: string[];
-    actionItems: string[];
+    immediate: string[];
+    shortTerm: string[];
+    longTerm: string[];
   };
 }
 
@@ -825,27 +825,27 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         </div>
         <div class="item-content">
             <div class="improvement-goals">
-                ${improvementPlan.shortTermGoals?.length ? `
+                ${improvementPlan.immediate?.length ? `
                 <div class="goal-category">
-                    <div class="goal-category-title">단기 목표</div>
+                    <div class="goal-category-title">즉시 실행</div>
                     <ul class="goal-list">
-                        ${improvementPlan.shortTermGoals.map((goal: string) => `<li>${goal}</li>`).join('')}
+                        ${improvementPlan.immediate.map((action: string) => `<li>${action}</li>`).join('')}
                     </ul>
                 </div>
                 ` : ''}
-                ${improvementPlan.longTermGoals?.length ? `
+                ${improvementPlan.shortTerm?.length ? `
                 <div class="goal-category">
-                    <div class="goal-category-title">장기 목표</div>
+                    <div class="goal-category-title">단기 목표 (1-4주)</div>
                     <ul class="goal-list">
-                        ${improvementPlan.longTermGoals.map((goal: string) => `<li>${goal}</li>`).join('')}
+                        ${improvementPlan.shortTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
                     </ul>
                 </div>
                 ` : ''}
-                ${improvementPlan.actionItems?.length ? `
+                ${improvementPlan.longTerm?.length ? `
                 <div class="goal-category">
-                    <div class="goal-category-title">실행 계획</div>
+                    <div class="goal-category-title">장기 목표 (1-6개월)</div>
                     <ul class="goal-list">
-                        ${improvementPlan.actionItems.map((item: string) => `<li>${item}</li>`).join('')}
+                        ${improvementPlan.longTerm.map((goal: string) => `<li>${goal}</li>`).join('')}
                     </ul>
                 </div>
                 ` : ''}
