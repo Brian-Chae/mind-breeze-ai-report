@@ -65,6 +65,91 @@ export function ReportViewerModal({
     }
     return 'desktop';
   });
+
+  /**
+   * 새 탭에서 리포트 열기
+   */
+  const handleOpenInNewTab = async () => {
+    try {
+      if (!actualRenderer || !reportContent) {
+        console.error('리포트 데이터가 없습니다.');
+        return;
+      }
+
+      // 현재 리포트 HTML 생성
+      const htmlContent = typeof reportContent === 'string' 
+        ? reportContent 
+        : reportContent.content;
+
+      // 새 탭용 완전한 HTML 문서 생성
+      const fullHtmlDocument = `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 건강 분석 리포트</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        @media print {
+            body { padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        ${htmlContent}
+    </div>
+    
+    <script>
+        // 인쇄 지원
+        function printReport() {
+            window.print();
+        }
+        
+        // 키보드 단축키 (Ctrl+P)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                printReport();
+            }
+        });
+    </script>
+</body>
+</html>`;
+
+      // Blob으로 HTML 생성
+      const blob = new Blob([fullHtmlDocument], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+
+      // 새 탭에서 열기
+      const newWindow = window.open(url, '_blank');
+      
+      if (!newWindow) {
+        alert('팝업이 차단되었습니다. 브라우저 설정에서 팝업을 허용해주세요.');
+        return;
+      }
+
+      // 잠시 후 URL 정리 (메모리 해제)
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+
+    } catch (error) {
+      console.error('새 탭에서 리포트 열기 실패:', error);
+      alert('리포트를 새 탭에서 여는 중 오류가 발생했습니다.');
+    }
+  };
   
   // 실제 렌더러 찾기 (viewMode에 따라 모바일/웹 렌더러 선택)
   useEffect(() => {
@@ -894,17 +979,30 @@ export function ReportViewerModal({
                 {isDownloading ? 'PDF 생성중...' : 'PDF 다운로드'}
               </Button>
               
-              {/* 전체화면 버튼 */}
+              {/* 새 탭에서 열기 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenInNewTab}
+                className="flex items-center gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                title="새 탭에서 전체화면으로 보기"
+              >
+                <Maximize2 className="w-4 h-4" />
+                새 탭에서 열기
+              </Button>
+              
+              {/* 모달 내 전체화면 버튼 (기존 기능 유지) */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsFullscreen(!isFullscreen)}
                 className="flex items-center gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                title={isFullscreen ? "모달 크기 축소" : "모달 크기 확대"}
               >
                 {isFullscreen ? (
                   <Minimize2 className="w-4 h-4" />
                 ) : (
-                  <Maximize2 className="w-4 h-4" />
+                  <Eye className="w-4 h-4" />
                 )}
               </Button>
             </div>
