@@ -515,9 +515,9 @@ export function ReportViewerModal({
                 }
                 
                 // Badge/Chip 요소의 텍스트 중앙정렬 처리
-                const className = el.className || '';
-                if (className.includes('badge') || className.includes('chip') || 
-                    className.includes('inline-flex') || className.includes('items-center')) {
+                const className = (el.className && typeof el.className === 'string') ? el.className : '';
+                if (className && (className.includes('badge') || className.includes('chip') || 
+                    className.includes('inline-flex') || className.includes('items-center'))) {
                   el.style.display = 'inline-flex';
                   el.style.alignItems = 'center';
                   el.style.justifyContent = 'center';
