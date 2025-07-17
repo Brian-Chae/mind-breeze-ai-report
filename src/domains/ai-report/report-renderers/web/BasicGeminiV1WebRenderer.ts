@@ -306,6 +306,15 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   private getPersonalInfo(analysis: AnalysisResult, field: string): string | null {
     // rawData.personalInfo 또는 root level personalInfo에서 추출
     const personalInfo = (analysis as any).personalInfo || analysis.rawData?.personalInfo;
+    
+    // 🔍 디버깅 로그 추가
+    console.log('🔍 getPersonalInfo - field:', field);
+    console.log('🔍 getPersonalInfo - analysis:', analysis);
+    console.log('🔍 getPersonalInfo - (analysis as any).personalInfo:', (analysis as any).personalInfo);
+    console.log('🔍 getPersonalInfo - analysis.rawData?.personalInfo:', analysis.rawData?.personalInfo);
+    console.log('🔍 getPersonalInfo - 최종 personalInfo:', personalInfo);
+    console.log('🔍 getPersonalInfo - personalInfo?.[' + field + ']:', personalInfo?.[field]);
+    
     return personalInfo?.[field] || null;
   }
 
@@ -1455,47 +1464,281 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             line-height: 1.5;
         }
         
-        /* 모바일 반응형 */
+        /* 모바일 반응형 - 대폭 개선 */
         @media (max-width: 768px) {
             .report-container {
-                padding: 10px;
+                padding: 16px;
+                max-width: 100%;
             }
             
             .report-header {
-                padding: 20px;
-                margin-bottom: 30px;
+                padding: 24px 20px;
+                margin-bottom: 24px;
+                border-radius: 12px;
             }
             
             .report-title {
-                font-size: 1.8rem;
-            }
-            
-            section {
-                padding: 20px;
-                margin-bottom: 30px;
-            }
-            
-            h2 {
-                font-size: 1.5rem;
-            }
-            
-            .scores-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .score-value {
-                font-size: 2.5rem;
-            }
-            
-            .demographic-grid, .occupational-grid, .plan-timeline {
-                grid-template-columns: 1fr;
-                gap: 15px;
+                font-size: 1.75rem;
+                line-height: 1.3;
+                margin-bottom: 8px;
             }
             
             .report-meta {
                 flex-direction: column;
-                gap: 5px;
+                gap: 8px;
+                font-size: 0.85rem;
+            }
+            
+            section {
+                padding: 20px 16px;
+                margin-bottom: 20px;
+                border-radius: 12px;
+            }
+            
+            h2 {
+                font-size: 1.4rem;
+                margin-bottom: 16px;
+                line-height: 1.3;
+            }
+            
+            h3.subsection-title {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+            
+            /* 개인정보 그리드 모바일 최적화 */
+            .personal-info-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            
+            .info-item {
+                padding: 12px;
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.02);
+            }
+            
+            .info-label {
+                font-size: 0.8rem;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+                color: #666;
+            }
+            
+            .info-value {
+                font-size: 0.9rem;
+                font-weight: 500;
+                display: block;
+                color: #333;
+            }
+            
+            /* 점수 게이지 모바일 최적화 */
+            .gauge-chart {
+                width: 150px;
+                height: 150px;
+                margin: 0 auto 16px;
+            }
+            
+            .gauge-chart svg {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .gauge-value {
+                font-size: 2rem;
+                font-weight: 700;
+            }
+            
+            .gauge-max {
+                font-size: 0.9rem;
+            }
+            
+            /* 건강 지표 점수 그리드 */
+            .scores-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .score-card {
+                padding: 16px;
+                border-radius: 10px;
+            }
+            
+            .score-title {
+                font-size: 0.9rem;
+                margin-bottom: 8px;
+            }
+            
+            .score-value {
+                font-size: 1.8rem;
+                margin-bottom: 6px;
+            }
+            
+            .score-bar {
+                height: 6px;
+                border-radius: 3px;
+                margin-bottom: 8px;
+            }
+            
+            .score-status {
+                font-size: 0.8rem;
+            }
+            
+            /* 상태 배지 */
+            .status-badge {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+                border-radius: 12px;
+                margin-bottom: 8px;
+                display: inline-block;
+            }
+            
+            .score-description {
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+            
+            /* 분석 콘텐츠 */
+            .analysis-content {
+                padding: 16px;
+            }
+            
+            .markdown-content {
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }
+            
+            .markdown-content h2 {
+                font-size: 1.2rem;
+                margin: 20px 0 12px;
+            }
+            
+            .markdown-content h3 {
+                font-size: 1.1rem;
+                margin: 16px 0 8px;
+            }
+            
+            .markdown-content p {
+                margin-bottom: 12px;
+            }
+            
+            .markdown-content ul, .markdown-content ol {
+                margin: 8px 0;
+                padding-left: 20px;
+            }
+            
+            .markdown-content li {
+                margin-bottom: 6px;
+                font-size: 0.85rem;
+                line-height: 1.5;
+            }
+            
+            /* 개선 계획 타임라인 */
+            .demographic-grid, .occupational-grid, .plan-timeline {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .timeline-item {
+                padding: 14px;
+                border-radius: 8px;
+                border-left: 4px solid ${primaryColor};
+            }
+            
+            .timeline-title {
+                font-size: 0.9rem;
+                font-weight: 600;
+                margin-bottom: 6px;
+            }
+            
+            .timeline-description {
+                font-size: 0.8rem;
+                line-height: 1.4;
+            }
+            
+            /* 권장사항 리스트 */
+            .recommendations-list {
+                margin: 12px 0;
+            }
+            
+            .recommendation-item {
+                padding: 12px;
+                margin-bottom: 8px;
+                border-radius: 8px;
+                background: rgba(34, 197, 94, 0.1);
+                border-left: 3px solid #22c55e;
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+            
+            /* 주의사항 */
+            .disclaimer {
+                font-size: 0.75rem;
+                padding: 12px;
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.04);
+                margin-top: 20px;
+                line-height: 1.5;
+            }
+        }
+        
+        /* 추가 소형 모바일 최적화 */
+        @media (max-width: 480px) {
+            .report-container {
+                padding: 12px;
+            }
+            
+            .report-header {
+                padding: 20px 16px;
+            }
+            
+            .report-title {
+                font-size: 1.5rem;
+            }
+            
+            section {
+                padding: 16px 12px;
+            }
+            
+            h2 {
+                font-size: 1.25rem;
+            }
+            
+            .personal-info-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .gauge-chart {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .gauge-chart svg {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .gauge-value {
+                font-size: 1.6rem;
+            }
+            
+            .score-value {
+                font-size: 1.5rem;
+            }
+            
+            .markdown-content {
+                font-size: 0.85rem;
+            }
+            
+            .markdown-content h2 {
+                font-size: 1.1rem;
+            }
+            
+            .markdown-content h3 {
+                font-size: 1rem;
             }
         }
     `;
