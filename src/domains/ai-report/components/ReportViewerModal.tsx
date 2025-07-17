@@ -854,34 +854,32 @@ export function ReportViewerModal({
               )}
             </div>
             
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-1 justify-end flex-wrap">
               {/* 뷰 모드 전환 버튼 */}
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                 <Button
                   variant={viewMode === 'desktop' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('desktop')}
-                  className={`px-3 py-1 text-xs rounded-none ${
+                  className={`px-2 py-1 text-xs rounded-none ${
                     viewMode === 'desktop' 
                       ? 'bg-blue-600 text-white' 
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  <Monitor className="w-3 h-3 mr-1" />
-                  데스크톱
+                  <Monitor className="w-3 h-3" />
                 </Button>
                 <Button
                   variant={viewMode === 'mobile' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('mobile')}
-                  className={`px-3 py-1 text-xs rounded-none ${
+                  className={`px-2 py-1 text-xs rounded-none ${
                     viewMode === 'mobile' 
                       ? 'bg-blue-600 text-white' 
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  <Smartphone className="w-3 h-3 mr-1" />
-                  모바일
+                  <Smartphone className="w-3 h-3" />
                 </Button>
               </div>
 
@@ -891,14 +889,17 @@ export function ReportViewerModal({
                 size="sm"
                 onClick={handleDownloadReport}
                 disabled={isDownloading}
-                className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50"
+                className="flex items-center gap-1 px-2 py-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50"
+                title="PDF 다운로드"
               >
                 {isDownloading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                {isDownloading ? 'PDF 생성중...' : 'PDF 다운로드'}
+                <span className="hidden sm:inline">
+                  {isDownloading ? 'PDF 생성중...' : 'PDF'}
+                </span>
               </Button>
               
               {/* 전체화면 보기 버튼 */}
@@ -906,7 +907,7 @@ export function ReportViewerModal({
                 variant="outline"
                 size="sm"
                 onClick={handleToggleFullscreen}
-                className="flex items-center gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                className="flex items-center gap-1 px-2 py-1 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
                 title={isFullscreen ? "일반 크기로 보기" : "전체화면으로 보기"}
               >
                 {isFullscreen ? (
@@ -914,7 +915,9 @@ export function ReportViewerModal({
                 ) : (
                   <Maximize2 className="w-4 h-4" />
                 )}
-                {isFullscreen ? "일반 크기" : "전체화면"}
+                <span className="hidden sm:inline">
+                  {isFullscreen ? "일반" : "전체"}
+                </span>
               </Button>
 
             </div>
