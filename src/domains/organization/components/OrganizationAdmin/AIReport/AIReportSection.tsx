@@ -513,7 +513,20 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       // subjectAge가 없지만 생년월일이 있다면 나이 계산
       if (!sessionData.subjectAge && sessionData.subjectBirthDate) {
         try {
-          const birthDate = new Date(sessionData.subjectBirthDate)
+          let birthDate;
+          
+          // Firestore Timestamp 객체인 경우 .toDate()로 변환
+          if (typeof sessionData.subjectBirthDate.toDate === 'function') {
+            birthDate = sessionData.subjectBirthDate.toDate();
+            console.log('🔄 Firestore Timestamp를 Date로 변환:', birthDate);
+          } else if (sessionData.subjectBirthDate instanceof Date) {
+            birthDate = sessionData.subjectBirthDate;
+            console.log('📅 이미 Date 객체:', birthDate);
+          } else {
+            birthDate = new Date(sessionData.subjectBirthDate);
+            console.log('🔄 문자열을 Date로 변환:', birthDate);
+          }
+          
           const today = new Date()
           calculatedAge = today.getFullYear() - birthDate.getFullYear()
           
@@ -522,9 +535,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
               (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
             calculatedAge--
           }
+          
+          console.log('📅 생년월일:', birthDate.toLocaleDateString('ko-KR'))
+          console.log('📅 오늘 날짜:', today.toLocaleDateString('ko-KR'))
           console.log('✅ 생년월일로부터 계산된 나이:', calculatedAge)
         } catch (error) {
           console.warn('⚠️ 생년월일 파싱 실패:', error)
+          console.warn('⚠️ 원본 값:', sessionData.subjectBirthDate)
         }
       }
       
@@ -554,6 +571,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       
       console.log('👤 구성된 개인 정보:', personalInfo)
       console.log('📊 구성된 측정 데이터 구조:', Object.keys(aiAnalysisData.measurementData))
+      console.log('🎯 AI 분석에 전달될 전체 데이터:', aiAnalysisData)
 
       // 3. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
       console.log('🤖 AI 엔진 초기화 중...')
@@ -615,6 +633,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       // Firestore에 분석 결과 저장
       const analysisId = await FirebaseService.addDocument('ai_analysis_results', analysisRecord)
       console.log('✅ 분석 결과 저장 완료:', analysisId)
+      console.log('💾 저장된 분석 레코드의 personalInfo:', analysisRecord.personalInfo)
 
       // 6. 크레딧 차감
       if (currentContext.organization && analysisResult.costUsed > 0) {
