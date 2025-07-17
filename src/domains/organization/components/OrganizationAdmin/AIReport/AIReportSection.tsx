@@ -1827,31 +1827,14 @@ AI 건강 분석 리포트
       </div>
 
       {/* 현황 카드 섹션 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* 전여 크레딧 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* 오늘 총 측정 세션 */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-1">전여 크레딧</div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">{calculateStats.totalCreditsUsed.toLocaleString()}</div>
-              <div className="text-xs text-gray-400">₩ {(calculateStats.totalCreditsUsed * 25).toLocaleString()} 상당</div>
-            </div>
-            <div className="p-3 bg-gray-100 rounded-full">
-              <DollarSign className="w-6 h-6 text-gray-600" />
-            </div>
-          </div>
-        </Card>
-
-        {/* 이번달 사용량 */}
-        <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-1">이번달 사용량</div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">{calculateStats.thisWeekReports.toLocaleString()}</div>
-              <div className="text-xs text-gray-400 flex items-center">
-                <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
-                이번달
-              </div>
+              <div className="text-sm text-gray-600 mb-1">오늘 총 측정 세션</div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">{calculateStats.todayMeasurements.toLocaleString()}</div>
+              <div className="text-xs text-gray-400">전체 측정 {calculateStats.totalMeasurements.toLocaleString()}</div>
             </div>
             <div className="p-3 bg-gray-100 rounded-full">
               <Activity className="w-6 h-6 text-gray-600" />
@@ -1859,36 +1842,30 @@ AI 건강 분석 리포트
           </div>
         </Card>
 
-        {/* 평균 일일 사용량 */}
+        {/* 오늘 총 발행 리포트 */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-1">평균 일일 사용량</div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">{Math.round(calculateStats.thisWeekReports / 7).toLocaleString()}</div>
-              <div className="text-xs text-gray-400 flex items-center">
-                <Clock className="w-3 h-3 mr-1 text-blue-500" />
-                최근 30일
-              </div>
+              <div className="text-sm text-gray-600 mb-1">오늘 총 발행 리포트</div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">{calculateStats.todayReports.toLocaleString()}</div>
+              <div className="text-xs text-gray-400">전체 리포트 {calculateStats.totalReports.toLocaleString()}</div>
             </div>
             <div className="p-3 bg-gray-100 rounded-full">
-              <Calendar className="w-6 h-6 text-gray-600" />
+              <FileText className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
 
-        {/* 총 구매액 */}
+        {/* 오늘 총 사용 크래딧 */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-1">총 구매액</div>
-              <div className="text-3xl font-bold text-gray-900 mb-2">0</div>
-              <div className="text-xs text-gray-400 flex items-center">
-                <Monitor className="w-3 h-3 mr-1 text-gray-400" />
-                누적
-              </div>
+              <div className="text-sm text-gray-600 mb-1">오늘 총 사용 크래딧</div>
+              <div className="text-3xl font-bold text-gray-900 mb-2">{calculateStats.todayCreditsUsed.toLocaleString()}</div>
+              <div className="text-xs text-gray-400">₩ {(calculateStats.todayCreditsUsed * 25).toLocaleString()} 상당</div>
             </div>
             <div className="p-3 bg-gray-100 rounded-full">
-              <BarChart3 className="w-6 h-6 text-gray-600" />
+              <DollarSign className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
