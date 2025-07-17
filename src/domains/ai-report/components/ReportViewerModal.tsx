@@ -597,13 +597,13 @@ export function ReportViewerModal({
                                       el.closest('.findings-grid');
                 
                 if (parentContainer) {
-                  // React 컴포넌트 - 체크표시 원형 배경 위로 이동 (6px 아래 → 1px 아래)
+                  // React 컴포넌트 - 체크표시 원형 배경 위로 이동 (1px 아래 → 원래 위치)
                   if (className && (
                     className.includes('bg-green-500') && 
                     className.includes('rounded-full') && 
                     className.includes('flex')
                   )) {
-                    el.style.transform = 'translateY(1px)';
+                    el.style.transform = 'translateY(0px)';
                     
                     // 배경 안의 체크표시 텍스트도 함께 위로 이동 (-6px → -11px)
                     const checkIcon = el.querySelector('span');
@@ -614,7 +614,7 @@ export function ReportViewerModal({
                   
                   // HTML 렌더러 - 체크표시 원형 배경 위로 이동
                   if (className && className.includes('finding-icon')) {
-                    el.style.transform = 'translateY(1px)';
+                    el.style.transform = 'translateY(0px)';
                     el.style.position = 'relative';
                     
                     // 내부 텍스트도 함께 위로 이동
