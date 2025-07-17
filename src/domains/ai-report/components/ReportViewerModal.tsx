@@ -656,16 +656,40 @@ export function ReportViewerModal({
   const renderBasicGeminiViewer = () => {
     // BasicGemini 전용 뷰어 (복잡한 리포트 렌더러 사용)
     if (reportContent?.isRawHTML && reportContent?.htmlContent) {
-      return (
-        <div 
-          id="report-content" 
-          className="w-full"
-          dangerouslySetInnerHTML={{ __html: reportContent.htmlContent }}
-        />
-      );
+      // 모바일 렌더러가 생성한 완전한 HTML 문서에서 body 내용과 스타일 추출
+      if (actualRenderer?.id === 'basic-gemini-v1-mobile') {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(reportContent.htmlContent, 'text/html');
+        
+        // 스타일 추출
+        const styles = Array.from(doc.querySelectorAll('style'))
+          .map(style => style.innerHTML)
+          .join('\n');
+          
+        // body 내용 추출
+        const bodyContent = doc.body?.innerHTML || reportContent.htmlContent;
+        
+        return (
+          <div id="report-content" className="w-full">
+            {/* 모바일 렌더러 스타일 삽입 */}
+            <style dangerouslySetInnerHTML={{ __html: styles }} />
+            {/* body 내용 렌더링 */}
+            <div dangerouslySetInnerHTML={{ __html: bodyContent }} />
+          </div>
+        );
+      } else {
+        // 일반 웹 렌더러의 경우 그대로 표시
+        return (
+          <div 
+            id="report-content" 
+            className="w-full"
+            dangerouslySetInnerHTML={{ __html: reportContent.htmlContent }}
+          />
+        );
+      }
     }
     
-    // 모바일 렌더러인 경우 적절한 안내 메시지 표시
+    // 데이터가 없는 경우 안내 메시지
     if (actualRenderer?.id === 'basic-gemini-v1-mobile') {
       return (
         <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-blue-200 shadow-sm">
