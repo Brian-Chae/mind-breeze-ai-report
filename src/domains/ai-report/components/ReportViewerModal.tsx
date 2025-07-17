@@ -484,7 +484,7 @@ export function ReportViewerModal({
             const reportContent = clonedDoc.getElementById('report-content');
             if (reportContent) {
               // 캔버스 크기에 맞춰 콘텐츠 크기 조정 (중앙정렬 최적화)
-              const contentWidth = viewMode === 'mobile' ? (canvasWidth - 40) : (canvasWidth - 120);
+              const contentWidth = viewMode === 'mobile' ? (canvasWidth - 1) : (canvasWidth - 1);
               const contentPadding = viewMode === 'mobile' ? '10px' : '40px';
               
               reportContent.style.cssText = `
@@ -512,6 +512,17 @@ export function ReportViewerModal({
                 if (el.textContent && el.textContent.trim()) {
                   el.style.height = 'auto';
                   el.style.overflow = 'visible';
+                }
+                
+                // Badge/Chip 요소의 텍스트 중앙정렬 처리
+                const className = el.className || '';
+                if (className.includes('badge') || className.includes('chip') || 
+                    className.includes('inline-flex') || className.includes('items-center')) {
+                  el.style.display = 'inline-flex';
+                  el.style.alignItems = 'center';
+                  el.style.justifyContent = 'center';
+                  el.style.lineHeight = '1';
+                  el.style.verticalAlign = 'middle';
                 }
               }
             });
