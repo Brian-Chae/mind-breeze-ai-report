@@ -557,7 +557,17 @@ export function ReportViewerModal({
                      ${currentHeight > 0 ? `height: ${currentHeight}px; min-height: ${currentHeight}px;` : ''}
                    `;
                    
-                   // 텍스트만 강제로 위로 이동
+                   // 주요 발견사항 섹션인지 확인
+                   const isInFindingsSection = el.closest('.findings-grid') || 
+                                             el.closest('.key-findings-section') ||
+                                             el.closest('[class*="finding"]');
+                   
+                   // 텍스트만 강제로 위로 이동 (주요 발견사항 섹션의 모바일에서는 더 많이 이동)
+                   let moveDistance = '-6px';
+                   if (isInFindingsSection && viewMode === 'mobile') {
+                     moveDistance = '-12px';
+                   }
+                   
                    const textNodes = Array.from(el.childNodes).filter((node: any) => node.nodeType === Node.TEXT_NODE);
                    textNodes.forEach((textNode: any) => {
                      if (textNode.textContent && textNode.textContent.trim()) {
@@ -565,7 +575,7 @@ export function ReportViewerModal({
                        span.textContent = textNode.textContent;
                        span.style.cssText = `
                          display: inline-block;
-                         transform: translateY(-6px);
+                         transform: translateY(${moveDistance});
                          line-height: 1;
                          margin-top: -2px;
                        `;
@@ -578,6 +588,8 @@ export function ReportViewerModal({
                 if (className && (className.includes('element-label') || className.includes('element-value'))) {
                   el.style.transform = 'translateY(-4px)';
                 }
+                
+
                 
                 // React 컴포넌트에서 건강 요소별 현황의 텍스트 위치 조정
                 const textContent = el.textContent ? el.textContent.trim() : '';
