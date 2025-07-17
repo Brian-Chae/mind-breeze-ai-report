@@ -506,6 +506,20 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             margin-top: 12px;
         }
         
+        /* 위험도 분석 섹션 */
+        .risk-analysis-section {
+            background: ${isDark ? '#7F1D1D' : '#FEF2F2'};
+            border: 1px solid ${isDark ? '#991B1B' : '#FECACA'};
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .risk-analysis-section .subsection-title {
+            color: ${isDark ? '#FEE2E2' : '#991B1B'};
+            font-weight: 700;
+        }
+        
         .health-element {
             background: ${cardBg};
             padding: 12px;
@@ -537,6 +551,21 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             padding: 2px 6px;
             border-radius: 10px;
             font-weight: 500;
+        }
+        
+        .element-badge.status-good {
+            background: #DCFCE7;
+            color: #166534;
+        }
+        
+        .element-badge.status-medium {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .element-badge.status-bad {
+            background: #FEE2E2;
+            color: #991B1B;
         }
         
         .element-value {
@@ -854,16 +883,36 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             height: 100%;
         }
         
-        .health-segment.bad, .risk-segment.bad {
+        /* 일반 건강도 색상 (주의-보통-양호 순서) */
+        .health-segment.bad {
             background: #FCA5A5;
+            width: 70%;
         }
         
-        .health-segment.medium, .risk-segment.medium {
+        .health-segment.medium {
             background: #FCD34D;
+            width: 10%;
         }
         
-        .health-segment.good, .risk-segment.good {
+        .health-segment.good {
             background: #86EFAC;
+            width: 20%;
+        }
+        
+        /* 위험도 분석 색상 (양호-보통-주의 순서) */
+        .risk-segment.good {
+            background: #86EFAC;
+            width: 20%;
+        }
+        
+        .risk-segment.medium {
+            background: #FCD34D;
+            width: 15%;
+        }
+        
+        .risk-segment.bad {
+            background: #FCA5A5;
+            width: 65%;
         }
         
         /* 스크롤 최적화 */
