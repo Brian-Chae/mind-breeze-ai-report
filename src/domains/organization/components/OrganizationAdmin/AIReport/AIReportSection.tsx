@@ -225,9 +225,34 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
              ]
              const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
              
+             // 나이 계산
+             let calculatedAge = session.subjectAge;
+             if (!calculatedAge && session.subjectBirthDate) {
+               try {
+                 let birthDate;
+                 if (typeof session.subjectBirthDate.toDate === 'function') {
+                   birthDate = session.subjectBirthDate.toDate();
+                 } else if (session.subjectBirthDate instanceof Date) {
+                   birthDate = session.subjectBirthDate;
+                 } else {
+                   birthDate = new Date(session.subjectBirthDate);
+                 }
+                 
+                 const today = new Date();
+                 calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                 if (today.getMonth() < birthDate.getMonth() || 
+                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+                   calculatedAge--;
+                 }
+               } catch (error) {
+                 console.warn('생년월일 파싱 실패:', error);
+               }
+             }
+
              return {
                id: session.id,
                userName: session.subjectName || '알 수 없음',
+               userAge: calculatedAge,
                userGender: session.subjectGender || '미지정',
                userOccupation: session.subjectOccupation || '미지정',
                userDepartment: session.subjectDepartment || '미지정',
@@ -280,9 +305,35 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
              }
            } catch (error) {
              console.warn(`세션 ${session.id}의 분석 결과 조회 실패:`, error)
+             
+             // 나이 계산
+             let calculatedAge = session.subjectAge;
+             if (!calculatedAge && session.subjectBirthDate) {
+               try {
+                 let birthDate;
+                 if (typeof session.subjectBirthDate.toDate === 'function') {
+                   birthDate = session.subjectBirthDate.toDate();
+                 } else if (session.subjectBirthDate instanceof Date) {
+                   birthDate = session.subjectBirthDate;
+                 } else {
+                   birthDate = new Date(session.subjectBirthDate);
+                 }
+                 
+                 const today = new Date();
+                 calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                 if (today.getMonth() < birthDate.getMonth() || 
+                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+                   calculatedAge--;
+                 }
+               } catch (error) {
+                 console.warn('생년월일 파싱 실패:', error);
+               }
+             }
+             
              return {
                id: session.id,
                userName: session.subjectName || '알 수 없음',
+               userAge: calculatedAge,
                userGender: session.subjectGender || '미지정',
                userOccupation: session.subjectOccupation || '미지정',
                userDepartment: session.subjectDepartment || '미지정',
@@ -1976,6 +2027,44 @@ AI 건강 분석 리포트
                           <div className="flex items-center space-x-2">
                             <User className="w-4 h-4 text-blue-500" />
                             <span className="font-semibold text-gray-900">{data.userName}</span>
+                            
+                            {/* 개인정보 Badge들 */}
+                            <div className="flex items-center space-x-2 ml-4">
+                              {/* 나이 Badge */}
+                              {data.userAge && (
+                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                  {data.userAge}세
+                                </Badge>
+                              )}
+                              
+                              {/* 성별 Badge */}
+                              {data.userGender && data.userGender !== '미지정' && (
+                                <Badge variant="outline" className="text-xs bg-pink-50 text-pink-700 border-pink-200">
+                                  {data.userGender === 'MALE' ? '남성' : data.userGender === 'FEMALE' ? '여성' : data.userGender}
+                                </Badge>
+                              )}
+                              
+                              {/* 직업 Badge */}
+                              {data.userOccupation && data.userOccupation !== '미지정' && (
+                                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                  {data.userOccupation}
+                                </Badge>
+                              )}
+                              
+                              {/* 부서 Badge */}
+                              {data.userDepartment && data.userDepartment !== '미지정' && (
+                                <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                  {data.userDepartment}
+                                </Badge>
+                              )}
+                              
+                              {/* 이메일 Badge */}
+                              {data.userEmail && (
+                                <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200">
+                                  {data.userEmail}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
