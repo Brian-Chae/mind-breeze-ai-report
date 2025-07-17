@@ -536,8 +536,9 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         
         .element-label-group {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         
         .element-label {
