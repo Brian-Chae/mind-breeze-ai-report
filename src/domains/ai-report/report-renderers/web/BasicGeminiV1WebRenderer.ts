@@ -301,21 +301,33 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
   }
 
   /**
-   * 개인 정보 추출 헬퍼
+   * 개인 정보 추출 헬퍼 (개선됨)
    */
   private getPersonalInfo(analysis: AnalysisResult, field: string): string | null {
-    // rawData.personalInfo 또는 root level personalInfo에서 추출
-    const personalInfo = (analysis as any).personalInfo || analysis.rawData?.personalInfo;
+    // 1차: root level personalInfo 확인 (AnalysisScreen에서 추가한 것)
+    const rootPersonalInfo = (analysis as any).personalInfo;
     
-    // 🔍 디버깅 로그 추가
-    console.log('🔍 getPersonalInfo - field:', field);
-    console.log('🔍 getPersonalInfo - analysis:', analysis);
-    console.log('🔍 getPersonalInfo - (analysis as any).personalInfo:', (analysis as any).personalInfo);
-    console.log('🔍 getPersonalInfo - analysis.rawData?.personalInfo:', analysis.rawData?.personalInfo);
-    console.log('🔍 getPersonalInfo - 최종 personalInfo:', personalInfo);
-    console.log('🔍 getPersonalInfo - personalInfo?.[' + field + ']:', personalInfo?.[field]);
+    // 2차: rawData.personalInfo 확인 (AI 엔진에서 처리한 것)
+    const rawDataPersonalInfo = analysis.rawData?.personalInfo;
     
-    return personalInfo?.[field] || null;
+    // 3차: 기타 위치 확인
+    const fallbackPersonalInfo = analysis.rawData?.detailedAnalysis?.personalInfo;
+    
+    // 우선순위에 따라 값 추출
+    const personalInfo = rootPersonalInfo || rawDataPersonalInfo || fallbackPersonalInfo;
+    
+    const result = personalInfo?.[field] || null;
+    
+    // 🔍 디버깅 로그 (간소화)
+    console.log(`🔍 getPersonalInfo(${field}):`, {
+      result,
+      hasRootPersonalInfo: !!rootPersonalInfo,
+      hasRawDataPersonalInfo: !!rawDataPersonalInfo,
+      hasFallbackPersonalInfo: !!fallbackPersonalInfo,
+      finalPersonalInfo: personalInfo
+    });
+    
+    return result;
   }
 
   /**

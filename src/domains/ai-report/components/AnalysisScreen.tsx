@@ -105,18 +105,85 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
     setAnalysisStatus('데이터 검증 중...');
 
     try {
-      // 1. 데이터 검증 - personalInfo 포함하여 전달
+      console.log('🔍 AI 분석 시작 - 원본 measurementData:', measurementData);
+      console.log('🔍 AI 분석 시작 - personalInfo:', personalInfo);
+
+      // 1. 측정 데이터를 AI 엔진이 기대하는 형식으로 변환
       setAnalysisProgress(10);
-      const dataForValidation = {
-        ...measurementData,
-        personalInfo: {
-          name: personalInfo.name,
-          age: personalInfo.birthDate ? new Date().getFullYear() - personalInfo.birthDate.getFullYear() : 30,
-          gender: personalInfo.gender === 'MALE' ? 'male' : personalInfo.gender === 'FEMALE' ? 'female' : 'male',
-          occupation: personalInfo.occupation || 'office_worker'
+      const convertedMeasurementData = {
+        eegMetrics: {
+          delta: measurementData.eegSummary?.deltaPower || 0.25,
+          theta: measurementData.eegSummary?.thetaPower || 0.30,
+          alpha: measurementData.eegSummary?.alphaPower || 0.35,
+          beta: measurementData.eegSummary?.betaPower || 0.40,
+          gamma: measurementData.eegSummary?.gammaPower || 0.15,
+          
+          attentionIndex: measurementData.eegSummary?.attentionLevel || measurementData.eegSummary?.focusIndex || 75,
+          meditationIndex: measurementData.eegSummary?.meditationLevel || measurementData.eegSummary?.relaxationIndex || 80,
+          stressIndex: measurementData.eegSummary?.stressIndex || 25,
+          fatigueIndex: 100 - (measurementData.eegSummary?.focusIndex || 75),
+          
+          signalQuality: (measurementData.eegSummary?.averageSQI || 85) / 100,
+          artifactRatio: 0.1,
+          
+          // 추가 메트릭들
+          hemisphericBalance: measurementData.eegSummary?.hemisphericBalance || 0.95,
+          cognitiveLoad: measurementData.eegSummary?.cognitiveLoad || 60,
+          emotionalStability: measurementData.eegSummary?.emotionalStability || 85
         },
-        measurementData
+        ppgMetrics: {
+          heartRate: { value: measurementData.ppgSummary?.heartRate || 72 },
+          rmssd: { value: measurementData.ppgSummary?.rmssd || 35 },
+          sdnn: { value: measurementData.ppgSummary?.sdnn || 50 },
+          lfHfRatio: { value: measurementData.ppgSummary?.lfHfRatio || 2.5 },
+          spo2: { value: measurementData.ppgSummary?.oxygenSaturation || 98 },
+          
+          heartRateVariability: measurementData.ppgSummary?.hrv || 45,
+          rrIntervals: [],
+          stressScore: (measurementData.ppgSummary?.stressLevel || 0.3) * 100,
+          autonomicBalance: measurementData.ppgSummary?.autonomicBalance || 0.8,
+          signalQuality: (measurementData.ppgSummary?.averageSQI || 90) / 100,
+          motionArtifact: 0.1
+        },
+        accMetrics: {
+          activityLevel: measurementData.accSummary?.activityLevel || 20,
+          movementVariability: measurementData.accSummary?.movementQuality || 85,
+          postureStability: measurementData.accSummary?.posturalStability || 85,
+          movementIntensity: measurementData.accSummary?.energyExpenditure || 120,
+          posture: 'UNKNOWN' as const,
+          movementEvents: []
+        },
+        dataQuality: {
+          overallScore: measurementData.qualitySummary?.qualityPercentage || 85,
+          eegQuality: measurementData.eegSummary?.averageSQI || 85,
+          ppgQuality: measurementData.ppgSummary?.averageSQI || 90,
+          motionInterference: 20,
+          usableForAnalysis: (measurementData.qualitySummary?.qualityPercentage || 85) >= 70,
+          qualityIssues: [],
+          overallQuality: measurementData.qualitySummary?.qualityPercentage || 85,
+          sensorContact: true,
+          signalStability: measurementData.qualitySummary?.measurementReliability === 'high' ? 1.0 : 0.8,
+          artifactLevel: 0.1
+        }
       };
+
+      // 2. 개인정보를 AI 엔진이 기대하는 형식으로 변환
+      const convertedPersonalInfo = {
+        name: personalInfo.name,
+        age: personalInfo.birthDate ? new Date().getFullYear() - personalInfo.birthDate.getFullYear() : 30,
+        gender: personalInfo.gender === 'MALE' ? 'male' : personalInfo.gender === 'FEMALE' ? 'female' : 'male',
+        occupation: personalInfo.occupation || 'office_worker',
+        // 생년월일 추가 (렌더러에서 사용)
+        birthDate: personalInfo.birthDate ? personalInfo.birthDate.toISOString().split('T')[0] : null
+      };
+
+      // 3. AI 엔진이 기대하는 전체 데이터 구조 구성
+      const dataForValidation = {
+        personalInfo: convertedPersonalInfo,
+        measurementData: convertedMeasurementData
+      };
+
+      console.log('🔍 변환된 AI 분석 데이터:', dataForValidation);
       
       const validationResult = await selectedEngine.validate(dataForValidation);
       
@@ -128,7 +195,7 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
         console.warn('데이터 검증 경고:', validationResult.warnings);
       }
 
-      // 2. AI 분석 수행
+      // 4. AI 분석 수행
       setAnalysisProgress(30);
       setAnalysisStatus('AI 분석 수행 중...');
       
@@ -143,10 +210,19 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
       setAnalysisProgress(80);
       setAnalysisStatus('결과 처리 중...');
 
-      // 3. 엔진 사용 기록
+      // 5. 분석 결과에 개인정보 추가 (렌더러에서 사용)
+      (analysisResult as any).personalInfo = convertedPersonalInfo;
+      analysisResult.rawData = {
+        ...analysisResult.rawData,
+        personalInfo: convertedPersonalInfo
+      };
+
+      console.log('🔍 AI 분석 완료 - 결과:', analysisResult);
+
+      // 6. 엔진 사용 기록
       aiEngineRegistry.recordUsage(selectedEngine.id, 5); // 기본 5점 평점
 
-      // 4. 결과 포맷팅
+      // 7. 결과 포맷팅
       setAnalysisProgress(100);
       setAnalysisStatus('분석 완료');
 
