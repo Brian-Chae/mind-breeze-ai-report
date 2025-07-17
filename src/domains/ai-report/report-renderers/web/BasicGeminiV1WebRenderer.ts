@@ -691,25 +691,40 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
 
     return `
     <section class="analysis-section demographic-analysis">
-        <h2>${language === 'ko' ? '👥 연령/성별 특성 분석' : '👥 Age/Gender Specific Analysis'}</h2>
+        <h2>${language === 'ko' ? '👥 개인 특성 분석' : '👥 Personal Characteristics Analysis'}</h2>
         <div class="analysis-content">
-            <div class="demographic-grid">
-                <div class="demographic-card">
-                    <h3>${language === 'ko' ? '연령별 특성' : 'Age-Specific Characteristics'}</h3>
-                    <p>${demographic.ageSpecific}</p>
+            <div class="plan-timeline">
+                ${demographic.ageSpecific ? `
+                <div class="plan-card short-term">
+                    <div class="plan-header">
+                        <h3>🎂 ${language === 'ko' ? '연령별 특성' : 'Age-Specific Characteristics'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '연령대' : 'Age Group'}</span>
+                    </div>
+                    <div class="plan-description">${demographic.ageSpecific}</div>
                 </div>
+                ` : ''}
                 
-                <div class="demographic-card">
-                    <h3>${language === 'ko' ? '성별 특성' : 'Gender-Specific Characteristics'}</h3>
-                    <p>${demographic.genderSpecific}</p>
+                ${demographic.genderSpecific ? `
+                <div class="plan-card long-term">
+                    <div class="plan-header">
+                        <h3>🚻 ${language === 'ko' ? '성별 특성' : 'Gender-Specific Characteristics'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '성별' : 'Gender'}</span>
+                    </div>
+                    <div class="plan-description">${demographic.genderSpecific}</div>
                 </div>
-            </div>
-            
-            <div class="insights-section">
-                <h3>${language === 'ko' ? '복합 인사이트' : 'Combined Insights'}</h3>
-                <ul class="insights-list">
-                    ${demographic.combinedInsights.map(insight => `<li>${insight}</li>`).join('')}
-                </ul>
+                ` : ''}
+                
+                ${demographic.combinedInsights?.length ? `
+                <div class="plan-card immediate">
+                    <div class="plan-header">
+                        <h3>💡 ${language === 'ko' ? '종합 인사이트' : 'Combined Insights'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '핵심' : 'Key Points'}</span>
+                    </div>
+                    <ul class="plan-list">
+                        ${demographic.combinedInsights.map(insight => `<li>${insight}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
             </div>
         </div>
     </section>`;
@@ -729,27 +744,42 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
     <section class="analysis-section occupational-analysis">
         <h2>${language === 'ko' ? '💼 직업 특성 분석' : '💼 Occupational Analysis'}</h2>
         <div class="analysis-content">
-            <div class="occupational-grid">
-                <div class="occupational-card risks">
-                    <h3>${language === 'ko' ? '⚠️ 직업 관련 위험 요소' : '⚠️ Job-Related Risk Factors'}</h3>
-                    <ul>
+            <div class="plan-timeline">
+                ${occupation.jobSpecificRisks?.length ? `
+                <div class="plan-card immediate">
+                    <div class="plan-header">
+                        <h3>⚠️ ${language === 'ko' ? '직업적 위험 요소' : 'Job-Related Risk Factors'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '주의필요' : 'Attention Required'}</span>
+                    </div>
+                    <ul class="plan-list">
                         ${occupation.jobSpecificRisks.map(risk => `<li>${risk}</li>`).join('')}
                     </ul>
                 </div>
+                ` : ''}
                 
-                <div class="occupational-card recommendations">
-                    <h3>${language === 'ko' ? '🏢 직장 내 권장사항' : '🏢 Workplace Recommendations'}</h3>
-                    <ul>
+                ${occupation.workplaceRecommendations?.length ? `
+                <div class="plan-card short-term">
+                    <div class="plan-header">
+                        <h3>🏢 ${language === 'ko' ? '직장 내 권장사항' : 'Workplace Recommendations'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '실천' : 'Practice'}</span>
+                    </div>
+                    <ul class="plan-list">
                         ${occupation.workplaceRecommendations.map(rec => `<li>${rec}</li>`).join('')}
                     </ul>
                 </div>
+                ` : ''}
                 
-                <div class="occupational-card tips">
-                    <h3>${language === 'ko' ? '💡 직업별 건강 팁' : '💡 Career Health Tips'}</h3>
-                    <ul>
+                ${occupation.careerHealthTips?.length ? `
+                <div class="plan-card long-term">
+                    <div class="plan-header">
+                        <h3>💪 ${language === 'ko' ? '직업별 건강 팁' : 'Career Health Tips'}</h3>
+                        <span class="plan-period">${language === 'ko' ? '장기관리' : 'Long-term Care'}</span>
+                    </div>
+                    <ul class="plan-list">
                         ${occupation.careerHealthTips.map(tip => `<li>${tip}</li>`).join('')}
                     </ul>
                 </div>
+                ` : ''}
             </div>
         </div>
     </section>`;
@@ -1506,6 +1536,13 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             font-size: 0.9rem;
             color: ${secondaryColor};
             font-weight: 500;
+        }
+        
+        .plan-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: ${textColor};
+            margin-top: 10px;
         }
         
         .plan-list li {

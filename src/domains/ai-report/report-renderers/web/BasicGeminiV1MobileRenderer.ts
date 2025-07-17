@@ -1070,16 +1070,6 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
       content += this.generatePPGAnalysisItem(detailedResult.ppgAnalysis, language);
     }
     
-    // 인구통계학적 분석
-    if (detailedResult?.demographicAnalysis) {
-      content += this.generateDemographicAnalysisItem(detailedResult.demographicAnalysis, language);
-    }
-    
-    // 직업적 분석
-    if (detailedResult?.occupationalAnalysis) {
-      content += this.generateOccupationalAnalysisItem(detailedResult.occupationalAnalysis, language);
-    }
-    
     // 개선 계획
     if (detailedResult?.improvementPlan) {
       content += this.generateImprovementPlanItem(detailedResult.improvementPlan, language);
@@ -1151,119 +1141,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
     </div>`;
   }
 
-  /**
-   * 인구통계학적 분석 아이템 생성
-   */
-  private generateDemographicAnalysisItem(demographicAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '개인 특성 분석' : 'Demographic Analysis';
-    
-    let content = `
-    <div class="plan-timeline">
-        <div class="plan-header" style="margin-bottom: 16px;">
-            <h3 style="font-size: 1.1rem;">👤 ${title}</h3>
-        </div>`;
 
-    // 연령별 특성 카드 (주황색 테두리 - short-term)
-    if (demographicAnalysis.ageSpecific) {
-      content += `
-        <div class="plan-card short-term">
-            <div class="plan-header">
-                <h3>🎂 연령별 특성</h3>
-                <div class="plan-period">연령대</div>
-            </div>
-            <div class="item-description">${demographicAnalysis.ageSpecific}</div>
-        </div>`;
-    }
-
-    // 성별 특성 카드 (초록색 테두리 - long-term)
-    if (demographicAnalysis.genderSpecific) {
-      content += `
-        <div class="plan-card long-term">
-            <div class="plan-header">
-                <h3>🚻 성별 특성</h3>
-                <div class="plan-period">성별</div>
-            </div>
-            <div class="item-description">${demographicAnalysis.genderSpecific}</div>
-        </div>`;
-    }
-
-    // 종합 인사이트 카드 (빨간색 테두리 - immediate)
-    if (demographicAnalysis.combinedInsights?.length) {
-      content += `
-        <div class="plan-card immediate">
-            <div class="plan-header">
-                <h3>💡 종합 인사이트</h3>
-                <div class="plan-period">핵심</div>
-            </div>
-            <ul class="plan-list">
-                ${demographicAnalysis.combinedInsights.map((insight: string) => `<li>${insight}</li>`).join('')}
-            </ul>
-        </div>`;
-    }
-
-    content += `</div>`;
-    
-    return content;
-  }
-
-  /**
-   * 직업적 분석 아이템 생성
-   */
-  private generateOccupationalAnalysisItem(occupationalAnalysis: any, language: string): string {
-    const title = language === 'ko' ? '직업별 건강 분석' : 'Occupational Health Analysis';
-    
-    let content = `
-    <div class="plan-timeline">
-        <div class="plan-header" style="margin-bottom: 16px;">
-            <h3 style="font-size: 1.1rem;">💼 ${title}</h3>
-        </div>`;
-
-    // 직업적 위험 요소 카드 (빨간색 테두리 - immediate)
-    if (occupationalAnalysis.jobSpecificRisks?.length) {
-      content += `
-        <div class="plan-card immediate">
-            <div class="plan-header">
-                <h3>⚠️ 직업적 위험 요소</h3>
-                <div class="plan-period">주의필요</div>
-            </div>
-            <ul class="plan-list">
-                ${occupationalAnalysis.jobSpecificRisks.map((risk: string) => `<li>${risk}</li>`).join('')}
-            </ul>
-        </div>`;
-    }
-
-    // 직장 내 권장사항 카드 (주황색 테두리 - short-term)
-    if (occupationalAnalysis.workplaceRecommendations?.length) {
-      content += `
-        <div class="plan-card short-term">
-            <div class="plan-header">
-                <h3>🏢 직장 내 권장사항</h3>
-                <div class="plan-period">실천</div>
-            </div>
-            <ul class="plan-list">
-                ${occupationalAnalysis.workplaceRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
-            </ul>
-        </div>`;
-    }
-
-    // 직업별 건강 팁 카드 (초록색 테두리 - long-term)
-    if (occupationalAnalysis.careerHealthTips?.length) {
-      content += `
-        <div class="plan-card long-term">
-            <div class="plan-header">
-                <h3>💪 직업별 건강 팁</h3>
-                <div class="plan-period">장기관리</div>
-            </div>
-            <ul class="plan-list">
-                ${occupationalAnalysis.careerHealthTips.map((tip: string) => `<li>${tip}</li>`).join('')}
-            </ul>
-        </div>`;
-    }
-
-    content += `</div>`;
-    
-    return content;
-  }
 
   /**
    * 개선 계획 아이템 생성
