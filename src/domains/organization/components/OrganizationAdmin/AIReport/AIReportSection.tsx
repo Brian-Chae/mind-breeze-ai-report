@@ -1712,6 +1712,13 @@ AI 건강 분석 리포트
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
+    // 이번주 시작일 (월요일) 계산
+    const thisWeekStart = new Date(today)
+    const dayOfWeek = today.getDay()
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 일요일(0)인 경우 6일 빼기, 나머지는 dayOfWeek - 1
+    thisWeekStart.setDate(today.getDate() - daysToSubtract)
+    thisWeekStart.setHours(0, 0, 0, 0)
+
     // 총 측정 데이터 수 (전체 데이터 기준)
     const totalMeasurements = measurementDataList.length
 
@@ -1726,6 +1733,12 @@ AI 건강 분석 리포트
       return measurementDate >= today && measurementDate < tomorrow
     }).length
 
+    // 이번주 측정한 데이터 수 (전체 데이터 기준)
+    const thisWeekMeasurements = measurementDataList.filter(data => {
+      const measurementDate = new Date(data.timestamp)
+      return measurementDate >= thisWeekStart && measurementDate < tomorrow
+    }).length
+
     // 오늘 발행된 리포트 수 (전체 데이터 기준)
     const todayReports = measurementDataList.reduce((sum, data) => {
       const todayReportsForData = (data.availableReports || []).filter((report: any) => {
@@ -1733,6 +1746,15 @@ AI 건강 분석 리포트
         return reportDate >= today && reportDate < tomorrow
       }).length
       return sum + todayReportsForData
+    }, 0)
+
+    // 이번주 발행된 리포트 수 (전체 데이터 기준)
+    const thisWeekReports = measurementDataList.reduce((sum, data) => {
+      const thisWeekReportsForData = (data.availableReports || []).filter((report: any) => {
+        const reportDate = new Date(report.createdAt)
+        return reportDate >= thisWeekStart && reportDate < tomorrow
+      }).length
+      return sum + thisWeekReportsForData
     }, 0)
 
     // 총 크레딧 사용량 (전체 데이터 기준)
@@ -1756,13 +1778,29 @@ AI 건강 분석 리포트
       return sum + todayCreditsForData
     }, 0)
 
+    // 이번주 사용한 크레딧 사용량 (전체 데이터 기준)
+    const thisWeekCreditsUsed = measurementDataList.reduce((sum, data) => {
+      const thisWeekCreditsForData = (data.availableReports || [])
+        .filter((report: any) => {
+          const reportDate = new Date(report.createdAt)
+          return reportDate >= thisWeekStart && reportDate < tomorrow
+        })
+        .reduce((reportSum: number, report: any) => {
+          return reportSum + (report.costUsed || 0)
+        }, 0)
+      return sum + thisWeekCreditsForData
+    }, 0)
+
     return {
       totalMeasurements,
       totalReports,
       todayMeasurements,
+      thisWeekMeasurements,
       todayReports,
+      thisWeekReports,
       totalCreditsUsed,
-      todayCreditsUsed
+      todayCreditsUsed,
+      thisWeekCreditsUsed
     }
   }, [measurementDataList])
 
@@ -1789,75 +1827,69 @@ AI 건강 분석 리포트
       </div>
 
       {/* 현황 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 측정 데이터수 카드 */}
         <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-600 mb-1">총 측정 데이터 수</p>
-              <p className="text-3xl font-bold text-blue-900">{calculateStats.totalMeasurements.toLocaleString()}</p>
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-blue-900">측정 데이터수</h3>
             <div className="p-3 bg-blue-200 rounded-lg">
               <Activity className="w-6 h-6 text-blue-700" />
             </div>
           </div>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-blue-600 mb-1">오늘</p>
+              <p className="text-3xl font-bold text-blue-900">{calculateStats.todayMeasurements.toLocaleString()}</p>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-blue-600">전체 : {calculateStats.totalMeasurements.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-blue-600">이번주 : {calculateStats.thisWeekMeasurements.toLocaleString()}</span>
+            </div>
+          </div>
         </Card>
 
+        {/* 리포트 수 카드 */}
         <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-600 mb-1">총 발행된 리포트 수</p>
-              <p className="text-3xl font-bold text-green-900">{calculateStats.totalReports.toLocaleString()}</p>
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-green-900">리포트 수</h3>
             <div className="p-3 bg-green-200 rounded-lg">
               <FileText className="w-6 h-6 text-green-700" />
             </div>
           </div>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-green-600 mb-1">오늘</p>
+              <p className="text-3xl font-bold text-green-900">{calculateStats.todayReports.toLocaleString()}</p>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">전체 : {calculateStats.totalReports.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">이번주 : {calculateStats.thisWeekReports.toLocaleString()}</span>
+            </div>
+          </div>
         </Card>
 
+        {/* 크레딧 사용량 카드 */}
         <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-600 mb-1">오늘 측정한 데이터 수</p>
-              <p className="text-3xl font-bold text-purple-900">{calculateStats.todayMeasurements.toLocaleString()}</p>
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-purple-900">크레딧 사용량</h3>
             <div className="p-3 bg-purple-200 rounded-lg">
-              <Calendar className="w-6 h-6 text-purple-700" />
+              <DollarSign className="w-6 h-6 text-purple-700" />
             </div>
           </div>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             <div>
-              <p className="text-sm font-medium text-orange-600 mb-1">오늘 발행된 리포트 수</p>
-              <p className="text-3xl font-bold text-orange-900">{calculateStats.todayReports.toLocaleString()}</p>
+              <p className="text-sm text-purple-600 mb-1">오늘</p>
+              <p className="text-3xl font-bold text-purple-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
             </div>
-            <div className="p-3 bg-orange-200 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-orange-700" />
+            <div className="flex justify-between text-sm">
+              <span className="text-purple-600">전체 : {calculateStats.totalCreditsUsed.toLocaleString()}</span>
             </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-emerald-600 mb-1">총 크레딧 사용량</p>
-              <p className="text-3xl font-bold text-emerald-900">{calculateStats.totalCreditsUsed.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-emerald-200 rounded-lg">
-              <DollarSign className="w-6 h-6 text-emerald-700" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-rose-600 mb-1">오늘 사용한 크레딧</p>
-              <p className="text-3xl font-bold text-rose-900">{calculateStats.todayCreditsUsed.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-rose-200 rounded-lg">
-              <DollarSign className="w-6 h-6 text-rose-700" />
+            <div className="flex justify-between text-sm">
+              <span className="text-purple-600">이번주 : {calculateStats.thisWeekCreditsUsed.toLocaleString()}</span>
             </div>
           </div>
         </Card>
