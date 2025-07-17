@@ -589,6 +589,42 @@ export function ReportViewerModal({
                   el.style.transform = 'translateY(-4px)';
                 }
                 
+                // 건강 요소별 현황에서 뇌파 건강도 "보통" 배지만 아래로 5px 이동 (PNG 출력용)
+                let isInEEGHealthSection = false;
+                let healthElementParent = el;
+                while (healthElementParent && healthElementParent !== clonedDoc.body) {
+                  if (healthElementParent.className && String(healthElementParent.className).includes('health-elements')) {
+                    isInEEGHealthSection = true;
+                    break;
+                  }
+                  healthElementParent = healthElementParent.parentElement;
+                }
+                
+                if (isInEEGHealthSection) {
+                  // React 컴포넌트 - Badge 클래스이면서 "뇌파 건강도"와 관련된 배지
+                  if (className && className.includes('Badge')) {
+                    // 같은 flex 컨테이너에서 "뇌파 건강도" 텍스트가 있는지 확인
+                    const parentFlex = el.closest('.flex');
+                    if (parentFlex) {
+                      const textSpan = parentFlex.querySelector('span');
+                      if (textSpan && textSpan.textContent && textSpan.textContent.includes('뇌파 건강도')) {
+                        el.style.transform = 'translateY(5px)';
+                      }
+                    }
+                  }
+                  
+                  // HTML 렌더러 - element-badge 클래스이면서 뇌파 건강도 라벨 옆의 배지
+                  if (className && className.includes('element-badge')) {
+                    const labelGroup = el.closest('.element-label-group');
+                    if (labelGroup) {
+                      const labelSpan = labelGroup.querySelector('.element-label');
+                      if (labelSpan && labelSpan.textContent && labelSpan.textContent.includes('뇌파 건강도')) {
+                        el.style.transform = 'translateY(5px)';
+                      }
+                    }
+                  }
+                }
+                
                 // 주요 발견사항 카드 전체 요소들을 위로 5px 이동 (PNG 출력용)
                 const parentContainer = el.closest('div[class*="border-green-200"]') || 
                                       el.closest('div[class*="border-l-green"]') ||
