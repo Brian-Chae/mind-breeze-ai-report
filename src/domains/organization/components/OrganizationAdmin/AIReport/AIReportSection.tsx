@@ -245,9 +245,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                  engineId: analysis.engineId || 'basic-gemini-v1',
                  engineName: analysis.engineName || '기본 분석',
                  analysisId: analysis.analysisId,
+                 timestamp: analysis.timestamp,
                  overallScore: analysis.overallScore || 0,
                  stressLevel: analysis.stressLevel || 0,
                  focusLevel: analysis.focusLevel || 0,
+                 insights: analysis.insights, // 🎯 insights 필드 추가
+                 rawData: analysis.rawData, // 🎯 rawData 필드 추가
+                 metrics: analysis.metrics, // 🎯 metrics 필드 추가
                  costUsed: analysis.costUsed || 1,
                  processingTime: analysis.processingTime || 0,
                  qualityScore: analysis.qualityScore || 0,
