@@ -580,12 +580,19 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
             border-radius: 12px;
             padding: 16px;
             margin: 16px 0;
-            text-align: left;
+            text-align: center;
             min-height: 160px;
             display: flex;
             flex-direction: column;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border: 1px solid ${borderColor};
+        }
+
+        .chart-container h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: ${textColor};
+            margin-bottom: 12px;
         }
         
         /* 아이템 설명 */
@@ -692,35 +699,34 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         .chart-container svg {
             max-width: 100%;
             height: auto;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
-            border-radius: 8px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
         }
         
-        /* 차트 애니메이션 및 상호작용 */
-        .chart-container svg .eeg-bar {
+        /* 차트 애니메이션 */
+        .eeg-bar {
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             transform-origin: bottom;
         }
         
-        .chart-container svg .eeg-bar:hover {
+        .eeg-bar:active {
             opacity: 0.9;
-            transform: translateY(-2px) scale(1.05);
+            transform: translateY(-1px) scale(1.02);
         }
         
-        .chart-container svg .ppg-circle {
+        .ppg-circle {
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .chart-container svg .ppg-circle:hover {
+        .ppg-circle:active {
             opacity: 0.9;
-            stroke-width: 6;
+            stroke-width: 10;
         }
         
-        /* 차트 컨테이너 호버 효과 */
-        .chart-container:hover {
+        /* 차트 컨테이너 터치 효과 */
+        .chart-container:active {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transition: all 0.2s ease;
         }
         
         /* 분석 섹션 */
@@ -739,6 +745,60 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         
         .analysis-content {
             padding: 0;
+        }
+
+        /* 분석 내용 섹션 스타일 */
+        .analysis-content-section {
+            margin: 16px 0;
+        }
+
+        .analysis-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: ${textColor};
+            margin-bottom: 16px;
+        }
+
+        .findings-section {
+            margin: 16px 0;
+            padding: 16px;
+            background: ${isDark ? '#065F46' : '#ECFDF5'};
+            border-radius: 8px;
+            border-left: 4px solid #10B981;
+        }
+
+        .concerns-section {
+            margin: 16px 0;
+            padding: 16px;
+            background: ${isDark ? '#7F1D1D' : '#FEF2F2'};
+            border-radius: 8px;
+            border-left: 4px solid #EF4444;
+        }
+
+        .findings-list {
+            list-style: none;
+            margin: 10px 0;
+            padding: 0;
+        }
+
+        .findings-list li {
+            padding: 6px 0;
+            color: ${isDark ? '#D1FAE5' : '#047857'};
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .concerns-list {
+            list-style: none;
+            margin: 10px 0;
+            padding: 0;
+        }
+
+        .concerns-list li {
+            padding: 6px 0;
+            color: ${isDark ? '#FEE2E2' : '#DC2626'};
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
         
         .markdown-content {
