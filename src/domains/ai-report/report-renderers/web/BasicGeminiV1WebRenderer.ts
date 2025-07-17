@@ -962,6 +962,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 30px;
             margin-bottom: 30px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         /* 게이지 차트 */
@@ -969,6 +973,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             background: ${isDark ? '#374151' : '#F9FAFB'};
             border-radius: 8px;
             padding: 25px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .score-gauge-container {
@@ -976,12 +984,17 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             flex-direction: column;
             align-items: center;
             gap: 20px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .gauge-chart {
             position: relative;
             width: 200px;
             height: 200px;
+            max-width: 100%;
+            margin: 0 auto;
         }
 
         .gauge-center {
@@ -1005,6 +1018,9 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
 
         .score-status {
             text-align: center;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .status-badge {
@@ -1035,6 +1051,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             font-size: 0.875rem;
             color: ${secondaryColor};
             line-height: 1.6;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
         }
 
         /* 건강 요소별 현황 */
@@ -1042,6 +1062,10 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             background: ${isDark ? '#374151' : '#F9FAFB'};
             border-radius: 8px;
             padding: 25px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .health-elements-grid {
@@ -1049,6 +1073,9 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             flex-direction: column;
             gap: 20px;
             margin-top: 15px;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* 위험도 분석 */
@@ -1530,6 +1557,16 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 gap: 12px !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                margin-bottom: 16px !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            
+            /* 메인 그리드 추가 강화 */
+            .summary-main-grid {
+                margin: 0 0 16px 0 !important;
+                padding: 0 !important;
             }
             
             /* 개별 카드들 */
@@ -1549,6 +1586,25 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 word-break: break-word !important;
                 overflow-wrap: break-word !important;
                 hyphens: auto !important;
+            }
+            
+            /* 건강 요소별 현황 모바일 최적화 */
+            .health-elements-section {
+                padding: 16px !important;
+                margin: 0 0 16px 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            
+            .health-elements-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-top: 12px !important;
             }
             
             /* 차트와 게이지 */
@@ -1649,25 +1705,67 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
                 word-break: break-word !important;
             }
             
-            /* 점수 게이지 모바일 최적화 */
+            /* 점수 게이지 모바일 최적화 - 강화 */
+            .health-score-section {
+                padding: 16px !important;
+                margin: 0 0 16px 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            
+            .score-gauge-container {
+                max-width: 100% !important;
+                width: 100% !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 12px !important;
+                padding: 0 16px !important;
+                box-sizing: border-box !important;
+            }
+            
             .gauge-chart {
-                width: 150px;
-                height: 150px;
-                margin: 0 auto 16px;
+                width: 120px !important;
+                height: 120px !important;
+                max-width: 120px !important;
+                margin: 0 auto !important;
+                overflow: hidden !important;
             }
             
             .gauge-chart svg {
-                width: 150px;
-                height: 150px;
+                width: 120px !important;
+                height: 120px !important;
+                max-width: 120px !important;
             }
             
             .gauge-value {
-                font-size: 2rem;
-                font-weight: 700;
+                font-size: 1.5rem !important;
+                font-weight: 700 !important;
             }
             
             .gauge-max {
-                font-size: 0.9rem;
+                font-size: 0.8rem !important;
+            }
+            
+            .score-status {
+                max-width: 100% !important;
+                width: 100% !important;
+                text-align: center !important;
+                padding: 0 8px !important;
+                box-sizing: border-box !important;
+            }
+            
+            .score-description {
+                font-size: 0.8rem !important;
+                line-height: 1.4 !important;
+                margin-top: 8px !important;
+                max-width: 100% !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                text-align: center !important;
+                padding: 0 4px !important;
             }
             
             /* 건강 지표 점수 그리드 */

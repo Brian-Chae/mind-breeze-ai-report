@@ -59,27 +59,32 @@ export function ReportViewerModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   
-  // 실제 렌더러 찾기
+  // 실제 렌더러 찾기 (viewMode에 따라 모바일/웹 렌더러 선택)
   useEffect(() => {
-    console.log('🔍 렌더러 찾기 시작 - report:', !!report, 'isOpen:', isOpen);
+    console.log('🔍 렌더러 찾기 시작 - report:', !!report, 'isOpen:', isOpen, 'viewMode:', viewMode);
     
     if (report && isOpen) {
       try {
         // report에서 engineId를 가져와서 적절한 렌더러 찾기
         const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
-        console.log('🔍 engineId:', engineId);
+        console.log('🔍 engineId:', engineId, 'viewMode:', viewMode);
         
         // 모든 등록된 렌더러 확인
         const allRenderers = rendererRegistry.getAll();
         console.log('🔍 등록된 모든 렌더러:', allRenderers.map(r => ({ id: r.id, name: r.name, outputFormat: r.outputFormat })));
         
-        // 🎯 직접 ID로 검색하기 (더 확실한 방법)
+        // 🎯 viewMode에 따라 적절한 렌더러 선택
         let targetRenderer = null;
         
-        // 1. engineId가 basic-gemini-v1이면 전용 렌더러 찾기
+        // 1. engineId가 basic-gemini-v1이면 viewMode에 따라 렌더러 선택
         if (engineId === 'basic-gemini-v1') {
-          targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
-          console.log('🔍 basic-gemini-v1-web 렌더러 직접 검색 결과:', targetRenderer);
+          if (viewMode === 'mobile') {
+            targetRenderer = rendererRegistry.get('basic-gemini-v1-mobile');
+            console.log('🔍 basic-gemini-v1-mobile 렌더러 선택:', targetRenderer);
+          } else {
+            targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
+            console.log('🔍 basic-gemini-v1-web 렌더러 선택:', targetRenderer);
+          }
         }
         
         // 2. 전용 렌더러가 없으면 selectBestRenderer 시도
@@ -106,7 +111,7 @@ export function ReportViewerModal({
         setRendererName('기본 웹 뷰어');
       }
     }
-  }, [report, isOpen]);
+  }, [report, isOpen, viewMode]); // viewMode 추가
 
   // 리포트 데이터 로드
   useEffect(() => {
