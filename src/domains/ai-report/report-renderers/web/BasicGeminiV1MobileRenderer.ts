@@ -600,7 +600,7 @@ export class BasicGeminiV1MobileRenderer implements IReportRenderer {
         .finding-item {
             display: flex !important;
             align-items: flex-start !important;
-            background: #F0FDF4 !important;
+            background: #FFFFFF !important;
             border: 1px solid #BBF7D0 !important;
             border-radius: 8px !important;
             padding: 12px !important;

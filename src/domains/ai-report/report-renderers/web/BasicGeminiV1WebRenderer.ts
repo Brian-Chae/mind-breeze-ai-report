@@ -1286,7 +1286,7 @@ export class BasicGeminiV1WebRenderer implements IReportRenderer {
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            background: ${isDark ? '#F0FDF4' : '#F0FDF4'};
+            background: ${isDark ? '#FFFFFF' : '#FFFFFF'};
             border: 1px solid ${isDark ? '#BBF7D0' : '#BBF7D0'};
             border-radius: 8px;
             padding: 16px;
