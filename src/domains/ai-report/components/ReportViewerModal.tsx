@@ -61,27 +61,48 @@ export function ReportViewerModal({
   
   // 실제 렌더러 찾기
   useEffect(() => {
+    console.log('🔍 렌더러 찾기 시작 - report:', !!report, 'isOpen:', isOpen);
+    
     if (report && isOpen) {
       try {
         // report에서 engineId를 가져와서 적절한 렌더러 찾기
         const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
-        const bestRenderer = selectBestRenderer(engineId, 'web');
+        console.log('🔍 engineId:', engineId);
         
-        if (bestRenderer) {
-          setActualRenderer(bestRenderer);
-          setRendererName(bestRenderer.name);
-          console.log('🎯 선택된 렌더러:', bestRenderer.name, '(ID:', bestRenderer.id, ')');
+        // 모든 등록된 렌더러 확인
+        const allRenderers = rendererRegistry.getAll();
+        console.log('🔍 등록된 모든 렌더러:', allRenderers.map(r => ({ id: r.id, name: r.name, outputFormat: r.outputFormat })));
+        
+        // 🎯 직접 ID로 검색하기 (더 확실한 방법)
+        let targetRenderer = null;
+        
+        // 1. engineId가 basic-gemini-v1이면 전용 렌더러 찾기
+        if (engineId === 'basic-gemini-v1') {
+          targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
+          console.log('🔍 basic-gemini-v1-web 렌더러 직접 검색 결과:', targetRenderer);
+        }
+        
+        // 2. 전용 렌더러가 없으면 selectBestRenderer 시도
+        if (!targetRenderer) {
+          targetRenderer = selectBestRenderer(engineId, 'web');
+          console.log('🔍 selectBestRenderer 결과:', targetRenderer);
+        }
+        
+        // 3. 여전히 없으면 첫 번째 웹 렌더러 사용
+        if (!targetRenderer) {
+          targetRenderer = allRenderers.find(r => r.outputFormat === 'web');
+          console.log('🔍 첫 번째 웹 렌더러 선택:', targetRenderer);
+        }
+        
+        if (targetRenderer) {
+          setActualRenderer(targetRenderer);
+          setRendererName(targetRenderer.name);
+          console.log('✅ 최종 선택된 렌더러:', targetRenderer.name, '(ID:', targetRenderer.id, ')');
         } else {
-          // 기본 렌더러 사용
-          const allRenderers = rendererRegistry.getAll();
-          const defaultRenderer = allRenderers.find(r => r.outputFormat === 'web');
-          if (defaultRenderer) {
-            setActualRenderer(defaultRenderer);
-            setRendererName(defaultRenderer.name);
-          }
+          console.error('❌ 어떤 웹 렌더러도 찾을 수 없음');
         }
       } catch (error) {
-        console.warn('렌더러 선택 중 오류:', error);
+        console.error('❌ 렌더러 선택 중 오류:', error);
         setRendererName('기본 웹 뷰어');
       }
     }
@@ -103,6 +124,11 @@ export function ReportViewerModal({
   }, [isOpen, report, onClose]);
 
   const loadReportContent = async () => {
+    console.log('🚀 ReportViewerModal loadReportContent 시작');
+    console.log('🚀 actualRenderer:', actualRenderer);
+    console.log('🚀 actualRenderer.id:', actualRenderer?.id);
+    console.log('🚀 report 존재 여부:', !!report);
+    
     setIsLoading(true);
     setError(null);
     
