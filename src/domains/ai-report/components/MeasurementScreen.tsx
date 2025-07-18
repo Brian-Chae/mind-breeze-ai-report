@@ -17,61 +17,25 @@ export function MeasurementScreen({ onComplete, onBack, onError, progress }: Mea
     // 임시 더미 데이터 (타입에 맞게 간단히)
     const dummyData: AggregatedMeasurementData = {
       eegSummary: {
-        deltaPower: 0.25,
-        thetaPower: 0.30,
-        alphaPower: 0.35,
-        betaPower: 0.40,
-        gammaPower: 0.15,
-        focusIndex: 75,
-        relaxationIndex: 80,
-        stressIndex: 25,
-        hemisphericBalance: 0.95,
-        cognitiveLoad: 60,
-        emotionalStability: 85,
-        attentionLevel: 82,
-        meditationLevel: 75,
-        averageSQI: 88,
-        dataCount: 158
+        averageAttention: 75,
+        averageMeditation: 80,
+        stressLevel: 25,
+        qualityScore: 88
       },
       ppgSummary: {
-        heartRate: 72,
-        hrv: 45.2,
-        rmssd: 38.5,
-        pnn50: 15.8,
-        stressLevel: 30,
-        recoveryIndex: 85,
-        autonomicBalance: 0.8,
-        cardiacCoherence: 75,
-        respiratoryRate: 16,
-        oxygenSaturation: 98,
-        perfusionIndex: 2.1,
-        vascularTone: 80,
-        cardiacEfficiency: 88,
-        metabolicRate: 1800,
-        averageSQI: 92,
-        dataCount: 165
+        averageHeartRate: 72,
+        heartRateVariability: 45.2,
+        qualityScore: 92
       },
       accSummary: {
-        activityLevel: 1.2,
-        motionPattern: 95,
-        posturalStability: 90,
-        movementQuality: 85,
-        energyExpenditure: 120,
-        averageQuality: 98,
-        dataCount: 180
+        movementLevel: 1.2,
+        stabilityScore: 90,
+        qualityScore: 98
       },
-      qualitySummary: {
-        totalDataPoints: 180,
-        highQualityDataPoints: 165,
-        qualityPercentage: 93,
-        measurementReliability: 'high'
-      },
-      measurementInfo: {
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 60000),
-        duration: 60,
-        environment: 'quiet'
-      }
+      sessionId: 'dummy-session-' + Date.now(),
+      totalDuration: 60,
+      overallQuality: 90,
+      timestamp: new Date()
     };
 
     setTimeout(() => {

@@ -247,7 +247,7 @@ export const BuiltInRules = {
 
 // === 검증자 클래스 ===
 
-export class FieldValidator<T = any> {
+export class FieldValidator<T = string> {
   private rules: ValidationRule<T>[] = [];
   private transformFn?: (value: any) => T;
 
@@ -296,7 +296,7 @@ export class FieldValidator<T = any> {
     return this.rule({
       ...rule,
       message: message || rule.message
-    });
+    } as ValidationRule<T>);
   }
 
   /**
@@ -307,7 +307,7 @@ export class FieldValidator<T = any> {
     return this.rule({
       ...rule,
       message: message || rule.message
-    });
+    } as ValidationRule<T>);
   }
 
   /**
@@ -317,7 +317,7 @@ export class FieldValidator<T = any> {
     return this.rule({
       ...BuiltInRules.email,
       message: message || BuiltInRules.email.message
-    });
+    } as ValidationRule<T>);
   }
 
   /**
@@ -327,14 +327,14 @@ export class FieldValidator<T = any> {
     return this.rule({
       ...BuiltInRules.phoneKR,
       message: message || BuiltInRules.phoneKR.message
-    });
+    } as ValidationRule<T>);
   }
 
   /**
    * 정규식 패턴 검증
    */
   pattern(regex: RegExp, message?: string): this {
-    return this.rule(BuiltInRules.pattern(regex, message));
+    return this.rule(BuiltInRules.pattern(regex, message) as ValidationRule<T>);
   }
 
   /**
@@ -345,7 +345,7 @@ export class FieldValidator<T = any> {
     return this.rule({
       ...rule,
       message: message || rule.message
-    });
+    } as ValidationRule<T>);
   }
 
   /**

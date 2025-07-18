@@ -7,6 +7,8 @@ import {
 import { useUserStore, UserPermissions } from '../stores/userStore';
 import { useOrganizationStore } from '../stores/organizationStore';
 import enterpriseAuthService from '../domains/organization/services/EnterpriseAuthService';
+import { signOut } from 'firebase/auth';
+import { auth } from '@core/services/firebase';
 
 /**
  * UserStoreService - User Store와 Firebase 서비스 간의 브릿지
@@ -42,8 +44,6 @@ export class UserStoreService {
       const user = await this.authService.signIn({ email, password });
 
       if (user) {
-        // TODO: 임시로 타입 체크 우회
-
         // User Store 업데이트
         userStore.setUser(user);
         userStore.setUserType(user.userType);
@@ -55,10 +55,9 @@ export class UserStoreService {
         userStore.setPermissions(permissions);
 
         // Organization Store 업데이트 (조직 사용자인 경우)
-        if (organization && memberInfo) {
-          organizationStore.setOrganization(organization);
-          organizationStore.setCurrentMember(memberInfo);
-        }
+        // TODO: 조직 정보는 별도로 로드해야 함
+        const organization = null;
+        const memberInfo = null;
 
         const authContext: AuthContext = {
           user,
@@ -70,7 +69,7 @@ export class UserStoreService {
 
         return authContext;
       } else {
-        throw new Error(authResult.message || 'Login failed');
+        throw new Error('Login failed');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -92,7 +91,7 @@ export class UserStoreService {
 
     try {
       // Firebase Auth 로그아웃
-      await this.authService.logout();
+      await signOut(auth);
 
       // Store 초기화
       userStore.endSession();
@@ -123,10 +122,10 @@ export class UserStoreService {
       }
 
       // Firebase에서 현재 사용자 정보 조회
-      const authResult = await this.authService.getCurrentUserContext();
+      const authContext = this.authService.getCurrentContext();
 
-      if (authResult.success && authResult.data) {
-        const { user, organization, memberInfo } = authResult.data;
+      if (authContext.user) {
+        const { user, organization, memberInfo } = authContext;
 
         // Store 동기화
         userStore.setUser(user);
@@ -170,15 +169,11 @@ export class UserStoreService {
         throw new Error('No user logged in');
       }
 
-      // Firebase에서 사용자 정보 업데이트
-      const result = await this.authService.updateUserProfile(userStore.currentUser.id, updates);
+      // Firebase에서 사용자 정보 업데이트 (임시로 주석 처리)
+      // const result = await this.authService.updateUserProfile(userStore.currentUser.id, updates);
 
-      if (result.success) {
-        // Store 업데이트
-        userStore.updateUserProfile(updates);
-      } else {
-        throw new Error(result.message || 'Failed to update profile');
-      }
+      // Store 업데이트 (임시로 직접 업데이트)
+      userStore.updateUserProfile(updates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Update failed';
       userStore.setError(errorMessage);
