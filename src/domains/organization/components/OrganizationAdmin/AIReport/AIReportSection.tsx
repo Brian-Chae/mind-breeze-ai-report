@@ -1771,21 +1771,33 @@ AI 건강 분석 리포트
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="측정자명, AI 엔진, 날짜로 검색..."
+              placeholder="측정자명, 날짜로 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
+          
+          {/* 정렬 옵션 */}
           <select 
-            value={selectedEngineFilter}
-            onChange={(e) => setSelectedEngineFilter(e.target.value)}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
             className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">전체 AI 엔진</option>
-            {availableEngines.map(engineId => (
-              <option key={engineId} value={engineId}>{engineId}</option>
-            ))}
+            <option value="newest">최신순</option>
+            <option value="oldest">오래된 순</option>
+          </select>
+          
+          {/* 기간 필터 */}
+          <select 
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
+            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">전체 기간</option>
+            <option value="today">오늘</option>
+            <option value="week">지난 1주일</option>
+            <option value="month">지난 1개월</option>
           </select>
         </div>
         
@@ -1803,7 +1815,7 @@ AI 건강 분석 리포트
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">생성된 리포트가 없습니다</h3>
                 <p className="text-gray-600 mb-4">
-                  {searchQuery || selectedEngineFilter !== 'all' 
+                  {searchQuery || dateFilter !== 'all' 
                     ? '검색 조건에 맞는 리포트가 없습니다.' 
                     : '아직 생성된 AI 분석 리포트가 없습니다.'}
                 </p>
@@ -2103,18 +2115,52 @@ AI 건강 분석 리포트
 
   // 리포트 목록용: 검색 및 필터링된 리포트들
   const filteredGeneratedReports = useMemo(() => {
-    return allGeneratedReports.filter(report => {
-      const matchesSearch = searchQuery === '' || 
-        report.subjectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.engineName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        new Date(report.createdAt).toLocaleDateString('ko-KR').includes(searchQuery)
-      
-      const matchesEngine = selectedEngineFilter === 'all' || 
-        report.engineId === selectedEngineFilter
-      
-      return matchesSearch && matchesEngine
-    })
-  }, [allGeneratedReports, searchQuery, selectedEngineFilter])
+    const now = new Date()
+    
+    // 기간 필터 계산
+    const getDateFilterRange = () => {
+      switch (dateFilter) {
+        case 'today':
+          const todayStart = new Date(now)
+          todayStart.setHours(0, 0, 0, 0)
+          return todayStart
+        case 'week':
+          const weekStart = new Date(now)
+          weekStart.setDate(now.getDate() - 7)
+          weekStart.setHours(0, 0, 0, 0)
+          return weekStart
+        case 'month':
+          const monthStart = new Date(now)
+          monthStart.setDate(now.getDate() - 30)
+          monthStart.setHours(0, 0, 0, 0)
+          return monthStart
+        default:
+          return null
+      }
+    }
+    
+    const dateFilterStart = getDateFilterRange()
+    
+    return allGeneratedReports
+      .filter(report => {
+        // 검색어 필터
+        const matchesSearch = searchQuery === '' || 
+          report.subjectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          new Date(report.createdAt).toLocaleDateString('ko-KR').includes(searchQuery)
+        
+        // 기간 필터
+        const matchesDate = !dateFilterStart || new Date(report.createdAt) >= dateFilterStart
+        
+        return matchesSearch && matchesDate
+      })
+      .sort((a, b) => {
+        // 정렬: 최신순 또는 오래된 순
+        const dateA = new Date(a.createdAt).getTime()
+        const dateB = new Date(b.createdAt).getTime()
+        
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+      })
+  }, [allGeneratedReports, searchQuery, sortOrder, dateFilter])
 
   // 통계 계산 함수 (필터링된 데이터 기준)
   const calculateStats = useMemo(() => {
