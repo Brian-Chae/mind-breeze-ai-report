@@ -28,6 +28,8 @@ import { AIHealthReportApp } from '@domains/ai-report/components/AIHealthReportA
 import { SharedReportPage } from '../pages/SharedReportPage';
 // AI Report Renderers 초기화
 import { initializeRenderers } from '@domains/ai-report/report-renderers';
+// 디버깅 유틸리티
+import { DebugUserInfo } from '../utils/DebugUserInfo';
 // import { AppLayout } from './layouts/AppLayout';
 
 const AppRouter = () => {
@@ -36,11 +38,16 @@ const AppRouter = () => {
   const location = useLocation();
   const [showWelcome, setShowWelcome] = useState(false);
 
-  // 렌더러 초기화 (앱 시작 시 한 번만 실행)
+  // 렌더러 초기화 및 디버깅 함수 등록 (앱 시작 시 한 번만 실행)
   useEffect(() => {
     try {
       initializeRenderers();
       console.log('✅ 렌더러 초기화 완료');
+      
+      // 디버깅 함수 등록 (개발 환경에서만)
+      if (process.env.NODE_ENV === 'development') {
+        DebugUserInfo.registerGlobalDebugFunctions();
+      }
     } catch (error) {
       console.error('❌ 렌더러 초기화 실패:', error);
     }

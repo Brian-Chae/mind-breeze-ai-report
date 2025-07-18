@@ -111,8 +111,11 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       });
       
       // 시스템 관리자인지 확인하여 Firestore 프로필 업데이트
+      console.log('🔍 이메일 체크:', formData.email, '===', 'admin-mindbreeze@looxidlabs.com', ':', formData.email === 'admin-mindbreeze@looxidlabs.com');
+      
       if (formData.email === 'admin-mindbreeze@looxidlabs.com') {
         console.log('🔴 시스템 관리자 로그인 감지 - Firestore 프로필 업데이트');
+        console.log('🔧 사용자 UID:', userCredential.user.uid);
         
         await FirebaseService.updateUserProfile(userCredential.user.uid, {
           userType: 'SYSTEM_ADMIN',
