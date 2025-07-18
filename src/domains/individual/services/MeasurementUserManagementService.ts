@@ -504,6 +504,350 @@ class MeasurementUserManagementService {
   generateAccessLink(accessToken: string): string {
     return createMeasurementAccessUrl(accessToken);
   }
+
+  /**
+   * CSV 데이터 검증
+   */
+  async validateCSVData(csvData: string): Promise<CSVValidationResult> {
+    try {
+      const lines = csvData.trim().split('\n');
+      if (lines.length < 2) {
+        throw new Error('CSV 파일이 비어있거나 헤더만 있습니다.');
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim());
+      const requiredHeaders = ['displayName', 'email', 'phone'];
+      const optionalHeaders = ['age', 'gender', 'notes', 'nextScheduledDate'];
+      
+      // 필수 헤더 확인
+      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+      if (missingHeaders.length > 0) {
+        throw new Error(`필수 헤더가 누락되었습니다: ${missingHeaders.join(', ')}`);
+      }
+
+      const validatedRows: CSVUserData[] = [];
+      const errors: CSVError[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        if (values.length !== headers.length) {
+          errors.push({
+            row: i + 1,
+            field: '',
+            message: '컬럼 수가 헤더와 일치하지 않습니다.'
+          });
+          continue;
+        }
+
+        const rowData: CSVUserData = { row: i + 1 };
+        
+        for (let j = 0; j < headers.length; j++) {
+          const header = headers[j];
+          const value = values[j];
+
+          // 필수 필드 검증
+          if (requiredHeaders.includes(header) && !value) {
+            errors.push({
+              row: i + 1,
+              field: header,
+              message: `${header}는 필수 항목입니다.`
+            });
+            continue;
+          }
+
+          // 필드별 검증
+          switch (header) {
+            case 'displayName':
+              if (value.length < 2) {
+                errors.push({
+                  row: i + 1,
+                  field: header,
+                  message: '이름은 2글자 이상이어야 합니다.'
+                });
+              } else {
+                rowData.displayName = value;
+              }
+              break;
+
+            case 'email':
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(value)) {
+                errors.push({
+                  row: i + 1,
+                  field: header,
+                  message: '올바른 이메일 형식이 아닙니다.'
+                });
+              } else {
+                rowData.email = value;
+              }
+              break;
+
+            case 'phone':
+              const phoneRegex = /^[0-9-+\s()]+$/;
+              if (!phoneRegex.test(value)) {
+                errors.push({
+                  row: i + 1,
+                  field: header,
+                  message: '올바른 전화번호 형식이 아닙니다.'
+                });
+              } else {
+                rowData.phone = value;
+              }
+              break;
+
+            case 'age':
+              if (value) {
+                const age = parseInt(value);
+                if (isNaN(age) || age < 1 || age > 150) {
+                  errors.push({
+                    row: i + 1,
+                    field: header,
+                    message: '나이는 1-150 사이의 숫자여야 합니다.'
+                  });
+                } else {
+                  rowData.age = age;
+                }
+              }
+              break;
+
+            case 'gender':
+              if (value && !['MALE', 'FEMALE', 'OTHER'].includes(value.toUpperCase())) {
+                errors.push({
+                  row: i + 1,
+                  field: header,
+                  message: '성별은 MALE, FEMALE, OTHER 중 하나여야 합니다.'
+                });
+              } else if (value) {
+                rowData.gender = value.toUpperCase() as 'MALE' | 'FEMALE' | 'OTHER';
+              }
+              break;
+
+            case 'notes':
+              if (value) rowData.notes = value;
+              break;
+
+            case 'nextScheduledDate':
+              if (value) {
+                const date = new Date(value);
+                if (isNaN(date.getTime())) {
+                  errors.push({
+                    row: i + 1,
+                    field: header,
+                    message: '올바른 날짜 형식이 아닙니다 (YYYY-MM-DD).'
+                  });
+                } else {
+                  rowData.nextScheduledDate = date;
+                }
+              }
+              break;
+          }
+        }
+
+        if (rowData.displayName && rowData.email && rowData.phone) {
+          validatedRows.push(rowData);
+        }
+      }
+
+      return {
+        isValid: errors.length === 0,
+        totalRows: lines.length - 1,
+        validRows: validatedRows,
+        errors
+      };
+
+    } catch (error) {
+      console.error('❌ CSV 검증 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 대량 사용자 등록 (CSV)
+   */
+  async bulkCreateMeasurementUsers(csvData: string): Promise<BulkCreateResult> {
+    try {
+      const currentUser = enterpriseAuthService.getCurrentContext().user;
+      const organization = enterpriseAuthService.getCurrentContext().organization;
+      
+      if (!currentUser || !organization) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      // 권한 확인
+      if (!enterpriseAuthService.hasPermission('measurement_users.create')) {
+        throw new Error('측정 대상자 등록 권한이 없습니다.');
+      }
+
+      // CSV 데이터 검증
+      const validationResult = await this.validateCSVData(csvData);
+      if (!validationResult.isValid) {
+        return {
+          success: false,
+          totalRows: validationResult.totalRows,
+          successfulRows: [],
+          failedRows: validationResult.errors.map(err => ({
+            row: err.row,
+            data: { row: err.row },
+            error: `${err.field}: ${err.message}`
+          })),
+          errors: validationResult.errors
+        };
+      }
+
+      const results: BulkCreateResult = {
+        success: true,
+        totalRows: validationResult.totalRows,
+        successfulRows: [],
+        failedRows: [],
+        errors: []
+      };
+
+      // 배치 처리로 대량 등록 (한 번에 10개씩)
+      const batchSize = 10;
+      const batches = [];
+      
+      for (let i = 0; i < validationResult.validRows.length; i += batchSize) {
+        batches.push(validationResult.validRows.slice(i, i + batchSize));
+      }
+
+      for (const batch of batches) {
+        const batchPromises = batch.map(async (userData) => {
+          try {
+            // 중복 확인
+            const existingUser = await this.findByEmail(userData.email!, organization.id);
+            if (existingUser) {
+              results.failedRows.push({
+                row: userData.row,
+                data: userData,
+                error: '이미 등록된 이메일입니다.'
+              });
+              return;
+            }
+
+            // 사용자 생성
+            const createData: CreateMeasurementUserData = {
+              email: userData.email!,
+              displayName: userData.displayName!,
+              age: userData.age,
+              gender: userData.gender,
+              phone: userData.phone,
+              notes: userData.notes,
+              nextScheduledDate: userData.nextScheduledDate
+            };
+
+            const newUser = await this.createMeasurementUser(createData);
+            
+            results.successfulRows.push({
+              row: userData.row,
+              data: userData,
+              userId: newUser.id,
+              user: newUser
+            });
+
+            console.log(`✅ 사용자 등록 완료 (행 ${userData.row}):`, userData.displayName);
+
+          } catch (error) {
+            const errorMessage = (error as Error).message;
+            results.failedRows.push({
+              row: userData.row,
+              data: userData,
+              error: errorMessage
+            });
+            
+            console.error(`❌ 사용자 등록 실패 (행 ${userData.row}):`, errorMessage);
+          }
+        });
+
+        // 배치 실행
+        await Promise.all(batchPromises);
+        
+        // 다음 배치 전 잠시 대기 (Rate limiting 방지)
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      // 결과 정리
+      results.success = results.failedRows.length === 0;
+      
+      console.log(`✅ 대량 등록 완료: 성공 ${results.successfulRows.length}개, 실패 ${results.failedRows.length}개`);
+      
+      return results;
+
+    } catch (error) {
+      console.error('❌ 대량 사용자 등록 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * CSV 템플릿 생성
+   */
+  generateCSVTemplate(): string {
+    const headers = [
+      'displayName',
+      'email', 
+      'phone',
+      'age',
+      'gender',
+      'notes',
+      'nextScheduledDate'
+    ];
+    
+    const exampleRow = [
+      '홍길동',
+      'hong@company.com',
+      '010-1234-5678',
+      '30',
+      'MALE',
+      '특이사항 없음',
+      '2024-02-01'
+    ];
+
+    return headers.join(',') + '\n' + exampleRow.join(',');
+  }
+}
+
+// 인터페이스 정의
+export interface CSVUserData {
+  row: number;
+  displayName?: string;
+  email?: string;
+  phone?: string;
+  age?: number;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  notes?: string;
+  nextScheduledDate?: Date;
+}
+
+export interface CSVError {
+  row: number;
+  field: string;
+  message: string;
+}
+
+export interface CSVValidationResult {
+  isValid: boolean;
+  totalRows: number;
+  validRows: CSVUserData[];
+  errors: CSVError[];
+}
+
+export interface BulkCreateResult {
+  success: boolean;
+  totalRows: number;
+  successfulRows: {
+    row: number;
+    data: CSVUserData;
+    userId: string;
+    user: MeasurementUser;
+  }[];
+  failedRows: {
+    row: number;
+    data: CSVUserData;
+    error: string;
+  }[];
+  errors: CSVError[];
 }
 
 const measurementUserManagementService = new MeasurementUserManagementService();

@@ -34,9 +34,12 @@ import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
 
 // Firebase 서비스 import
-import measurementUserManagementService, { MeasurementUser as FirebaseMeasurementUser, MeasurementUserStats } from '@domains/individual/services/MeasurementUserManagementService'
+import measurementUserManagementService, { MeasurementUser as FirebaseMeasurementUser, MeasurementUserStats, BulkCreateResult } from '@domains/individual/services/MeasurementUserManagementService'
 import { MeasurementUserDataService } from '@domains/individual/services/MeasurementUserDataService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
+
+// 컴포넌트 import
+import BulkUserUploadModal from './BulkUserUploadModal'
 
 interface UsersSectionProps {
   subSection: string;
@@ -97,6 +100,9 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
   const [firebaseUsers, setFirebaseUsers] = useState<FirebaseMeasurementUser[]>([])
   const [users, setUsers] = useState<MeasurementUser[]>([])
   const [userStats, setUserStats] = useState<MeasurementUserStats | null>(null)
+
+  // 모달 상태
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false)
 
   // 측정 세션 데이터
   const [sessions, setSessions] = useState<MeasurementSession[]>([
@@ -200,6 +206,15 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
   useEffect(() => {
     loadUsersData()
   }, [subSection])
+
+  // 대량 등록 성공 핸들러
+  const handleBulkUploadSuccess = (result: BulkCreateResult) => {
+    setShowBulkUploadModal(false)
+    loadUsersData() // 사용자 목록 새로고침
+    
+    // 성공 메시지 표시 (선택적)
+    console.log(`✅ 대량 등록 완료: 성공 ${result.successfulRows.length}개, 실패 ${result.failedRows.length}개`)
+  }
 
   const loadUsersData = async () => {
     try {
@@ -385,20 +400,34 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
     }
 
     return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">사용자 목록</h2>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              내보내기
-            </Button>
-            <Button className="bg-blue-600 text-white hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              사용자 추가
-            </Button>
+              <div className="space-y-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">사용자 목록</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                내보내기
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    사용자 추가
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => {/* TODO: 개별 등록 모달 */}}>
+                    <User className="w-4 h-4 mr-2" />
+                    개별 등록
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowBulkUploadModal(true)}>
+                    <Users className="w-4 h-4 mr-2" />
+                    대량 등록 (CSV)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
 
         {/* 검색 및 필터 */}
         <div className="flex items-center space-x-4">
@@ -439,10 +468,19 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                 <p className="text-gray-600 mb-4">
                   {searchQuery ? '검색 조건에 맞는 사용자가 없습니다.' : '등록된 사용자가 없습니다.'}
                 </p>
-                <Button className="bg-blue-600 text-white hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  사용자 추가
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    개별 등록
+                  </Button>
+                  <Button 
+                    onClick={() => setShowBulkUploadModal(true)}
+                    variant="outline"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    대량 등록 (CSV)
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>
@@ -1033,6 +1071,13 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
     <div className="p-6">
       {renderTabs()}
       {renderContent()}
+      
+      {/* 대량 등록 모달 */}
+      <BulkUserUploadModal
+        isOpen={showBulkUploadModal}
+        onClose={() => setShowBulkUploadModal(false)}
+        onSuccess={handleBulkUploadSuccess}
+      />
     </div>
   )
 } 
