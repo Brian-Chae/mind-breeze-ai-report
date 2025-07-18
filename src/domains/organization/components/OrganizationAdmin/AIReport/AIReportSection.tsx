@@ -91,13 +91,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const {
     selectedEngine,
     selectedViewer,
-    selectedPDFViewer,
     setSelectedEngine,
     setSelectedViewer,
-    setSelectedPDFViewer,
     engines,
     viewers,
-    pdfViewers,
     loading: configLoading,
     error: configError,
     validateConfiguration,
@@ -1595,22 +1592,6 @@ AI 건강 분석 리포트
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">PDF 뷰어</label>
-              <select 
-                value={selectedPDFViewer}
-                onChange={(e) => setSelectedPDFViewer(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
-                disabled={configLoading || !selectedEngine}
-              >
-                <option value="">PDF 뷰어를 선택하세요</option>
-                {pdfViewers.map(viewer => (
-                  <option key={viewer.id} value={viewer.id}>
-                    {viewer.name} ({viewer.id})
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <Button 
               className="w-full bg-purple-600 text-white hover:bg-purple-700 h-12"
@@ -1620,8 +1601,7 @@ AI 건강 분석 리포트
                 if (validation.isValid) {
                   console.log('리포트 생성 시작:', {
                     engine: selectedEngine,
-                    viewer: selectedViewer,
-                    pdfViewer: selectedPDFViewer
+                    viewer: selectedViewer
                   });
                   // AI 리포트 생성 페이지로 이동
                   navigate('/ai-report/personal-info');

@@ -255,7 +255,6 @@ export const usePermissionCheck = (organizationId?: string) => {
 export const useAIReportConfiguration = (organizationId?: string) => {
   const [selectedEngine, setSelectedEngine] = useState<string>('');
   const [selectedViewer, setSelectedViewer] = useState<string>('');
-  const [selectedPDFViewer, setSelectedPDFViewer] = useState<string>('');
   
   const { engines, loading: enginesLoading, error: enginesError } = useAvailableEngines(organizationId);
   const { viewers, loading: viewersLoading, error: viewersError } = useAvailableViewers(organizationId, selectedEngine);
@@ -279,23 +278,14 @@ export const useAIReportConfiguration = (organizationId?: string) => {
           console.log('🎯 기본 웹 뷰어 선택:', webViewer.name);
         }
       }
-      
-      if (!selectedPDFViewer) {
-        const pdfViewer = viewers.find(v => v.type === 'pdf');
-        if (pdfViewer) {
-          setSelectedPDFViewer(pdfViewer.id);
-          console.log('🎯 기본 PDF 뷰어 선택:', pdfViewer.name);
-        }
-      }
     }
-  }, [viewers, selectedEngine, selectedViewer, selectedPDFViewer]);
+  }, [viewers, selectedEngine, selectedViewer]);
 
   // 엔진 변경 시 뷰어 선택 초기화
   const handleEngineChange = useCallback((engineId: string) => {
     console.log('🔄 엔진 변경:', engineId);
     setSelectedEngine(engineId);
     setSelectedViewer('');
-    setSelectedPDFViewer('');
   }, []);
 
   // 설정 유효성 검증
@@ -341,17 +331,14 @@ export const useAIReportConfiguration = (organizationId?: string) => {
     // 선택된 값들
     selectedEngine,
     selectedViewer,
-    selectedPDFViewer,
     
     // 선택 변경 함수들
     setSelectedEngine: handleEngineChange,
     setSelectedViewer,
-    setSelectedPDFViewer,
     
     // 데이터
     engines,
     viewers: viewers.filter(v => v.type === 'web'), // 웹 뷰어만
-    pdfViewers: viewers.filter(v => v.type === 'pdf'), // PDF 뷰어만
     
     // 상태
     loading: enginesLoading || viewersLoading,
@@ -362,7 +349,6 @@ export const useAIReportConfiguration = (organizationId?: string) => {
     
     // 선택된 엔진/뷰어의 상세 정보
     selectedEngineDetails: engines.find(e => e.id === selectedEngine),
-    selectedViewerDetails: viewers.find(v => v.id === selectedViewer),
-    selectedPDFViewerDetails: viewers.find(v => v.id === selectedPDFViewer)
+    selectedViewerDetails: viewers.find(v => v.id === selectedViewer)
   };
 }; 
