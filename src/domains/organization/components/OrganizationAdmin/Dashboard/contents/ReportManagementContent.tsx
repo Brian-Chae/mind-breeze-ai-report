@@ -66,8 +66,8 @@ export const ReportManagementContent: React.FC = () => {
 
       <Card className="bg-white border border-gray-200">
         <CardHeader>
-          <CardTitle>리포트 관리 기능</CardTitle>
-          <CardDescription>리포트 시스템 관리 및 모니터링</CardDescription>
+          <CardTitle className="text-gray-900">리포트 관리 기능</CardTitle>
+          <CardDescription className="text-gray-600">리포트 시스템 관리 및 모니터링</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12">

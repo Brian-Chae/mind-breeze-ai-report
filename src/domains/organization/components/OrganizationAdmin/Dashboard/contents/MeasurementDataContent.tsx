@@ -67,15 +67,15 @@ export const MeasurementDataContent: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-white border border-gray-200">
           <CardHeader>
-            <CardTitle>데이터 타입별 현황</CardTitle>
-            <CardDescription>측정 데이터 유형별 통계</CardDescription>
+            <CardTitle className="text-gray-900">데이터 타입별 현황</CardTitle>
+            <CardDescription className="text-gray-600">측정 데이터 유형별 통계</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="font-medium">EEG 데이터</span>
+                  <span className="font-medium text-gray-900">EEG 데이터</span>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">1.6TB</p>
@@ -86,7 +86,7 @@ export const MeasurementDataContent: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="font-medium">PPG 데이터</span>
+                  <span className="font-medium text-gray-900">PPG 데이터</span>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">0.8TB</p>
@@ -97,7 +97,7 @@ export const MeasurementDataContent: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="font-medium">ACC 데이터</span>
+                  <span className="font-medium text-gray-900">ACC 데이터</span>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">0.4TB</p>
@@ -110,8 +110,8 @@ export const MeasurementDataContent: React.FC = () => {
 
         <Card className="bg-white border border-gray-200">
           <CardHeader>
-            <CardTitle>데이터 관리 기능</CardTitle>
-            <CardDescription>측정 데이터 시스템 관리</CardDescription>
+            <CardTitle className="text-gray-900">데이터 관리 기능</CardTitle>
+            <CardDescription className="text-gray-600">측정 데이터 시스템 관리</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">

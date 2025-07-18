@@ -261,11 +261,11 @@ export const SystemDashboardContent: React.FC = () => {
         {/* 최근 기업 현황 */}
         <Card className="bg-white border border-gray-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
               <Building className="h-5 w-5" />
               최근 기업 현황
             </CardTitle>
-            <CardDescription>활성 기업들의 최신 현황</CardDescription>
+            <CardDescription className="text-gray-600">활성 기업들의 최신 현황</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-80">
@@ -306,11 +306,11 @@ export const SystemDashboardContent: React.FC = () => {
         {/* 최근 시스템 활동 */}
         <Card className="bg-white border border-gray-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
               <Activity className="h-5 w-5" />
               최근 시스템 활동
             </CardTitle>
-            <CardDescription>실시간 시스템 활동 로그</CardDescription>
+            <CardDescription className="text-gray-600">실시간 시스템 활동 로그</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-80">
