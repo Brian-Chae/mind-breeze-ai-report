@@ -180,7 +180,7 @@ export const SystemDashboardContent: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">시스템 데이터를 불러오는 중...</span>
+        <span className="ml-2 text-gray-600">시스템 데이터를 불러오는 중...</span>
       </div>
     )
   }
@@ -241,7 +241,10 @@ export const SystemDashboardContent: React.FC = () => {
                 <p className="text-sm font-medium text-gray-600">시스템 상태</p>
                 <div className="flex items-center gap-2 mt-1">
                   {getHealthIcon()}
-                  <span className="text-lg font-semibold">
+                  <span className={`text-lg font-semibold ${
+                    systemStats.systemHealth === 'healthy' ? 'text-green-600' : 
+                    systemStats.systemHealth === 'warning' ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
                     {systemStats.systemHealth === 'healthy' ? '정상' : 
                      systemStats.systemHealth === 'warning' ? '주의' : '오류'}
                   </span>
