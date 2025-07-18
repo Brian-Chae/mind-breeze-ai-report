@@ -183,57 +183,6 @@ export default function ReportManagementContent() {
           <p className="text-lg text-slate-600">AI 리포트 현황 및 성능 모니터링</p>
         </div>
 
-        {/* 제어 패널 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="사용자명, 조직명으로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
-                />
-              </div>
-              
-              <select
-                value={filterEngine}
-                onChange={(e) => setFilterEngine(e.target.value)}
-                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-slate-900"
-              >
-                <option value="all" className="text-slate-900">전체 엔진</option>
-                <option value="Basic Gemini V1" className="text-slate-900">Basic Gemini V1</option>
-                <option value="Advanced GPT-4" className="text-slate-900">Advanced GPT-4</option>
-                <option value="Claude Sonnet" className="text-slate-900">Claude Sonnet</option>
-                <option value="Custom Engine" className="text-slate-900">Custom Engine</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
-                />
-                자동 새로고침
-              </label>
-              
-              <button
-                onClick={loadReportData}
-                disabled={isLoading}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                새로고침
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* 주요 통계 카드 */}
         {reportStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -290,6 +239,57 @@ export default function ReportManagementContent() {
             </div>
           </div>
         )}
+
+        {/* 제어 패널 */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="사용자명, 조직명으로 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
+                />
+              </div>
+              
+              <select
+                value={filterEngine}
+                onChange={(e) => setFilterEngine(e.target.value)}
+                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-slate-900"
+              >
+                <option value="all" className="text-slate-900">전체 엔진</option>
+                <option value="Basic Gemini V1" className="text-slate-900">Basic Gemini V1</option>
+                <option value="Advanced GPT-4" className="text-slate-900">Advanced GPT-4</option>
+                <option value="Claude Sonnet" className="text-slate-900">Claude Sonnet</option>
+                <option value="Custom Engine" className="text-slate-900">Custom Engine</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                />
+                자동 새로고침
+              </label>
+              
+              <button
+                onClick={loadReportData}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                새로고침
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* 품질 및 성능 지표 */}
         {reportStats && (
