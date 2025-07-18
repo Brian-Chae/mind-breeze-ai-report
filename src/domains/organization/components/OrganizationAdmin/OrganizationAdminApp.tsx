@@ -41,6 +41,7 @@ import FirebaseService from '@core/services/FirebaseService'
 
 // 섹션별 컴포넌트 import
 import DashboardSection from './Dashboard/DashboardSection'
+import SystemAdminDashboard from './Dashboard/SystemAdminDashboard'
 import OrganizationSection from './Organization/OrganizationSection'
 import MembersSection from './Members/MembersSection'
 import UsersSection from './Users/UsersSection'
@@ -87,6 +88,8 @@ export default function OrganizationAdminApp() {
   // 사용자 역할을 한국어로 변환하는 함수
   const getUserRoleName = (userType: string | undefined) => {
     switch (userType) {
+      case 'SYSTEM_ADMIN':
+        return '시스템 관리자'
       case 'ORGANIZATION_ADMIN':
         return '조직 관리자'
       case 'ORGANIZATION_MEMBER':
@@ -208,11 +211,65 @@ export default function OrganizationAdminApp() {
     }
   }
 
-  // 사이드바 메뉴 항목들
-  const sidebarMenuItems: SidebarMenuItem[] = [
+  // 시스템 관리자용 메뉴 항목들
+  const systemAdminMenuItems: SidebarMenuItem[] = [
     {
       id: 'dashboard',
-      title: '대시보드',
+      title: '시스템 대시보드',
+      icon: BarChart3,
+      path: '/admin/dashboard'
+    },
+    {
+      id: 'system',
+      title: '시스템 관리',
+      icon: Settings,
+      path: '/admin/system',
+      children: [
+        { id: 'system-overview', title: '시스템 현황', icon: Monitor, path: '/admin/system/system-overview' },
+        { id: 'system-monitoring', title: '시스템 모니터링', icon: Activity, path: '/admin/system/system-monitoring' },
+        { id: 'system-settings', title: '시스템 설정', icon: Settings, path: '/admin/system/system-settings' }
+      ]
+    },
+    {
+      id: 'organizations',
+      title: '전체 조직 관리',
+      icon: Building,
+      path: '/admin/organizations',
+      children: [
+        { id: 'organization-list', title: '조직 목록', icon: Building, path: '/admin/organizations/organization-list' },
+        { id: 'organization-analytics', title: '조직 분석', icon: TrendingUp, path: '/admin/organizations/organization-analytics' },
+        { id: 'organization-settings', title: '조직 설정', icon: Settings, path: '/admin/organizations/organization-settings' }
+      ]
+    },
+    {
+      id: 'users',
+      title: '전체 사용자 관리',
+      icon: User,
+      path: '/admin/users',
+      children: [
+        { id: 'all-users', title: '전체 사용자', icon: Users, path: '/admin/users/all-users' },
+        { id: 'user-analytics', title: '사용자 분석', icon: TrendingUp, path: '/admin/users/user-analytics' },
+        { id: 'user-support', title: '사용자 지원', icon: Eye, path: '/admin/users/user-support' }
+      ]
+    },
+    {
+      id: 'system-analytics',
+      title: '시스템 분석',
+      icon: TrendingUp,
+      path: '/admin/system-analytics',
+      children: [
+        { id: 'usage-analytics', title: '사용량 분석', icon: BarChart3, path: '/admin/system-analytics/usage-analytics' },
+        { id: 'performance-metrics', title: '성능 지표', icon: Monitor, path: '/admin/system-analytics/performance-metrics' },
+        { id: 'error-monitoring', title: '에러 모니터링', icon: AlertCircle, path: '/admin/system-analytics/error-monitoring' }
+      ]
+    }
+  ]
+
+  // 조직 관리자용 메뉴 항목들
+  const organizationAdminMenuItems: SidebarMenuItem[] = [
+    {
+      id: 'dashboard',
+      title: '조직 대시보드',
       icon: BarChart3,
       path: '/admin/dashboard'
     },
@@ -283,6 +340,23 @@ export default function OrganizationAdminApp() {
       ]
     }
   ]
+
+  // 사용자 타입에 따른 메뉴 선택
+  const getSidebarMenuItems = (): SidebarMenuItem[] => {
+    const userType = currentContext.user?.userType
+    
+    switch (userType) {
+      case 'SYSTEM_ADMIN':
+        return systemAdminMenuItems
+      case 'ORGANIZATION_ADMIN':
+        return organizationAdminMenuItems
+      default:
+        console.warn(`알 수 없는 사용자 타입: ${userType}`)
+        return organizationAdminMenuItems // 기본값
+    }
+  }
+
+  const sidebarMenuItems = getSidebarMenuItems()
 
   const handleNavigation = (sectionId: string, subSectionId?: string) => {
     if (subSectionId) {
@@ -355,23 +429,89 @@ export default function OrganizationAdminApp() {
   }
 
   const renderCurrentSection = () => {
+    const userType = currentContext.user?.userType
+    
     switch (currentSection) {
       case 'dashboard':
-        return <DashboardSection />
+        // 사용자 타입에 따라 다른 대시보드 렌더링
+        if (userType === 'SYSTEM_ADMIN') {
+          return <SystemAdminDashboard />
+        } else {
+          return <DashboardSection />
+        }
+      
+      // 시스템 관리자 전용 섹션들
+      case 'system':
+        if (userType === 'SYSTEM_ADMIN') {
+          return <div className="p-6"><h2 className="text-2xl font-bold">시스템 관리 (개발 중)</h2></div>
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
+      case 'organizations':
+        if (userType === 'SYSTEM_ADMIN') {
+          return <div className="p-6"><h2 className="text-2xl font-bold">전체 조직 관리 (개발 중)</h2></div>
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
+      case 'system-analytics':
+        if (userType === 'SYSTEM_ADMIN') {
+          return <div className="p-6"><h2 className="text-2xl font-bold">시스템 분석 (개발 중)</h2></div>
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
+      // 조직 관리자 전용 섹션들 (권한 체크)
       case 'organization':
-        return <OrganizationSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        if (userType === 'ORGANIZATION_ADMIN' || userType === 'SYSTEM_ADMIN') {
+          return <OrganizationSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
       case 'members':
-        return <MembersSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        if (userType === 'ORGANIZATION_ADMIN' || userType === 'SYSTEM_ADMIN') {
+          return <MembersSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
       case 'users':
-        return <UsersSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        if (userType === 'ORGANIZATION_ADMIN' || userType === 'SYSTEM_ADMIN') {
+          return <UsersSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
       case 'ai-report':
-        return <AIReportSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        if (userType === 'ORGANIZATION_ADMIN' || userType === 'SYSTEM_ADMIN') {
+          return <AIReportSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
       case 'devices':
-        return <DevicesSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        if (userType === 'ORGANIZATION_ADMIN' || userType === 'SYSTEM_ADMIN') {
+          return <DevicesSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
       case 'credits':
-        return <CreditsSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        if (userType === 'ORGANIZATION_ADMIN' || userType === 'SYSTEM_ADMIN') {
+          return <CreditsSection subSection={currentSubSection} onNavigate={handleNavigation} />
+        } else {
+          return <div className="p-6"><h2 className="text-2xl font-bold text-red-600">접근 권한이 없습니다.</h2></div>
+        }
+      
       default:
-        return <DashboardSection />
+        // 기본값도 사용자 타입에 따라 다르게
+        if (userType === 'SYSTEM_ADMIN') {
+          return <SystemAdminDashboard />
+        } else {
+          return <DashboardSection />
+        }
     }
   }
 

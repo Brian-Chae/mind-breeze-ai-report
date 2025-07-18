@@ -394,6 +394,83 @@ const AppRouter = () => {
           <OrganizationAdminApp />
         </ProtectedRoute>
       } />
+      
+      {/* 시스템 관리자 전용 라우트 */}
+      <Route path="/admin/system" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system/system-overview" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system/system-monitoring" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system/system-settings" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organizations" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organizations/organization-list" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organizations/organization-analytics" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/organizations/organization-settings" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/all-users" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/user-analytics" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users/user-support" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system-analytics" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system-analytics/usage-analytics" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system-analytics/performance-metrics" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/system-analytics/error-monitoring" element={
+        <ProtectedRoute>
+          <OrganizationAdminApp />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 };
