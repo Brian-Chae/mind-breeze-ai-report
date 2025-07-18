@@ -301,6 +301,7 @@ class EnterpriseAuthService {
 
       const data = userDoc.data();
       console.log('🔄 Firestore 문서 데이터:', data);
+      console.log('🔍 userType 상세 확인:', data.userType, typeof data.userType);
       
       const userProfile = {
         id: userDoc.id,
