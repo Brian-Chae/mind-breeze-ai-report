@@ -1818,68 +1818,70 @@ AI 건강 분석 리포트
             </div>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredGeneratedReports.map((report) => (
-              <Card key={`${report.measurementDataId}-${report.id}`} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
-                {/* 사용자 정보 헤더 */}
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-5 h-5 text-gray-500" />
-                      <span className="text-lg font-semibold text-gray-900">{report.subjectName || '알 수 없음'}</span>
+              <Card key={`${report.measurementDataId}-${report.id}`} className="p-4 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
+                {/* 첫 번째 줄: 이름, 나이, 성별, 직업, 부서, 이메일, 생성일자 + 액션버튼들 */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-3 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span className="font-semibold text-gray-900">{report.subjectName || '알 수 없음'}</span>
                     </div>
                     
-                    {/* 개인정보 Badge들 */}
-                    <div className="flex items-center space-x-2">
-                      {report.subjectAge && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                          만 {report.subjectAge}세
-                        </Badge>
-                      )}
-                      
-                      {report.subjectGender && report.subjectGender !== '미지정' && (
-                        <Badge variant="outline" className="text-xs">
-                          {report.subjectGender === 'MALE' ? '남성' : report.subjectGender === 'FEMALE' ? '여성' : report.subjectGender}
-                        </Badge>
-                      )}
-                      
-                      {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
-                        <Badge variant="outline" className="text-xs">
-                          {report.subjectOccupation}
-                        </Badge>
-                      )}
-                      
-                      {report.subjectDepartment && report.subjectDepartment !== '미지정' && (
-                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                          {report.subjectDepartment}
-                        </Badge>
-                      )}
-                      
-                      {report.subjectEmail && report.subjectEmail !== '' && (
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100"
-                          onClick={() => handleEmailCopy(report.id, report.subjectEmail)}
-                        >
-                          {copiedEmails[report.id] ? '복사됨!' : report.subjectEmail}
-                        </Badge>
-                      )}
-                    </div>
+                    {report.subjectAge && (
+                      <span className="text-blue-600">만 {report.subjectAge}세</span>
+                    )}
+                    
+                    {report.subjectGender && report.subjectGender !== '미지정' && (
+                      <span className="text-gray-600">
+                        {report.subjectGender === 'MALE' ? '남성' : report.subjectGender === 'FEMALE' ? '여성' : report.subjectGender}
+                      </span>
+                    )}
+                    
+                    {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
+                      <span className="text-gray-600">{report.subjectOccupation}</span>
+                    )}
+                    
+                    {report.subjectDepartment && report.subjectDepartment !== '미지정' && (
+                      <span className="text-purple-600">{report.subjectDepartment}</span>
+                    )}
+                    
+                    {report.subjectEmail && report.subjectEmail !== '' && (
+                      <span 
+                        className="text-gray-600 cursor-pointer hover:text-gray-800"
+                        onClick={() => handleEmailCopy(report.id, report.subjectEmail)}
+                      >
+                        {copiedEmails[report.id] ? '복사됨!' : report.subjectEmail}
+                      </span>
+                    )}
+                    
+                    <span className="text-gray-500">
+                      {new Date(report.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'numeric', 
+                        day: 'numeric'
+                      }).replace(/\//g, '. ') + '.'} {new Date(report.createdAt).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </span>
                   </div>
                   
                   {/* 액션 버튼들 */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleCreateShareLink(report)}
                       disabled={creatingShareLinks[report.id]}
-                      className="text-green-600 border-green-300 hover:bg-green-50"
+                      className="text-green-600 border-green-300 hover:bg-green-50 text-xs px-2 py-1 h-7"
                     >
                       {creatingShareLinks[report.id] ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                       ) : (
-                        <Share2 className="w-4 h-4 mr-1" />
+                        <Share2 className="w-3 h-3 mr-1" />
                       )}
                       공유하기
                     </Button>
@@ -1889,9 +1891,9 @@ AI 건강 분석 리포트
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs px-2 py-1 h-7"
                         >
-                          <Eye className="w-4 h-4 mr-1" />
+                          <Eye className="w-3 h-3 mr-1" />
                           리포트보기
                         </Button>
                       </DropdownMenuTrigger>
@@ -1912,50 +1914,43 @@ AI 건강 분석 리포트
                       variant="outline"
                       onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
                       disabled={deletingReports[report.id]}
-                      className="text-red-600 border-red-300 hover:bg-red-50"
+                      className="text-red-600 border-red-300 hover:bg-red-50 text-xs px-2 py-1 h-7"
                     >
                       {deletingReports[report.id] ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                       ) : (
-                        <Trash2 className="w-4 h-4 mr-1" />
+                        <Trash2 className="w-3 h-3 mr-1" />
                       )}
                       삭제
                     </Button>
                   </div>
                 </div>
                 
-                {/* 리포트 정보 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-1">AI 모델</div>
-                    <div className="text-sm font-mono bg-purple-50 px-2 py-1 rounded text-purple-700">
-                      {report.engineId || 'basic-gemini-v1'}
-                    </div>
+                {/* 두 번째 줄: 담당자, AI 모델, 렌더링 모델, 측정일자 */}
+                <div className="flex items-center space-x-6 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-gray-500">담당자:</span>
+                    <span>
+                      {report.managerInfo 
+                        ? `${report.managerInfo.name}${report.managerInfo.department !== '미지정' ? `(${report.managerInfo.department})` : ''}`
+                        : '미지정'
+                      }
+                    </span>
                   </div>
                   
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-1">렌더링 모델</div>
-                    <div className="text-sm text-gray-700">기본 웹 뷰어</div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-gray-500">AI 모델:</span>
+                    <span className="font-mono text-purple-600">{report.engineId || 'basic-gemini-v1'}</span>
                   </div>
                   
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-1">생성일자</div>
-                    <div className="text-sm text-gray-700">
-                      {new Date(report.createdAt).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'numeric', 
-                        day: 'numeric'
-                      }).replace(/\//g, '. ') + '.'} {new Date(report.createdAt).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
-                    </div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-gray-500">렌더링 모델:</span>
+                    <span>기본 웹 뷰어</span>
                   </div>
                   
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-1">측정일자</div>
-                    <div className="text-sm text-gray-700">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-gray-500">측정일자:</span>
+                    <span>
                       {new Date(report.measurementDate).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: 'numeric', 
@@ -1965,21 +1960,9 @@ AI 건강 분석 리포트
                         minute: '2-digit',
                         hour12: true
                       })}
-                    </div>
+                    </span>
                   </div>
                 </div>
-                
-                {/* 담당자 정보 */}
-                {report.managerInfo && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">담당자:</span>
-                      <span className="text-sm text-gray-700">
-                        {report.managerInfo.name}{report.managerInfo.department !== '미지정' ? `(${report.managerInfo.department})` : ''}
-                      </span>
-                    </div>
-                  </div>
-                )}
 
                 {/* 공유 성공/에러 메시지 */}
                 {shareSuccess[report.id] && (
