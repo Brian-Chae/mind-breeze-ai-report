@@ -220,19 +220,19 @@ export default function MeasurementDataContent() {
                   placeholder="사용자명, 조직명으로 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
                 />
               </div>
               
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-slate-900"
               >
-                <option value="all">전체 데이터 타입</option>
-                <option value="EEG">EEG 데이터</option>
-                <option value="PPG">PPG 데이터</option>
-                <option value="ACC">ACC 데이터</option>
+                <option value="all" className="text-slate-900">전체 데이터 타입</option>
+                <option value="EEG" className="text-slate-900">EEG 데이터</option>
+                <option value="PPG" className="text-slate-900">PPG 데이터</option>
+                <option value="ACC" className="text-slate-900">ACC 데이터</option>
               </select>
             </div>
 

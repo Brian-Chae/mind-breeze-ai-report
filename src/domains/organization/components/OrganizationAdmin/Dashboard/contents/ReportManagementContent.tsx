@@ -194,20 +194,20 @@ export default function ReportManagementContent() {
                   placeholder="사용자명, 조직명으로 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
                 />
               </div>
               
               <select
                 value={filterEngine}
                 onChange={(e) => setFilterEngine(e.target.value)}
-                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-slate-900"
               >
-                <option value="all">전체 엔진</option>
-                <option value="Basic Gemini V1">Basic Gemini V1</option>
-                <option value="Advanced GPT-4">Advanced GPT-4</option>
-                <option value="Claude Sonnet">Claude Sonnet</option>
-                <option value="Custom Engine">Custom Engine</option>
+                <option value="all" className="text-slate-900">전체 엔진</option>
+                <option value="Basic Gemini V1" className="text-slate-900">Basic Gemini V1</option>
+                <option value="Advanced GPT-4" className="text-slate-900">Advanced GPT-4</option>
+                <option value="Claude Sonnet" className="text-slate-900">Claude Sonnet</option>
+                <option value="Custom Engine" className="text-slate-900">Custom Engine</option>
               </select>
             </div>
 
