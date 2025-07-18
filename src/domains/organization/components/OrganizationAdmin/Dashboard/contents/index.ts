@@ -5,7 +5,7 @@ export { default as SystemDashboardContent } from './SystemDashboardContent'
 export { default as SystemAnalyticsContent } from '../SystemAnalyticsPanel'
 export { default as SystemMonitoringContent } from './SystemMonitoringContent'
 export { default as CreditManagementContent } from './CreditManagementContent'
-export { EnterpriseManagementPanel as EnterpriseManagementContent } from '../EnterpriseManagementPanel'
+export { default as EnterpriseManagementContent } from './EnterpriseManagementContent'
 export { DeviceSystemManagementPanel as DeviceManagementContent } from '../DeviceSystemManagementPanel'
 
 // 새로 구현된 콘텐츠들
