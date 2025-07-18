@@ -1682,151 +1682,371 @@ AI 건강 분석 리포트
     </div>
   )
 
-  const renderReportList = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">리포트 목록</h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={loadReportData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            새로고침
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            일괄 다운로드
-          </Button>
-          <Button 
-            onClick={() => handleGenerateReport('default', '스트레스 분석')}
-            className="bg-blue-600 text-white hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            새 리포트
-          </Button>
-        </div>
-      </div>
+  const renderReportList = () => {
+    // 실제 생성된 리포트들을 평면화하여 수집
+    const allGeneratedReports = useMemo(() => {
+      const reports: any[] = []
       
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="리포트 제목이나 사용자로 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <select className="px-3 py-2 border border-gray-300 rounded-md">
-          <option value="all">전체 상태</option>
-          <option value="completed">완료</option>
-          <option value="processing">처리중</option>
-          <option value="failed">실패</option>
-        </select>
-        <select className="px-3 py-2 border border-gray-300 rounded-md">
-          <option value="all">전체 엔진</option>
-          <option value="basic-gemini-v1">기본 Gemini 엔진</option>
-          <option value="mental-gemini-v1">정신건강 Gemini 엔진</option>
-          <option value="biosignal-gemini-v1">생체신호 Gemini 엔진</option>
-        </select>
-      </div>
+      measurementDataList.forEach(measurementData => {
+        if (measurementData.availableReports && measurementData.availableReports.length > 0) {
+          measurementData.availableReports.forEach((report: any) => {
+            reports.push({
+              ...report,
+              // 측정자 정보 추가
+              subjectName: measurementData.userName,
+              subjectAge: measurementData.userAge,
+              subjectGender: measurementData.userGender,
+              subjectOccupation: measurementData.userOccupation,
+              subjectDepartment: measurementData.userDepartment,
+              subjectEmail: measurementData.userEmail,
+              measurementDate: measurementData.timestamp,
+              managerInfo: measurementData.managerInfo,
+              // 원본 측정 데이터 참조
+              measurementDataId: measurementData.id
+            })
+          })
+        }
+      })
       
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      return reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    }, [measurementDataList])
+
+    // 검색 및 필터링
+    const filteredGeneratedReports = useMemo(() => {
+      return allGeneratedReports.filter(report => {
+        const matchesSearch = searchQuery === '' || 
+          report.subjectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          report.engineName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          new Date(report.createdAt).toLocaleDateString('ko-KR').includes(searchQuery)
+        
+        const matchesEngine = selectedEngineFilter === 'all' || 
+          report.engineId === selectedEngineFilter
+        
+        return matchesSearch && matchesEngine
+      })
+    }, [allGeneratedReports, searchQuery, selectedEngineFilter])
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">리포트 목록</h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={loadMeasurementData}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              새로고침
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              일괄 다운로드
+            </Button>
+          </div>
         </div>
-      ) : (
-        <>
-          {filteredReports.length === 0 ? (
-            <Card className="p-8 bg-white border border-gray-200">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl">
-                  <FileText className="w-8 h-8 text-purple-600" />
-                </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">리포트가 없습니다</h3>
-                  <p className="text-gray-600 mb-4">
-                    {searchQuery ? '검색 조건에 맞는 리포트가 없습니다.' : '아직 생성된 리포트가 없습니다.'}
-                  </p>
-                  <Button 
-                    onClick={() => handleGenerateReport('default', '스트레스 분석')}
-                    className="bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    첫 리포트 생성하기
-                  </Button>
-                </div>
+
+        {/* 통계 카드 섹션 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* 오늘 측정 데이터 수 */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-medium text-gray-600">오늘 측정 데이터 수</h3>
+              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                <Activity className="w-4 h-4 text-gray-600" />
               </div>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 gap-6">
-              {filteredReports.map((report) => (
-                <Card key={report.id} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                        <FileText className="w-6 h-6 text-gray-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
-                        <p className="text-sm text-gray-600">{report.userName} • {report.createdAt.toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge className={
-                        report.status === 'completed' ? 'bg-green-100 text-green-600' :
-                        report.status === 'processing' ? 'bg-yellow-100 text-yellow-600' :
-                        report.status === 'failed' ? 'bg-red-100 text-red-600' :
-                        'bg-gray-100 text-gray-600'
-                      }>
-                        {report.status === 'completed' ? '완료' :
-                         report.status === 'processing' ? '처리중' :
-                         report.status === 'failed' ? '실패' : '대기'}
-                      </Badge>
-                      <Badge variant="outline">품질: {report.quality}%</Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="hover:bg-gray-50">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="w-4 h-4 mr-2" />
-                            미리보기
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDownloadReport(report.id)}>
-                            <Download className="w-4 h-4 mr-2" />
-                            다운로드
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Send className="w-4 h-4 mr-2" />
-                            메일 발송
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">생성일: {report.createdAt.toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
-                      <Download className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">다운로드: {report.downloadCount}회</span>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg">
-                      <TrendingUp className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">품질 점수: {report.quality}%</span>
-                    </div>
-                  </div>
-                </Card>
-              ))}
             </div>
-          )}
-        </>
-      )}
-    </div>
-  )
+            <div>
+              <div className="text-xl font-bold text-gray-900">
+                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayMeasurements}건`}
+              </div>
+              <div className="text-xs text-gray-500">
+                총 {calculateStats.totalMeasurements}건
+              </div>
+            </div>
+          </div>
+
+          {/* 오늘 발행 리포트 수 */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-medium text-gray-600">오늘 발행 리포트 수</h3>
+              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                <FileText className="w-4 h-4 text-gray-600" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900">
+                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayReports}건`}
+              </div>
+              <div className="text-xs text-gray-500">
+                총 {calculateStats.totalReports}건
+              </div>
+            </div>
+          </div>
+
+          {/* 오늘 사용 크레딧 */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-medium text-gray-600">오늘 사용 크레딧</h3>
+              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                <DollarSign className="w-4 h-4 text-gray-600" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900">
+                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayCreditsUsed} 크레딧`}
+              </div>
+              <div className="text-xs text-gray-500">
+                총 {calculateStats.totalCreditsUsed} 크레딧 사용
+              </div>
+            </div>
+          </div>
+
+          {/* 이번주 사용 현황 */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-medium text-gray-600">이번주 사용 현황</h3>
+              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                <TrendingUp className="w-4 h-4 text-gray-600" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-900">
+                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.thisWeekMeasurements}건`}
+              </div>
+              <div className="text-xs text-gray-500">
+                리포트 {calculateStats.thisWeekReports}건, 크레딧 {calculateStats.thisWeekCreditsUsed}개
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* 검색 및 필터 섹션 */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="측정자명, AI 엔진, 날짜로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <select 
+            value={selectedEngineFilter}
+            onChange={(e) => setSelectedEngineFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">전체 AI 엔진</option>
+            {availableEngines.map(engineId => (
+              <option key={engineId} value={engineId}>{engineId}</option>
+            ))}
+          </select>
+        </div>
+        
+        {loadingMeasurementData ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">리포트 목록을 불러오는 중...</span>
+          </div>
+        ) : filteredGeneratedReports.length === 0 ? (
+          <Card className="p-8 bg-white border border-gray-200">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl">
+                <FileText className="w-8 h-8 text-purple-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">생성된 리포트가 없습니다</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchQuery || selectedEngineFilter !== 'all' 
+                    ? '검색 조건에 맞는 리포트가 없습니다.' 
+                    : '아직 생성된 AI 분석 리포트가 없습니다.'}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredGeneratedReports.map((report) => (
+              <Card key={`${report.measurementDataId}-${report.id}`} className="p-6 bg-white border border-gray-200 hover:bg-gray-50 transition-all duration-300">
+                {/* 사용자 정보 헤더 */}
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <User className="w-5 h-5 text-gray-500" />
+                      <span className="text-lg font-semibold text-gray-900">{report.subjectName || '알 수 없음'}</span>
+                    </div>
+                    
+                    {/* 개인정보 Badge들 */}
+                    <div className="flex items-center space-x-2">
+                      {report.subjectAge && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          만 {report.subjectAge}세
+                        </Badge>
+                      )}
+                      
+                      {report.subjectGender && report.subjectGender !== '미지정' && (
+                        <Badge variant="outline" className="text-xs">
+                          {report.subjectGender === 'MALE' ? '남성' : report.subjectGender === 'FEMALE' ? '여성' : report.subjectGender}
+                        </Badge>
+                      )}
+                      
+                      {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
+                        <Badge variant="outline" className="text-xs">
+                          {report.subjectOccupation}
+                        </Badge>
+                      )}
+                      
+                      {report.subjectDepartment && report.subjectDepartment !== '미지정' && (
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          {report.subjectDepartment}
+                        </Badge>
+                      )}
+                      
+                      {report.subjectEmail && report.subjectEmail !== '' && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleEmailCopy(report.id, report.subjectEmail)}
+                        >
+                          {copiedEmails[report.id] ? '복사됨!' : report.subjectEmail}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* 액션 버튼들 */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCreateShareLink(report)}
+                      disabled={creatingShareLinks[report.id]}
+                      className="text-green-600 border-green-300 hover:bg-green-50"
+                    >
+                      {creatingShareLinks[report.id] ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Share2 className="w-4 h-4 mr-1" />
+                      )}
+                      공유하기
+                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          리포트보기
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
+                          <DropdownMenuItem 
+                            key={viewer.id}
+                            onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                          >
+                            {viewer.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
+                      disabled={deletingReports[report.id]}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      {deletingReports[report.id] ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4 mr-1" />
+                      )}
+                      삭제
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* 리포트 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">AI 모델</div>
+                    <div className="text-sm font-mono bg-purple-50 px-2 py-1 rounded text-purple-700">
+                      {report.engineId || 'basic-gemini-v1'}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">렌더링 모델</div>
+                    <div className="text-sm text-gray-700">기본 웹 뷰어</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">생성일자</div>
+                    <div className="text-sm text-gray-700">
+                      {new Date(report.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'numeric', 
+                        day: 'numeric'
+                      }).replace(/\//g, '. ') + '.'} {new Date(report.createdAt).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">측정일자</div>
+                    <div className="text-sm text-gray-700">
+                      {new Date(report.measurementDate).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'numeric', 
+                        day: 'numeric'
+                      }).replace(/\//g, '. ') + '.'} {new Date(report.measurementDate).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 담당자 정보 */}
+                {report.managerInfo && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">담당자:</span>
+                      <span className="text-sm text-gray-700">
+                        {report.managerInfo.name}{report.managerInfo.department !== '미지정' ? `(${report.managerInfo.department})` : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 공유 성공/에러 메시지 */}
+                {shareSuccess[report.id] && (
+                  <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
+                    <div className="flex items-center gap-1">
+                      <Copy className="w-4 h-4" />
+                      공유 링크가 클립보드에 복사되었습니다!
+                    </div>
+                  </div>
+                )}
+                
+                {shareError[report.id] && (
+                  <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-sm text-red-800">
+                    {shareError[report.id]}
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   // 분석 엔진 목록 추출
   const availableEngines = useMemo(() => {
