@@ -291,6 +291,94 @@ export default function ReportManagementContent() {
           </div>
         </div>
 
+        {/* 최근 리포트 목록 */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-6">최근 생성된 리포트</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">사용자</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">조직</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">AI 엔진</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">품질 점수</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">처리 시간</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">상태</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">생성 시간</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">액션</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filteredReports.map((report) => (
+                  <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-slate-900">{report.userName}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-slate-900">{report.organizationName}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {getEngineIcon(report.engineUsed)}
+                        <span className="text-slate-900">{report.engineUsed}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {report.status === 'completed' ? (
+                        <div className={`font-semibold ${getQualityColor(report.qualityScore)}`}>
+                          {report.qualityScore}/100
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {report.status === 'completed' ? (
+                        <div className="text-slate-900">{report.processingTime.toFixed(1)}분</div>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)}`}>
+                        {getStatusText(report.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-600">
+                        {report.createdAt.toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                          <Eye className="w-4 h-4 text-slate-600" />
+                        </button>
+                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                          <Download className="w-4 h-4 text-slate-600" />
+                        </button>
+                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                          <MoreHorizontal className="w-4 h-4 text-slate-600" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {filteredReports.length === 0 && (
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-100 rounded-full mb-4">
+                  <Search className="w-6 h-6 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">리포트를 찾을 수 없습니다</h3>
+                <p className="text-slate-600">검색 조건을 변경해보세요.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* 품질 및 성능 지표 */}
         {reportStats && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -383,94 +471,6 @@ export default function ReportManagementContent() {
             </div>
           </div>
         )}
-
-        {/* 최근 리포트 목록 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">최근 생성된 리포트</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">사용자</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">조직</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">AI 엔진</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">품질 점수</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">처리 시간</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">상태</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">생성 시간</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">액션</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{report.userName}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-slate-900">{report.organizationName}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {getEngineIcon(report.engineUsed)}
-                        <span className="text-slate-900">{report.engineUsed}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {report.status === 'completed' ? (
-                        <div className={`font-semibold ${getQualityColor(report.qualityScore)}`}>
-                          {report.qualityScore}/100
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {report.status === 'completed' ? (
-                        <div className="text-slate-900">{report.processingTime.toFixed(1)}분</div>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)}`}>
-                        {getStatusText(report.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-slate-600">
-                        {report.createdAt.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                          <Eye className="w-4 h-4 text-slate-600" />
-                        </button>
-                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                          <Download className="w-4 h-4 text-slate-600" />
-                        </button>
-                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                          <MoreHorizontal className="w-4 h-4 text-slate-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {filteredReports.length === 0 && (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-100 rounded-full mb-4">
-                  <Search className="w-6 h-6 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">리포트를 찾을 수 없습니다</h3>
-                <p className="text-slate-600">검색 조건을 변경해보세요.</p>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   )
