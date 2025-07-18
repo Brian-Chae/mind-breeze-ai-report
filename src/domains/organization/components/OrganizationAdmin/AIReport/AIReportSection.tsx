@@ -1823,34 +1823,85 @@ AI 건강 분석 리포트
             </div>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredGeneratedReports.map((report) => (
-              <Card key={`${report.measurementDataId}-${report.id}`} className="p-6 bg-white border border-gray-200 hover:shadow-md transition-all duration-300 rounded-xl">
-                {/* 헤더: 이름과 액션 버튼들 */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
-                      <User className="w-5 h-5 text-white" />
+              <Card key={`${report.measurementDataId}-${report.id}`} className="p-4 bg-white border border-gray-200 hover:shadow-md transition-all duration-300 rounded-lg">
+                {/* 첫 번째 줄: 이름 + 개인정보 배지들 + 액션 버튼들 */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex-shrink-0">
+                      <User className="w-4 h-4 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">{report.subjectName || '알 수 없음'}</h3>
-                      <p className="text-sm text-gray-500">AI 건강 분석 리포트</p>
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <h3 className="text-base font-bold text-gray-900 flex-shrink-0">{report.subjectName || '알 수 없음'}</h3>
+                      
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        {report.subjectAge && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            만 {report.subjectAge}세
+                          </Badge>
+                        )}
+                        
+                        {report.subjectGender && report.subjectGender !== '미지정' && (
+                          <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 text-xs px-2 py-0.5">
+                            {report.subjectGender === 'MALE' ? '👨 남성' : '👩 여성'}
+                          </Badge>
+                        )}
+                        
+                        {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-2 py-0.5">
+                            <Briefcase className="w-3 h-3 mr-1" />
+                            {report.subjectOccupation}
+                          </Badge>
+                        )}
+                        
+                        {report.subjectDepartment && report.subjectDepartment !== '미지정' && (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
+                            <Building className="w-3 h-3 mr-1" />
+                            {report.subjectDepartment}
+                          </Badge>
+                        )}
+                        
+                        {report.subjectEmail && report.subjectEmail !== '' && (
+                          <Badge 
+                            variant="outline" 
+                            className="bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors text-xs px-2 py-0.5"
+                            onClick={() => handleEmailCopy(report.id, report.subjectEmail)}
+                          >
+                            <Mail className="w-3 h-3 mr-1" />
+                            {copiedEmails[report.id] ? '✅ 복사됨!' : report.subjectEmail}
+                          </Badge>
+                        )}
+                        
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {new Date(report.createdAt).toLocaleDateString('ko-KR', {
+                            month: 'short',
+                            day: 'numeric'
+                          })} {new Date(report.createdAt).toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                   
                   {/* 액션 버튼들 */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 flex-shrink-0 ml-3">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleCreateShareLink(report)}
                       disabled={creatingShareLinks[report.id]}
-                      className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors"
+                      className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors text-xs px-2 py-1 h-7"
                     >
                       {creatingShareLinks[report.id] ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                       ) : (
-                        <Share2 className="w-4 h-4 mr-1" />
+                        <Share2 className="w-3 h-3 mr-1" />
                       )}
                       공유하기
                     </Button>
@@ -1860,9 +1911,9 @@ AI 건강 분석 리포트
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors text-xs px-2 py-1 h-7"
                         >
-                          <Eye className="w-4 h-4 mr-1" />
+                          <Eye className="w-3 h-3 mr-1" />
                           리포트보기
                         </Button>
                       </DropdownMenuTrigger>
@@ -1883,79 +1934,21 @@ AI 건강 분석 리포트
                       variant="outline"
                       onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
                       disabled={deletingReports[report.id]}
-                      className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
+                      className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors text-xs px-2 py-1 h-7"
                     >
                       {deletingReports[report.id] ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                       ) : (
-                        <Trash2 className="w-4 h-4 mr-1" />
+                        <Trash2 className="w-3 h-3 mr-1" />
                       )}
                       삭제
                     </Button>
                   </div>
                 </div>
                 
-                {/* 개인정보 배지들 */}
-                <div className="mb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {report.subjectAge && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        만 {report.subjectAge}세
-                      </Badge>
-                    )}
-                    
-                    {report.subjectGender && report.subjectGender !== '미지정' && (
-                      <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 font-medium">
-                        {report.subjectGender === 'MALE' ? '👨 남성' : '👩 여성'}
-                      </Badge>
-                    )}
-                    
-                    {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-medium">
-                        <Briefcase className="w-3 h-3 mr-1" />
-                        {report.subjectOccupation}
-                      </Badge>
-                    )}
-                    
-                    {report.subjectDepartment && report.subjectDepartment !== '미지정' && (
-                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-medium">
-                        <Building className="w-3 h-3 mr-1" />
-                        {report.subjectDepartment}
-                      </Badge>
-                    )}
-                    
-                    {report.subjectEmail && report.subjectEmail !== '' && (
-                      <Badge 
-                        variant="outline" 
-                        className="bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors font-medium"
-                        onClick={() => handleEmailCopy(report.id, report.subjectEmail)}
-                      >
-                        <Mail className="w-3 h-3 mr-1" />
-                        {copiedEmails[report.id] ? '✅ 복사됨!' : report.subjectEmail}
-                      </Badge>
-                    )}
-                    
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-medium">
-                      <Clock className="w-3 h-3 mr-1" />
-                      생성: {new Date(report.createdAt).toLocaleDateString('ko-KR', {
-                        month: 'short',
-                        day: 'numeric'
-                      })} {new Date(report.createdAt).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
-                    </Badge>
-                  </div>
-                </div>
-                
-                {/* 구분선 */}
-                <div className="border-t border-gray-100 my-4"></div>
-                
-                {/* 리포트 정보 배지들 */}
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 font-medium">
+                {/* 두 번째 줄: 리포트 정보 배지들 */}
+                <div className="flex flex-wrap gap-1.5 ml-11">
+                  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-xs px-2 py-0.5">
                     <UserCheck className="w-3 h-3 mr-1" />
                     담당자: {report.managerInfo 
                       ? `${report.managerInfo.name}${report.managerInfo.department !== '미지정' ? `(${report.managerInfo.department})` : ''}`
@@ -1963,17 +1956,17 @@ AI 건강 분석 리포트
                     }
                   </Badge>
                   
-                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-mono font-medium">
+                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-mono text-xs px-2 py-0.5">
                     <Brain className="w-3 h-3 mr-1" />
                     AI: {report.engineId || 'basic-gemini-v1'}
                   </Badge>
                   
-                  <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 font-medium">
+                  <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 text-xs px-2 py-0.5">
                     <Monitor className="w-3 h-3 mr-1" />
                     뷰어: 기본 웹 뷰어
                   </Badge>
                   
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-medium">
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs px-2 py-0.5">
                     <Calendar className="w-3 h-3 mr-1" />
                     측정: {new Date(report.measurementDate).toLocaleDateString('ko-KR', {
                       month: 'short',
