@@ -1438,8 +1438,21 @@ AI 건강 분석 리포트
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">AI 리포트 생성</h2>
-                  <Button 
-            onClick={() => handleGenerateReport('default', '스트레스 분석')}
+          <Button 
+            onClick={async () => {
+              const validation = await validateConfiguration();
+              if (validation.isValid) {
+                console.log('새 리포트 생성 시작:', {
+                  engine: selectedEngine,
+                  viewer: selectedViewer
+                });
+                // AI 리포트 생성 페이지로 이동
+                navigate('/ai-report/personal-info');
+              } else {
+                alert(validation.message);
+              }
+            }}
+            disabled={loading || configLoading || !selectedEngine || !selectedViewer}
             className="bg-purple-600 text-white hover:bg-purple-700"
           >
             <Plus className="w-4 h-4 mr-2" />
