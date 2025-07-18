@@ -1823,42 +1823,40 @@ AI 건강 분석 리포트
             </div>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-6">
             {filteredGeneratedReports.map((report) => (
-              <Card key={`${report.measurementDataId}-${report.id}`} className="p-4 bg-white border border-gray-200 hover:shadow-md transition-all duration-300 rounded-lg">
-                {/* 첫 번째 줄: 이름 + 개인정보 배지들 + 액션 버튼들 */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex-shrink-0">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <h3 className="text-base font-bold text-gray-900 flex-shrink-0">{report.subjectName || '알 수 없음'}</h3>
+              <div key={`${report.measurementDataId}-${report.id}`} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                {/* 사용자 정보 헤더 */}
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-5 h-5 text-gray-500" />
+                        <span className="text-lg font-semibold text-gray-900">{report.subjectName || '알 수 없음'}</span>
+                      </div>
                       
-                      <div className="flex flex-wrap gap-1.5 items-center">
+                      {/* 개인정보 Badge들 */}
+                      <div className="flex items-center space-x-2">
                         {report.subjectAge && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
-                            <Calendar className="w-3 h-3 mr-1" />
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                             만 {report.subjectAge}세
                           </Badge>
                         )}
                         
                         {report.subjectGender && report.subjectGender !== '미지정' && (
-                          <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 text-xs px-2 py-0.5">
-                            {report.subjectGender === 'MALE' ? '👨 남성' : '👩 여성'}
+                          <Badge variant="outline" className="text-xs">
+                            {report.subjectGender === 'MALE' ? '남성' : report.subjectGender === 'FEMALE' ? '여성' : report.subjectGender}
                           </Badge>
                         )}
                         
                         {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-2 py-0.5">
-                            <Briefcase className="w-3 h-3 mr-1" />
+                          <Badge variant="outline" className="text-xs">
                             {report.subjectOccupation}
                           </Badge>
                         )}
                         
                         {report.subjectDepartment && report.subjectDepartment !== '미지정' && (
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
-                            <Building className="w-3 h-3 mr-1" />
+                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
                             {report.subjectDepartment}
                           </Badge>
                         )}
@@ -1866,117 +1864,120 @@ AI 건강 분석 리포트
                         {report.subjectEmail && report.subjectEmail !== '' && (
                           <Badge 
                             variant="outline" 
-                            className="bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors text-xs px-2 py-0.5"
+                            className="text-xs bg-gray-50 text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-100"
                             onClick={() => handleEmailCopy(report.id, report.subjectEmail)}
                           >
-                            <Mail className="w-3 h-3 mr-1" />
-                            {copiedEmails[report.id] ? '✅ 복사됨!' : report.subjectEmail}
+                            {copiedEmails[report.id] ? '복사됨!' : report.subjectEmail}
                           </Badge>
                         )}
-                        
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-0.5">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {new Date(report.createdAt).toLocaleDateString('ko-KR', {
-                            month: 'short',
-                            day: 'numeric'
-                          })} {new Date(report.createdAt).toLocaleTimeString('ko-KR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          })}
-                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-6">
+                      {report.managerInfo && (
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 mb-1">담당자</div>
+                          <div className="text-sm text-gray-700">
+                            {report.managerInfo.name}{report.managerInfo.department !== '미지정' ? `(${report.managerInfo.department})` : ''}
+                          </div>
+                        </div>
+                      )}
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-1">생성일시</div>
+                        <div className="text-sm text-gray-700">
+                          {new Date(report.createdAt).toLocaleDateString('ko-KR')} {new Date(report.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-1">측정일시</div>
+                        <div className="text-sm text-gray-700">
+                          {new Date(report.measurementDate).toLocaleDateString('ko-KR')} {new Date(report.measurementDate).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* 액션 버튼들 */}
-                  <div className="flex items-center space-x-1 flex-shrink-0 ml-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCreateShareLink(report)}
-                      disabled={creatingShareLinks[report.id]}
-                      className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors text-xs px-2 py-1 h-7"
-                    >
-                      {creatingShareLinks[report.id] ? (
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      ) : (
-                        <Share2 className="w-3 h-3 mr-1" />
-                      )}
-                      공유하기
-                    </Button>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                </div>
+
+                {/* 리포트 정보 */}
+                <div className="p-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span className="font-medium text-gray-900">AI 건강 분석 리포트</span>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 mb-1">분석 엔진</div>
+                          <span className="text-sm font-mono bg-gray-200 px-2 py-1 rounded text-gray-700">
+                            {report.engineId || 'basic-gemini-v1'}
+                          </span>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 mb-1">렌더링</div>
+                          <span className="text-sm text-gray-700">기본 웹 뷰어</span>
+                        </div>
+                      </div>
+                      
+                      {/* 액션 버튼들 */}
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCreateShareLink(report)}
+                          disabled={creatingShareLinks[report.id]}
+                          className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors"
+                        >
+                          {creatingShareLinks[report.id] ? (
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          ) : (
+                            <Share2 className="w-4 h-4 mr-1" />
+                          )}
+                          공유하기
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              리포트보기
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
+                              <DropdownMenuItem 
+                                key={viewer.id}
+                                onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                              >
+                                {viewer.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors text-xs px-2 py-1 h-7"
+                          onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
+                          disabled={deletingReports[report.id]}
+                          className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
                         >
-                          <Eye className="w-3 h-3 mr-1" />
-                          리포트보기
+                          {deletingReports[report.id] ? (
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 mr-1" />
+                          )}
+                          삭제
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
-                          <DropdownMenuItem 
-                            key={viewer.id}
-                            onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
-                          >
-                            {viewer.name}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
-                      disabled={deletingReports[report.id]}
-                      className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors text-xs px-2 py-1 h-7"
-                    >
-                      {deletingReports[report.id] ? (
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3 h-3 mr-1" />
-                      )}
-                      삭제
-                    </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                {/* 두 번째 줄: 리포트 정보 배지들 */}
-                <div className="flex flex-wrap gap-1.5 ml-11">
-                  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-xs px-2 py-0.5">
-                    <UserCheck className="w-3 h-3 mr-1" />
-                    담당자: {report.managerInfo 
-                      ? `${report.managerInfo.name}${report.managerInfo.department !== '미지정' ? `(${report.managerInfo.department})` : ''}`
-                      : '미지정'
-                    }
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-mono text-xs px-2 py-0.5">
-                    <Brain className="w-3 h-3 mr-1" />
-                    AI: {report.engineId || 'basic-gemini-v1'}
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 text-xs px-2 py-0.5">
-                    <Monitor className="w-3 h-3 mr-1" />
-                    뷰어: 기본 웹 뷰어
-                  </Badge>
-                  
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs px-2 py-0.5">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    측정: {new Date(report.measurementDate).toLocaleDateString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric'
-                    })} {new Date(report.measurementDate).toLocaleTimeString('ko-KR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true
-                    })}
-                  </Badge>
                 </div>
 
                 {/* 공유 성공/에러 메시지 */}
@@ -1994,7 +1995,7 @@ AI 건강 분석 리포트
                     {shareError[report.id]}
                   </div>
                 )}
-              </Card>
+              </div>
             ))}
           </div>
         )}
