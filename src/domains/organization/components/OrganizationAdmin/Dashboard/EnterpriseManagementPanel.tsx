@@ -263,7 +263,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">총 기업 수</p>
-                        <p className="text-2xl font-bold">{enterpriseOverviews.length}</p>
+                                                    <p className="text-2xl font-bold text-gray-900">{enterpriseOverviews.length}</p>
                       </div>
                       <Building2 className="h-8 w-8 text-blue-600" />
                     </div>
@@ -275,7 +275,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">활성 기업</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-green-600">
                           {enterpriseOverviews.filter(e => e.status.organizationStatus === 'active').length}
                         </p>
                       </div>
@@ -289,7 +289,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">트라이얼 기업</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-blue-600">
                           {enterpriseOverviews.filter(e => e.status.organizationStatus === 'trial').length}
                         </p>
                       </div>
@@ -303,7 +303,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">고위험 기업</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-2xl font-bold text-red-600">
                           {enterpriseOverviews.filter(e => e.status.riskLevel === 'high').length}
                         </p>
                       </div>
@@ -636,7 +636,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                       <CardContent className="p-4">
                         <div className="text-center">
                           <FileText className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                          <p className="text-2xl font-bold">{reportAnalytics.reportSummary.totalReports}</p>
+                          <p className="text-2xl font-bold text-gray-900">{reportAnalytics.reportSummary.totalReports}</p>
                           <p className="text-sm text-gray-600">총 리포트</p>
                         </div>
                       </CardContent>
@@ -646,7 +646,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                       <CardContent className="p-4">
                         <div className="text-center">
                           <TrendingUp className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                          <p className="text-2xl font-bold">{reportAnalytics.reportSummary.reportsThisMonth}</p>
+                          <p className="text-2xl font-bold text-green-600">{reportAnalytics.reportSummary.reportsThisMonth}</p>
                           <p className="text-sm text-gray-600">이번 달 리포트</p>
                         </div>
                       </CardContent>
@@ -656,7 +656,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                       <CardContent className="p-4">
                         <div className="text-center">
                           <Award className="h-8 w-8 mx-auto text-purple-600 mb-2" />
-                          <p className="text-2xl font-bold">{reportAnalytics.qualityMetrics.averageQualityScore.toFixed(1)}</p>
+                          <p className="text-2xl font-bold text-purple-600">{reportAnalytics.qualityMetrics.averageQualityScore.toFixed(1)}</p>
                           <p className="text-sm text-gray-600">평균 품질 점수</p>
                         </div>
                       </CardContent>
@@ -666,7 +666,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                       <CardContent className="p-4">
                         <div className="text-center">
                           <Activity className="h-8 w-8 mx-auto text-orange-600 mb-2" />
-                          <p className="text-2xl font-bold">{reportAnalytics.qualityMetrics.errorRate.toFixed(1)}%</p>
+                          <p className="text-2xl font-bold text-red-600">{reportAnalytics.qualityMetrics.errorRate.toFixed(1)}%</p>
                           <p className="text-sm text-gray-600">에러율</p>
                         </div>
                       </CardContent>
@@ -710,7 +710,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="font-bold">{type.count}개</div>
+                              <div className="font-bold text-gray-900">{type.count}개</div>
                               <div className="text-sm text-gray-600">{type.percentage.toFixed(1)}%</div>
                             </div>
                           </div>

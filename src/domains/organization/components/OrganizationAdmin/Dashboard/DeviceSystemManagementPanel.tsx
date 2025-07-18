@@ -244,7 +244,7 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium text-gray-600">총 디바이스</p>
-                            <p className="text-2xl font-bold">{systemOverview.totalDevices}</p>
+                            <p className="text-2xl font-bold text-gray-900">{systemOverview.totalDevices}</p>
                           </div>
                           <Smartphone className="h-8 w-8 text-blue-600" />
                         </div>
@@ -300,8 +300,8 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                             <div className="flex justify-center mb-2">
                               {getDeviceTypeIcon(type.type)}
                             </div>
-                            <div className="font-semibold">{type.type}</div>
-                            <div className="text-2xl font-bold">{type.count}</div>
+                            <div className="font-semibold text-gray-900">{type.type}</div>
+                            <div className="text-2xl font-bold text-gray-900">{type.count}</div>
                             <div className="text-sm text-gray-600">
                               활성: {type.activeCount} ({type.percentage}%)
                             </div>
@@ -517,7 +517,7 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                     <Card className="bg-white border border-gray-200">
                       <CardContent className="p-4 text-center">
                         <Activity className="h-6 w-6 mx-auto text-blue-600 mb-2" />
-                        <div className="text-2xl font-bold">{usageAnalytics.usageMetrics.totalSessions}</div>
+                                                    <div className="text-2xl font-bold text-gray-900">{usageAnalytics.usageMetrics.totalSessions}</div>
                         <div className="text-sm text-gray-600">총 세션</div>
                       </CardContent>
                     </Card>
@@ -525,7 +525,7 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                     <Card className="bg-white border border-gray-200">
                       <CardContent className="p-4 text-center">
                         <Clock className="h-6 w-6 mx-auto text-green-600 mb-2" />
-                        <div className="text-2xl font-bold">{usageAnalytics.usageMetrics.averageSessionDuration}분</div>
+                        <div className="text-2xl font-bold text-gray-900">{usageAnalytics.usageMetrics.averageSessionDuration}분</div>
                         <div className="text-sm text-gray-600">평균 세션 시간</div>
                       </CardContent>
                     </Card>
@@ -533,7 +533,7 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                     <Card className="bg-white border border-gray-200">
                       <CardContent className="p-4 text-center">
                         <HardDrive className="h-6 w-6 mx-auto text-purple-600 mb-2" />
-                        <div className="text-2xl font-bold">{usageAnalytics.usageMetrics.totalDataCollected}MB</div>
+                        <div className="text-2xl font-bold text-gray-900">{usageAnalytics.usageMetrics.totalDataCollected}MB</div>
                         <div className="text-sm text-gray-600">수집 데이터</div>
                       </CardContent>
                     </Card>
@@ -541,7 +541,7 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                     <Card className="bg-white border border-gray-200">
                       <CardContent className="p-4 text-center">
                         <Users className="h-6 w-6 mx-auto text-orange-600 mb-2" />
-                        <div className="text-2xl font-bold">{usageAnalytics.userEngagement.length}</div>
+                        <div className="text-2xl font-bold text-gray-900">{usageAnalytics.userEngagement.length}</div>
                         <div className="text-sm text-gray-600">활성 사용자</div>
                       </CardContent>
                     </Card>
