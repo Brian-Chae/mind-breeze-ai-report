@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Card } from '@shared/components/ui/card'
 import { Button } from '@shared/components/ui/button'
 import { Badge } from '@shared/components/ui/badge'
+import systemAdminService, { 
+  SystemStats as ServiceSystemStats, 
+  OrganizationSummary as ServiceOrganizationSummary, 
+  SystemActivity 
+} from '../../../services/SystemAdminService'
+import SystemAnalyticsPanel from './SystemAnalyticsPanel'
 import { 
   Users, 
   Building, 
@@ -55,6 +61,7 @@ export default function SystemAdminDashboard() {
 
   const [organizations, setOrganizations] = useState<OrganizationSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAnalytics, setShowAnalytics] = useState(false)
 
   useEffect(() => {
     loadSystemData()
@@ -63,53 +70,82 @@ export default function SystemAdminDashboard() {
   const loadSystemData = async () => {
     setLoading(true)
     try {
-      // TODO: 실제 API 호출로 교체
-      // 현재는 모의 데이터
-      const mockStats: SystemStats = {
-        totalOrganizations: 25,
-        totalUsers: 1248,
-        activeUsers: 892,
-        totalReports: 4521,
-        systemHealth: 'healthy',
-        uptime: '99.9%',
-        totalCreditsUsed: 89750,
-        monthlyGrowth: 15.2
+      console.log('🚀 실제 시스템 데이터 로딩 시작...')
+      
+      // 실제 API 호출
+      const [realStats, realOrganizations, recentActivities] = await Promise.allSettled([
+        systemAdminService.getSystemStats(),
+        systemAdminService.getAllOrganizationSummaries(),
+        systemAdminService.getRecentSystemActivities(10)
+      ])
+
+      // 시스템 통계 설정
+      if (realStats.status === 'fulfilled') {
+        const stats: SystemStats = {
+          totalOrganizations: realStats.value.totalOrganizations,
+          totalUsers: realStats.value.totalUsers,
+          activeUsers: realStats.value.activeUsers,
+          totalReports: realStats.value.totalReports,
+          systemHealth: realStats.value.systemHealth,
+          uptime: realStats.value.uptime,
+          totalCreditsUsed: realStats.value.totalCreditsUsed,
+          monthlyGrowth: realStats.value.monthlyGrowth
+        }
+        setSystemStats(stats)
+        console.log('✅ 시스템 통계 로드 성공:', stats)
+      } else {
+        console.warn('⚠️ 시스템 통계 로드 실패:', realStats.reason)
+        // Fallback to mock data
+        setSystemStats({
+          totalOrganizations: 0,
+          totalUsers: 0,
+          activeUsers: 0,
+          totalReports: 0,
+          systemHealth: 'warning',
+          uptime: '99.9%',
+          totalCreditsUsed: 0,
+          monthlyGrowth: 0
+        })
       }
 
-      const mockOrganizations: OrganizationSummary[] = [
-        {
-          id: '1',
-          name: '삼성전자',
-          memberCount: 450,
-          activeUsers: 320,
-          creditBalance: 15000,
-          status: 'active',
-          lastActivity: new Date()
-        },
-        {
-          id: '2',
-          name: 'LG전자',
-          memberCount: 280,
-          activeUsers: 195,
-          creditBalance: 8500,
-          status: 'active',
-          lastActivity: new Date()
-        },
-        {
-          id: '3',
-          name: '현대자동차',
-          memberCount: 320,
-          activeUsers: 245,
-          creditBalance: 12000,
-          status: 'trial',
-          lastActivity: new Date()
-        }
-      ]
+      // 조직 정보 설정
+      if (realOrganizations.status === 'fulfilled') {
+        const orgs: OrganizationSummary[] = realOrganizations.value.map(org => ({
+          id: org.id,
+          name: org.name,
+          memberCount: org.memberCount,
+          activeUsers: org.activeUsers,
+          creditBalance: org.creditBalance,
+          status: org.status,
+          lastActivity: org.lastActivity
+        }))
+        setOrganizations(orgs)
+        console.log('✅ 조직 정보 로드 성공:', orgs.length, '개 조직')
+      } else {
+        console.warn('⚠️ 조직 정보 로드 실패:', realOrganizations.reason)
+        setOrganizations([])
+      }
 
-      setSystemStats(mockStats)
-      setOrganizations(mockOrganizations)
+      // 최근 활동 로그
+      if (recentActivities.status === 'fulfilled') {
+        console.log('✅ 최근 활동 로드 성공:', recentActivities.value.length, '개 활동')
+      }
+
     } catch (error) {
-      console.error('시스템 데이터 로드 실패:', error)
+      console.error('❌ 시스템 데이터 로드 중 오류:', error)
+      
+      // 에러 발생 시 기본값 설정
+      setSystemStats({
+        totalOrganizations: 0,
+        totalUsers: 0,
+        activeUsers: 0,
+        totalReports: 0,
+        systemHealth: 'error',
+        uptime: '99.9%',
+        totalCreditsUsed: 0,
+        monthlyGrowth: 0
+      })
+      setOrganizations([])
     } finally {
       setLoading(false)
     }
@@ -172,6 +208,11 @@ export default function SystemAdminDashboard() {
     )
   }
 
+  // 분석 패널 표시 시 해당 컴포넌트 렌더링
+  if (showAnalytics) {
+    return <SystemAnalyticsPanel systemStats={systemStats} />
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -181,11 +222,20 @@ export default function SystemAdminDashboard() {
             <h1 className="text-3xl font-bold text-gray-900">시스템 관리 대시보드</h1>
             <p className="text-gray-600 mt-2">전체 시스템 현황과 조직 관리</p>
           </div>
-          <div className="flex items-center space-x-2">
-            {getHealthIcon(systemStats.systemHealth)}
-            <span className={`font-medium ${getHealthColor(systemStats.systemHealth)}`}>
-              시스템 상태: {systemStats.systemHealth === 'healthy' ? '정상' : '주의'}
-            </span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              {getHealthIcon(systemStats.systemHealth)}
+              <span className={`font-medium ${getHealthColor(systemStats.systemHealth)}`}>
+                시스템 상태: {systemStats.systemHealth === 'healthy' ? '정상' : '주의'}
+              </span>
+            </div>
+            <Button 
+              onClick={() => setShowAnalytics(!showAnalytics)}
+              className={`${showAnalytics ? 'bg-blue-700' : 'bg-blue-600'} text-white hover:bg-blue-700`}
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              {showAnalytics ? '대시보드 보기' : '상세 분석'}
+            </Button>
           </div>
         </div>
 
