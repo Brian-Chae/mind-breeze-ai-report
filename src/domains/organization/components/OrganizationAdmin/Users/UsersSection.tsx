@@ -954,7 +954,7 @@ export default function UsersSection({ subSection, onNavigate }: UsersSectionPro
                        report.status === 'processing' ? '처리중' : '실패'}
                     </Badge>
                     {report.quality > 0 && (
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="text-gray-900 border-gray-300">
                         품질: {report.quality}%
                       </Badge>
                     )}

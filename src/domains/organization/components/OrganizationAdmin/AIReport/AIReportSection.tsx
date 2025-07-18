@@ -1844,13 +1844,13 @@ AI 건강 분석 리포트
                         )}
                         
                         {report.subjectGender && report.subjectGender !== '미지정' && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
                             {report.subjectGender === 'MALE' ? '남성' : report.subjectGender === 'FEMALE' ? '여성' : report.subjectGender}
                           </Badge>
                         )}
                         
                         {report.subjectOccupation && report.subjectOccupation !== '미지정' && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
                             {report.subjectOccupation}
                           </Badge>
                         )}
@@ -2438,13 +2438,13 @@ AI 건강 분석 리포트
                       )}
                       
                       {data.userGender && data.userGender !== '미지정' && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
                           {data.userGender === 'MALE' ? '남성' : data.userGender === 'FEMALE' ? '여성' : data.userGender}
                         </Badge>
                       )}
                       
                       {data.userOccupation && data.userOccupation !== '미지정' && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
                           {data.userOccupation}
                         </Badge>
                       )}

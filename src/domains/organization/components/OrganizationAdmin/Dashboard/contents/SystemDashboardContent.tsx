@@ -325,7 +325,7 @@ export const SystemDashboardContent: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{activity.organizationName}</span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
                           {activity.type}
                         </Badge>
                       </div>

@@ -683,7 +683,7 @@ export const EnterpriseManagementPanel: React.FC<EnterpriseManagementPanelProps>
                         {reportAnalytics.reportSummary.mostActiveUsers.map((user, index) => (
                           <div key={user.userId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline">{index + 1}</Badge>
+                              <Badge variant="outline" className="text-gray-900 border-gray-300">{index + 1}</Badge>
                               <span>{user.userName}</span>
                             </div>
                             <span className="font-medium">{user.reportCount}개 리포트</span>
