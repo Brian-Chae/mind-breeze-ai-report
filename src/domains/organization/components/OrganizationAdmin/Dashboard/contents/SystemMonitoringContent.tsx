@@ -164,18 +164,18 @@ export default function SystemMonitoringContent() {
       <div className="w-full space-y-6">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             시스템 모니터링
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-gray-600 text-lg">
             실시간 시스템 상태 및 성능 지표
           </p>
         </div>
 
         {/* Control Panel */}
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground">시스템 상태 제어</h2>
+            <h2 className="text-xl font-semibold text-gray-900">시스템 상태 제어</h2>
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
@@ -198,7 +198,7 @@ export default function SystemMonitoringContent() {
             </div>
           </div>
 
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-gray-500">
             마지막 업데이트: {lastUpdated.toLocaleString()}
           </div>
         </div>
@@ -206,42 +206,42 @@ export default function SystemMonitoringContent() {
         {/* System Overview */}
         {systemHealth && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center space-x-3">
                 <Clock className="w-8 h-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">가동 시간</p>
-                  <p className="text-2xl font-bold text-foreground">{formatUptime(systemHealth.uptime)}</p>
+                  <p className="text-sm text-gray-500">가동 시간</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatUptime(systemHealth.uptime)}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center space-x-3">
                 <Cpu className="w-8 h-8 text-green-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">CPU 사용률</p>
-                  <p className="text-2xl font-bold text-foreground">{systemHealth.performance.cpuUsage.toFixed(1)}%</p>
+                  <p className="text-sm text-gray-500">CPU 사용률</p>
+                  <p className="text-2xl font-bold text-gray-900">{systemHealth.performance.cpuUsage.toFixed(1)}%</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center space-x-3">
                 <Activity className="w-8 h-8 text-purple-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">메모리 사용률</p>
-                  <p className="text-2xl font-bold text-foreground">{systemHealth.performance.memoryUsage.toFixed(1)}%</p>
+                  <p className="text-sm text-gray-500">메모리 사용률</p>
+                  <p className="text-2xl font-bold text-gray-900">{systemHealth.performance.memoryUsage.toFixed(1)}%</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center space-x-3">
                 <Wifi className="w-8 h-8 text-orange-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">네트워크 지연</p>
-                  <p className="text-2xl font-bold text-foreground">{systemHealth.performance.networkLatency.toFixed(0)}ms</p>
+                  <p className="text-sm text-gray-500">네트워크 지연</p>
+                  <p className="text-2xl font-bold text-gray-900">{systemHealth.performance.networkLatency.toFixed(0)}ms</p>
                 </div>
               </div>
             </div>
@@ -250,9 +250,9 @@ export default function SystemMonitoringContent() {
 
         {/* System Health Status */}
         {systemHealth && (
-          <div className="bg-card border border-border rounded-lg p-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">시스템 상태</h2>
+              <h2 className="text-xl font-semibold text-gray-900">시스템 상태</h2>
               <div className="flex items-center space-x-2">
                 {getStatusIcon(systemHealth.status)}
                 <span className={`font-medium ${getStatusColor(systemHealth.status)}`}>
@@ -263,13 +263,13 @@ export default function SystemMonitoringContent() {
             </div>
 
             {/* 서비스 상태 */}
-            <h3 className="text-md font-medium text-foreground mb-4">서비스 상태</h3>
+            <h3 className="text-md font-medium text-gray-900 mb-4">서비스 상태</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {Object.entries(systemHealth.services).map(([service, status]) => (
-                <div key={service} className="flex items-center space-x-2 p-4 border border-border rounded-lg">
+                <div key={service} className="flex items-center space-x-2 p-4 border border-gray-200 rounded-lg">
                   {getServiceIcon(service)}
                   <div className="flex-1">
-                    <p className="text-sm font-medium capitalize">
+                    <p className="text-sm font-medium capitalize text-gray-900">
                       {service === 'aiEngine' ? 'AI 엔진' : 
                        service === 'database' ? '데이터베이스' :
                        service === 'storage' ? '스토리지' :
@@ -283,20 +283,20 @@ export default function SystemMonitoringContent() {
               ))}
             </div>
 
-            {/* 활성 알림 */}
+                        {/* 활성 알림 */}
             {systemHealth.alerts.length > 0 && (
               <div>
-                <h3 className="text-md font-medium text-foreground mb-4">활성 알림</h3>
-                                 <div className="space-y-3">
-                   {systemHealth.alerts.map((alert: SystemHealth['alerts'][0]) => (
-                     <div key={alert.id} className={`p-4 rounded-lg border-l-4 ${
+                <h3 className="text-md font-medium text-gray-900 mb-4">활성 알림</h3>
+                <div className="space-y-3">
+                  {systemHealth.alerts.map((alert: SystemHealth['alerts'][0]) => (
+                    <div key={alert.id} className={`p-4 rounded-lg border-l-4 ${
                       alert.type === 'critical' ? 'bg-red-50 border-red-500' :
                       alert.type === 'error' ? 'bg-red-50 border-red-400' :
                       'bg-yellow-50 border-yellow-400'
                     }`}>
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{alert.message}</p>
-                        <span className="text-xs text-muted-foreground">
+                        <p className="text-sm font-medium text-gray-900">{alert.message}</p>
+                        <span className="text-xs text-gray-500">
                           {alert.timestamp.toLocaleTimeString()}
                         </span>
                       </div>
@@ -312,44 +312,44 @@ export default function SystemMonitoringContent() {
         {performanceMetrics && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 성능 지표 */}
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">성능 지표</h2>
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">성능 지표</h2>
               
               <div className="space-y-6">
                 {/* 응답 시간 */}
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">응답 시간</h3>
+                  <h3 className="text-sm font-medium text-gray-600 mb-3">응답 시간</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">평균</span>
-                      <span className="font-semibold">{performanceMetrics.responseTime.average.toFixed(0)}ms</span>
+                      <span className="text-sm text-gray-500">평균</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.responseTime.average.toFixed(0)}ms</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">P95</span>
-                      <span className="font-semibold">{performanceMetrics.responseTime.p95.toFixed(0)}ms</span>
+                      <span className="text-sm text-gray-500">P95</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.responseTime.p95.toFixed(0)}ms</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">P99</span>
-                      <span className="font-semibold">{performanceMetrics.responseTime.p99.toFixed(0)}ms</span>
+                      <span className="text-sm text-gray-500">P99</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.responseTime.p99.toFixed(0)}ms</span>
                     </div>
                   </div>
                 </div>
 
                 {/* 처리량 */}
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">처리량</h3>
+                  <h3 className="text-sm font-medium text-gray-600 mb-3">처리량</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">요청/초</span>
-                      <span className="font-semibold">{performanceMetrics.throughput.requestsPerSecond.toFixed(1)}</span>
+                      <span className="text-sm text-gray-500">요청/초</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.throughput.requestsPerSecond.toFixed(1)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">리포트/시간</span>
-                      <span className="font-semibold">{performanceMetrics.throughput.reportsPerHour.toFixed(0)}</span>
+                      <span className="text-sm text-gray-500">리포트/시간</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.throughput.reportsPerHour.toFixed(0)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">측정/시간</span>
-                      <span className="font-semibold">{performanceMetrics.throughput.measurementsPerHour.toFixed(0)}</span>
+                      <span className="text-sm text-gray-500">측정/시간</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.throughput.measurementsPerHour.toFixed(0)}</span>
                     </div>
                   </div>
                 </div>
@@ -357,35 +357,35 @@ export default function SystemMonitoringContent() {
             </div>
 
             {/* 사용자 및 리소스 지표 */}
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">사용자 & 리소스</h2>
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">사용자 & 리소스</h2>
               
               <div className="space-y-6">
                 {/* 사용자 지표 */}
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">사용자 지표</h3>
+                  <h3 className="text-sm font-medium text-gray-600 mb-3">사용자 지표</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">활성 사용자</span>
-                      <span className="font-semibold">{performanceMetrics.userMetrics.activeUsers}</span>
+                      <span className="text-sm text-gray-500">활성 사용자</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.userMetrics.activeUsers}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">동시 세션</span>
-                      <span className="font-semibold">{performanceMetrics.userMetrics.concurrentSessions}</span>
+                      <span className="text-sm text-gray-500">동시 세션</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.userMetrics.concurrentSessions}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">평균 세션</span>
-                      <span className="font-semibold">{performanceMetrics.userMetrics.averageSessionDuration.toFixed(1)}분</span>
+                      <span className="text-sm text-gray-500">평균 세션</span>
+                      <span className="font-semibold text-gray-900">{performanceMetrics.userMetrics.averageSessionDuration.toFixed(1)}분</span>
                     </div>
                   </div>
                 </div>
 
                 {/* 리소스 사용량 */}
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">리소스 사용량</h3>
+                  <h3 className="text-sm font-medium text-gray-600 mb-3">리소스 사용량</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">에러율</span>
+                      <span className="text-sm text-gray-500">에러율</span>
                       <span className={`font-semibold ${
                         performanceMetrics.errorRate < 1 ? 'text-green-600' :
                         performanceMetrics.errorRate < 5 ? 'text-yellow-600' : 'text-red-600'
@@ -394,7 +394,7 @@ export default function SystemMonitoringContent() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">스토리지 사용량</span>
+                      <span className="text-sm text-gray-500">스토리지 사용량</span>
                       <span className="font-semibold text-blue-600">
                         {formatBytes(performanceMetrics.resourceUsage.storage * 1024 * 1024 * 1024)}
                       </span>
@@ -406,10 +406,10 @@ export default function SystemMonitoringContent() {
           </div>
         )}
 
-        {/* Error Logs */}
-        <div className="bg-card border border-border rounded-lg p-6">
+                {/* Error Logs */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground">에러 로그 (24시간)</h2>
+            <h2 className="text-xl font-semibold text-gray-900">에러 로그 (24시간)</h2>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
@@ -425,7 +425,7 @@ export default function SystemMonitoringContent() {
           <div className="flex items-center space-x-4 mb-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   placeholder="에러 메시지, 서비스명 검색..."
                   value={searchTerm}
@@ -436,11 +436,11 @@ export default function SystemMonitoringContent() {
             </div>
             
             <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Filter className="w-4 h-4 text-gray-400" />
               <select 
                 value={selectedFilter}
-                                 onChange={(e) => setSelectedFilter(e.target.value as string)}
-                 className="bg-background border border-border rounded-md px-3 py-2 text-foreground"
+                onChange={(e) => setSelectedFilter(e.target.value as string)}
+                className="bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-900"
               >
                 <option value="all">모든 로그</option>
                 <option value="error">에러</option>
@@ -453,7 +453,7 @@ export default function SystemMonitoringContent() {
           {filteredErrorLogs.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <p className="text-gray-500">
                 {errorLogs.length === 0 
                   ? "최근 24시간 동안 에러가 없습니다." 
                   : "검색 조건에 맞는 로그가 없습니다."
@@ -478,15 +478,15 @@ export default function SystemMonitoringContent() {
                         }>
                           {log.level.toUpperCase()}
                         </Badge>
-                        <span className="text-sm font-medium text-foreground">{log.service}</span>
+                        <span className="text-sm font-medium text-gray-900">{log.service}</span>
                       </div>
-                      <p className="text-sm text-foreground mb-1">{log.message}</p>
+                      <p className="text-sm text-gray-900 mb-1">{log.message}</p>
                       {log.organizationId && (
-                        <p className="text-xs text-muted-foreground">조직: {log.organizationId}</p>
+                        <p className="text-xs text-gray-500">조직: {log.organizationId}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-500">
                         {log.timestamp.toLocaleString()}
                       </p>
                       {log.resolved && (
