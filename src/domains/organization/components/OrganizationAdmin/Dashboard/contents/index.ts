@@ -3,7 +3,7 @@ export { default as SystemDashboardContent } from './SystemDashboardContent'
 
 // 기존 패널들을 콘텐츠로 활용
 export { default as SystemAnalyticsContent } from '../SystemAnalyticsPanel'
-export { default as SystemMonitoringContent } from '../SystemMonitoringPanel'
+export { default as SystemMonitoringContent } from './SystemMonitoringContent'
 export { default as CreditManagementContent } from '../EnterpriseCreditManagementPanel'
 export { EnterpriseManagementPanel as EnterpriseManagementContent } from '../EnterpriseManagementPanel'
 export { DeviceSystemManagementPanel as DeviceManagementContent } from '../DeviceSystemManagementPanel'
