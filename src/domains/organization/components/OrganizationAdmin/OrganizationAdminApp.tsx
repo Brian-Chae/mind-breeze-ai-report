@@ -89,13 +89,13 @@ export default function OrganizationAdminApp() {
   const getUserRoleName = (userType: string | undefined) => {
     switch (userType) {
       case 'SYSTEM_ADMIN':
-        return '시스템 관리자'
+        return '시스템관리자'
       case 'ORGANIZATION_ADMIN':
-        return '조직 관리자'
+        return '조직관리자'
       case 'ORGANIZATION_MEMBER':
-        return '조직 구성원'
+        return '조직구성원'
       case 'INDIVIDUAL_USER':
-        return '개인 사용자'
+        return '개인사용자'
       default:
         return '관리자'
     }
@@ -539,7 +539,7 @@ export default function OrganizationAdminApp() {
             </div>
             <div className="flex-1">
               <p className="text-xs font-medium text-gray-900">
-                {currentContext.user?.displayName || '사용자'} | {getUserRoleName(currentContext.user?.userType)}
+                {currentContext.user?.userType === 'SYSTEM_ADMIN' ? '관리자' : (currentContext.user?.displayName || '사용자')} | {getUserRoleName(currentContext.user?.userType)}
               </p>
               <p className="text-xs text-gray-500">{currentContext.user?.email || '이메일 없음'}</p>
             </div>
