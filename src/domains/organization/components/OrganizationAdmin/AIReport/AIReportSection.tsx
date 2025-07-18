@@ -1682,51 +1682,7 @@ AI 건강 분석 리포트
     </div>
   )
 
-  const renderReportList = () => {
-    // 실제 생성된 리포트들을 평면화하여 수집
-    const allGeneratedReports = useMemo(() => {
-      const reports: any[] = []
-      
-      measurementDataList.forEach(measurementData => {
-        if (measurementData.availableReports && measurementData.availableReports.length > 0) {
-          measurementData.availableReports.forEach((report: any) => {
-            reports.push({
-              ...report,
-              // 측정자 정보 추가
-              subjectName: measurementData.userName,
-              subjectAge: measurementData.userAge,
-              subjectGender: measurementData.userGender,
-              subjectOccupation: measurementData.userOccupation,
-              subjectDepartment: measurementData.userDepartment,
-              subjectEmail: measurementData.userEmail,
-              measurementDate: measurementData.timestamp,
-              managerInfo: measurementData.managerInfo,
-              // 원본 측정 데이터 참조
-              measurementDataId: measurementData.id
-            })
-          })
-        }
-      })
-      
-      return reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    }, [measurementDataList])
-
-    // 검색 및 필터링
-    const filteredGeneratedReports = useMemo(() => {
-      return allGeneratedReports.filter(report => {
-        const matchesSearch = searchQuery === '' || 
-          report.subjectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          report.engineName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          new Date(report.createdAt).toLocaleDateString('ko-KR').includes(searchQuery)
-        
-        const matchesEngine = selectedEngineFilter === 'all' || 
-          report.engineId === selectedEngineFilter
-        
-        return matchesSearch && matchesEngine
-      })
-    }, [allGeneratedReports, searchQuery, selectedEngineFilter])
-
-    return (
+  const renderReportList = () => (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">리포트 목록</h2>
@@ -2046,7 +2002,6 @@ AI 건강 분석 리포트
         )}
       </div>
     )
-  }
 
   // 분석 엔진 목록 추출
   const availableEngines = useMemo(() => {
@@ -2124,6 +2079,49 @@ AI 건강 분석 리포트
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery, selectedEngineFilter, sortOrder, dateFilter])
+
+  // 리포트 목록용: 실제 생성된 리포트들 수집
+  const allGeneratedReports = useMemo(() => {
+    const reports: any[] = []
+    
+    measurementDataList.forEach(measurementData => {
+      if (measurementData.availableReports && measurementData.availableReports.length > 0) {
+        measurementData.availableReports.forEach((report: any) => {
+          reports.push({
+            ...report,
+            // 측정자 정보 추가
+            subjectName: measurementData.userName,
+            subjectAge: measurementData.userAge,
+            subjectGender: measurementData.userGender,
+            subjectOccupation: measurementData.userOccupation,
+            subjectDepartment: measurementData.userDepartment,
+            subjectEmail: measurementData.userEmail,
+            measurementDate: measurementData.timestamp,
+            managerInfo: measurementData.managerInfo,
+            // 원본 측정 데이터 참조
+            measurementDataId: measurementData.id
+          })
+        })
+      }
+    })
+    
+    return reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [measurementDataList])
+
+  // 리포트 목록용: 검색 및 필터링된 리포트들
+  const filteredGeneratedReports = useMemo(() => {
+    return allGeneratedReports.filter(report => {
+      const matchesSearch = searchQuery === '' || 
+        report.subjectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.engineName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        new Date(report.createdAt).toLocaleDateString('ko-KR').includes(searchQuery)
+      
+      const matchesEngine = selectedEngineFilter === 'all' || 
+        report.engineId === selectedEngineFilter
+      
+      return matchesSearch && matchesEngine
+    })
+  }, [allGeneratedReports, searchQuery, selectedEngineFilter])
 
   // 통계 계산 함수 (필터링된 데이터 기준)
   const calculateStats = useMemo(() => {
