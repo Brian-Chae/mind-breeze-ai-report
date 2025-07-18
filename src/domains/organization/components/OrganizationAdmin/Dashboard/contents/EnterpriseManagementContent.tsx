@@ -232,31 +232,31 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
                       placeholder="기업명, 코드, 이메일로 검색..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
                     />
                   </div>
                   
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
                   >
-                    <option value="all">전체 상태</option>
-                    <option value="active">활성</option>
-                    <option value="trial">트라이얼</option>
-                    <option value="suspended">정지</option>
-                    <option value="pending">대기</option>
+                    <option value="all" className="text-slate-900">전체 상태</option>
+                    <option value="active" className="text-slate-900">활성</option>
+                    <option value="trial" className="text-slate-900">트라이얼</option>
+                    <option value="suspended" className="text-slate-900">정지</option>
+                    <option value="pending" className="text-slate-900">대기</option>
                   </select>
 
                   <select
                     value={filterRisk}
                     onChange={(e) => setFilterRisk(e.target.value)}
-                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
                   >
-                    <option value="all">전체 위험도</option>
-                    <option value="low">낮음</option>
-                    <option value="medium">보통</option>
-                    <option value="high">높음</option>
+                    <option value="all" className="text-slate-900">전체 위험도</option>
+                    <option value="low" className="text-slate-900">낮음</option>
+                    <option value="medium" className="text-slate-900">보통</option>
+                    <option value="high" className="text-slate-900">높음</option>
                   </select>
                 </div>
 
