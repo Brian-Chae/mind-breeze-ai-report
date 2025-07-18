@@ -102,39 +102,19 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     console.log('🔵 이메일 로그인 시도:', formData.email);
     
     try {
-      // 시스템 관리자 계정 확인
-      const isSuperAdmin = formData.email === 'admin@mindbreeze.kr' && formData.password === 'looxidlabs1234!';
+      // 모든 사용자(시스템 관리자 포함) Firebase Authentication 사용
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
-      if (isSuperAdmin) {
-        console.log('🔴 시스템 관리자 로그인 감지 - Firebase 우회 처리');
+      console.log('✅ Firebase 인증 성공:', {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email
+      });
+      
+      // 시스템 관리자인지 확인하여 Firestore 프로필 업데이트
+      if (formData.email === 'admin@mindbreeze.kr') {
+        console.log('🔴 시스템 관리자 로그인 감지 - Firestore 프로필 업데이트');
         
-        // Firebase 우회: 직접 사용자 객체 생성
-        const fakeUser = {
-          uid: 'system-admin-uid',
-          email: 'admin@mindbreeze.kr',
-          displayName: 'System Administrator',
-          emailVerified: true,
-          isAnonymous: false,
-          providerData: [],
-          refreshToken: '',
-          tenantId: null,
-          delete: async () => {},
-          getIdToken: async () => 'fake-token',
-          getIdTokenResult: async () => ({} as any),
-          reload: async () => {},
-          toJSON: () => ({}),
-          phoneNumber: null,
-          photoURL: null,
-          providerId: 'firebase',
-          metadata: {
-            creationTime: new Date().toISOString(),
-            lastSignInTime: new Date().toISOString(),
-            toJSON: () => ({})
-          }
-        };
-        
-        // 시스템 관리자 프로필을 Firebase에 저장
-        await FirebaseService.updateUserProfile(fakeUser.uid, {
+        await FirebaseService.updateUserProfile(userCredential.user.uid, {
           userType: 'SYSTEM_ADMIN',
           displayName: 'System Administrator',
           email: formData.email,
@@ -150,28 +130,17 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           ],
           lastLoginAt: new Date(),
           isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          organizationId: null, // 시스템 관리자는 특정 조직에 속하지 않음
+          role: 'SYSTEM_ADMIN',
+          department: 'System Administration',
+          position: 'System Administrator',
+          status: 'ACTIVE'
         });
         
-        // 수동으로 인증 상태 설정 (Firebase Auth 상태 변경 시뮬레이션)
-        // 이 부분은 AuthProvider에서 처리되도록 해야 합니다
-        console.log('✅ 시스템 관리자 Firebase 우회 로그인 완료');
+        console.log('✅ 시스템 관리자 Firestore 프로필 업데이트 완료');
         toast.success('시스템 관리자로 로그인되었습니다!');
-        
-        // 강제로 대시보드로 이동
-        navigate('/app/dashboard', { replace: true });
-        
       } else {
-        // 일반 사용자 로그인
-        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-        
-        console.log('✅ Firebase 인증 성공:', {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email
-        });
-        
-        // 마지막 로그인 시간 업데이트
+        // 일반 사용자 로그인 시간 업데이트
         try {
           await FirebaseService.updateUserProfile(userCredential.user.uid, {
             lastLoginAt: new Date()
@@ -179,9 +148,9 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         } catch (updateError) {
           console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
         }
-        
-        console.log('✅ 이메일 로그인 완료');
       }
+      
+      console.log('✅ 이메일 로그인 완료');
       
     } catch (error: any) {
       console.error('❌ 이메일 로그인 오류:', error);
