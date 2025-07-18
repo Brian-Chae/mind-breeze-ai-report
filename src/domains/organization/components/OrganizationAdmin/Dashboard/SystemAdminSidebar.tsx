@@ -15,7 +15,8 @@ import {
   Settings,
   Activity,
   TrendingUp,
-  Shield
+  Shield,
+  LogOut
 } from 'lucide-react'
 
 export type SystemAdminMenuItem = 
@@ -37,13 +38,15 @@ interface SystemAdminSidebarProps {
     devices: number
     enterprises: number
   }
+  onLogout?: () => void
 }
 
 export const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
   activeMenu,
   onMenuChange,
   systemHealth = 'healthy',
-  notifications = { credits: 0, devices: 0, enterprises: 0 }
+  notifications = { credits: 0, devices: 0, enterprises: 0 },
+  onLogout
 }) => {
   const menuItems = [
     {
@@ -213,6 +216,19 @@ export const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
               <div className="font-semibold text-green-600">{notifications.enterprises}</div>
             </div>
           </div>
+
+          {/* 로그아웃 버튼 */}
+          {onLogout && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLogout}
+              className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              로그아웃
+            </Button>
+          )}
         </div>
       </div>
     </div>

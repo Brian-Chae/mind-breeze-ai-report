@@ -515,6 +515,11 @@ export default function OrganizationAdminApp() {
     }
   }
 
+  // 시스템 관리자인 경우 새로운 사이드바 시스템 사용
+  if (currentContext.user && (currentContext.user as any).userType === 'SYSTEM_ADMIN') {
+    return <SystemAdminDashboard onLogout={handleLogout} />
+  }
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* 사이드바 */}

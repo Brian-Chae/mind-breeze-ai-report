@@ -11,7 +11,11 @@ import {
   MeasurementDataContent
 } from './contents'
 
-export default function SystemAdminDashboard() {
+interface SystemAdminDashboardProps {
+  onLogout?: () => void
+}
+
+export default function SystemAdminDashboard({ onLogout }: SystemAdminDashboardProps = {}) {
   const [activeMenu, setActiveMenu] = useState<SystemAdminMenuItem>('dashboard')
   const [systemHealth, setSystemHealth] = useState<'healthy' | 'warning' | 'error'>('healthy')
   const [notifications, setNotifications] = useState({
@@ -86,6 +90,7 @@ export default function SystemAdminDashboard() {
         onMenuChange={setActiveMenu}
         systemHealth={systemHealth}
         notifications={notifications}
+        onLogout={onLogout}
       />
       
       {/* 메인 콘텐츠 영역 */}
