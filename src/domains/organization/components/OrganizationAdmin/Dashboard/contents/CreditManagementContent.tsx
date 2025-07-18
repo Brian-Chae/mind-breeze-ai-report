@@ -246,19 +246,19 @@ export default function CreditManagementContent() {
                   placeholder="조직명 또는 ID 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
                 />
               </div>
               
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
               >
-                <option value="all">전체 상태</option>
-                <option value="active">활성</option>
-                <option value="suspended">정지</option>
-                <option value="limitReached">한도도달</option>
+                <option value="all" className="text-slate-900">전체 상태</option>
+                <option value="active" className="text-slate-900">활성</option>
+                <option value="suspended" className="text-slate-900">정지</option>
+                <option value="limitReached" className="text-slate-900">한도도달</option>
               </select>
             </div>
 
@@ -615,7 +615,7 @@ function GrantCreditsModal({ organizations, onClose, onGrant, systemSettings }: 
                 min="1"
                 max={systemSettings?.globalCreditLimits.maxFreeCredits || 1000}
                 placeholder="지급할 크래딧 수량"
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
               />
               {systemSettings && (
                 <p className="text-xs text-slate-500 mt-1">
@@ -635,7 +635,7 @@ function GrantCreditsModal({ organizations, onClose, onGrant, systemSettings }: 
                 min="1"
                 max="365"
                 placeholder="만료 기간 (비워두면 무제한)"
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
               />
             </div>
           </div>
@@ -649,7 +649,7 @@ function GrantCreditsModal({ organizations, onClose, onGrant, systemSettings }: 
               onChange={(e) => setReason(e.target.value)}
               placeholder="크래딧 지급 사유를 입력하세요"
               maxLength={100}
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
             />
           </div>
 
