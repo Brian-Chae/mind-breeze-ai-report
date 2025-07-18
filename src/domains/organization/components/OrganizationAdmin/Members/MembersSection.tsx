@@ -36,7 +36,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
 
 // Firebase 서비스 import
-import { MemberManagementService } from '../../../services/MemberManagementService'
+import { memberManagementService } from '../../../services/MemberManagementService'
 import { MemberListResponse } from '../../../types/member'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { UserType } from '@core/types/business'
@@ -82,7 +82,7 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
   // 실제 데이터 상태
   const [membersData, setMembersData] = useState<MemberListResponse | null>(null)
   const [members, setMembers] = useState<Member[]>([])
-  const [memberManagementService] = useState(new MemberManagementService())
+  // 싱글톤 인스턴스 사용
 
   // 로딩 및 에러 상태
   const [loading, setLoading] = useState(false)
@@ -235,21 +235,69 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
   }
 
   // 초대 관리 기능들
-  const handleSendInvite = () => {
-    if (newInviteEmail.trim()) {
-      const newInvitation: Invitation = {
-        id: Date.now().toString(),
+  const handleSendInvite = async () => {
+    if (!newInviteEmail.trim()) return
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 현재 사용자 정보 가져오기
+      const currentContext = enterpriseAuthService.getCurrentContext()
+      if (!currentContext.user || !currentContext.user.organizationId) {
+        setError('조직 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      // 역할 변환 (UI role → MemberRole)
+      const memberRoleMap = {
+        'admin': 'ORGANIZATION_ADMIN',
+        'manager': 'DEPARTMENT_MANAGER',
+        'member': 'ORGANIZATION_MEMBER'
+      } as const
+
+      const inviteRequest = {
+        organizationId: currentContext.user.organizationId,
         email: newInviteEmail,
+        role: memberRoleMap[newInviteRole] || 'ORGANIZATION_MEMBER',
+        displayName: newInviteEmail.split('@')[0], // 이메일에서 이름 추출
+        departments: newInviteDepartment ? [newInviteDepartment] : [],
+        sendEmail: true // 이메일 발송 여부
+      }
+
+      // 실제 초대 요청
+      const invitation = await memberManagementService.inviteMember(
+        inviteRequest,
+        currentContext.user.id
+      )
+
+      console.log('초대 성공:', invitation)
+      
+      // UI 상태 업데이트
+      const newInvitation: Invitation = {
+        id: invitation.id,
+        email: invitation.email,
         role: newInviteRole,
         department: newInviteDepartment,
-        sentDate: new Date().toLocaleDateString(),
+        sentDate: invitation.createdAt.toLocaleDateString(),
         status: 'pending',
-        invitedBy: '관리자'
+        invitedBy: currentContext.user.displayName || '관리자'
       }
       setInvitations([...invitations, newInvitation])
+      
+      // 폼 초기화
       setNewInviteEmail('')
       setNewInviteDepartment('')
       setShowInviteForm(false)
+
+      // 멤버 목록 새로고침
+      await loadMembersData()
+
+    } catch (err: any) {
+      console.error('초대 실패:', err)
+      setError(err.message || '초대를 보내는 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
     }
   }
 

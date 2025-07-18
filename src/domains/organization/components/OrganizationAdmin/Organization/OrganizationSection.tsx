@@ -32,7 +32,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 // Firebase 서비스 import
 import { OrganizationService, OrganizationInfo } from '../../../services/CompanyService'
-import { MemberManagementService } from '../../../services/MemberManagementService'
+import { memberManagementService } from '../../../services/MemberManagementService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 
 interface OrganizationSectionProps {
@@ -166,7 +166,7 @@ export default function OrganizationSection({ subSection, onNavigate }: Organiza
           // 조직 관리 및 구조에 필요한 데이터 로드
           const [orgData, membersResponse] = await Promise.all([
             OrganizationService.getOrganizationById(organizationId),
-            new MemberManagementService().getOrganizationMembers(organizationId)
+            memberManagementService.getOrganizationMembers(organizationId)
           ])
 
           if (orgData) {
