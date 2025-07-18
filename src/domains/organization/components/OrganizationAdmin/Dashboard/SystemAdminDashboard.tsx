@@ -8,6 +8,8 @@ import systemAdminService, {
   SystemActivity 
 } from '../../../services/SystemAdminService'
 import SystemAnalyticsPanel from './SystemAnalyticsPanel'
+import SystemMonitoringPanel from './SystemMonitoringPanel'
+import EnterpriseCreditManagementPanel from './EnterpriseCreditManagementPanel'
 import { 
   Users, 
   Building, 
@@ -62,6 +64,8 @@ export default function SystemAdminDashboard() {
   const [organizations, setOrganizations] = useState<OrganizationSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [showAnalytics, setShowAnalytics] = useState(false)
+  const [showMonitoring, setShowMonitoring] = useState(false)
+  const [showCreditManagement, setShowCreditManagement] = useState(false)
 
   useEffect(() => {
     loadSystemData()
@@ -208,9 +212,17 @@ export default function SystemAdminDashboard() {
     )
   }
 
-  // 분석 패널 표시 시 해당 컴포넌트 렌더링
+  // 패널 표시 시 해당 컴포넌트 렌더링
   if (showAnalytics) {
     return <SystemAnalyticsPanel systemStats={systemStats} />
+  }
+
+  if (showMonitoring) {
+    return <SystemMonitoringPanel isVisible={showMonitoring} onClose={() => setShowMonitoring(false)} />
+  }
+
+  if (showCreditManagement) {
+    return <EnterpriseCreditManagementPanel isVisible={showCreditManagement} onClose={() => setShowCreditManagement(false)} />
   }
 
   return (
@@ -229,13 +241,31 @@ export default function SystemAdminDashboard() {
                 시스템 상태: {systemStats.systemHealth === 'healthy' ? '정상' : '주의'}
               </span>
             </div>
-            <Button 
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              className={`${showAnalytics ? 'bg-blue-700' : 'bg-blue-600'} text-white hover:bg-blue-700`}
-            >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              {showAnalytics ? '대시보드 보기' : '상세 분석'}
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button 
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className={`${showAnalytics ? 'bg-blue-700' : 'bg-blue-600'} text-white hover:bg-blue-700`}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                {showAnalytics ? '대시보드 보기' : '상세 분석'}
+              </Button>
+              
+              <Button 
+                onClick={() => setShowMonitoring(!showMonitoring)}
+                className={`${showMonitoring ? 'bg-green-700' : 'bg-green-600'} text-white hover:bg-green-700`}
+              >
+                <Monitor className="w-4 h-4 mr-2" />
+                시스템 모니터링
+              </Button>
+              
+              <Button 
+                onClick={() => setShowCreditManagement(!showCreditManagement)}
+                className={`${showCreditManagement ? 'bg-purple-700' : 'bg-purple-600'} text-white hover:bg-purple-700`}
+              >
+                <DollarSign className="w-4 h-4 mr-2" />
+                크레딧 관리
+              </Button>
+            </div>
           </div>
         </div>
 
