@@ -37,13 +37,7 @@ interface DataStats {
   storageUsed: number
 }
 
-interface DataTypeBreakdown {
-  type: string
-  volume: number
-  percentage: number
-  sessions: number
-  color: string
-}
+
 
 interface RecentSession {
   id: string
@@ -67,7 +61,7 @@ interface StorageInfo {
 export default function MeasurementDataContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [dataStats, setDataStats] = useState<DataStats | null>(null)
-  const [dataBreakdown, setDataBreakdown] = useState<DataTypeBreakdown[]>([])
+
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([])
   const [storageInfo, setStorageInfo] = useState<StorageInfo[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -104,11 +98,7 @@ export default function MeasurementDataContent() {
         storageUsed: 68.5
       })
 
-      setDataBreakdown([
-        { type: 'EEG 데이터', volume: 1.6, percentage: 57.1, sessions: 8800, color: 'purple' },
-        { type: 'PPG 데이터', volume: 0.8, percentage: 28.6, sessions: 4400, color: 'red' },
-        { type: 'ACC 데이터', volume: 0.4, percentage: 14.3, sessions: 2200, color: 'blue' }
-      ])
+
 
       setRecentSessions([
         { id: '1', userName: '김측정', organizationName: '헬스테크', dataType: 'EEG', duration: 15, dataSize: 45.2, quality: 98, timestamp: new Date(), status: 'completed' },
@@ -163,14 +153,7 @@ export default function MeasurementDataContent() {
     return <Signal className="w-4 h-4 text-slate-600" />
   }
 
-  const getTypeColor = (color: string) => {
-    switch (color) {
-      case 'purple': return { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' }
-      case 'red': return { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' }
-      case 'blue': return { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' }
-      default: return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-500' }
-    }
-  }
+
 
   const filteredSessions = recentSessions.filter(session => {
     const matchesSearch = session.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -403,38 +386,7 @@ export default function MeasurementDataContent() {
           </div>
         )}
 
-        {/* 데이터 타입별 현황 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-6">데이터 타입별 현황</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {dataBreakdown.map((data) => {
-              const colors = getTypeColor(data.color)
-              return (
-                <div key={data.type} className={`p-6 ${colors.bg} border ${colors.border} rounded-xl`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 ${colors.dot} rounded-full`}></div>
-                      <span className={`font-medium ${colors.text}`}>{data.type}</span>
-                    </div>
-                    {getDataTypeIcon(data.type)}
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <div className={`text-2xl font-bold ${colors.text}`}>{data.volume}TB</div>
-                      <div className="text-sm text-slate-600">{data.percentage}% 비율</div>
-                    </div>
-                    
-                    <div>
-                      <div className={`text-lg font-semibold ${colors.text}`}>{data.sessions.toLocaleString()}</div>
-                      <div className="text-sm text-slate-600">총 세션 수</div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+
 
         {/* 최근 측정 세션 */}
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
