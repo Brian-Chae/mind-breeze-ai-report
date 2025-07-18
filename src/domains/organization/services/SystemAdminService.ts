@@ -259,6 +259,303 @@ export interface SystemSettings {
   }
 }
 
+// 새로운 기업 관리 관련 인터페이스들
+export interface EnterpriseOverview {
+  organizationId: string
+  organizationName: string
+  companyCode: string
+  adminInfo: {
+    name: string
+    email: string
+    registeredAt: Date
+    lastLogin: Date
+    isActive: boolean
+  }
+  memberStats: {
+    totalMembers: number
+    activeMembers: number
+    adminCount: number
+    regularUserCount: number
+    measurementUserCount: number
+  }
+  usageStats: {
+    totalReports: number
+    reportsThisMonth: number
+    totalMeasurements: number
+    measurementsThisMonth: number
+    averageReportsPerMember: number
+    lastActivityDate: Date
+  }
+  creditInfo: {
+    currentBalance: number
+    creditLimit: number
+    usedThisMonth: number
+    freeCreditsRemaining: number
+    freeCreditsExpiry?: Date
+    totalCreditsUsed: number
+  }
+  status: {
+    organizationStatus: 'active' | 'trial' | 'suspended' | 'pending'
+    plan: 'trial' | 'basic' | 'premium' | 'enterprise'
+    subscriptionExpiry?: Date
+    healthScore: number // 0-100
+    riskLevel: 'low' | 'medium' | 'high'
+  }
+  performance: {
+    engagementRate: number // percentage
+    adoptionRate: number // percentage
+    churnRisk: number // percentage
+    satisfactionScore?: number // 1-5
+  }
+  recentActivity: Array<{
+    type: 'member_joined' | 'report_generated' | 'credits_used' | 'admin_action'
+    description: string
+    timestamp: Date
+    metadata?: Record<string, any>
+  }>
+}
+
+export interface RecentEnterpriseRegistration {
+  organizationId: string
+  organizationName: string
+  companyCode: string
+  adminInfo: {
+    name: string
+    email: string
+    phone?: string
+    department?: string
+  }
+  registrationDetails: {
+    registeredAt: Date
+    source: 'direct' | 'invitation' | 'promotion' | 'trial'
+    referralCode?: string
+    initialPlan: string
+  }
+  setupProgress: {
+    profileCompleted: boolean
+    firstMemberAdded: boolean
+    firstMeasurementDone: boolean
+    firstReportGenerated: boolean
+    progressPercentage: number
+  }
+  trialInfo?: {
+    startDate: Date
+    endDate: Date
+    freeCreditsGranted: number
+    freeCreditsUsed: number
+    daysRemaining: number
+  }
+  flags: {
+    needsAttention: boolean
+    isHighValue: boolean
+    hasIssues: boolean
+    isChampion: boolean
+  }
+}
+
+export interface ReportAnalytics {
+  organizationId: string
+  organizationName: string
+  reportSummary: {
+    totalReports: number
+    reportsThisMonth: number
+    reportsLastMonth: number
+    averageReportsPerUser: number
+    mostActiveUsers: Array<{
+      userId: string
+      userName: string
+      reportCount: number
+    }>
+  }
+  reportTypes: Array<{
+    engineName: string
+    count: number
+    percentage: number
+    averageProcessingTime: number
+    successRate: number
+  }>
+  qualityMetrics: {
+    averageQualityScore: number
+    highQualityReports: number // score > 80
+    lowQualityReports: number // score < 50
+    averageProcessingTime: number
+    errorRate: number
+  }
+  usagePatterns: {
+    peakUsageHours: Array<{ hour: number; count: number }>
+    busyDays: Array<{ day: string; count: number }>
+    seasonalTrends: Array<{
+      month: string
+      reportCount: number
+      trend: 'up' | 'down' | 'stable'
+    }>
+  }
+  recentReports: Array<{
+    reportId: string
+    userId: string
+    userName: string
+    engineUsed: string
+    qualityScore: number
+    createdAt: Date
+    status: 'completed' | 'processing' | 'failed'
+  }>
+}
+
+export interface EnterpriseManagementAction {
+  organizationId: string
+  action: 'suspend_organization' | 'activate_organization' | 'extend_trial' | 
+           'grant_credits' | 'set_limit' | 'change_plan' | 'send_notification' | 
+           'flag_review' | 'escalate_support'
+  parameters: {
+    amount?: number
+    reason: string
+    duration?: number // days
+    notificationMessage?: string
+    escalationLevel?: 'low' | 'medium' | 'high' | 'urgent'
+    newPlan?: string
+    creditLimit?: number
+    expiryDate?: Date
+  }
+  scheduledFor?: Date
+  sendNotification: boolean
+  requiresApproval: boolean
+  metadata?: Record<string, any>
+}
+
+// 디바이스 관리 관련 인터페이스들
+export interface SystemDeviceOverview {
+  totalDevices: number
+  activeDevices: number
+  offlineDevices: number
+  maintenanceDevices: number
+  errorDevices: number
+  averageBatteryLevel: number
+  devicesNeedingAttention: number
+  organizationBreakdown: Array<{
+    organizationId: string
+    organizationName: string
+    totalDevices: number
+    activeDevices: number
+    offlineDevices: number
+    errorDevices: number
+    averageBatteryLevel: number
+    lastActivity: Date
+  }>
+  deviceTypeBreakdown: Array<{
+    type: 'EEG' | 'PPG' | 'MULTI_SENSOR' | 'WEARABLE'
+    count: number
+    activeCount: number
+    percentage: number
+  }>
+  recentActivity: Array<{
+    deviceId: string
+    deviceName: string
+    organizationId: string
+    organizationName: string
+    action: string
+    timestamp: Date
+    details?: string
+  }>
+}
+
+export interface OrganizationDeviceBreakdown {
+  organizationId: string
+  organizationName: string
+  companyCode: string
+  totalDevices: number
+  deviceStats: {
+    online: number
+    offline: number
+    maintenance: number
+    error: number
+    lowBattery: number // <20%
+    needsCalibration: number
+    needsFirmwareUpdate: number
+  }
+  deviceTypes: Array<{
+    type: string
+    count: number
+    activeCount: number
+  }>
+  utilizationRate: number // percentage
+  averageSessionTime: number // minutes
+  departmentBreakdown: Array<{
+    departmentId: string
+    departmentName: string
+    assignedDevices: number
+    activeDevices: number
+    utilizationRate: number
+  }>
+  recentDeviceActivity: Array<{
+    deviceId: string
+    deviceName: string
+    action: 'assigned' | 'unassigned' | 'status_changed' | 'maintenance'
+    timestamp: Date
+    userId?: string
+    userName?: string
+    details?: string
+  }>
+  healthScore: number // 0-100
+  issuesCount: number
+}
+
+export interface DeviceUsageAnalytics {
+  organizationId: string
+  organizationName: string
+  timeRange: 'week' | 'month' | 'quarter'
+  usageMetrics: {
+    totalSessions: number
+    averageSessionDuration: number // minutes
+    totalDataCollected: number // MB
+    peakUsageHours: Array<{ hour: number; sessionCount: number }>
+    dailyUsagePattern: Array<{ date: string; sessionCount: number; totalDuration: number }>
+  }
+  devicePerformance: Array<{
+    deviceId: string
+    deviceName: string
+    serialNumber: string
+    sessionCount: number
+    totalUptime: number // hours
+    errorRate: number // percentage
+    batteryPerformance: number // average level
+    dataQuality: number // 0-100
+  }>
+  userEngagement: Array<{
+    userId: string
+    userName: string
+    sessionCount: number
+    averageSessionTime: number
+    lastActivity: Date
+    consistencyScore: number // 0-100
+  }>
+  alerts: Array<{
+    type: 'device_offline' | 'low_battery' | 'calibration_needed' | 'firmware_outdated' | 'error_rate_high'
+    deviceId: string
+    deviceName: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    message: string
+    timestamp: Date
+    acknowledged: boolean
+  }>
+}
+
+export interface DeviceManagementAction {
+  deviceId: string
+  organizationId: string
+  action: 'update_firmware' | 'schedule_maintenance' | 'reassign_device' | 
+          'force_sync' | 'reset_device' | 'calibrate_device' | 'replace_device'
+  parameters: {
+    reason: string
+    scheduledFor?: Date
+    newUserId?: string
+    firmwareVersion?: string
+    maintenanceType?: 'routine' | 'repair' | 'replacement'
+    notes?: string
+  }
+  sendNotification: boolean
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+}
+
 export class SystemAdminService extends BaseService {
   constructor() {
     super()
@@ -1702,6 +1999,1210 @@ export class SystemAdminService extends BaseService {
     } catch (error) {
       this.log('error', '시스템 활동 기록 실패', { error })
     }
+  }
+
+  // ===================== 기업 관리 기능 메서드들 =====================
+
+  /**
+   * 모든 기업 개요 정보 조회
+   */
+  async getAllEnterpriseOverview(): Promise<EnterpriseOverview[]> {
+    return this.measureAndLog('getAllEnterpriseOverview', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const organizations = await getDocs(collection(db, 'organizations'))
+        const enterpriseOverviews: EnterpriseOverview[] = []
+
+        for (const orgDoc of organizations.docs) {
+          const orgData = orgDoc.data()
+          const organizationId = orgDoc.id
+
+          // 병렬로 관련 데이터 수집
+          const [members, measurementUsers, reports, sessions, creditTransactions] = await Promise.allSettled([
+            getDocs(query(collection(db, 'organizationMembers'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'measurementUsers'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'aiReports'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'measurementSessions'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'creditTransactions'), where('organizationId', '==', organizationId)))
+          ])
+
+          // 데이터 파싱 및 계산
+          const memberDocs = members.status === 'fulfilled' ? members.value.docs : []
+          const measurementUserDocs = measurementUsers.status === 'fulfilled' ? measurementUsers.value.docs : []
+          const reportDocs = reports.status === 'fulfilled' ? reports.value.docs : []
+          const sessionDocs = sessions.status === 'fulfilled' ? sessions.value.docs : []
+          const creditDocs = creditTransactions.status === 'fulfilled' ? creditTransactions.value.docs : []
+
+          // 관리자 정보 찾기
+          const adminMember = memberDocs.find(doc => {
+            const data = doc.data()
+            return data.role === 'ORGANIZATION_ADMIN'
+          })?.data()
+
+          // 이번 달 시작 날짜
+          const thisMonth = new Date()
+          thisMonth.setDate(1)
+          thisMonth.setHours(0, 0, 0, 0)
+
+          // 통계 계산
+          const activeMembers = memberDocs.filter(doc => {
+            const data = doc.data()
+            const lastActive = data.lastActivity?.toDate?.()
+            return lastActive && lastActive >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          }).length
+
+          const reportsThisMonth = reportDocs.filter(doc => {
+            const data = doc.data()
+            const createdAt = data.createdAt?.toDate?.()
+            return createdAt && createdAt >= thisMonth
+          }).length
+
+          const measurementsThisMonth = sessionDocs.filter(doc => {
+            const data = doc.data()
+            const startTime = data.startTime?.toDate?.()
+            return startTime && startTime >= thisMonth
+          }).length
+
+          // 크레딧 정보 계산
+          const creditBalance = creditDocs.reduce((sum, doc) => {
+            const data = doc.data()
+            return sum + (data.amount || 0)
+          }, 0)
+
+          const creditsUsedThisMonth = Math.abs(creditDocs
+            .filter(doc => {
+              const data = doc.data()
+              const createdAt = data.createdAt?.toDate?.()
+              return createdAt && createdAt >= thisMonth && (data.amount || 0) < 0
+            })
+            .reduce((sum, doc) => sum + Math.abs(doc.data().amount || 0), 0))
+
+          const freeCreditsRemaining = creditDocs
+            .filter(doc => doc.data().type === 'free_grant')
+            .reduce((sum, doc) => sum + (doc.data().amount || 0), 0)
+
+          // 최근 활동
+          const lastActivityDate = Math.max(
+            ...reportDocs.map(doc => doc.data().createdAt?.toDate?.()?.getTime() || 0),
+            ...sessionDocs.map(doc => doc.data().startTime?.toDate?.()?.getTime() || 0)
+          )
+
+          const enterpriseOverview: EnterpriseOverview = {
+            organizationId,
+            organizationName: orgData.name || '알 수 없음',
+            companyCode: orgData.companyCode || '',
+            adminInfo: {
+              name: adminMember?.name || '관리자 없음',
+              email: adminMember?.email || '',
+              registeredAt: adminMember?.createdAt?.toDate?.() || new Date(),
+              lastLogin: adminMember?.lastActivity?.toDate?.() || new Date(),
+              isActive: !!adminMember
+            },
+            memberStats: {
+              totalMembers: memberDocs.length,
+              activeMembers,
+              adminCount: memberDocs.filter(doc => doc.data().role === 'ORGANIZATION_ADMIN').length,
+              regularUserCount: memberDocs.filter(doc => doc.data().role === 'ORGANIZATION_MEMBER').length,
+              measurementUserCount: measurementUserDocs.length
+            },
+            usageStats: {
+              totalReports: reportDocs.length,
+              reportsThisMonth,
+              totalMeasurements: sessionDocs.length,
+              measurementsThisMonth,
+              averageReportsPerMember: memberDocs.length > 0 ? reportDocs.length / memberDocs.length : 0,
+              lastActivityDate: lastActivityDate ? new Date(lastActivityDate) : new Date()
+            },
+            creditInfo: {
+              currentBalance: creditBalance,
+              creditLimit: 1000, // 기본값
+              usedThisMonth: creditsUsedThisMonth,
+              freeCreditsRemaining,
+              totalCreditsUsed: Math.abs(creditDocs.filter(doc => (doc.data().amount || 0) < 0).reduce((sum, doc) => sum + Math.abs(doc.data().amount || 0), 0))
+            },
+            status: {
+              organizationStatus: orgData.status || 'active',
+              plan: this.determinePlan(creditBalance, creditsUsedThisMonth),
+              healthScore: this.calculateHealthScore(memberDocs.length, reportDocs.length, activeMembers),
+              riskLevel: this.calculateRiskLevel(activeMembers, memberDocs.length, creditBalance)
+            },
+            performance: {
+              engagementRate: memberDocs.length > 0 ? (activeMembers / memberDocs.length) * 100 : 0,
+              adoptionRate: memberDocs.length > 0 ? (reportDocs.length > 0 ? 100 : 0) : 0,
+              churnRisk: this.calculateChurnRisk(activeMembers, memberDocs.length, lastActivityDate)
+            },
+            recentActivity: await this.getRecentOrganizationActivity(organizationId)
+          }
+
+          enterpriseOverviews.push(enterpriseOverview)
+        }
+
+        return enterpriseOverviews.sort((a, b) => 
+          b.adminInfo.registeredAt.getTime() - a.adminInfo.registeredAt.getTime()
+        )
+
+      } catch (error) {
+        this.log('error', '기업 개요 조회 실패', { error })
+        throw new Error('기업 개요 정보를 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 최근 기업 등록 현황 조회
+   */
+  async getRecentEnterpriseRegistrations(days: number = 30): Promise<RecentEnterpriseRegistration[]> {
+    return this.measureAndLog('getRecentEnterpriseRegistrations', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+        
+        const organizationsQuery = query(
+          collection(db, 'organizations'),
+          where('createdAt', '>=', Timestamp.fromDate(cutoffDate)),
+          orderBy('createdAt', 'desc')
+        )
+
+        const organizations = await getDocs(organizationsQuery)
+        const registrations: RecentEnterpriseRegistration[] = []
+
+        for (const orgDoc of organizations.docs) {
+          const orgData = orgDoc.data()
+          const organizationId = orgDoc.id
+
+          // 관리자 정보 가져오기
+          const adminQuery = query(
+            collection(db, 'organizationMembers'),
+            where('organizationId', '==', organizationId),
+            where('role', '==', 'ORGANIZATION_ADMIN'),
+            limit(1)
+          )
+          
+          const adminSnapshot = await getDocs(adminQuery)
+          const adminData = adminSnapshot.docs[0]?.data()
+
+          // 진행 상황 확인
+          const [memberSnapshot, sessionSnapshot, reportSnapshot] = await Promise.all([
+            getDocs(query(collection(db, 'organizationMembers'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'measurementSessions'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'aiReports'), where('organizationId', '==', organizationId)))
+          ])
+
+          const setupProgress = {
+            profileCompleted: !!(orgData.name && orgData.companyCode),
+            firstMemberAdded: memberSnapshot.docs.length > 1, // 관리자 외 멤버
+            firstMeasurementDone: sessionSnapshot.docs.length > 0,
+            firstReportGenerated: reportSnapshot.docs.length > 0,
+            progressPercentage: 0
+          }
+
+          setupProgress.progressPercentage = 
+            (Number(setupProgress.profileCompleted) +
+             Number(setupProgress.firstMemberAdded) +
+             Number(setupProgress.firstMeasurementDone) +
+             Number(setupProgress.firstReportGenerated)) * 25
+
+          // 트라이얼 정보
+          const trialInfo = orgData.trialEndDate ? {
+            startDate: orgData.createdAt?.toDate?.() || new Date(),
+            endDate: orgData.trialEndDate?.toDate?.() || new Date(),
+            freeCreditsGranted: orgData.freeCreditsGranted || 50,
+            freeCreditsUsed: 0, // 별도 계산 필요
+            daysRemaining: Math.max(0, Math.ceil((orgData.trialEndDate?.toDate?.()?.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+          } : undefined
+
+          const registration: RecentEnterpriseRegistration = {
+            organizationId,
+            organizationName: orgData.name || '설정 필요',
+            companyCode: orgData.companyCode || '',
+            adminInfo: {
+              name: adminData?.name || '관리자 정보 없음',
+              email: adminData?.email || '',
+              phone: adminData?.phone,
+              department: adminData?.department
+            },
+            registrationDetails: {
+              registeredAt: orgData.createdAt?.toDate?.() || new Date(),
+              source: orgData.registrationSource || 'direct',
+              referralCode: orgData.referralCode,
+              initialPlan: orgData.plan || 'trial'
+            },
+            setupProgress,
+            trialInfo,
+            flags: {
+              needsAttention: setupProgress.progressPercentage < 50,
+              isHighValue: memberSnapshot.docs.length > 10,
+              hasIssues: setupProgress.progressPercentage === 0,
+              isChampion: reportSnapshot.docs.length > 5
+            }
+          }
+
+          registrations.push(registration)
+        }
+
+        return registrations
+
+      } catch (error) {
+        this.log('error', '최근 기업 등록 현황 조회 실패', { error })
+        throw new Error('최근 기업 등록 현황을 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 기업별 리포트 분석 조회
+   */
+  async getOrganizationReportAnalytics(organizationId: string): Promise<ReportAnalytics> {
+    return this.measureAndLog('getOrganizationReportAnalytics', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const reportsQuery = query(
+          collection(db, 'aiReports'),
+          where('organizationId', '==', organizationId),
+          orderBy('createdAt', 'desc')
+        )
+
+        const reports = await getDocs(reportsQuery)
+        const reportDocs = reports.docs
+
+        // 조직 정보
+        const orgDoc = await getDoc(doc(db, 'organizations', organizationId))
+        const orgData = orgDoc.data()
+
+        // 이번 달과 지난 달 시작 날짜
+        const thisMonth = new Date()
+        thisMonth.setDate(1)
+        thisMonth.setHours(0, 0, 0, 0)
+
+        const lastMonth = new Date(thisMonth)
+        lastMonth.setMonth(lastMonth.getMonth() - 1)
+
+        const reportsThisMonth = reportDocs.filter(doc => {
+          const createdAt = doc.data().createdAt?.toDate?.()
+          return createdAt && createdAt >= thisMonth
+        })
+
+        const reportsLastMonth = reportDocs.filter(doc => {
+          const createdAt = doc.data().createdAt?.toDate?.()
+          return createdAt && createdAt >= lastMonth && createdAt < thisMonth
+        })
+
+        // 사용자별 리포트 수 계산
+        const userReportCounts = new Map<string, { name: string; count: number }>()
+        reportDocs.forEach(doc => {
+          const data = doc.data()
+          const userId = data.userId || data.measurementUserId
+          const userName = data.userName || '알 수 없음'
+          
+          if (userId) {
+            const current = userReportCounts.get(userId) || { name: userName, count: 0 }
+            current.count++
+            userReportCounts.set(userId, current)
+          }
+        })
+
+        const mostActiveUsers = Array.from(userReportCounts.entries())
+          .map(([userId, data]) => ({
+            userId,
+            userName: data.name,
+            reportCount: data.count
+          }))
+          .sort((a, b) => b.reportCount - a.reportCount)
+          .slice(0, 5)
+
+        // 리포트 유형별 통계
+        const engineCounts = new Map<string, { count: number; totalTime: number; successes: number }>()
+        reportDocs.forEach(doc => {
+          const data = doc.data()
+          const engine = data.engineName || '알 수 없음'
+          const processingTime = data.processingTime || 0
+          const isSuccess = data.status === 'completed'
+
+          const current = engineCounts.get(engine) || { count: 0, totalTime: 0, successes: 0 }
+          current.count++
+          current.totalTime += processingTime
+          if (isSuccess) current.successes++
+          engineCounts.set(engine, current)
+        })
+
+        const reportTypes = Array.from(engineCounts.entries()).map(([engineName, stats]) => ({
+          engineName,
+          count: stats.count,
+          percentage: reportDocs.length > 0 ? (stats.count / reportDocs.length) * 100 : 0,
+          averageProcessingTime: stats.count > 0 ? stats.totalTime / stats.count : 0,
+          successRate: stats.count > 0 ? (stats.successes / stats.count) * 100 : 0
+        }))
+
+        // 품질 지표
+        const qualityScores = reportDocs
+          .map(doc => doc.data().qualityScore || 0)
+          .filter(score => score > 0)
+
+        const qualityMetrics = {
+          averageQualityScore: qualityScores.length > 0 ? qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length : 0,
+          highQualityReports: qualityScores.filter(score => score > 80).length,
+          lowQualityReports: qualityScores.filter(score => score < 50).length,
+          averageProcessingTime: reportDocs.length > 0 ? reportDocs.reduce((sum, doc) => sum + (doc.data().processingTime || 0), 0) / reportDocs.length : 0,
+          errorRate: reportDocs.length > 0 ? (reportDocs.filter(doc => doc.data().status === 'failed').length / reportDocs.length) * 100 : 0
+        }
+
+        // 사용 패턴 분석
+        const hourCounts = new Array(24).fill(0)
+        const dayCounts = new Map<string, number>()
+
+        reportDocs.forEach(doc => {
+          const createdAt = doc.data().createdAt?.toDate?.()
+          if (createdAt) {
+            // 시간별 카운트
+            hourCounts[createdAt.getHours()]++
+            
+            // 요일별 카운트
+            const dayName = createdAt.toLocaleDateString('ko-KR', { weekday: 'long' })
+            dayCounts.set(dayName, (dayCounts.get(dayName) || 0) + 1)
+          }
+        })
+
+        const peakUsageHours = hourCounts
+          .map((count, hour) => ({ hour, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5)
+
+        const busyDays = Array.from(dayCounts.entries())
+          .map(([day, count]) => ({ day, count }))
+          .sort((a, b) => b.count - a.count)
+
+        // 최근 리포트
+        const recentReports = reportDocs.slice(0, 10).map(doc => {
+          const data = doc.data()
+          return {
+            reportId: doc.id,
+            userId: data.userId || data.measurementUserId || '',
+            userName: data.userName || '알 수 없음',
+            engineUsed: data.engineName || '',
+            qualityScore: data.qualityScore || 0,
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+            status: data.status || 'completed'
+          }
+        })
+
+        const analytics: ReportAnalytics = {
+          organizationId,
+          organizationName: orgData?.name || '알 수 없음',
+          reportSummary: {
+            totalReports: reportDocs.length,
+            reportsThisMonth: reportsThisMonth.length,
+            reportsLastMonth: reportsLastMonth.length,
+            averageReportsPerUser: mostActiveUsers.length > 0 ? reportDocs.length / mostActiveUsers.length : 0,
+            mostActiveUsers
+          },
+          reportTypes,
+          qualityMetrics,
+          usagePatterns: {
+            peakUsageHours,
+            busyDays,
+            seasonalTrends: [] // 구현 필요시 추가
+          },
+          recentReports
+        }
+
+        return analytics
+
+      } catch (error) {
+        this.log('error', '리포트 분석 조회 실패', { error })
+        throw new Error('리포트 분석 정보를 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 기업 관리 액션 실행
+   */
+  async executeEnterpriseManagementAction(action: EnterpriseManagementAction): Promise<boolean> {
+    return this.measureAndLog('executeEnterpriseManagementAction', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const { organizationId, action: actionType, parameters } = action
+
+        switch (actionType) {
+          case 'suspend_organization':
+            await this.updateDocument(doc(db, 'organizations', organizationId), {
+              status: 'suspended',
+              suspendedAt: Timestamp.now(),
+              suspensionReason: parameters.reason
+            })
+            break
+
+          case 'activate_organization':
+            await this.updateDocument(doc(db, 'organizations', organizationId), {
+              status: 'active',
+              activatedAt: Timestamp.now(),
+              suspendedAt: null,
+              suspensionReason: null
+            })
+            break
+
+          case 'grant_credits':
+            if (parameters.amount) {
+              await this.addDocument(collection(db, 'creditTransactions'), {
+                organizationId,
+                amount: parameters.amount,
+                type: 'admin_grant',
+                reason: parameters.reason,
+                createdAt: Timestamp.now(),
+                expiryDate: parameters.expiryDate ? Timestamp.fromDate(parameters.expiryDate) : null
+              })
+            }
+            break
+
+          case 'extend_trial':
+            if (parameters.duration) {
+              const newEndDate = new Date(Date.now() + parameters.duration * 24 * 60 * 60 * 1000)
+              await this.updateDocument(doc(db, 'organizations', organizationId), {
+                trialEndDate: Timestamp.fromDate(newEndDate),
+                trialExtended: true,
+                trialExtensionReason: parameters.reason
+              })
+            }
+            break
+
+          case 'change_plan':
+            if (parameters.newPlan) {
+              await this.updateDocument(doc(db, 'organizations', organizationId), {
+                plan: parameters.newPlan,
+                planChangedAt: Timestamp.now(),
+                planChangeReason: parameters.reason
+              })
+            }
+            break
+
+          case 'set_limit':
+            if (parameters.creditLimit) {
+              await this.updateDocument(doc(db, 'organizations', organizationId), {
+                creditLimit: parameters.creditLimit,
+                limitSetAt: Timestamp.now(),
+                limitReason: parameters.reason
+              })
+            }
+            break
+        }
+
+        // 활동 기록
+        await this.recordSystemActivity({
+          organizationId,
+          type: 'system_event',
+          description: `관리자 액션: ${actionType} - ${parameters.reason}`,
+          timestamp: new Date(),
+          severity: 'info',
+          metadata: { action: actionType, parameters }
+        })
+
+        return true
+
+      } catch (error) {
+        this.log('error', '기업 관리 액션 실행 실패', { error })
+        throw new Error('기업 관리 액션을 실행할 수 없습니다.')
+      }
+    })
+  }
+
+  // ===================== 헬퍼 메서드들 =====================
+
+  private calculateHealthScore(memberCount: number, reportCount: number, activeMembers: number): number {
+    let score = 0
+    
+    // 멤버 수 점수 (30점)
+    if (memberCount > 20) score += 30
+    else if (memberCount > 10) score += 20
+    else if (memberCount > 5) score += 15
+    else if (memberCount > 0) score += 10
+
+    // 활동성 점수 (40점)
+    const activityRate = memberCount > 0 ? (activeMembers / memberCount) * 100 : 0
+    if (activityRate > 80) score += 40
+    else if (activityRate > 60) score += 30
+    else if (activityRate > 40) score += 20
+    else if (activityRate > 20) score += 10
+
+    // 리포트 활용도 점수 (30점)
+    const reportsPerMember = memberCount > 0 ? reportCount / memberCount : 0
+    if (reportsPerMember > 5) score += 30
+    else if (reportsPerMember > 3) score += 25
+    else if (reportsPerMember > 1) score += 20
+    else if (reportsPerMember > 0) score += 15
+
+    return Math.min(100, score)
+  }
+
+  private calculateRiskLevel(activeMembers: number, totalMembers: number, creditBalance: number): 'low' | 'medium' | 'high' {
+    const activityRate = totalMembers > 0 ? (activeMembers / totalMembers) * 100 : 0
+    
+    if (creditBalance <= 0 || activityRate < 20) return 'high'
+    if (creditBalance < 50 || activityRate < 50) return 'medium'
+    return 'low'
+  }
+
+  private calculateChurnRisk(activeMembers: number, totalMembers: number, lastActivity: number): number {
+    const activityRate = totalMembers > 0 ? (activeMembers / totalMembers) * 100 : 0
+    const daysSinceLastActivity = (Date.now() - lastActivity) / (24 * 60 * 60 * 1000)
+    
+    let risk = 0
+    
+    // 활동률 기반 위험도
+    if (activityRate < 20) risk += 40
+    else if (activityRate < 50) risk += 20
+    else if (activityRate < 80) risk += 10
+
+    // 마지막 활동 기반 위험도
+    if (daysSinceLastActivity > 30) risk += 30
+    else if (daysSinceLastActivity > 14) risk += 20
+    else if (daysSinceLastActivity > 7) risk += 10
+
+    return Math.min(100, risk)
+  }
+
+  private async getRecentOrganizationActivity(organizationId: string): Promise<EnterpriseOverview['recentActivity']> {
+    try {
+      const activitiesQuery = query(
+        collection(db, 'systemActivities'),
+        where('organizationId', '==', organizationId),
+        orderBy('timestamp', 'desc'),
+        limit(5)
+      )
+
+      const activities = await getDocs(activitiesQuery)
+      
+      return activities.docs.map(doc => {
+        const data = doc.data()
+        return {
+          type: data.type || 'admin_action',
+          description: data.description || '',
+          timestamp: data.timestamp?.toDate?.() || new Date(),
+          metadata: data.metadata
+        }
+      })
+    } catch (error) {
+      this.log('error', '최근 활동 조회 실패', { organizationId, error })
+      return []
+    }
+  }
+
+  // ===================== 디바이스 관리 기능 메서드들 =====================
+
+  /**
+   * 전체 시스템 디바이스 현황 조회
+   */
+  async getSystemDeviceOverview(): Promise<SystemDeviceOverview> {
+    return this.measureAndLog('getSystemDeviceOverview', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // 모든 조직의 디바이스 정보 수집
+        const organizationsSnapshot = await getDocs(collection(db, 'organizations'))
+        const organizations = organizationsSnapshot.docs
+
+        const organizationBreakdown = []
+        let totalDevices = 0
+        let activeDevices = 0
+        let offlineDevices = 0
+        let maintenanceDevices = 0
+        let errorDevices = 0
+        let totalBatteryLevel = 0
+        let deviceCount = 0
+
+        const deviceTypeCounts = new Map<string, { total: number; active: number }>()
+        const recentActivity = []
+
+        // 각 조직별로 디바이스 정보 수집
+        for (const orgDoc of organizations) {
+          const orgData = orgDoc.data()
+          const organizationId = orgDoc.id
+
+          // 조직의 디바이스 조회
+          const devicesQuery = query(
+            collection(db, 'devices'),
+            where('organizationId', '==', organizationId),
+            where('isActive', '==', true)
+          )
+
+          const devicesSnapshot = await getDocs(devicesQuery)
+          const orgDevices = devicesSnapshot.docs
+
+          // 조직별 통계 계산
+          let orgActiveDevices = 0
+          let orgOfflineDevices = 0
+          let orgErrorDevices = 0
+          let orgTotalBattery = 0
+          let orgLastActivity = new Date(0)
+
+          orgDevices.forEach(deviceDoc => {
+            const device = deviceDoc.data()
+            totalDevices++
+            deviceCount++
+
+            // 상태별 카운트
+            switch (device.status) {
+              case 'online':
+                activeDevices++
+                orgActiveDevices++
+                break
+              case 'offline':
+                offlineDevices++
+                orgOfflineDevices++
+                break
+              case 'maintenance':
+                maintenanceDevices++
+                break
+              case 'error':
+                errorDevices++
+                orgErrorDevices++
+                break
+            }
+
+            // 배터리 레벨 집계
+            if (device.batteryLevel) {
+              totalBatteryLevel += device.batteryLevel
+              orgTotalBattery += device.batteryLevel
+            }
+
+            // 디바이스 타입별 집계
+            const deviceType = device.type || 'WEARABLE'
+            const typeCounts = deviceTypeCounts.get(deviceType) || { total: 0, active: 0 }
+            typeCounts.total++
+            if (device.status === 'online') typeCounts.active++
+            deviceTypeCounts.set(deviceType, typeCounts)
+
+            // 마지막 활동 시간 추적
+            const lastSync = device.lastSyncAt?.toDate?.() || device.updatedAt?.toDate?.()
+            if (lastSync && lastSync > orgLastActivity) {
+              orgLastActivity = lastSync
+            }
+          })
+
+          // 조직별 정보 추가
+          organizationBreakdown.push({
+            organizationId,
+            organizationName: orgData.name || '알 수 없음',
+            totalDevices: orgDevices.length,
+            activeDevices: orgActiveDevices,
+            offlineDevices: orgOfflineDevices,
+            errorDevices: orgErrorDevices,
+            averageBatteryLevel: orgDevices.length > 0 ? Math.round(orgTotalBattery / orgDevices.length) : 0,
+            lastActivity: orgLastActivity
+          })
+        }
+
+        // 디바이스 타입별 백분율 계산
+        const deviceTypeBreakdown = Array.from(deviceTypeCounts.entries()).map(([type, counts]) => ({
+          type: type as 'EEG' | 'PPG' | 'MULTI_SENSOR' | 'WEARABLE',
+          count: counts.total,
+          activeCount: counts.active,
+          percentage: totalDevices > 0 ? Math.round((counts.total / totalDevices) * 100) : 0
+        }))
+
+        // 최근 디바이스 활동 조회
+        const recentActivitiesQuery = query(
+          collection(db, 'deviceActivities'),
+          orderBy('timestamp', 'desc'),
+          limit(10)
+        )
+
+        const recentActivitiesSnapshot = await getDocs(recentActivitiesQuery)
+        const recentDeviceActivity = recentActivitiesSnapshot.docs.map(doc => {
+          const data = doc.data()
+          return {
+            deviceId: data.deviceId || '',
+            deviceName: data.deviceName || '알 수 없음',
+            organizationId: data.organizationId || '',
+            organizationName: data.organizationName || '알 수 없음',
+            action: data.action || '',
+            timestamp: data.timestamp?.toDate?.() || new Date(),
+            details: data.details
+          }
+        })
+
+        const overview: SystemDeviceOverview = {
+          totalDevices,
+          activeDevices,
+          offlineDevices,
+          maintenanceDevices,
+          errorDevices,
+          averageBatteryLevel: deviceCount > 0 ? Math.round(totalBatteryLevel / deviceCount) : 0,
+          devicesNeedingAttention: errorDevices + maintenanceDevices,
+          organizationBreakdown: organizationBreakdown.sort((a, b) => b.totalDevices - a.totalDevices),
+          deviceTypeBreakdown,
+          recentActivity: recentDeviceActivity
+        }
+
+        return overview
+
+      } catch (error) {
+        this.log('error', '시스템 디바이스 현황 조회 실패', { error })
+        throw new Error('시스템 디바이스 현황을 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 특정 조직의 상세 디바이스 현황 조회
+   */
+  async getOrganizationDeviceBreakdown(organizationId: string): Promise<OrganizationDeviceBreakdown> {
+    return this.measureAndLog('getOrganizationDeviceBreakdown', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // 조직 정보 조회
+        const orgDoc = await getDoc(doc(db, 'organizations', organizationId))
+        if (!orgDoc.exists()) {
+          throw new Error('조직을 찾을 수 없습니다.')
+        }
+        const orgData = orgDoc.data()
+
+        // 디바이스 목록 조회
+        const devicesQuery = query(
+          collection(db, 'devices'),
+          where('organizationId', '==', organizationId),
+          where('isActive', '==', true)
+        )
+
+        const devicesSnapshot = await getDocs(devicesQuery)
+        const devices = devicesSnapshot.docs
+
+        // 디바이스 통계 계산
+        const deviceStats = {
+          online: 0,
+          offline: 0,
+          maintenance: 0,
+          error: 0,
+          lowBattery: 0,
+          needsCalibration: 0,
+          needsFirmwareUpdate: 0
+        }
+
+        const deviceTypeCounts = new Map<string, { total: number; active: number }>()
+        let totalSessions = 0
+        let totalSessionTime = 0
+
+        devices.forEach(deviceDoc => {
+          const device = deviceDoc.data()
+
+          // 상태별 통계
+          switch (device.status) {
+            case 'online': deviceStats.online++; break
+            case 'offline': deviceStats.offline++; break
+            case 'maintenance': deviceStats.maintenance++; break
+            case 'error': deviceStats.error++; break
+          }
+
+          // 기타 통계
+          if (device.batteryLevel && device.batteryLevel < 20) deviceStats.lowBattery++
+          if (!device.isCalibrated) deviceStats.needsCalibration++
+          if (this.needsFirmwareUpdate(device)) deviceStats.needsFirmwareUpdate++
+
+          // 디바이스 타입별 통계
+          const deviceType = device.type || 'WEARABLE'
+          const typeCounts = deviceTypeCounts.get(deviceType) || { total: 0, active: 0 }
+          typeCounts.total++
+          if (device.status === 'online') typeCounts.active++
+          deviceTypeCounts.set(deviceType, typeCounts)
+        })
+
+        // 디바이스 타입별 배열 생성
+        const deviceTypes = Array.from(deviceTypeCounts.entries()).map(([type, counts]) => ({
+          type,
+          count: counts.total,
+          activeCount: counts.active
+        }))
+
+        // 부서별 디바이스 할당 현황 조회
+        const departmentsQuery = query(
+          collection(db, 'departments'),
+          where('organizationId', '==', organizationId)
+        )
+
+        const departmentsSnapshot = await getDocs(departmentsQuery)
+        const departmentBreakdown = []
+
+        for (const deptDoc of departmentsSnapshot.docs) {
+          const deptData = deptDoc.data()
+          const departmentId = deptDoc.id
+
+          // 부서에 할당된 디바이스 조회
+          const deptDevicesQuery = query(
+            collection(db, 'devices'),
+            where('organizationId', '==', organizationId),
+            where('assignedLocation', '==', deptData.name)
+          )
+
+          const deptDevicesSnapshot = await getDocs(deptDevicesQuery)
+          const assignedDevices = deptDevicesSnapshot.docs.length
+          const activeDevices = deptDevicesSnapshot.docs.filter(doc => 
+            doc.data().status === 'online'
+          ).length
+
+          departmentBreakdown.push({
+            departmentId,
+            departmentName: deptData.name || '알 수 없음',
+            assignedDevices,
+            activeDevices,
+            utilizationRate: assignedDevices > 0 ? Math.round((activeDevices / assignedDevices) * 100) : 0
+          })
+        }
+
+        // 최근 디바이스 활동 조회
+        const recentActivityQuery = query(
+          collection(db, 'deviceActivities'),
+          where('organizationId', '==', organizationId),
+          orderBy('timestamp', 'desc'),
+          limit(10)
+        )
+
+        const recentActivitySnapshot = await getDocs(recentActivityQuery)
+        const recentDeviceActivity = recentActivitySnapshot.docs.map(doc => {
+          const data = doc.data()
+          return {
+            deviceId: data.deviceId || '',
+            deviceName: data.deviceName || '알 수 없음',
+            action: data.action || 'assigned',
+            timestamp: data.timestamp?.toDate?.() || new Date(),
+            userId: data.userId,
+            userName: data.userName,
+            details: data.details
+          }
+        })
+
+        // 전체 활용률 계산
+        const utilizationRate = devices.length > 0 ? 
+          Math.round((deviceStats.online / devices.length) * 100) : 0
+
+        // 건강 점수 계산 (에러가 적고, 배터리가 충분하고, 활용률이 높을수록 높은 점수)
+        const healthScore = this.calculateDeviceHealthScore(
+          devices.length,
+          deviceStats.online,
+          deviceStats.error,
+          deviceStats.lowBattery
+        )
+
+        const breakdown: OrganizationDeviceBreakdown = {
+          organizationId,
+          organizationName: orgData.name || '알 수 없음',
+          companyCode: orgData.companyCode || '',
+          totalDevices: devices.length,
+          deviceStats,
+          deviceTypes,
+          utilizationRate,
+          averageSessionTime: totalSessions > 0 ? Math.round(totalSessionTime / totalSessions) : 0,
+          departmentBreakdown,
+          recentDeviceActivity,
+          healthScore,
+          issuesCount: deviceStats.error + deviceStats.lowBattery + deviceStats.needsCalibration
+        }
+
+        return breakdown
+
+      } catch (error) {
+        this.log('error', '조직 디바이스 현황 조회 실패', { organizationId, error })
+        throw new Error('조직 디바이스 현황을 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 디바이스 사용 분석 조회
+   */
+  async getDeviceUsageAnalytics(organizationId: string, timeRange: 'week' | 'month' | 'quarter' = 'month'): Promise<DeviceUsageAnalytics> {
+    return this.measureAndLog('getDeviceUsageAnalytics', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // 조직 정보 조회
+        const orgDoc = await getDoc(doc(db, 'organizations', organizationId))
+        const orgData = orgDoc.data()
+
+        // 시간 범위 설정
+        const endDate = new Date()
+        const startDate = new Date()
+        switch (timeRange) {
+          case 'week':
+            startDate.setDate(endDate.getDate() - 7)
+            break
+          case 'month':
+            startDate.setMonth(endDate.getMonth() - 1)
+            break
+          case 'quarter':
+            startDate.setMonth(endDate.getMonth() - 3)
+            break
+        }
+
+        // 측정 세션 데이터 조회
+        const sessionsQuery = query(
+          collection(db, 'measurementSessions'),
+          where('organizationId', '==', organizationId),
+          where('startTime', '>=', Timestamp.fromDate(startDate)),
+          where('startTime', '<=', Timestamp.fromDate(endDate))
+        )
+
+        const sessionsSnapshot = await getDocs(sessionsQuery)
+        const sessions = sessionsSnapshot.docs
+
+        // 사용 지표 계산
+        const usageMetrics = {
+          totalSessions: sessions.length,
+          averageSessionDuration: 0,
+          totalDataCollected: 0,
+          peakUsageHours: [] as Array<{ hour: number; sessionCount: number }>,
+          dailyUsagePattern: [] as Array<{ date: string; sessionCount: number; totalDuration: number }>
+        }
+
+        // 세션별 분석
+        const hourCounts = new Array(24).fill(0)
+        const dailyCounts = new Map<string, { count: number; duration: number }>()
+        let totalDuration = 0
+
+        sessions.forEach(sessionDoc => {
+          const session = sessionDoc.data()
+          const startTime = session.startTime?.toDate?.()
+          const duration = session.duration || 0
+
+          if (startTime) {
+            // 시간별 카운트
+            hourCounts[startTime.getHours()]++
+
+            // 일별 카운트
+            const dateKey = startTime.toISOString().split('T')[0]
+            const dayData = dailyCounts.get(dateKey) || { count: 0, duration: 0 }
+            dayData.count++
+            dayData.duration += duration
+            dailyCounts.set(dateKey, dayData)
+
+            totalDuration += duration
+          }
+        })
+
+        usageMetrics.averageSessionDuration = sessions.length > 0 ? Math.round(totalDuration / sessions.length) : 0
+        usageMetrics.peakUsageHours = hourCounts
+          .map((count, hour) => ({ hour, sessionCount: count }))
+          .sort((a, b) => b.sessionCount - a.sessionCount)
+          .slice(0, 5)
+
+        usageMetrics.dailyUsagePattern = Array.from(dailyCounts.entries()).map(([date, data]) => ({
+          date,
+          sessionCount: data.count,
+          totalDuration: data.duration
+        }))
+
+        // 디바이스 성능 분석 (모의 데이터)
+        const devicePerformance = sessions
+          .reduce((acc, sessionDoc) => {
+            const session = sessionDoc.data()
+            const deviceId = session.deviceId || 'unknown'
+            
+            if (!acc[deviceId]) {
+              acc[deviceId] = {
+                sessionCount: 0,
+                totalUptime: 0,
+                errorCount: 0
+              }
+            }
+            
+            acc[deviceId].sessionCount++
+            acc[deviceId].totalUptime += session.duration || 0
+            if (session.hasError) acc[deviceId].errorCount++
+            
+            return acc
+          }, {} as Record<string, any>)
+
+        // 사용자 참여 분석 (모의 데이터)
+        const userEngagement = sessions
+          .reduce((acc, sessionDoc) => {
+            const session = sessionDoc.data()
+            const userId = session.userId || session.measurementUserId || 'unknown'
+            const userName = session.userName || '알 수 없음'
+            
+            if (!acc[userId]) {
+              acc[userId] = {
+                userName,
+                sessionCount: 0,
+                totalDuration: 0,
+                lastActivity: new Date(0)
+              }
+            }
+            
+            acc[userId].sessionCount++
+            acc[userId].totalDuration += session.duration || 0
+            
+            const sessionDate = session.startTime?.toDate?.()
+            if (sessionDate && sessionDate > acc[userId].lastActivity) {
+              acc[userId].lastActivity = sessionDate
+            }
+            
+            return acc
+          }, {} as Record<string, any>)
+
+        // 알림 생성 (모의 데이터)
+        const alerts = [] // 실제 구현에서는 디바이스 상태 기반으로 알림 생성
+
+        const analytics: DeviceUsageAnalytics = {
+          organizationId,
+          organizationName: orgData?.name || '알 수 없음',
+          timeRange,
+          usageMetrics,
+          devicePerformance: Object.entries(devicePerformance).map(([deviceId, data]: [string, any]) => ({
+            deviceId,
+            deviceName: `Device-${deviceId.slice(0, 8)}`,
+            serialNumber: `SN${deviceId.slice(-6)}`,
+            sessionCount: data.sessionCount,
+            totalUptime: Math.round(data.totalUptime / 60), // hours
+            errorRate: data.sessionCount > 0 ? Math.round((data.errorCount / data.sessionCount) * 100) : 0,
+            batteryPerformance: 85, // 모의 데이터
+            dataQuality: 92 // 모의 데이터
+          })),
+          userEngagement: Object.entries(userEngagement).map(([userId, data]: [string, any]) => ({
+            userId,
+            userName: data.userName,
+            sessionCount: data.sessionCount,
+            averageSessionTime: data.sessionCount > 0 ? Math.round(data.totalDuration / data.sessionCount) : 0,
+            lastActivity: data.lastActivity,
+            consistencyScore: 85 // 모의 데이터
+          })),
+          alerts
+        }
+
+        return analytics
+
+      } catch (error) {
+        this.log('error', '디바이스 사용 분석 조회 실패', { organizationId, error })
+        throw new Error('디바이스 사용 분석을 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 디바이스 관리 액션 실행
+   */
+  async executeDeviceManagementAction(action: DeviceManagementAction): Promise<boolean> {
+    return this.measureAndLog('executeDeviceManagementAction', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const { deviceId, organizationId, action: actionType, parameters } = action
+
+        // 디바이스 존재 확인
+        const deviceDoc = await getDoc(doc(db, 'devices', deviceId))
+        if (!deviceDoc.exists()) {
+          throw new Error('디바이스를 찾을 수 없습니다.')
+        }
+
+        const deviceData = deviceDoc.data()
+
+        switch (actionType) {
+          case 'update_firmware':
+            // 펌웨어 업데이트 스케줄링
+            await this.updateDocument(doc(db, 'devices', deviceId), {
+              firmwareVersion: parameters.firmwareVersion,
+              maintenanceScheduledAt: parameters.scheduledFor ? Timestamp.fromDate(parameters.scheduledFor) : Timestamp.now(),
+              status: 'maintenance',
+              updatedAt: Timestamp.now()
+            })
+            break
+
+          case 'schedule_maintenance':
+            // 유지보수 스케줄링
+            await this.updateDocument(doc(db, 'devices', deviceId), {
+              maintenanceScheduledAt: parameters.scheduledFor ? Timestamp.fromDate(parameters.scheduledFor) : Timestamp.now(),
+              status: 'maintenance',
+              updatedAt: Timestamp.now()
+            })
+            break
+
+          case 'reassign_device':
+            // 디바이스 재할당
+            if (parameters.newUserId) {
+              await this.updateDocument(doc(db, 'devices', deviceId), {
+                assignedUserId: parameters.newUserId,
+                pairedAt: Timestamp.now(),
+                isPaired: true,
+                updatedAt: Timestamp.now()
+              })
+            }
+            break
+
+          case 'force_sync':
+            // 강제 동기화
+            await this.updateDocument(doc(db, 'devices', deviceId), {
+              lastSyncAt: Timestamp.now(),
+              updatedAt: Timestamp.now()
+            })
+            break
+
+          case 'calibrate_device':
+            // 디바이스 캘리브레이션
+            await this.updateDocument(doc(db, 'devices', deviceId), {
+              isCalibrated: true,
+              calibrationDate: Timestamp.now(),
+              updatedAt: Timestamp.now()
+            })
+            break
+        }
+
+        // 활동 기록 생성
+        await this.addDocument(collection(db, 'deviceActivities'), {
+          deviceId,
+          organizationId,
+          deviceName: deviceData.name || '알 수 없음',
+          action: actionType,
+          details: parameters.reason,
+          timestamp: Timestamp.now(),
+          performedBy: 'system_admin',
+          priority: action.priority,
+          metadata: parameters
+        })
+
+        return true
+
+      } catch (error) {
+        this.log('error', '디바이스 관리 액션 실행 실패', { error })
+        throw new Error('디바이스 관리 액션을 실행할 수 없습니다.')
+      }
+    })
+  }
+
+  // ===================== 디바이스 관리 헬퍼 메서드들 =====================
+
+  private needsFirmwareUpdate(device: any): boolean {
+    // 간단한 펌웨어 버전 체크 (실제로는 더 복잡한 로직 필요)
+    const currentVersion = device.firmwareVersion || '1.0.0'
+    const latestVersion = '2.1.0' // 하드코딩된 최신 버전
+    
+    return currentVersion < latestVersion
+  }
+
+  private calculateDeviceHealthScore(
+    totalDevices: number,
+    onlineDevices: number,
+    errorDevices: number,
+    lowBatteryDevices: number
+  ): number {
+    if (totalDevices === 0) return 100
+
+    let score = 100
+
+    // 온라인 비율 (40점)
+    const onlineRatio = onlineDevices / totalDevices
+    score -= (1 - onlineRatio) * 40
+
+    // 에러 디바이스 비율 (30점)
+    const errorRatio = errorDevices / totalDevices
+    score -= errorRatio * 30
+
+    // 저배터리 디바이스 비율 (30점)
+    const lowBatteryRatio = lowBatteryDevices / totalDevices
+    score -= lowBatteryRatio * 30
+
+    return Math.max(0, Math.round(score))
   }
 }
 
