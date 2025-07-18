@@ -121,7 +121,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           userType: 'SYSTEM_ADMIN',
           displayName: 'System Administrator',
           email: formData.email,
-          permissions: [
+          permissions: JSON.stringify([
             'system:all',
             'organization:all',
             'user:all',
@@ -130,7 +130,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             'analytics:all',
             'settings:all',
             'admin:all'
-          ],
+          ]),
           lastLoginAt: new Date(),
           isActive: true,
           organizationId: null, // 시스템 관리자는 특정 조직에 속하지 않음

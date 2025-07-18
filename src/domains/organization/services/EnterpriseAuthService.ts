@@ -314,7 +314,7 @@ class EnterpriseAuthService {
         department: data.department,
         position: data.position,
         personalCreditBalance: data.personalCreditBalance,
-        permissions: data.permissions ? JSON.parse(data.permissions) : [],
+        permissions: Array.isArray(data.permissions) ? data.permissions : (data.permissions ? JSON.parse(data.permissions) : []),
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
         lastLoginAt: data.lastLoginAt?.toDate(),
