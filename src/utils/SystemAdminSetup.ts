@@ -7,7 +7,7 @@ import { FirebaseService } from '@core/services/FirebaseService';
  * Firebase Authentication과 Firestore 모두에 시스템 관리자 계정을 생성
  */
 export class SystemAdminSetup {
-  private static readonly ADMIN_EMAIL = 'admin@mindbreeze.kr';
+  private static readonly ADMIN_EMAIL = 'admin-mindbreeze@looxidlabs.com';
   private static readonly ADMIN_PASSWORD = 'looxidlabs1234!';
   private static readonly ADMIN_UID = 'system-admin-uid';
 
