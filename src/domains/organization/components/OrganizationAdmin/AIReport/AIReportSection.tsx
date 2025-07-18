@@ -1450,6 +1450,81 @@ AI 건강 분석 리포트
           </Button>
       </div>
 
+      {/* 통계 카드 섹션 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* 오늘 측정 데이터 수 */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">오늘 측정 데이터 수</h3>
+            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+              <Activity className="w-4 h-4 text-gray-600" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-gray-900">
+              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayMeasurements}건`}
+            </div>
+            <div className="text-xs text-gray-500">
+              총 {calculateStats.totalMeasurements}건
+            </div>
+          </div>
+        </div>
+
+        {/* 오늘 발행 리포트 수 */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">오늘 발행 리포트 수</h3>
+            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+              <FileText className="w-4 h-4 text-gray-600" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-gray-900">
+              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayReports}건`}
+            </div>
+            <div className="text-xs text-gray-500">
+              총 {calculateStats.totalReports}건
+            </div>
+          </div>
+        </div>
+
+        {/* 오늘 사용 크레딧 */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">오늘 사용 크레딧</h3>
+            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+              <DollarSign className="w-4 h-4 text-gray-600" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-gray-900">
+              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayCreditsUsed} 크레딧`}
+            </div>
+            <div className="text-xs text-gray-500">
+              총 {calculateStats.totalCreditsUsed} 크레딧 사용
+            </div>
+          </div>
+        </div>
+
+        {/* 이번주 사용 현황 */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">이번주 사용 현황</h3>
+            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+              <TrendingUp className="w-4 h-4 text-gray-600" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-gray-900">
+              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.thisWeekMeasurements}건`}
+            </div>
+            <div className="text-xs text-gray-500">
+              리포트 {calculateStats.thisWeekReports}건, 크레딧 {calculateStats.thisWeekCreditsUsed}개
+            </div>
+          </div>
+        </div>
+      </div>
+
       {error && (
         <Card className="p-6 bg-red-50 border border-red-200">
           <div className="flex items-start space-x-3">
@@ -1951,8 +2026,8 @@ AI 건강 분석 리포트
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* 오늘 측정 데이터 수 */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-gray-600">오늘 측정 데이터 수</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">오늘 측정 데이터 수</h3>
             <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
               <Activity className="w-4 h-4 text-gray-600" />
             </div>
@@ -1969,8 +2044,8 @@ AI 건강 분석 리포트
 
         {/* 오늘 발행 리포트 수 */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-gray-600">오늘 발행 리포트 수</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">오늘 발행 리포트 수</h3>
             <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
               <FileText className="w-4 h-4 text-gray-600" />
             </div>
@@ -1987,8 +2062,8 @@ AI 건강 분석 리포트
 
         {/* 오늘 사용 크레딧 */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-gray-600">오늘 사용 크레딧</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">오늘 사용 크레딧</h3>
             <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
               <DollarSign className="w-4 h-4 text-gray-600" />
             </div>
@@ -2005,8 +2080,8 @@ AI 건강 분석 리포트
 
         {/* 이번주 사용 현황 */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-gray-600">이번주 사용 현황</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-medium text-gray-600">이번주 사용 현황</h3>
             <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
               <TrendingUp className="w-4 h-4 text-gray-600" />
             </div>
