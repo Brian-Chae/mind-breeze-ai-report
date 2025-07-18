@@ -20,10 +20,9 @@ import {
   Gauge,
   Signal,
   Clock,
-  Server,
+
   Monitor,
-  Shield,
-  Target,
+
   BarChart3
 } from 'lucide-react'
 
@@ -51,19 +50,14 @@ interface RecentSession {
   status: 'completed' | 'processing' | 'failed'
 }
 
-interface StorageInfo {
-  type: string
-  used: number
-  total: number
-  growthRate: number
-}
+
 
 export default function MeasurementDataContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [dataStats, setDataStats] = useState<DataStats | null>(null)
 
   const [recentSessions, setRecentSessions] = useState<RecentSession[]>([])
-  const [storageInfo, setStorageInfo] = useState<StorageInfo[]>([])
+
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [autoRefresh, setAutoRefresh] = useState(false)
@@ -108,12 +102,7 @@ export default function MeasurementDataContent() {
         { id: '5', userName: '최바이오', organizationName: '메디텍', dataType: 'PPG', duration: 0, dataSize: 0, quality: 0, timestamp: new Date(), status: 'failed' }
       ])
 
-      setStorageInfo([
-        { type: '실시간 데이터', used: 850, total: 1000, growthRate: 2.3 },
-        { type: '보관 데이터', used: 1900, total: 3000, growthRate: 5.2 },
-        { type: '백업 데이터', used: 950, total: 2000, growthRate: 1.8 },
-        { type: '분석 캐시', used: 280, total: 500, growthRate: 8.7 }
-      ])
+
     } catch (error) {
       console.error('측정 데이터 로드 실패:', error)
     } finally {
@@ -299,92 +288,7 @@ export default function MeasurementDataContent() {
           </div>
         </div>
 
-        {/* 품질 및 저장소 정보 */}
-        {dataStats && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 데이터 품질 및 성능 */}
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-6">데이터 품질 및 성능</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-slate-700">평균 데이터 품질</span>
-                    <span className="text-lg font-bold text-emerald-600">{dataStats.qualityScore}/100</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-3">
-                    <div 
-                      className="bg-emerald-500 h-3 rounded-full transition-all" 
-                      style={{ width: `${dataStats.qualityScore}%` }}
-                    ></div>
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-slate-700">저장소 사용률</span>
-                    <span className="text-lg font-bold text-blue-600">{dataStats.storageUsed}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-500 h-3 rounded-full transition-all" 
-                      style={{ width: `${dataStats.storageUsed}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <div className="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 rounded-lg mb-2">
-                      <Shield className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div className="font-bold text-slate-900">99.2%</div>
-                    <div className="text-xs text-slate-600">데이터 무결성</div>
-                  </div>
-                  
-                  <div className="text-center p-4 bg-slate-50 rounded-xl">
-                    <div className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg mb-2">
-                      <Target className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="font-bold text-slate-900">A+급</div>
-                    <div className="text-xs text-slate-600">품질 등급</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 저장소 상세 정보 */}
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-6">저장소 상세 정보</h3>
-              <div className="space-y-4">
-                {storageInfo.map((storage) => (
-                  <div key={storage.type} className="p-4 bg-slate-50 rounded-xl">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Server className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium text-slate-900">{storage.type}</span>
-                      </div>
-                      <span className="text-sm text-slate-600">+{storage.growthRate}% 증가</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-700">{storage.used}GB / {storage.total}GB</span>
-                      <span className="text-sm font-semibold text-slate-900">
-                        {((storage.used / storage.total) * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all" 
-                        style={{ width: `${(storage.used / storage.total) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
 
 
