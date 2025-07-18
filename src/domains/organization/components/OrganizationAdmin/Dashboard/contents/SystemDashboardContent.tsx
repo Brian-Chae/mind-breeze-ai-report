@@ -24,18 +24,12 @@ import {
   Zap
 } from 'lucide-react'
 
-interface SystemStats {
-  totalOrganizations: number
-  totalUsers: number
-  activeUsers: number
-  totalReports: number
-  systemHealth: 'healthy' | 'warning' | 'error'
-  uptime: string
-  totalCreditsUsed: number
-  monthlyGrowth: number
-}
+// Service에서 가져온 타입들 사용
+type SystemStats = ServiceSystemStats
+type OrganizationSummary = ServiceOrganizationSummary
 
-interface OrganizationSummary {
+// 컴포넌트 내부용 인터페이스
+interface OrganizationStatus {
   id: string
   name: string
   memberCount: number
@@ -54,10 +48,16 @@ export const SystemDashboardContent: React.FC = () => {
     systemHealth: 'healthy',
     uptime: '99.9%',
     totalCreditsUsed: 0,
-    monthlyGrowth: 0
+    monthlyGrowth: 0,
+    todayMeasurements: 0,
+    thisWeekMeasurements: 0,
+    thisMonthMeasurements: 0,
+    averageReportsPerUser: 0,
+    totalStorageUsed: 0,
+    averageSessionDuration: 0
   })
 
-  const [organizations, setOrganizations] = useState<OrganizationSummary[]>([])
+  const [organizations, setOrganizations] = useState<OrganizationStatus[]>([])
   const [activities, setActivities] = useState<SystemActivity[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -68,85 +68,103 @@ export const SystemDashboardContent: React.FC = () => {
   const loadSystemData = async () => {
     setLoading(true)
     try {
-      // 실제 서비스 호출 대신 임시 데이터 사용
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('🔄 실제 시스템 데이터 로딩 시작...')
       
-      // 임시 데이터 설정
-      setSystemStats({
-        totalOrganizations: 45,
-        totalUsers: 1250,
-        activeUsers: 980,
-        totalReports: 8450,
-        systemHealth: 'healthy',
-        uptime: '99.9%',
-        totalCreditsUsed: 125000,
-        monthlyGrowth: 12.5
-      })
-
-      setOrganizations([
-        {
-          id: '1',
-          name: 'ABC 헬스케어',
-          memberCount: 150,
-          activeUsers: 120,
-          creditBalance: 2500,
-          status: 'active',
-          lastActivity: new Date(Date.now() - 2 * 60 * 60 * 1000)
-        },
-        {
-          id: '2',
-          name: 'XYZ 웰니스',
-          memberCount: 89,
-          activeUsers: 75,
-          creditBalance: 800,
-          status: 'trial',
-          lastActivity: new Date(Date.now() - 5 * 60 * 60 * 1000)
-        },
-        {
-          id: '3',
-          name: 'DEF 메디컬',
-          memberCount: 200,
-          activeUsers: 180,
-          creditBalance: 5000,
-          status: 'active',
-          lastActivity: new Date(Date.now() - 30 * 60 * 1000)
-        }
+      // 실제 SystemAdminService 호출
+      const [statsResult, organizationsResult, activitiesResult] = await Promise.allSettled([
+        systemAdminService.getSystemStats(),
+        systemAdminService.getAllOrganizationSummaries(),
+        systemAdminService.getRecentSystemActivities(20)
       ])
 
-      setActivities([
-        {
-          id: '1',
-          organizationId: '1',
-          organizationName: 'ABC 헬스케어',
-          type: 'user_registered',
-          description: '새로운 사용자 5명 등록',
-          timestamp: new Date(Date.now() - 10 * 60 * 1000),
-          severity: 'info'
-        },
-        {
-          id: '2',
-          organizationId: '2',
-          organizationName: 'XYZ 웰니스',
-          type: 'credit_purchased',
-          description: '크레딧 500개 구매',
-          timestamp: new Date(Date.now() - 20 * 60 * 1000),
-          severity: 'info'
-        },
-        {
-          id: '3',
-          organizationId: '3',
-          organizationName: 'DEF 메디컬',
-          type: 'system_event',
-          description: '대용량 리포트 생성 완료',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000),
-          severity: 'info'
-        }
-      ])
+      // 시스템 통계 설정
+      if (statsResult.status === 'fulfilled') {
+        setSystemStats(statsResult.value)
+        console.log('✅ 시스템 통계 로드 성공:', statsResult.value)
+      } else {
+        console.warn('⚠️ 시스템 통계 로드 실패:', statsResult.reason)
+        // 에러 시 기본값 설정
+        setSystemStats({
+          totalOrganizations: 0,
+          totalUsers: 0,
+          activeUsers: 0,
+          totalReports: 0,
+          systemHealth: 'error',
+          uptime: '0%',
+          totalCreditsUsed: 0,
+          monthlyGrowth: 0,
+          todayMeasurements: 0,
+          thisWeekMeasurements: 0,
+          thisMonthMeasurements: 0,
+          averageReportsPerUser: 0,
+          totalStorageUsed: 0,
+          averageSessionDuration: 0
+        })
+      }
+
+      // 조직 현황 설정
+      if (organizationsResult.status === 'fulfilled') {
+        // OrganizationSummary를 OrganizationStatus로 변환
+        const orgStatuses = organizationsResult.value.slice(0, 10).map(org => ({
+          id: org.id,
+          name: org.name,
+          memberCount: org.memberCount,
+          activeUsers: org.activeUsers,
+          creditBalance: org.creditBalance,
+          status: org.status,
+          lastActivity: org.lastActivity
+        }))
+        setOrganizations(orgStatuses)
+        console.log('✅ 조직 현황 로드 성공:', orgStatuses.length, '개 조직')
+      } else {
+        console.warn('⚠️ 조직 현황 로드 실패:', organizationsResult.reason)
+        setOrganizations([])
+      }
+
+      // 시스템 활동 설정
+      if (activitiesResult.status === 'fulfilled') {
+        setActivities(activitiesResult.value.slice(0, 10))
+        console.log('✅ 시스템 활동 로드 성공:', activitiesResult.value.length, '개 활동')
+      } else {
+        console.warn('⚠️ 시스템 활동 로드 실패:', activitiesResult.reason)
+        // 에러 시 기본 활동 로그 설정
+        setActivities([
+          {
+            id: 'fallback-1',
+            organizationId: 'system',
+            organizationName: '시스템',
+            type: 'system_event',
+            description: '시스템 활동 데이터를 불러오는 중 오류가 발생했습니다.',
+            timestamp: new Date(),
+            severity: 'error'
+          }
+        ])
+      }
 
     } catch (error) {
-      console.error('시스템 데이터 로드 실패:', error)
+      console.error('❌ 시스템 데이터 로드 실패:', error)
+      // 전체 에러 시 기본값들 설정
+      setSystemStats({
+        totalOrganizations: 0,
+        totalUsers: 0,
+        activeUsers: 0,
+        totalReports: 0,
+        systemHealth: 'error',
+        uptime: '0%',
+        totalCreditsUsed: 0,
+        monthlyGrowth: 0,
+        todayMeasurements: 0,
+        thisWeekMeasurements: 0,
+        thisMonthMeasurements: 0,
+        averageReportsPerUser: 0,
+        totalStorageUsed: 0,
+        averageSessionDuration: 0
+      })
+      setOrganizations([])
+      setActivities([])
     } finally {
       setLoading(false)
+      console.log('🏁 시스템 데이터 로딩 완료')
     }
   }
 
