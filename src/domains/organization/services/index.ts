@@ -16,4 +16,5 @@ export { default as TrialManagementService } from './TrialManagementService';
 
 // Device management services
 export { deviceInventoryService } from './DeviceInventoryService';
-export { default as ServiceManagementService } from './ServiceManagementService'; 
+export { default as ServiceManagementService } from './ServiceManagementService';
+export { default as organizationDeviceService } from './OrganizationDeviceService'; 
