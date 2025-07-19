@@ -44,6 +44,22 @@ export default function SystemMonitoringContent() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
+  const [performanceHistory, setPerformanceHistory] = useState<Array<{
+    timestamp: Date
+    responseTime: number
+    errorRate: number
+    activeUsers: number
+    cpuUsage: number
+    memoryUsage: number
+  }>>([])
+  const [realTimeAlerts, setRealTimeAlerts] = useState<Array<{
+    id: string
+    type: 'warning' | 'error' | 'info'
+    message: string
+    timestamp: Date
+    resolved: boolean
+  }>>([])
+  const [trendsLoading, setTrendsLoading] = useState(false)
 
   useEffect(() => {
     loadMonitoringData()
@@ -63,6 +79,81 @@ export default function SystemMonitoringContent() {
     }
   }, [autoRefresh])
 
+  const generateRealTimeAlerts = (metrics: PerformanceMetrics) => {
+    const now = new Date()
+    const newAlerts: Array<{
+      id: string
+      type: 'warning' | 'error' | 'info'
+      message: string
+      timestamp: Date
+      resolved: boolean
+    }> = []
+
+    // CPU 사용률 알림
+    if (metrics.resourceUsage.cpu > 80) {
+      newAlerts.push({
+        id: `cpu-${now.getTime()}`,
+        type: 'error',
+        message: `CPU 사용률이 높습니다: ${metrics.resourceUsage.cpu.toFixed(1)}%`,
+        timestamp: now,
+        resolved: false
+      })
+    } else if (metrics.resourceUsage.cpu > 70) {
+      newAlerts.push({
+        id: `cpu-${now.getTime()}`,
+        type: 'warning',
+        message: `CPU 사용률 주의: ${metrics.resourceUsage.cpu.toFixed(1)}%`,
+        timestamp: now,
+        resolved: false
+      })
+    }
+
+    // 메모리 사용률 알림
+    if (metrics.resourceUsage.memory > 85) {
+      newAlerts.push({
+        id: `memory-${now.getTime()}`,
+        type: 'error',
+        message: `메모리 사용률이 높습니다: ${metrics.resourceUsage.memory.toFixed(1)}%`,
+        timestamp: now,
+        resolved: false
+      })
+    }
+
+    // 오류율 알림
+    if (metrics.errorRate > 5) {
+      newAlerts.push({
+        id: `error-${now.getTime()}`,
+        type: 'error',
+        message: `오류율이 높습니다: ${metrics.errorRate.toFixed(2)}%`,
+        timestamp: now,
+        resolved: false
+      })
+    } else if (metrics.errorRate > 2) {
+      newAlerts.push({
+        id: `error-${now.getTime()}`,
+        type: 'warning',
+        message: `오류율 주의: ${metrics.errorRate.toFixed(2)}%`,
+        timestamp: now,
+        resolved: false
+      })
+    }
+
+    // 응답시간 알림
+    if (metrics.responseTime.average > 3000) {
+      newAlerts.push({
+        id: `response-${now.getTime()}`,
+        type: 'warning',
+        message: `응답시간이 느립니다: ${(metrics.responseTime.average / 1000).toFixed(1)}초`,
+        timestamp: now,
+        resolved: false
+      })
+    }
+
+    if (newAlerts.length > 0) {
+      setRealTimeAlerts(prev => [...newAlerts, ...prev].slice(0, 10))
+    }
+  }
+
   const loadMonitoringData = async () => {
     try {
       setIsLoading(true)
@@ -81,7 +172,24 @@ export default function SystemMonitoringContent() {
       }
 
       if (performance.status === 'fulfilled') {
-        setPerformanceMetrics(performance.value)
+        const newMetrics = performance.value
+        setPerformanceMetrics(newMetrics)
+        
+        // 성능 히스토리에 현재 데이터 추가 (최대 20개 유지)
+        setPerformanceHistory(prev => {
+          const newHistory = [...prev, {
+            timestamp: newMetrics.timestamp,
+            responseTime: newMetrics.responseTime.average,
+            errorRate: newMetrics.errorRate,
+            activeUsers: newMetrics.userMetrics.activeUsers,
+            cpuUsage: newMetrics.resourceUsage.cpu,
+            memoryUsage: newMetrics.resourceUsage.memory
+          }].slice(-20)
+          return newHistory
+        })
+        
+        // 실시간 알림 생성
+        generateRealTimeAlerts(newMetrics)
       }
 
       if (logs.status === 'fulfilled') {
@@ -406,6 +514,201 @@ export default function SystemMonitoringContent() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Performance Trends Chart */}
+        {performanceHistory.length > 0 && (
+          <div className="space-y-6">
+            {/* 실시간 알림 배너 */}
+            {realTimeAlerts.length > 0 && (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-amber-100 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-amber-800">실시간 알림</h3>
+                      <p className="text-sm text-amber-600">시스템 성능 이상 감지</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                    {realTimeAlerts.filter(alert => !alert.resolved).length}개 활성
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {realTimeAlerts.slice(0, 4).map((alert) => (
+                    <div key={alert.id} className="bg-white rounded-lg p-4 border border-amber-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-800">{alert.message}</p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {alert.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <div className={`w-2 h-2 rounded-full ml-3 ${
+                          alert.type === 'error' ? 'bg-red-500' :
+                          alert.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+                        }`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 성능 트렌드 차트 */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
+                    <Activity className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">성능 트렌드</h2>
+                    <p className="text-slate-500">최근 20회 측정 결과</p>
+                  </div>
+                </div>
+                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                  실시간
+                </Badge>
+              </div>
+
+              {/* 차트 영역 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 응답시간 트렌드 */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="font-semibold text-slate-700 mb-4">응답시간 (ms)</h3>
+                  <div className="h-32 flex items-end justify-between gap-1">
+                    {performanceHistory.map((point, index) => {
+                      const maxResponseTime = Math.max(...performanceHistory.map(p => p.responseTime))
+                      const heightPercentage = (point.responseTime / maxResponseTime) * 100
+                      
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center">
+                          <div 
+                            className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600 cursor-pointer"
+                            style={{ height: `${Math.max(heightPercentage, 5)}%` }}
+                            title={`${point.timestamp.toLocaleTimeString()}: ${point.responseTime.toFixed(0)}ms`}
+                          />
+                          {index % 5 === 0 && (
+                            <span className="text-xs text-slate-500 mt-1 transform -rotate-45">
+                              {point.timestamp.toLocaleTimeString().slice(0, 5)}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-sm text-slate-600">
+                      평균: {(performanceHistory.reduce((sum, p) => sum + p.responseTime, 0) / performanceHistory.length).toFixed(0)}ms
+                    </span>
+                  </div>
+                </div>
+
+                {/* 오류율 트렌드 */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="font-semibold text-slate-700 mb-4">오류율 (%)</h3>
+                  <div className="h-32 flex items-end justify-between gap-1">
+                    {performanceHistory.map((point, index) => {
+                      const maxErrorRate = Math.max(...performanceHistory.map(p => p.errorRate), 5)
+                      const heightPercentage = (point.errorRate / maxErrorRate) * 100
+                      
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center">
+                          <div 
+                            className={`w-full rounded-t transition-all cursor-pointer ${
+                              point.errorRate > 5 ? 'bg-red-500 hover:bg-red-600' :
+                              point.errorRate > 2 ? 'bg-amber-500 hover:bg-amber-600' :
+                              'bg-emerald-500 hover:bg-emerald-600'
+                            }`}
+                            style={{ height: `${Math.max(heightPercentage, 5)}%` }}
+                            title={`${point.timestamp.toLocaleTimeString()}: ${point.errorRate.toFixed(2)}%`}
+                          />
+                          {index % 5 === 0 && (
+                            <span className="text-xs text-slate-500 mt-1 transform -rotate-45">
+                              {point.timestamp.toLocaleTimeString().slice(0, 5)}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-sm text-slate-600">
+                      평균: {(performanceHistory.reduce((sum, p) => sum + p.errorRate, 0) / performanceHistory.length).toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* 리소스 사용률 트렌드 */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="font-semibold text-slate-700 mb-4">CPU 사용률 (%)</h3>
+                  <div className="h-32 flex items-end justify-between gap-1">
+                    {performanceHistory.map((point, index) => {
+                      const heightPercentage = point.cpuUsage
+                      
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center">
+                          <div 
+                            className={`w-full rounded-t transition-all cursor-pointer ${
+                              point.cpuUsage > 80 ? 'bg-red-500 hover:bg-red-600' :
+                              point.cpuUsage > 60 ? 'bg-amber-500 hover:bg-amber-600' :
+                              'bg-emerald-500 hover:bg-emerald-600'
+                            }`}
+                            style={{ height: `${Math.max(heightPercentage, 5)}%` }}
+                            title={`${point.timestamp.toLocaleTimeString()}: ${point.cpuUsage.toFixed(1)}%`}
+                          />
+                          {index % 5 === 0 && (
+                            <span className="text-xs text-slate-500 mt-1 transform -rotate-45">
+                              {point.timestamp.toLocaleTimeString().slice(0, 5)}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-sm text-slate-600">
+                      평균: {(performanceHistory.reduce((sum, p) => sum + p.cpuUsage, 0) / performanceHistory.length).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* 활성 사용자 트렌드 */}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <h3 className="font-semibold text-slate-700 mb-4">활성 사용자</h3>
+                  <div className="h-32 flex items-end justify-between gap-1">
+                    {performanceHistory.map((point, index) => {
+                      const maxUsers = Math.max(...performanceHistory.map(p => p.activeUsers))
+                      const heightPercentage = (point.activeUsers / maxUsers) * 100
+                      
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center">
+                          <div 
+                            className="w-full bg-purple-500 rounded-t transition-all hover:bg-purple-600 cursor-pointer"
+                            style={{ height: `${Math.max(heightPercentage, 5)}%` }}
+                            title={`${point.timestamp.toLocaleTimeString()}: ${point.activeUsers}명`}
+                          />
+                          {index % 5 === 0 && (
+                            <span className="text-xs text-slate-500 mt-1 transform -rotate-45">
+                              {point.timestamp.toLocaleTimeString().slice(0, 5)}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-sm text-slate-600">
+                      평균: {Math.round(performanceHistory.reduce((sum, p) => sum + p.activeUsers, 0) / performanceHistory.length)}명
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

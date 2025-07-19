@@ -1500,30 +1500,125 @@ export class SystemAdminService extends BaseService {
       this.validateSystemAdminAccess()
       
       try {
-        // 실제 구현에서는 모니터링 시스템(New Relic, DataDog 등)에서 데이터 조회
-        // 여기서는 시뮬레이션 데이터 제공
+        const now = new Date()
+        const lastHour = new Date(now.getTime() - 60 * 60 * 1000)
+        const lastDay = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+        
+        // 실제 성능 데이터 수집
+        const [
+          recentReports,
+          recentSessions,
+          recentUsers,
+          recentLogs
+        ] = await Promise.all([
+          // 최근 1시간 AI 리포트 생성 데이터
+          getDocs(query(
+            collection(db, 'aiReports'),
+            where('createdAt', '>=', lastHour.getTime()),
+            orderBy('createdAt', 'desc')
+          )),
+          // 최근 1시간 측정 세션 데이터
+          getDocs(query(
+            collection(db, 'measurementSessions'),
+            where('createdAt', '>=', lastHour.getTime()),
+            orderBy('createdAt', 'desc')
+          )),
+          // 최근 24시간 활성 사용자
+          getDocs(query(
+            collection(db, 'users'),
+            where('lastActiveAt', '>=', lastDay.getTime())
+          )),
+          // 최근 1시간 시스템 로그 (응답시간 계산용)
+          getDocs(query(
+            collection(db, 'systemLogs'),
+            where('timestamp', '>=', Timestamp.fromDate(lastHour)),
+            where('category', '==', 'performance'),
+                         orderBy('timestamp', 'desc'),
+             limit(100)
+          ))
+        ])
+        
+        // 응답시간 계산 (AI 리포트 처리 시간 기반)
+        const responseTimes = recentReports.docs
+          .map(doc => doc.data().processingTime)
+          .filter(time => time && time > 0)
+          .sort((a, b) => a - b)
+        
+        const avgResponseTime = responseTimes.length > 0 
+          ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length 
+          : 2500
+        
+        const p95Index = Math.floor(responseTimes.length * 0.95)
+        const p99Index = Math.floor(responseTimes.length * 0.99)
+        
+        // 처리량 계산
+        const reportsPerHour = recentReports.docs.length
+        const measurementsPerHour = recentSessions.docs.length
+        const requestsPerSecond = (reportsPerHour + measurementsPerHour) / 3600
+        
+        // 오류율 계산 (실패한 작업 비율)
+        const failedReports = recentReports.docs.filter(doc => 
+          doc.data().status === 'failed' || doc.data().status === 'error'
+        ).length
+        const failedSessions = recentSessions.docs.filter(doc => 
+          doc.data().status === 'failed' || doc.data().status === 'error'
+        ).length
+        const totalOperations = recentReports.docs.length + recentSessions.docs.length
+        const errorRate = totalOperations > 0 
+          ? ((failedReports + failedSessions) / totalOperations) * 100 
+          : 0
+        
+        // 활성 사용자 및 세션 계산
+        const activeUsers = recentUsers.docs.length
+        
+        // 현재 활성 세션 (최근 30분 이내 활동)
+        const recentSessionTime = new Date(now.getTime() - 30 * 60 * 1000)
+        const activeSessions = recentUsers.docs.filter(doc => {
+          const lastActive = doc.data().lastActiveAt
+          return lastActive && new Date(lastActive) >= recentSessionTime
+        }).length
+        
+        // 평균 세션 지속시간 계산
+        const sessionDurations = recentSessions.docs
+          .map(doc => {
+            const data = doc.data()
+            const start = data.startTime || data.createdAt
+            const end = data.endTime || data.updatedAt || now.getTime()
+            return (end - start) / (1000 * 60) // 분 단위
+          })
+          .filter(duration => duration > 0 && duration < 180) // 3시간 이하만
+        
+        const avgSessionDuration = sessionDurations.length > 0
+          ? sessionDurations.reduce((sum, duration) => sum + duration, 0) / sessionDurations.length
+          : 25.5
+        
+        // 리소스 사용량 (시뮬레이션 - 실제 환경에서는 시스템 메트릭 사용)
+        const cpuUsage = Math.min(40 + (requestsPerSecond * 0.5), 95)
+        const memoryUsage = Math.min(50 + (activeUsers * 0.1), 90)
+        const storageUsed = 200 + (recentReports.docs.length * 0.5) + (recentSessions.docs.length * 0.3)
+        
         const metrics: PerformanceMetrics = {
-          timestamp: new Date(),
+          timestamp: now,
           responseTime: {
-            average: Math.random() * 500 + 200, // 200-700ms
-            p95: Math.random() * 800 + 500,     // 500-1300ms
-            p99: Math.random() * 1200 + 800     // 800-2000ms
+            average: avgResponseTime,
+            p95: responseTimes[p95Index] || avgResponseTime * 1.5,
+            p99: responseTimes[p99Index] || avgResponseTime * 2
           },
           throughput: {
-            requestsPerSecond: Math.random() * 100 + 50,    // 50-150 req/s
-            reportsPerHour: Math.random() * 200 + 100,      // 100-300 reports/h
-            measurementsPerHour: Math.random() * 500 + 300  // 300-800 measurements/h
+            requestsPerSecond,
+            reportsPerHour,
+            measurementsPerHour
           },
-          errorRate: Math.random() * 2, // 0-2%
+          errorRate,
           resourceUsage: {
-            cpu: Math.random() * 30 + 40,      // 40-70%
-            memory: Math.random() * 25 + 50,   // 50-75%
-            storage: Math.random() * 100 + 200 // 200-300GB
+            cpu: cpuUsage,
+            memory: memoryUsage,
+            storage: storageUsed
           },
           userMetrics: {
-            activeUsers: Math.floor(Math.random() * 200 + 100),    // 100-300 users
-            concurrentSessions: Math.floor(Math.random() * 50 + 20), // 20-70 sessions
-            averageSessionDuration: Math.random() * 20 + 15         // 15-35 minutes
+            activeUsers,
+            concurrentSessions: activeSessions,
+            averageSessionDuration: avgSessionDuration
           }
         }
         
