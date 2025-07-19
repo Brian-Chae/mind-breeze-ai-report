@@ -1608,21 +1608,38 @@ export class SystemAdminService extends BaseService {
             await Promise.allSettled(orgQueries)
           }
 
-          // 측정 사용자 정보 조회
-          const measurementUserIds = [...new Set(sessions.map((s: any) => s.measurementUserId).filter(Boolean))]
+          // 측정 사용자 정보 조회 - 다양한 필드명 지원
+          const measurementUserIds = [...new Set(
+            sessions
+              .map((s: any) => s.measurementUserId || s.userId || s.user || s.patientId)
+              .filter(Boolean)
+          )]
           const measurementUsersMap = new Map()
           
           if (measurementUserIds.length > 0) {
             const userQueries = measurementUserIds.map(async (userId) => {
               try {
-                const userDocRef = doc(db, 'measurementUsers', userId)
-                const userDoc = await getDoc(userDocRef)
+                // measurementUsers 컬렉션 시도
+                let userDocRef = doc(db, 'measurementUsers', userId)
+                let userDoc = await getDoc(userDocRef)
+                
+                if (!userDoc.exists()) {
+                  // users 컬렉션 시도
+                  userDocRef = doc(db, 'users', userId)
+                  userDoc = await getDoc(userDocRef)
+                }
+                
                 if (userDoc.exists()) {
                   const userData = userDoc.data()
-                  measurementUsersMap.set(userId, userData.displayName || userData.name || '알 수 없음')
+                  const userName = userData.displayName || userData.name || userData.firstName || userData.email || userData.username || `사용자${userId.slice(-4)}`
+                  measurementUsersMap.set(userId, userName)
+                } else {
+                  // 사용자 정보를 찾을 수 없는 경우 ID 마지막 4자리로 표시
+                  measurementUsersMap.set(userId, `사용자${userId.slice(-4)}`)
                 }
               } catch (error) {
                 console.warn(`측정 사용자 정보 조회 실패: ${userId}`, error)
+                measurementUsersMap.set(userId, `사용자${userId.slice(-4)}`)
               }
             })
             await Promise.allSettled(userQueries)
@@ -1646,9 +1663,12 @@ export class SystemAdminService extends BaseService {
             // 데이터 크기 추정 (분당 약 2MB)
             const estimatedSize = (session.duration || 60) / 60 * 2
 
+            // 사용자 ID 다양한 필드에서 추출
+            const userId = session.measurementUserId || session.userId || session.user || session.patientId
+            
             return {
               id: session.id,
-              userName: measurementUsersMap.get(session.measurementUserId) || '알 수 없음',
+              userName: measurementUsersMap.get(userId) || '알 수 없음',
               organizationName: organizationsMap.get(session.organizationId) || '개인',
               dataType,
               duration: Math.round((session.duration || 0) / 60 * 10) / 10, // 분 단위
