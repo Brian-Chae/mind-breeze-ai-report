@@ -3448,6 +3448,421 @@ export class SystemAdminService extends BaseService {
       }
     })
   }
+
+  /**
+   * 기업별 실시간 성과 대시보드 데이터 조회
+   */
+  async getEnterprisePerformanceDashboard(organizationId: string): Promise<{
+    realTimeMetrics: {
+      onlineUsers: number
+      activeSessions: number
+      recentReports: number
+      errorRate: number
+    }
+    weeklyTrends: Array<{
+      date: Date
+      measurements: number
+      reports: number
+      credits: number
+      activeUsers: number
+    }>
+    riskMetrics: {
+      creditDepletionDays: number
+      inactivityScore: number
+      errorTrend: 'increasing' | 'decreasing' | 'stable'
+      supportTickets: number
+    }
+    memberActivity: Array<{
+      memberName: string
+      lastActivity: Date
+      measurementsCount: number
+      reportsCount: number
+      status: 'active' | 'inactive' | 'new'
+    }>
+  }> {
+    return this.measureAndLog('getEnterprisePerformanceDashboard', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const now = new Date()
+        const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+        const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        const last30Minutes = new Date(now.getTime() - 30 * 60 * 1000)
+
+        // 병렬로 데이터 수집
+        const [
+          members,
+          recentSessions,
+          recentReports,
+          creditTransactions,
+          weeklyActivities,
+          recentErrors
+        ] = await Promise.all([
+          // 조직 멤버들
+          getDocs(query(
+            collection(db, 'organizationMembers'),
+            where('organizationId', '==', organizationId)
+          )),
+          // 최근 24시간 세션
+          getDocs(query(
+            collection(db, 'measurementSessions'),
+            where('organizationId', '==', organizationId),
+            where('startTime', '>=', Timestamp.fromDate(last24Hours))
+          )),
+          // 최근 24시간 리포트
+          getDocs(query(
+            collection(db, 'aiReports'),
+            where('organizationId', '==', organizationId),
+            where('createdAt', '>=', last24Hours.getTime()),
+            orderBy('createdAt', 'desc')
+          )),
+          // 크레딧 거래
+          getDocs(query(
+            collection(db, 'creditTransactions'),
+            where('organizationId', '==', organizationId),
+            where('createdAt', '>=', Timestamp.fromDate(lastWeek)),
+            orderBy('createdAt', 'desc')
+          )),
+          // 지난 주 활동 (사용자별)
+          getDocs(query(
+            collection(db, 'users'),
+            where('organizationId', '==', organizationId),
+            where('lastActiveAt', '>=', lastWeek.getTime())
+          )),
+          // 최근 에러 로그
+          getDocs(query(
+            collection(db, 'systemLogs'),
+            where('organizationId', '==', organizationId),
+            where('level', '==', 'error'),
+            where('timestamp', '>=', Timestamp.fromDate(last24Hours)),
+            limit(50)
+          ))
+        ])
+
+        // 실시간 지표 계산
+        const onlineUsers = members.docs.filter(doc => {
+          const lastActive = doc.data().lastActivity?.toDate?.()
+          return lastActive && lastActive >= last30Minutes
+        }).length
+
+        const activeSessions = recentSessions.docs.filter(doc => {
+          const data = doc.data()
+          return !data.endTime || data.endTime?.toDate?.() >= last30Minutes
+        }).length
+
+        const recentReportsCount = recentReports.docs.length
+        const errorRate = recentErrors.docs.length / Math.max(recentSessions.docs.length, 1) * 100
+
+        // 주간 트렌드 계산
+        const weeklyTrends = []
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+          const dayStart = new Date(date)
+          dayStart.setHours(0, 0, 0, 0)
+          const dayEnd = new Date(date)
+          dayEnd.setHours(23, 59, 59, 999)
+
+          const dayMeasurements = recentSessions.docs.filter(doc => {
+            const startTime = doc.data().startTime?.toDate?.()
+            return startTime && startTime >= dayStart && startTime <= dayEnd
+          }).length
+
+          const dayReports = recentReports.docs.filter(doc => {
+            const createdAt = new Date(doc.data().createdAt)
+            return createdAt >= dayStart && createdAt <= dayEnd
+          }).length
+
+          const dayCredits = Math.abs(creditTransactions.docs
+            .filter(doc => {
+              const createdAt = doc.data().createdAt?.toDate?.()
+              return createdAt && createdAt >= dayStart && createdAt <= dayEnd && doc.data().amount < 0
+            })
+            .reduce((sum, doc) => sum + Math.abs(doc.data().amount || 0), 0))
+
+          const dayActiveUsers = weeklyActivities.docs.filter(doc => {
+            const lastActive = new Date(doc.data().lastActiveAt)
+            return lastActive >= dayStart && lastActive <= dayEnd
+          }).length
+
+          weeklyTrends.push({
+            date: dayStart,
+            measurements: dayMeasurements,
+            reports: dayReports,
+            credits: dayCredits,
+            activeUsers: dayActiveUsers
+          })
+        }
+
+        // 위험 지표 계산
+        const currentBalance = creditTransactions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0)
+        const avgDailyCreditUsage = Math.abs(creditTransactions.docs
+          .filter(doc => doc.data().amount < 0)
+          .reduce((sum, doc) => sum + Math.abs(doc.data().amount || 0), 0)) / 7
+
+        const creditDepletionDays = avgDailyCreditUsage > 0 ? Math.floor(currentBalance / avgDailyCreditUsage) : 999
+
+        const recentActivity = members.docs.filter(doc => {
+          const lastActive = doc.data().lastActivity?.toDate?.()
+          return lastActive && lastActive >= lastWeek
+        }).length
+
+        const inactivityScore = Math.max(0, 100 - (recentActivity / members.docs.length) * 100)
+
+        // 에러 트렌드 분석
+        const recentErrorsCount = recentErrors.docs.filter(doc => {
+          const timestamp = doc.data().timestamp?.toDate?.()
+          return timestamp && timestamp >= new Date(now.getTime() - 12 * 60 * 60 * 1000)
+        }).length
+
+        const olderErrorsCount = recentErrors.docs.filter(doc => {
+          const timestamp = doc.data().timestamp?.toDate?.()
+          const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000)
+          return timestamp && timestamp >= last24Hours && timestamp < twelveHoursAgo
+        }).length
+
+        let errorTrend: 'increasing' | 'decreasing' | 'stable' = 'stable'
+        if (recentErrorsCount > olderErrorsCount * 1.2) errorTrend = 'increasing'
+        else if (recentErrorsCount < olderErrorsCount * 0.8) errorTrend = 'decreasing'
+
+        // 멤버 활동 분석
+        const memberActivity = await Promise.all(
+          members.docs.map(async (memberDoc) => {
+            const memberData = memberDoc.data()
+            const userId = memberData.userId
+
+            const [userSessions, userReports] = await Promise.all([
+              getDocs(query(
+                collection(db, 'measurementSessions'),
+                where('userId', '==', userId),
+                where('startTime', '>=', Timestamp.fromDate(lastWeek))
+              )),
+              getDocs(query(
+                collection(db, 'aiReports'),
+                where('userId', '==', userId),
+                where('createdAt', '>=', lastWeek.getTime())
+              ))
+            ])
+
+            const lastActivity = memberData.lastActivity?.toDate?.() || new Date(0)
+            const isNewMember = memberData.createdAt?.toDate?.() >= lastWeek
+            
+            let status: 'active' | 'inactive' | 'new' = 'inactive'
+            if (isNewMember) status = 'new'
+            else if (lastActivity >= new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)) status = 'active'
+
+            return {
+              memberName: memberData.name || memberData.email || '알 수 없음',
+              lastActivity,
+              measurementsCount: userSessions.docs.length,
+              reportsCount: userReports.docs.length,
+              status
+            }
+          })
+        )
+
+        return {
+          realTimeMetrics: {
+            onlineUsers,
+            activeSessions,
+            recentReports: recentReportsCount,
+            errorRate
+          },
+          weeklyTrends,
+          riskMetrics: {
+            creditDepletionDays,
+            inactivityScore,
+            errorTrend,
+            supportTickets: 0 // TODO: 지원 티켓 시스템 구현 시 연결
+          },
+          memberActivity: memberActivity.sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime())
+        }
+
+      } catch (error) {
+        this.log('error', '기업 성과 대시보드 조회 실패', {
+          organizationId,
+          error: error instanceof Error ? error.message : String(error)
+        })
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 기업별 비교 분석 데이터 조회
+   */
+  async getEnterpriseComparisonAnalytics(): Promise<{
+    topPerformers: Array<{
+      organizationId: string
+      organizationName: string
+      score: number
+      metrics: {
+        reportsPerMember: number
+        averageSessionTime: number
+        memberRetentionRate: number
+        creditEfficiency: number
+      }
+    }>
+    industryBenchmarks: {
+      avgReportsPerMember: number
+      avgSessionTime: number
+      avgMemberRetentionRate: number
+      avgCreditEfficiency: number
+    }
+    growthTrends: Array<{
+      organizationId: string
+      organizationName: string
+      monthlyGrowth: {
+        members: number
+        reports: number
+        sessions: number
+      }
+    }>
+  }> {
+    return this.measureAndLog('getEnterpriseComparisonAnalytics', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const now = new Date()
+        const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+
+        // 모든 조직 데이터 수집
+        const organizations = await getDocs(collection(db, 'organizations'))
+        const performanceData = []
+
+        for (const orgDoc of organizations.docs) {
+          const orgData = orgDoc.data()
+          const organizationId = orgDoc.id
+
+          // 병렬로 데이터 수집
+          const [
+            members,
+            reports,
+            sessions,
+            creditTransactions,
+            oldMembers,
+            oldReports,
+            oldSessions
+          ] = await Promise.all([
+            getDocs(query(collection(db, 'organizationMembers'), where('organizationId', '==', organizationId))),
+            getDocs(query(collection(db, 'aiReports'), where('organizationId', '==', organizationId), where('createdAt', '>=', lastMonth.getTime()))),
+            getDocs(query(collection(db, 'measurementSessions'), where('organizationId', '==', organizationId), where('startTime', '>=', Timestamp.fromDate(lastMonth)))),
+            getDocs(query(collection(db, 'creditTransactions'), where('organizationId', '==', organizationId), where('amount', '<', 0))),
+            // 2개월 전 데이터
+            getDocs(query(collection(db, 'organizationMembers'), where('organizationId', '==', organizationId), where('createdAt', '<=', Timestamp.fromDate(twoMonthsAgo)))),
+            getDocs(query(collection(db, 'aiReports'), where('organizationId', '==', organizationId), where('createdAt', '>=', twoMonthsAgo.getTime()), where('createdAt', '<', lastMonth.getTime()))),
+            getDocs(query(collection(db, 'measurementSessions'), where('organizationId', '==', organizationId), where('startTime', '>=', Timestamp.fromDate(twoMonthsAgo)), where('startTime', '<', Timestamp.fromDate(lastMonth))))
+          ])
+
+          // 메트릭 계산
+          const reportsPerMember = members.docs.length > 0 ? reports.docs.length / members.docs.length : 0
+          
+          const sessionDurations = sessions.docs.map(doc => {
+            const data = doc.data()
+            const start = data.startTime?.toDate?.()?.getTime() || 0
+            const end = data.endTime?.toDate?.()?.getTime() || start + (5 * 60 * 1000) // 기본 5분
+            return (end - start) / (1000 * 60) // 분 단위
+          }).filter(duration => duration > 0 && duration < 120) // 2시간 이하만
+
+          const averageSessionTime = sessionDurations.length > 0 
+            ? sessionDurations.reduce((sum, duration) => sum + duration, 0) / sessionDurations.length 
+            : 0
+
+          // 멤버 유지율 (30일 이상 활동한 멤버 비율)
+          const retainedMembers = members.docs.filter(doc => {
+            const lastActivity = doc.data().lastActivity?.toDate?.()
+            const joinDate = doc.data().createdAt?.toDate?.()
+            return lastActivity && joinDate && 
+                   lastActivity >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) &&
+                   joinDate <= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          }).length
+
+          const eligibleMembers = members.docs.filter(doc => {
+            const joinDate = doc.data().createdAt?.toDate?.()
+            return joinDate && joinDate <= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          }).length
+
+          const memberRetentionRate = eligibleMembers > 0 ? (retainedMembers / eligibleMembers) * 100 : 0
+
+          // 크레딧 효율성 (리포트당 크레딧 사용량)
+          const totalCreditsUsed = creditTransactions.docs.reduce((sum, doc) => sum + Math.abs(doc.data().amount || 0), 0)
+          const creditEfficiency = reports.docs.length > 0 ? totalCreditsUsed / reports.docs.length : 0
+
+          // 성과 점수 계산 (0-100)
+          const score = Math.min(100, 
+            (reportsPerMember * 10) +
+            (Math.min(averageSessionTime, 30) / 30 * 20) +
+            (memberRetentionRate * 0.3) +
+            (Math.max(0, 50 - creditEfficiency) * 0.5)
+          )
+
+          // 성장률 계산
+          const memberGrowth = oldMembers.docs.length > 0 
+            ? ((members.docs.length - oldMembers.docs.length) / oldMembers.docs.length) * 100 
+            : 0
+
+          const reportGrowth = oldReports.docs.length > 0 
+            ? ((reports.docs.length - oldReports.docs.length) / oldReports.docs.length) * 100 
+            : 0
+
+          const sessionGrowth = oldSessions.docs.length > 0 
+            ? ((sessions.docs.length - oldSessions.docs.length) / oldSessions.docs.length) * 100 
+            : 0
+
+          performanceData.push({
+            organizationId,
+            organizationName: orgData.name || '알 수 없음',
+            score,
+            metrics: {
+              reportsPerMember,
+              averageSessionTime,
+              memberRetentionRate,
+              creditEfficiency
+            },
+            monthlyGrowth: {
+              members: memberGrowth,
+              reports: reportGrowth,
+              sessions: sessionGrowth
+            }
+          })
+        }
+
+        // 상위 성과자 정렬
+        const topPerformers = performanceData
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10)
+
+        // 업계 벤치마크 계산
+        const industryBenchmarks = {
+          avgReportsPerMember: performanceData.reduce((sum, org) => sum + org.metrics.reportsPerMember, 0) / performanceData.length,
+          avgSessionTime: performanceData.reduce((sum, org) => sum + org.metrics.averageSessionTime, 0) / performanceData.length,
+          avgMemberRetentionRate: performanceData.reduce((sum, org) => sum + org.metrics.memberRetentionRate, 0) / performanceData.length,
+          avgCreditEfficiency: performanceData.reduce((sum, org) => sum + org.metrics.creditEfficiency, 0) / performanceData.length
+        }
+
+        // 성장 트렌드 정렬
+        const growthTrends = performanceData
+          .sort((a, b) => {
+            const aGrowth = a.monthlyGrowth.members + a.monthlyGrowth.reports + a.monthlyGrowth.sessions
+            const bGrowth = b.monthlyGrowth.members + b.monthlyGrowth.reports + b.monthlyGrowth.sessions
+            return bGrowth - aGrowth
+          })
+          .slice(0, 15)
+
+        return {
+          topPerformers,
+          industryBenchmarks,
+          growthTrends
+        }
+
+      } catch (error) {
+        this.log('error', '기업 비교 분석 조회 실패', {
+          error: error instanceof Error ? error.message : String(error)
+        })
+        throw error
+      }
+    })
+  }
 }
 
 const systemAdminService = new SystemAdminService()

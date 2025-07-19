@@ -50,12 +50,26 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterRisk, setFilterRisk] = useState<string>('all')
-  const [activeTab, setActiveTab] = useState<'overview' | 'registrations' | 'analytics'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'registrations' | 'analytics' | 'performance' | 'comparison'>('overview')
   const [autoRefresh, setAutoRefresh] = useState(false)
+  const [performanceDashboard, setPerformanceDashboard] = useState<any>(null)
+  const [comparisonAnalytics, setComparisonAnalytics] = useState<any>(null)
+  const [dashboardLoading, setDashboardLoading] = useState(false)
 
   useEffect(() => {
     loadData()
+    // 초기 비교 분석 데이터 로드
+    loadComparisonData()
   }, [])
+
+  const loadComparisonData = async () => {
+    try {
+      const comparison = await systemAdminService.getEnterpriseComparisonAnalytics()
+      setComparisonAnalytics(comparison)
+    } catch (error) {
+      console.error('비교 분석 데이터 로드 실패:', error)
+    }
+  }
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -91,6 +105,24 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
       setActiveTab('analytics')
     } catch (error) {
       console.error('리포트 분석 로드 실패:', error)
+    }
+  }
+
+  const loadPerformanceDashboard = async (organizationId: string) => {
+    try {
+      setDashboardLoading(true)
+      const [dashboard, comparison] = await Promise.all([
+        systemAdminService.getEnterprisePerformanceDashboard(organizationId),
+        systemAdminService.getEnterpriseComparisonAnalytics()
+      ])
+      setPerformanceDashboard(dashboard)
+      setComparisonAnalytics(comparison)
+      setSelectedOrganization(organizationId)
+      setActiveTab('analytics')
+    } catch (error) {
+      console.error('성과 대시보드 로드 실패:', error)
+    } finally {
+      setDashboardLoading(false)
     }
   }
 
@@ -200,7 +232,9 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
             {[
               { id: 'overview', label: '기업 현황', icon: Building2 },
               { id: 'registrations', label: '최근 가입', icon: Users },
-              { id: 'analytics', label: '상세 분석', icon: Activity }
+              { id: 'analytics', label: '상세 분석', icon: Activity },
+              { id: 'performance', label: '성과 대시보드', icon: TrendingUp },
+              { id: 'comparison', label: '기업 비교', icon: Award }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -445,20 +479,36 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
                     {/* 액션 버튼들 */}
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => loadPerformanceDashboard(enterprise.organizationId)}
+                        disabled={dashboardLoading}
+                        className="px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all text-sm font-medium disabled:opacity-50"
+                      >
+                        {dashboardLoading ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <TrendingUp className="w-4 h-4 mr-1" />
+                            성과 분석
+                          </>
+                        )}
+                      </button>
+                      
+                      <button
                         onClick={() => {
                           setSelectedOrganization(enterprise.organizationId)
                           loadReportAnalytics(enterprise.organizationId)
                         }}
                         className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="상세 리포트 분석"
                       >
                         <Eye className="w-4 h-4 text-slate-600" />
                       </button>
                       
-                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="기업 설정">
                         <Settings className="w-4 h-4 text-slate-600" />
                       </button>
                       
-                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="더 많은 옵션">
                         <MoreHorizontal className="w-4 h-4 text-slate-600" />
                       </button>
                     </div>
