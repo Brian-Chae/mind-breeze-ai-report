@@ -1277,6 +1277,227 @@ export class SystemAdminService extends BaseService {
     }))
   }
 
+  // 리포트 관리 메서드들
+  async getReportManagementOverview(): Promise<{
+    totalReports: number
+    dailyAverage: number
+    averageProcessingTime: number
+    activeUsers: number
+    qualityScore: number
+    errorRate: number
+  }> {
+    return this.withCache(
+      'report_management_overview',
+      async () => {
+        try {
+          // 최근 30일 데이터
+          const thirtyDaysAgo = new Date()
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+          
+          const reportsInPeriod = await this.getAIReportsInRange(thirtyDaysAgo, new Date())
+          
+          const totalReports = reportsInPeriod.length
+          const dailyAverage = totalReports / 30
+          
+          // 완료된 리포트만 필터링
+          const completedReports = reportsInPeriod.filter(r => r.processingTime && r.processingTime > 0)
+          const averageProcessingTime = completedReports.length > 0 
+            ? completedReports.reduce((sum, r) => sum + (r.processingTime || 0), 0) / completedReports.length / 1000 
+            : 0
+
+          // 유니크 사용자 수
+          const uniqueUsers = new Set(reportsInPeriod.map(r => r.userId)).size
+          
+          // 품질 점수 평균
+          const reportsWithQuality = reportsInPeriod.filter(r => r.qualityScore && r.qualityScore > 0)
+          const qualityScore = reportsWithQuality.length > 0
+            ? reportsWithQuality.reduce((sum, r) => sum + (r.qualityScore || 0), 0) / reportsWithQuality.length
+            : 0
+
+          // 에러율 계산 (processingTime이 없거나 0인 경우 실패로 간주)
+          const failedReports = reportsInPeriod.filter(r => !r.processingTime || r.processingTime <= 0).length
+          const errorRate = totalReports > 0 ? (failedReports / totalReports) * 100 : 0
+
+          this.log('리포트 관리 개요 조회 완료', { 
+            totalReports, 
+            dailyAverage, 
+            averageProcessingTime, 
+            activeUsers: uniqueUsers, 
+            qualityScore, 
+            errorRate 
+          })
+
+          return {
+            totalReports,
+            dailyAverage: Math.round(dailyAverage * 10) / 10,
+            averageProcessingTime: Math.round(averageProcessingTime * 10) / 10,
+            activeUsers: uniqueUsers,
+            qualityScore: Math.round(qualityScore * 10) / 10,
+            errorRate: Math.round(errorRate * 10) / 10
+          }
+        } catch (error) {
+          this.error('리포트 관리 개요 조회 실패', error as Error)
+          return {
+            totalReports: 0,
+            dailyAverage: 0,
+            averageProcessingTime: 0,
+            activeUsers: 0,
+            qualityScore: 0,
+            errorRate: 0
+          }
+        }
+      },
+      300 // 5분 캐시
+    )
+  }
+
+  async getEngineUsageStatistics(): Promise<Array<{
+    engineName: string
+    reportsGenerated: number
+    averageQuality: number
+    processingTime: number
+    successRate: number
+    usage: number
+  }>> {
+    return this.withCache(
+      'engine_usage_statistics',
+      async () => {
+        try {
+          // 최근 30일 데이터
+          const thirtyDaysAgo = new Date()
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+          
+          const reportsInPeriod = await this.getAIReportsInRange(thirtyDaysAgo, new Date())
+          
+          // 엔진별 그룹화
+          const engineGroups = reportsInPeriod.reduce((acc, report) => {
+            const engineName = report.engineName || report.engineId || 'Unknown Engine'
+            if (!acc[engineName]) {
+              acc[engineName] = []
+            }
+            acc[engineName].push(report)
+            return acc
+          }, {} as Record<string, any[]>)
+
+          const totalReports = reportsInPeriod.length
+
+          const engineStats = Object.entries(engineGroups).map(([engineName, reports]) => {
+            const reportList = reports as any[]
+            const reportsGenerated = reportList.length
+            
+            // 품질 점수가 있는 리포트만 필터링
+            const reportsWithQuality = reportList.filter((r: any) => r.qualityScore && r.qualityScore > 0)
+            const averageQuality = reportsWithQuality.length > 0
+              ? reportsWithQuality.reduce((sum: number, r: any) => sum + r.qualityScore, 0) / reportsWithQuality.length
+              : 0
+
+            // 처리 시간이 있는 리포트만 필터링
+            const reportsWithTime = reportList.filter((r: any) => r.processingTime && r.processingTime > 0)
+            const processingTime = reportsWithTime.length > 0
+              ? reportsWithTime.reduce((sum: number, r: any) => sum + r.processingTime, 0) / reportsWithTime.length / 1000
+              : 0
+
+            // 성공률 계산
+            const successfulReports = reportList.filter((r: any) => r.processingTime && r.processingTime > 0).length
+            const successRate = reportsGenerated > 0 ? (successfulReports / reportsGenerated) * 100 : 0
+
+            // 사용률 계산
+            const usage = totalReports > 0 ? (reportsGenerated / totalReports) * 100 : 0
+
+            return {
+              engineName,
+              reportsGenerated,
+              averageQuality: Math.round(averageQuality * 10) / 10,
+              processingTime: Math.round(processingTime * 10) / 10,
+              successRate: Math.round(successRate * 10) / 10,
+              usage: Math.round(usage * 10) / 10
+            }
+          })
+
+          // 사용량 순으로 정렬
+          engineStats.sort((a, b) => b.reportsGenerated - a.reportsGenerated)
+
+          this.log('엔진 사용 통계 조회 완료', { engineCount: engineStats.length })
+          return engineStats
+
+        } catch (error) {
+          this.error('엔진 사용 통계 조회 실패', error as Error)
+          return []
+        }
+      },
+      300 // 5분 캐시
+    )
+  }
+
+  async getRecentReports(limit: number = 50): Promise<Array<{
+    id: string
+    userName: string
+    organizationName: string
+    engineUsed: string
+    qualityScore: number
+    processingTime: number
+    createdAt: Date
+    status: 'completed' | 'processing' | 'failed'
+  }>> {
+    return this.withCache(
+      `recent_reports_${limit}`,
+      async () => {
+        try {
+          const reports = await this.getRecentAIReports(limit)
+          
+          // 조직 정보를 한 번에 조회
+          const organizationIds = [...new Set(reports.map(r => r.organizationId).filter(Boolean))]
+          const organizationsMap = new Map()
+          
+          if (organizationIds.length > 0) {
+            const orgQueries = organizationIds.map(async (orgId) => {
+              try {
+                const orgDocRef = doc(db, 'organizations', orgId)
+                const orgDoc = await getDoc(orgDocRef)
+                if (orgDoc.exists()) {
+                  const orgData = orgDoc.data()
+                  organizationsMap.set(orgId, orgData.name || orgData.organizationName || 'Unknown')
+                }
+              } catch (error) {
+                console.warn(`조직 정보 조회 실패: ${orgId}`, error)
+              }
+            })
+            await Promise.allSettled(orgQueries)
+          }
+
+          const transformedReports = reports.map(report => {
+            // 상태 결정
+            let status: 'completed' | 'processing' | 'failed' = 'completed'
+            if (!report.processingTime || report.processingTime <= 0) {
+              status = 'failed'
+            } else if (report.processingStatus?.stage && report.processingStatus.stage !== 'COMPLETED') {
+              status = 'processing'
+            }
+
+            return {
+              id: report.id,
+              userName: report.createdByUserName || '알 수 없음',
+              organizationName: organizationsMap.get(report.organizationId) || '개인',
+              engineUsed: report.engineName || report.engineId || 'Unknown',
+              qualityScore: report.qualityScore || 0,
+              processingTime: report.processingTime ? Math.round(report.processingTime / 100) / 10 : 0,
+              createdAt: report.createdAt,
+              status
+            }
+          })
+
+          this.log('최근 리포트 조회 완료', { count: transformedReports.length })
+          return transformedReports
+
+        } catch (error) {
+          this.error('최근 리포트 조회 실패', error as Error)
+          return []
+        }
+      },
+      180 // 3분 캐시
+    )
+  }
+
   private calculateAverageDuration(sessions: any[]): number {
     const validSessions = sessions.filter(s => s.duration && s.duration > 0)
     if (validSessions.length === 0) return 0
