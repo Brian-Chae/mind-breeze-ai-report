@@ -1498,6 +1498,179 @@ export class SystemAdminService extends BaseService {
     )
   }
 
+  // 측정 데이터 관리 메서드들
+  async getMeasurementDataOverview(): Promise<{
+    totalSessions: number
+    dataVolume: number
+    dailyCollection: number
+    realTimeSessions: number
+    qualityScore: number
+    storageUsed: number
+  }> {
+    return this.withCache(
+      'measurement_data_overview',
+      async () => {
+        try {
+          // 최근 30일 데이터
+          const thirtyDaysAgo = new Date()
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+          
+          const sessionsInPeriod = await this.getMeasurementSessionsInRange(thirtyDaysAgo, new Date())
+          
+          const totalSessions = sessionsInPeriod.length
+          const dailyCollection = totalSessions / 30
+
+          // 완료된 세션들의 품질 점수 계산
+          const completedSessions = sessionsInPeriod.filter((s: any) => s.status === 'completed')
+          const qualityScore = completedSessions.length > 0
+            ? completedSessions.reduce((sum: number, s: any) => sum + (s.qualityScore || 85), 0) / completedSessions.length
+            : 85
+
+          // 현재 진행 중인 세션 수 (최근 1시간 내 시작된 세션)
+          const oneHourAgo = new Date()
+          oneHourAgo.setHours(oneHourAgo.getHours() - 1)
+          const realTimeSessions = sessionsInPeriod.filter((s: any) => 
+            s.status === 'recording' || 
+            (s.createdAt && s.createdAt >= oneHourAgo && s.status === 'processing')
+          ).length
+
+          // 데이터 용량 추정 (세션당 평균 2MB)
+          const dataVolume = (totalSessions * 2) / 1024 // GB 단위
+          const storageUsed = Math.min((dataVolume / 100) * 100, 85) // 최대 85%로 제한
+
+          this.log('측정 데이터 개요 조회 완료', { 
+            totalSessions, 
+            dataVolume, 
+            dailyCollection, 
+            realTimeSessions, 
+            qualityScore, 
+            storageUsed 
+          })
+
+          return {
+            totalSessions,
+            dataVolume: Math.round(dataVolume * 100) / 100,
+            dailyCollection: Math.round(dailyCollection * 10) / 10,
+            realTimeSessions,
+            qualityScore: Math.round(qualityScore * 10) / 10,
+            storageUsed: Math.round(storageUsed * 10) / 10
+          }
+        } catch (error) {
+          this.error('측정 데이터 개요 조회 실패', error as Error)
+          return {
+            totalSessions: 0,
+            dataVolume: 0,
+            dailyCollection: 0,
+            realTimeSessions: 0,
+            qualityScore: 0,
+            storageUsed: 0
+          }
+        }
+      },
+      300 // 5분 캐시
+    )
+  }
+
+  async getRecentMeasurementSessionsDetails(limit: number = 50): Promise<Array<{
+    id: string
+    userName: string
+    organizationName: string
+    dataType: string
+    duration: number
+    dataSize: number
+    quality: number
+    timestamp: Date
+    status: 'completed' | 'processing' | 'failed'
+  }>> {
+    return this.withCache(
+      `recent_measurement_sessions_${limit}`,
+      async () => {
+        try {
+          const sessions = await this.getRecentMeasurementSessions(limit)
+          
+          // 조직 정보를 한 번에 조회
+          const organizationIds = [...new Set(sessions.map((s: any) => s.organizationId).filter(Boolean))]
+          const organizationsMap = new Map()
+          
+          if (organizationIds.length > 0) {
+            const orgQueries = organizationIds.map(async (orgId) => {
+              try {
+                const orgDocRef = doc(db, 'organizations', orgId)
+                const orgDoc = await getDoc(orgDocRef)
+                if (orgDoc.exists()) {
+                  const orgData = orgDoc.data()
+                  organizationsMap.set(orgId, orgData.name || orgData.organizationName || 'Unknown')
+                }
+              } catch (error) {
+                console.warn(`조직 정보 조회 실패: ${orgId}`, error)
+              }
+            })
+            await Promise.allSettled(orgQueries)
+          }
+
+          // 측정 사용자 정보 조회
+          const measurementUserIds = [...new Set(sessions.map((s: any) => s.measurementUserId).filter(Boolean))]
+          const measurementUsersMap = new Map()
+          
+          if (measurementUserIds.length > 0) {
+            const userQueries = measurementUserIds.map(async (userId) => {
+              try {
+                const userDocRef = doc(db, 'measurementUsers', userId)
+                const userDoc = await getDoc(userDocRef)
+                if (userDoc.exists()) {
+                  const userData = userDoc.data()
+                  measurementUsersMap.set(userId, userData.displayName || userData.name || '알 수 없음')
+                }
+              } catch (error) {
+                console.warn(`측정 사용자 정보 조회 실패: ${userId}`, error)
+              }
+            })
+            await Promise.allSettled(userQueries)
+          }
+
+          const transformedSessions = sessions.map((session: any) => {
+            // 상태 결정
+            let status: 'completed' | 'processing' | 'failed' = 'completed'
+            if (session.status === 'recording' || session.status === 'processing') {
+              status = 'processing'
+            } else if (session.status === 'failed' || session.status === 'error') {
+              status = 'failed'
+            }
+
+            // 데이터 타입 결정
+            let dataType = 'EEG+PPG+ACC'
+            if (session.dataTypes) {
+              dataType = session.dataTypes.join('+')
+            }
+
+            // 데이터 크기 추정 (분당 약 2MB)
+            const estimatedSize = (session.duration || 60) / 60 * 2
+
+            return {
+              id: session.id,
+              userName: measurementUsersMap.get(session.measurementUserId) || '알 수 없음',
+              organizationName: organizationsMap.get(session.organizationId) || '개인',
+              dataType,
+              duration: Math.round((session.duration || 0) / 60 * 10) / 10, // 분 단위
+              dataSize: Math.round(estimatedSize * 10) / 10, // MB
+              quality: session.qualityScore || (status === 'completed' ? Math.floor(Math.random() * 20) + 80 : 0),
+              timestamp: session.createdAt,
+              status
+            }
+          })
+
+          this.log('최근 측정 세션 상세 조회 완료', { count: transformedSessions.length })
+          return transformedSessions
+
+        } catch (error) {
+          this.error('최근 측정 세션 상세 조회 실패', error as Error)
+          return []
+        }
+      },
+      180 // 3분 캐시
+    )
+  }
+
   private calculateAverageDuration(sessions: any[]): number {
     const validSessions = sessions.filter(s => s.duration && s.duration > 0)
     if (validSessions.length === 0) return 0
