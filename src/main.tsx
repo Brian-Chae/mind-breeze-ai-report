@@ -43,9 +43,36 @@ if (process.env.NODE_ENV === 'development') {
       console.error('❌ 개발용 크레딧 추가 실패:', error);
     }
   };
+
+  // @ts-ignore
+  window.initTestData = async () => {
+    try {
+      const { TestDataInitializer } = await import('./utils/TestDataInitializer');
+      await TestDataInitializer.initializeAllTestData();
+      console.log('🎉 테스트 데이터 초기화 완료! 페이지를 새로고침하세요.');
+    } catch (error) {
+      console.error('❌ 테스트 데이터 초기화 실패:', error);
+    }
+  };
+
+  // @ts-ignore  
+  window.loginAsSystemAdmin = async () => {
+    try {
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      const { auth } = await import('@core/services/firebase');
+      
+      await signInWithEmailAndPassword(auth, 'admin@mindbreeze.ai', 'admin123456!');
+      console.log('✅ 시스템 관리자로 로그인 완료!');
+      window.location.reload();
+    } catch (error) {
+      console.error('❌ 시스템 관리자 로그인 실패:', error);
+    }
+  };
   
-  console.log('🚀 개발 환경 감지: 크레딧 추가 함수 사용 가능');
-  console.log('   사용법: addDevCredits() 또는 addDevCredits(원하는크레딧수)');
+  console.log('🚀 개발 환경 감지: 개발용 함수들이 사용 가능합니다');
+  console.log('   📊 initTestData() - 테스트 데이터 생성');
+  console.log('   👤 loginAsSystemAdmin() - 시스템 관리자 로그인');
+  console.log('   💳 addDevCredits(amount) - 크레딧 추가');
 }
 
 // Cache busting - 브라우저 캐시 강제 새로고침
