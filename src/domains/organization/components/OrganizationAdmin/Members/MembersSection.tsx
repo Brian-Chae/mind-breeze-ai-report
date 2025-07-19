@@ -36,7 +36,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
 
 // Firebase 서비스 import
-import { memberManagementService } from '../../../services/MemberManagementService'
+import measurementUserManagementService, { MeasurementUser } from '../../../../individual/services/MeasurementUserManagementService'
 import { MemberListResponse } from '../../../types/member'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { UserType } from '@core/types/business'
@@ -58,6 +58,10 @@ interface Member {
   lastLogin: string;
   status: 'active' | 'inactive' | 'pending';
   permissions: string[];
+  // 측정 관련 추가 필드
+  measurementCount?: number;
+  reportCount?: number;
+  lastMeasurement?: string;
 }
 
 interface Invitation {
@@ -155,22 +159,27 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
 
       const organizationId = currentContext.user.organizationId
 
-      // 멤버 데이터 로드
-      const membersResponse = await memberManagementService.getOrganizationMembers(organizationId)
-      setMembersData(membersResponse)
+      // 측정 사용자 데이터 로드
+      console.log('🔄 [MembersSection] 측정 사용자 데이터 로딩 시작...', { organizationId })
+      const measurementUsers = await measurementUserManagementService.getMeasurementUsers()
+      console.log('✅ [MembersSection] 로딩된 측정 사용자 수:', measurementUsers.length)
 
-      // OrganizationMember를 Member 인터페이스로 변환
-      const convertedMembers: Member[] = membersResponse.members.map(member => ({
-        id: member.userId,
-        name: member.displayName || member.email || '알 수 없음',
+      // MeasurementUser를 Member 인터페이스로 변환
+      const convertedMembers: Member[] = measurementUsers.map((member: MeasurementUser) => ({
+        id: member.id,
+        name: member.displayName || '알 수 없음',
         email: member.email || '',
-        phone: member.phoneNumber || '', // phoneNumber 사용
-        role: convertToMemberRole(member.role),
-        department: member.departments?.[0] || '미지정', // departments 배열의 첫 번째 항목
-        joinDate: member.joinedAt?.toLocaleDateString() || member.createdAt?.toLocaleDateString() || '',
-        lastLogin: member.lastLoginAt?.toLocaleDateString() || '로그인 기록 없음',
-        status: member.status === 'ACTIVE' ? 'active' : 'inactive',
-        permissions: member.permissions?.flatMap(p => p.actions) || []
+        phone: member.phone || '',
+        role: 'member', // MeasurementUser는 기본적으로 member 역할
+        department: '측정 대상자', // MeasurementUser는 부서 대신 측정 대상자로 표시
+        joinDate: member.createdAt?.toLocaleDateString() || '',
+        lastLogin: member.lastMeasurementDate?.toLocaleDateString() || '측정 기록 없음',
+        status: member.isActive ? 'active' : 'inactive',
+        permissions: [], // MeasurementUser는 권한이 없음
+        // 추가 측정 관련 정보
+        measurementCount: member.measurementCount || 0,
+        reportCount: member.reportIds?.length || 0,
+        lastMeasurement: member.lastMeasurementDate?.toLocaleDateString() || '없음'
       }))
 
       setMembers(convertedMembers)
@@ -265,25 +274,21 @@ export default function MembersSection({ subSection, onNavigate }: MembersSectio
         sendEmail: true // 이메일 발송 여부
       }
 
-      // 실제 초대 요청
-      const invitation = await memberManagementService.inviteMember(
-        inviteRequest,
-        currentContext.user.id
-      )
+      // 실제 측정 사용자 생성
+      const newMeasurementUser = await measurementUserManagementService.createMeasurementUser({
+        email: inviteRequest.email,
+        displayName: inviteRequest.displayName,
+        // MeasurementUser에 맞는 추가 필드들
+        notes: `${inviteRequest.role} 역할로 등록됨`
+      })
 
-      console.log('초대 성공:', invitation)
+      console.log('측정 사용자 생성 성공:', newMeasurementUser)
       
-      // UI 상태 업데이트
-      const newInvitation: Invitation = {
-        id: invitation.id,
-        email: invitation.email,
-        role: newInviteRole,
-        department: newInviteDepartment,
-        sentDate: invitation.createdAt.toLocaleDateString(),
-        status: 'pending',
-        invitedBy: currentContext.user.displayName || '관리자'
-      }
-      setInvitations([...invitations, newInvitation])
+             // 성공 알림
+       alert(`${newMeasurementUser.displayName}님이 측정 사용자로 등록되었습니다.`)
+       
+       // 페이지 새로고침으로 데이터 업데이트
+       window.location.reload()
       
       // 폼 초기화
       setNewInviteEmail('')
