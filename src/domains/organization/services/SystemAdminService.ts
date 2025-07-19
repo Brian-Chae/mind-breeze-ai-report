@@ -1430,7 +1430,7 @@ export class SystemAdminService extends BaseService {
           lastCheck: new Date()
         }
         
-                 this.log('info', '시스템 상태 조회 완료', { 
+                 this.log('시스템 상태 조회 완료', { 
            status, 
            serviceCount: Object.keys(services).length,
            alertCount: alerts.filter(a => !a.resolved).length 
@@ -1439,8 +1439,8 @@ export class SystemAdminService extends BaseService {
          return systemHealth
          
        } catch (error) {
-         this.log('error', '시스템 상태 조회 실패', { 
-           error: error instanceof Error ? error.message : String(error) 
+         this.error('시스템 상태 조회 실패', error instanceof Error ? error : new Error(String(error)), {
+           timestamp: new Date().toISOString()
          })
          throw error
       }
@@ -1534,7 +1534,7 @@ export class SystemAdminService extends BaseService {
             where('timestamp', '>=', Timestamp.fromDate(lastHour)),
             where('category', '==', 'performance'),
                          orderBy('timestamp', 'desc'),
-             limit(100)
+             firestoreLimit(100)
           ))
         ])
         
@@ -1663,7 +1663,7 @@ export class SystemAdminService extends BaseService {
             collection(db, 'creditTransactions'),
             where('organizationId', '==', orgDoc.id),
             orderBy('createdAt', 'desc'),
-            limit(30)
+            firestoreLimit(30)
           )
           const creditSnapshot = await getDocs(creditQuery)
           const transactions = creditSnapshot.docs.map(doc => doc.data())
@@ -2108,11 +2108,19 @@ export class SystemAdminService extends BaseService {
 
       try {
         const organizations = await getDocs(collection(db, 'organizations'))
+        console.log('📊 [SystemAdmin] 조직 데이터 로딩:', organizations.docs.length, '개 조직 발견')
+        
         const enterpriseOverviews: EnterpriseOverview[] = []
 
         for (const orgDoc of organizations.docs) {
           const orgData = orgDoc.data()
           const organizationId = orgDoc.id
+          
+          console.log('🔍 [SystemAdmin] 처리 중인 조직:', {
+            id: organizationId,
+            name: orgData.name,
+            companyCode: orgData.companyCode
+          })
 
           // 병렬로 관련 데이터 수집
           const [members, measurementUsers, reports, sessions, creditTransactions] = await Promise.allSettled([
@@ -2666,7 +2674,7 @@ export class SystemAdminService extends BaseService {
         collection(db, 'systemActivities'),
         where('organizationId', '==', organizationId),
         orderBy('timestamp', 'desc'),
-        limit(5)
+                    firestoreLimit(5)
       )
 
       const activities = await getDocs(activitiesQuery)

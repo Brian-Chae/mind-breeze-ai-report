@@ -84,15 +84,37 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
   const loadData = async () => {
     setIsLoading(true)
     try {
+      console.log('🔄 [EnterpriseManagement] 기업 데이터 로딩 시작...')
+      
       const [overviews, registrations] = await Promise.all([
         systemAdminService.getAllEnterpriseOverview(),
         systemAdminService.getRecentEnterpriseRegistrations(30)
       ])
       
+      console.log('✅ [EnterpriseManagement] 로딩된 기업 수:', overviews.length)
+      console.log('📋 [EnterpriseManagement] 기업 목록:', overviews.map(e => ({ 
+        id: e.organizationId, 
+        name: e.organizationName,
+        companyCode: e.companyCode
+      })))
+      
+      // LOOXID LABS INC. 검색
+      const looxidLabs = overviews.find(e => 
+        e.organizationName.toLowerCase().includes('looxid') || 
+        e.organizationName.toLowerCase().includes('labs')
+      )
+      
+      if (looxidLabs) {
+        console.log('🎯 [EnterpriseManagement] LOOXID LABS 발견!', looxidLabs)
+      } else {
+        console.log('❌ [EnterpriseManagement] LOOXID LABS를 찾을 수 없습니다')
+        console.log('🔍 모든 기업명:', overviews.map(e => e.organizationName))
+      }
+      
       setEnterpriseOverviews(overviews)
       setRecentRegistrations(registrations)
     } catch (error) {
-      console.error('기업 관리 데이터 로드 실패:', error)
+      console.error('❌ [EnterpriseManagement] 기업 관리 데이터 로드 실패:', error)
     } finally {
       setIsLoading(false)
     }
