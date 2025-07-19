@@ -1582,11 +1582,18 @@ export class SystemAdminService extends BaseService {
     timestamp: Date
     status: 'completed' | 'processing' | 'failed'
   }>> {
+    // 디버깅용으로 캐시 무효화
+    const cacheKey = `recent_measurement_sessions_${limit}`
+    this.cache.delete(cacheKey)
+    
     return this.withCache(
-      `recent_measurement_sessions_${limit}`,
+      cacheKey,
       async () => {
         try {
           const sessions = await this.getRecentMeasurementSessions(limit)
+          
+          // 디버깅: 실제 세션 데이터 구조 확인
+          console.log('🔍 측정 세션 데이터 샘플:', sessions.slice(0, 2))
           
           // 조직 정보를 한 번에 조회
           const organizationIds = [...new Set(sessions.map((s: any) => s.organizationId).filter(Boolean))]
@@ -1614,6 +1621,10 @@ export class SystemAdminService extends BaseService {
               .map((s: any) => s.measurementUserId || s.userId || s.user || s.patientId)
               .filter(Boolean)
           )]
+          
+          // 디버깅: 추출된 사용자 ID들 확인
+          console.log('🔍 추출된 사용자 ID들:', measurementUserIds)
+          
           const measurementUsersMap = new Map()
           
           if (measurementUserIds.length > 0) {
