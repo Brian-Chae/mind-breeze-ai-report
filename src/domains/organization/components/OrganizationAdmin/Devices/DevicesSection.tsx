@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Smartphone, Battery, Wifi, Plus, Search, Filter, MapPin, User, Calendar, Activity, AlertCircle, CheckCircle, Settings, MoreHorizontal, Edit, Trash2, Eye, Download, BarChart3, RefreshCw, Power, Signal, Loader2 } from 'lucide-react'
+import { Smartphone, Battery, Wifi, Plus, Search, Filter, MapPin, User, Calendar, Activity, AlertCircle, CheckCircle, Settings, MoreHorizontal, Edit, Trash2, Eye, Download, BarChart3, RefreshCw, Power, Signal, Loader2, Package } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FirebaseService } from '@core/services/FirebaseService'
 import { SystemControlService } from '@core/services/SystemControlService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
+import DeviceInventorySection from './DeviceInventorySection'
 
 interface DevicesSectionProps {
   subSection: string;
@@ -39,7 +40,7 @@ interface DeviceStats {
 }
 
 export default function DevicesSection({ subSection, onNavigate }: DevicesSectionProps) {
-  const [activeTab, setActiveTab] = useState(subSection || 'device-inventory')
+  const [activeTab, setActiveTab] = useState(subSection || 'overall-status')
   const [searchQuery, setSearchQuery] = useState('')
   const [devices, setDevices] = useState<Device[]>([])
   const [deviceStats, setDeviceStats] = useState<DeviceStats>({
@@ -53,11 +54,10 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
   const [systemControl] = useState(new SystemControlService())
 
   useEffect(() => {
+    if (subSection) {
+      setActiveTab(subSection || 'overall-status')
+    }
     loadDeviceData()
-  }, [])
-
-  useEffect(() => {
-    setActiveTab(subSection || 'device-inventory')
   }, [subSection])
 
   const loadDeviceData = async () => {
@@ -162,225 +162,7 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
     onNavigate('devices', tab)
   }
 
-  const renderDeviceInventory = () => (
-    <div className="space-y-8">
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">디바이스 현황</h2>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={loadDeviceData} className="hover:bg-gray-50">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              새로고침
-            </Button>
-            <Button variant="outline" size="sm" className="hover:bg-gray-50">
-              <Download className="w-4 h-4 mr-2" />
-              리포트 다운로드
-            </Button>
-            <Button className="bg-blue-600 text-white hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              디바이스 추가
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <Card className="border-red-200 bg-red-50">
-          <div className="p-4">
-            <div className="flex">
-              <AlertCircle className="w-5 h-5 text-red-400" />
-              <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={loadDeviceData} 
-                  className="mt-2 border-red-300 text-red-700 hover:bg-red-100"
-                >
-                  다시 시도
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">전체 디바이스</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.totalDevices}
-              </p>
-            </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
-              <Smartphone className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">활성 디바이스</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.activeDevices}
-              </p>
-            </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">오프라인</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.offlineDevices}
-              </p>
-            </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-              <Power className="w-6 h-6 text-gray-600" />
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">점검 필요</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : deviceStats.maintenanceDevices}
-              </p>
-            </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-xl">
-              <AlertCircle className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-        </Card>
-      </div>
-      
-      <Card className="bg-white border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="디바이스 ID나 모델로 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-gray-200 focus:border-gray-500"
-            />
-          </div>
-          <Button variant="outline" size="sm" className="hover:bg-gray-50">
-            <Filter className="w-4 h-4 mr-2" />
-            필터
-          </Button>
-        </div>
-      </Card>
-      
-      {loading ? (
-        <Card className="p-8">
-          <div className="flex justify-center items-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredDevices.map((device) => (
-            <Card key={device.id} className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                    <Smartphone className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{device.name}</h3>
-                    <p className="text-sm text-gray-600">{device.model} • {device.firmwareVersion}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Badge className={
-                    device.status === 'online' ? 'bg-green-100 text-green-600' :
-                    device.status === 'offline' ? 'bg-gray-100 text-gray-600' :
-                    'bg-yellow-100 text-yellow-600'
-                  }>
-                    {device.status === 'online' ? '온라인' : 
-                     device.status === 'offline' ? '오프라인' : '점검중'}
-                  </Badge>
-                  <Badge variant="outline" className="border-gray-200 text-gray-700">
-                    배터리: {device.batteryLevel}%
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="hover:bg-gray-50">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="w-4 h-4 mr-2" />
-                        상세 정보
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Settings className="w-4 h-4 mr-2" />
-                        설정
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeviceUpdate(device.id)}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        업데이트
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeviceConnect(device.id)}>
-                        <Wifi className="w-4 h-4 mr-2" />
-                        연결
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Battery className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">배터리: {device.batteryLevel}%</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Signal className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">신호: {
-                    device.signalStrength === 'strong' ? '강함' :
-                    device.signalStrength === 'medium' ? '보통' : '약함'
-                  }</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">사용자: {device.assignedUserName || '미할당'}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    마지막 동기화: {device.lastSyncAt ? 
-                      `${Math.floor((Date.now() - device.lastSyncAt.getTime()) / 60000)}분 전` :
-                      '없음'
-                    }
-                  </span>
-                </div>
-              </div>
-            </Card>
-          ))}
-          {filteredDevices.length === 0 && !loading && (
-            <Card className="p-8 text-center bg-white border border-gray-200">
-              <div className="text-gray-500">
-                <Smartphone className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-lg font-medium">검색 결과가 없습니다</p>
-                <p className="text-sm mt-2">다른 검색어를 입력해보세요</p>
-              </div>
-            </Card>
-          )}
-        </div>
-      )}
-    </div>
-  )
+  const renderDeviceInventory = () => <DeviceInventorySection />
 
   const renderDeviceAssignment = () => (
     <div className="space-y-8">
@@ -551,16 +333,106 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
     </div>
   )
 
+  const renderOverallStatus = () => (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">전체 현황</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">총 디바이스</p>
+                <p className="text-2xl font-bold text-gray-900">246</p>
+              </div>
+              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
+                <Smartphone className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">사용 중</p>
+                <p className="text-2xl font-bold text-gray-900">189</p>
+              </div>
+              <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">재고</p>
+                <p className="text-2xl font-bold text-gray-900">42</p>
+              </div>
+              <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-xl">
+                <Package className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-white border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">A/S 중</p>
+                <p className="text-2xl font-bold text-gray-900">15</p>
+              </div>
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-xl">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderUsageStatus = () => (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-gray-900">사용 현황</h2>
+        <p className="text-gray-600 mt-2">디바이스 사용 통계 및 분석</p>
+      </div>
+    </div>
+  )
+
+  const renderRentalManagement = () => (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-gray-900">렌탈 관리</h2>
+        <p className="text-gray-600 mt-2">렌탈 디바이스 회수 및 관리</p>
+      </div>
+    </div>
+  )
+
+  const renderAfterService = () => (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-gray-900">A/S 관리</h2>
+        <p className="text-gray-600 mt-2">구매 제품 서비스 및 수리 관리</p>
+      </div>
+    </div>
+  )
+
   const renderContent = () => {
     switch (activeTab) {
-      case 'device-inventory':
+      case 'overall-status':
+        return renderOverallStatus()
+      case 'inventory-management':
         return renderDeviceInventory()
-      case 'device-assignment':
+      case 'assignment':
         return renderDeviceAssignment()
-      case 'device-monitoring':
-        return renderDeviceMonitoring()
+      case 'usage-status':
+        return renderUsageStatus()
+      case 'rental-management':
+        return renderRentalManagement()
+      case 'after-service':
+        return renderAfterService()
       default:
-        return renderDeviceInventory()
+        return renderOverallStatus()
     }
   }
 
@@ -568,36 +440,66 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
     <div>
       {/* 탭 네비게이션 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex space-x-8">
+        <div className="flex space-x-8 overflow-x-auto">
           <button
-            onClick={() => handleTabChange('device-inventory')}
-            className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm ${
-              activeTab === 'device-inventory'
+            onClick={() => handleTabChange('overall-status')}
+            className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'overall-status'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            디바이스 현황
+            전체 현황
           </button>
           <button
-            onClick={() => handleTabChange('device-assignment')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'device-assignment'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            디바이스 배치
-          </button>
-          <button
-            onClick={() => handleTabChange('device-monitoring')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'device-monitoring'
+            onClick={() => handleTabChange('inventory-management')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'inventory-management'
                 ? 'border-green-500 text-green-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            디바이스 모니터링
+            재고 관리
+          </button>
+          <button
+            onClick={() => handleTabChange('assignment')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'assignment'
+                ? 'border-purple-500 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            배정
+          </button>
+          <button
+            onClick={() => handleTabChange('usage-status')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'usage-status'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            사용 현황
+          </button>
+          <button
+            onClick={() => handleTabChange('rental-management')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'rental-management'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            렌탈관리
+          </button>
+          <button
+            onClick={() => handleTabChange('after-service')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'after-service'
+                ? 'border-red-500 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            A/S
           </button>
         </div>
       </div>

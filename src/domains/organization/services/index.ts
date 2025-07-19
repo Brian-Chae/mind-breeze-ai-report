@@ -12,4 +12,8 @@ export { default as CompanyCodeService } from './CompanyCodeService';
 export { default as MemberManagementService } from './MemberManagementService';
 
 // Trial management services
-export { default as TrialManagementService } from './TrialManagementService'; 
+export { default as TrialManagementService } from './TrialManagementService';
+
+// Device management services
+export { deviceInventoryService } from './DeviceInventoryService';
+export { default as ServiceManagementService } from './ServiceManagementService'; 

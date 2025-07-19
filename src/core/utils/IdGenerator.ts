@@ -130,6 +130,14 @@ export class IdGenerator {
   }
 
   /**
+   * A/S 요청 ID 생성
+   * @returns SRQ_ 프리픽스가 있는 A/S 요청 ID
+   */
+  static generateServiceRequestId(): string {
+    return `SRQ_${uuidv4()}`;
+  }
+
+  /**
    * 캐시 키 생성
    * @param prefix 캐시 키 프리픽스
    * @param identifier 식별자
