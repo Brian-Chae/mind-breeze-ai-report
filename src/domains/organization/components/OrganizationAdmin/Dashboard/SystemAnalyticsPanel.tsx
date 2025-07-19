@@ -61,121 +61,14 @@ export default function SystemAnalyticsPanel({ systemStats }: SystemAnalyticsPan
   const loadAnalyticsData = async () => {
     setLoading(true)
     try {
-      // 임시 데이터 생성
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setUsageAnalytics({
-        period: selectedPeriod,
-        measurements: {
-          total: 15420,
-          successful: 14980,
-          failed: 440,
-          averageDuration: 145.5
-        },
-        reports: {
-          total: 8450,
-          generated: 8450,
-          downloaded: 7200,
-          shared: 1800
-        },
-        users: {
-          total: 1250,
-          active: 980,
-          newRegistrations: 125,
-          churnRate: 2.3
-        },
-        credits: {
-          totalUsed: 125000,
-          averagePerReport: 14.8,
-          totalRevenue: 1850000,
-          topSpendingOrganizations: [
-            { organizationId: '1', organizationName: 'ABC 헬스케어', creditsUsed: 15000, revenue: 225000 },
-            { organizationId: '2', organizationName: 'XYZ 웰니스', creditsUsed: 12000, revenue: 180000 },
-            { organizationId: '3', organizationName: 'DEF 메디컬', creditsUsed: 18000, revenue: 270000 }
-          ]
-        },
-        performance: {
-          averageResponseTime: 235,
-          errorRate: 1.2,
-          systemLoad: 68,
-          peakUsageHour: 14
-        }
-      })
-
-      setOrganizationComparison([
-        {
-          organizationId: '1',
-          organizationName: 'ABC 헬스케어',
-          metrics: {
-            usersCount: 150,
-            measurementsThisMonth: 2400,
-            reportsGenerated: 890,
-            creditsUsed: 15000,
-            activityScore: 85,
-            engagementRate: 78.5,
-            averageSessionLength: 25.8
-          },
-          trends: {
-            userGrowth: 8.5,
-            usageGrowth: 12.5,
-            engagementTrend: 'up' as const
-          },
-          ranking: { 
-            overall: 1,
-            byActivity: 1,
-            byUsage: 2,
-            byEngagement: 1
-          }
-        },
-        {
-          organizationId: '2',
-          organizationName: 'XYZ 웰니스',
-          metrics: {
-            usersCount: 89,
-            measurementsThisMonth: 1580,
-            reportsGenerated: 520,
-            creditsUsed: 12000,
-            activityScore: 72,
-            engagementRate: 65.8,
-            averageSessionLength: 22.3
-          },
-          trends: {
-            userGrowth: 5.2,
-            usageGrowth: 8.2,
-            engagementTrend: 'up' as const
-          },
-          ranking: { 
-            overall: 2,
-            byActivity: 3,
-            byUsage: 3,
-            byEngagement: 2
-          }
-        },
-        {
-          organizationId: '3',
-          organizationName: 'DEF 메디컬',
-          metrics: {
-            usersCount: 200,
-            measurementsThisMonth: 3200,
-            reportsGenerated: 1100,
-            creditsUsed: 18000,
-            activityScore: 91,
-            engagementRate: 82.3,
-            averageSessionLength: 28.5
-          },
-          trends: {
-            userGrowth: 12.7,
-            usageGrowth: 15.7,
-            engagementTrend: 'up' as const
-          },
-          ranking: { 
-            overall: 3,
-            byActivity: 2,
-            byUsage: 1,
-            byEngagement: 3
-          }
-        }
+      // 실제 SystemAdminService 데이터 호출
+      const [analytics, comparison] = await Promise.all([
+        systemAdminService.getUsageAnalytics(selectedPeriod),
+        systemAdminService.getOrganizationComparison()
       ])
+      
+      setUsageAnalytics(analytics)
+      setOrganizationComparison(comparison)
 
     } catch (error) {
       console.error('분석 데이터 로드 오류:', error)
