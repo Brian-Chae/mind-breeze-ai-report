@@ -293,10 +293,7 @@ export default function SystemAnalyticsPanel({ systemStats }: SystemAnalyticsPan
                 새로고침
               </button>
 
-              <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition-colors">
-                <Download className="w-4 h-4" />
-                리포트 다운로드
-              </button>
+
             </div>
           </div>
         </div>
