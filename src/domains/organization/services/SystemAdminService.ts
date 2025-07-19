@@ -2205,8 +2205,8 @@ export class SystemAdminService extends BaseService {
 
           const enterpriseOverview: EnterpriseOverview = {
             organizationId,
-            organizationName: orgData.name || '알 수 없음',
-            companyCode: orgData.companyCode || '',
+            organizationName: orgData.organizationName || orgData.name || '알 수 없음',
+            companyCode: orgData.organizationCode || orgData.companyCode || '',
             adminInfo: {
               name: adminMember?.name || '관리자 없음',
               email: adminMember?.email || '',
