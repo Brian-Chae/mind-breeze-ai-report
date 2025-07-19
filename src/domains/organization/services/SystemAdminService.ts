@@ -1592,8 +1592,13 @@ export class SystemAdminService extends BaseService {
         try {
           const sessions = await this.getRecentMeasurementSessions(limit)
           
-          // 디버깅: 실제 세션 데이터 구조 확인
-          console.log('🔍 측정 세션 데이터 샘플:', sessions.slice(0, 2))
+          // 디버깅: 실제 세션 데이터 구조 상세 확인
+          console.log('🔍 측정 세션 데이터 샘플 (상세):', JSON.stringify(sessions.slice(0, 2), null, 2))
+          
+          // 첫 번째 세션의 모든 필드명 확인
+          if (sessions.length > 0) {
+            console.log('🔍 첫 번째 세션의 모든 필드명:', Object.keys(sessions[0]))
+          }
           
           // 조직 정보를 한 번에 조회
           const organizationIds = [...new Set(sessions.map((s: any) => s.organizationId).filter(Boolean))]
