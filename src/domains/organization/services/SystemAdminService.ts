@@ -2119,7 +2119,18 @@ export class SystemAdminService extends BaseService {
           console.log('🔍 [SystemAdmin] 처리 중인 조직:', {
             id: organizationId,
             name: orgData.name,
-            companyCode: orgData.companyCode
+            companyCode: orgData.companyCode,
+            전체_데이터: orgData
+          })
+          
+          // 가능한 name 필드들 확인
+          console.log('📝 [SystemAdmin] 조직 이름 필드 탐색:', {
+            name: orgData.name,
+            organizationName: orgData.organizationName,
+            companyName: orgData.companyName,
+            displayName: orgData.displayName,
+            title: orgData.title,
+            모든_키: Object.keys(orgData)
           })
 
           // 병렬로 관련 데이터 수집
