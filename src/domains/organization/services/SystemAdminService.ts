@@ -26,6 +26,8 @@ export interface SystemStats {
   systemHealth: 'healthy' | 'warning' | 'error'
   uptime: string
   totalCreditsUsed: number
+  todayCreditsUsed: number
+  monthlyCreditsUsed: number
   monthlyGrowth: number
   todayMeasurements: number
   thisWeekMeasurements: number
@@ -641,6 +643,18 @@ export class SystemAdminService extends BaseService {
           sum + (credit.amount < 0 ? Math.abs(credit.amount) : 0), 0
         )
 
+        // 오늘 사용된 크레딧 계산
+        const todayCreditsUsed = credits.filter(c => {
+          const creditDate = new Date(c.createdAt || 0)
+          return creditDate >= todayStart && c.amount < 0
+        }).reduce((sum, credit) => sum + Math.abs(credit.amount), 0)
+
+        // 월간 사용된 크레딧 계산
+        const monthlyCreditsUsed = credits.filter(c => {
+          const creditDate = new Date(c.createdAt || 0)
+          return creditDate >= monthStart && c.amount < 0
+        }).reduce((sum, credit) => sum + Math.abs(credit.amount), 0)
+
         const averageReportsPerUser = users.length > 0 
           ? reports.length / users.length 
           : 0
@@ -668,6 +682,8 @@ export class SystemAdminService extends BaseService {
           systemHealth,
           uptime: '99.9%', // TODO: 실제 업타임 계산 구현 필요
           totalCreditsUsed,
+          todayCreditsUsed,
+          monthlyCreditsUsed,
           monthlyGrowth,
           todayMeasurements,
           thisWeekMeasurements,

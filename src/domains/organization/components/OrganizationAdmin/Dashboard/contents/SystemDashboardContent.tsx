@@ -474,12 +474,12 @@ export const SystemDashboardContent: React.FC = () => {
             <h3 className="text-lg font-semibold text-slate-900 mb-4">수익 현황</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm font-medium text-slate-700">사용된 크레딧</span>
-                <span className="text-lg font-bold text-slate-900">{systemStats.totalCreditsUsed.toLocaleString()}</span>
+                <span className="text-sm font-medium text-slate-700">오늘 사용된 크레딧</span>
+                <span className="text-lg font-bold text-slate-900">{systemStats.todayCreditsUsed?.toLocaleString() || '0'}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm font-medium text-slate-700">월간 성장률</span>
-                <span className="text-lg font-bold text-emerald-600">+{systemStats.monthlyGrowth}%</span>
+                <span className="text-sm font-medium text-slate-700">월간 사용된 크레딧</span>
+                <span className="text-lg font-bold text-slate-900">{systemStats.monthlyCreditsUsed?.toLocaleString() || '0'}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
                 <span className="text-sm font-medium text-slate-700">활성률</span>
