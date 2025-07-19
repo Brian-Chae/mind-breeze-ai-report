@@ -3205,6 +3205,154 @@ export class SystemAdminService extends BaseService {
 
     return Math.max(0, Math.round(score))
   }
+
+  /**
+   * 크레딧 트렌드 분석 데이터 조회
+   */
+  async getCreditTrendsAnalysis(): Promise<{
+    dailyUsage: Array<{ date: string; credits: number; revenue: number }>
+    monthlyRevenue: Array<{ month: string; revenue: number; transactions: number }>
+    topSpendingOrganizations: Array<{ 
+      organizationId: string
+      organizationName: string
+      totalSpent: number
+      avgMonthlySpent: number
+      creditBalance: number
+    }>
+    revenueGrowth: {
+      thisMonth: number
+      lastMonth: number
+      growthRate: number
+    }
+  }> {
+    return this.measureAndLog('getCreditTrendsAnalysis', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        const now = new Date()
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        
+        // 최근 30일 크레딧 사용량 조회
+        const recentTransactionsQuery = query(
+          collection(db, 'creditTransactions'),
+          where('createdAt', '>=', thirtyDaysAgo.getTime()),
+          where('amount', '<', 0), // 사용량만 (음수)
+          orderBy('createdAt', 'desc')
+        )
+        const recentTransactions = await getDocs(recentTransactionsQuery)
+        
+        // 일별 사용량 집계
+        const dailyUsage = new Map<string, { credits: number; revenue: number }>()
+        
+        recentTransactions.docs.forEach(doc => {
+          const data = doc.data()
+          const date = new Date(data.createdAt).toISOString().split('T')[0]
+          const credits = Math.abs(data.amount)
+          const revenue = credits * 15 // 크레딧당 15원 가정
+          
+          const current = dailyUsage.get(date) || { credits: 0, revenue: 0 }
+          dailyUsage.set(date, {
+            credits: current.credits + credits,
+            revenue: current.revenue + revenue
+          })
+        })
+        
+        // 최근 6개월 월별 수익 조회
+        const monthlyRevenue: Array<{ month: string; revenue: number; transactions: number }> = []
+        for (let i = 5; i >= 0; i--) {
+          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+          
+          const monthQuery = query(
+            collection(db, 'creditTransactions'),
+            where('createdAt', '>=', monthStart.getTime()),
+            where('createdAt', '<=', monthEnd.getTime()),
+            where('amount', '<', 0)
+          )
+          const monthTransactions = await getDocs(monthQuery)
+          
+          const totalCredits = monthTransactions.docs.reduce((sum, doc) => 
+            sum + Math.abs(doc.data().amount), 0
+          )
+          
+          monthlyRevenue.push({
+            month: monthStart.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' }),
+            revenue: totalCredits * 15,
+            transactions: monthTransactions.docs.length
+          })
+        }
+        
+        // 최고 소비 조직 분석
+        const orgsSnapshot = await getDocs(collection(db, 'organizations'))
+        const topSpendingOrganizations = []
+        
+        for (const orgDoc of orgsSnapshot.docs) {
+          const orgData = orgDoc.data()
+          
+          const orgTransactionsQuery = query(
+            collection(db, 'creditTransactions'),
+            where('organizationId', '==', orgDoc.id),
+            where('amount', '<', 0)
+          )
+          const orgTransactions = await getDocs(orgTransactionsQuery)
+          
+          const totalSpent = orgTransactions.docs.reduce((sum, doc) => 
+            sum + Math.abs(doc.data().amount), 0
+          )
+          
+          if (totalSpent > 0) {
+            // 최근 3개월 평균 계산
+            const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+            const recentOrgTransactions = orgTransactions.docs.filter(doc => 
+              doc.data().createdAt >= threeMonthsAgo.getTime()
+            )
+            const recentSpent = recentOrgTransactions.reduce((sum, doc) => 
+              sum + Math.abs(doc.data().amount), 0
+            )
+            const avgMonthlySpent = recentSpent / 3
+            
+            topSpendingOrganizations.push({
+              organizationId: orgDoc.id,
+              organizationName: orgData.name || '조직명 없음',
+              totalSpent,
+              avgMonthlySpent,
+              creditBalance: orgData.creditBalance || 0
+            })
+          }
+        }
+        
+        // 수익 성장률 계산
+        const thisMonthRevenue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0
+        const lastMonthRevenue = monthlyRevenue[monthlyRevenue.length - 2]?.revenue || 0
+        const growthRate = lastMonthRevenue > 0 
+          ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+          : 0
+        
+        return {
+          dailyUsage: Array.from(dailyUsage.entries()).map(([date, data]) => ({
+            date,
+            credits: data.credits,
+            revenue: data.revenue
+          })).sort((a, b) => a.date.localeCompare(b.date)),
+          monthlyRevenue,
+          topSpendingOrganizations: topSpendingOrganizations
+            .sort((a, b) => b.totalSpent - a.totalSpent)
+            .slice(0, 10),
+          revenueGrowth: {
+            thisMonth: thisMonthRevenue,
+            lastMonth: lastMonthRevenue,
+            growthRate
+          }
+        }
+        
+      } catch (error) {
+        this.log('error', '크레딧 트렌드 분석 실패', { error })
+        throw error
+      }
+    })
+  }
 }
 
 const systemAdminService = new SystemAdminService()

@@ -6,6 +6,7 @@ import {
   RefreshCw,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   Users,
   Filter,
   Search,
@@ -44,6 +45,8 @@ export default function CreditManagementContent() {
   const [selectedOrganizations, setSelectedOrganizations] = useState<Set<string>>(new Set())
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(false)
+  const [creditTrends, setCreditTrends] = useState<any>(null)
+  const [trendsLoading, setTrendsLoading] = useState(false)
 
   useEffect(() => {
     loadCreditData()
@@ -66,10 +69,12 @@ export default function CreditManagementContent() {
   const loadCreditData = async () => {
     try {
       setIsLoading(true)
+      setTrendsLoading(true)
 
-      const [credits, settings] = await Promise.allSettled([
+      const [credits, settings, trends] = await Promise.allSettled([
         systemAdminService.getAllOrganizationCredits(),
-        systemAdminService.getSystemSettings()
+        systemAdminService.getSystemSettings(),
+        systemAdminService.getCreditTrendsAnalysis()
       ])
 
       if (credits.status === 'fulfilled') {
@@ -80,11 +85,16 @@ export default function CreditManagementContent() {
         setSystemSettings(settings.value)
       }
 
+      if (trends.status === 'fulfilled') {
+        setCreditTrends(trends.value)
+      }
+
       setLastUpdated(new Date())
     } catch (error) {
       console.error('크레딧 데이터 로드 실패:', error)
     } finally {
       setIsLoading(false)
+      setTrendsLoading(false)
     }
   }
 
@@ -353,6 +363,135 @@ export default function CreditManagementContent() {
             </div>
           </div>
         </div>
+
+        {/* 크래딧 트렌드 분석 */}
+        {creditTrends && (
+          <div className="space-y-6">
+            {/* 수익 성장률 및 월간 트렌드 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 수익 성장률 카드 */}
+              <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900">월간 수익 성장률</h3>
+                  <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                    creditTrends.revenueGrowth.growthRate >= 0 
+                      ? 'text-emerald-700 bg-emerald-50' 
+                      : 'text-red-700 bg-red-50'
+                  }`}>
+                    {creditTrends.revenueGrowth.growthRate >= 0 ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    {Math.abs(creditTrends.revenueGrowth.growthRate).toFixed(1)}%
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">이번 달</span>
+                    <span className="text-lg font-bold text-slate-900">
+                      ₩{formatCurrency(creditTrends.revenueGrowth.thisMonth)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600">지난 달</span>
+                    <span className="text-sm text-slate-600">
+                      ₩{formatCurrency(creditTrends.revenueGrowth.lastMonth)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 최고 소비 조직 */}
+              <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">최고 소비 조직 TOP 5</h3>
+                <div className="space-y-3">
+                  {creditTrends.topSpendingOrganizations.slice(0, 5).map((org: any, index: number) => (
+                    <div key={org.organizationId} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                          index === 1 ? 'bg-slate-100 text-slate-700' :
+                          index === 2 ? 'bg-amber-100 text-amber-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{org.organizationName}</p>
+                          <p className="text-xs text-slate-500">월평균: {formatCurrency(org.avgMonthlySpent)} 크레딧</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900">{formatCurrency(org.totalSpent)}</p>
+                        <p className="text-xs text-slate-500">잔액: {formatCurrency(org.creditBalance)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 최근 30일 사용량 트렌드 */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">최근 30일 크래딧 사용량 트렌드</h3>
+              <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+                {creditTrends.dailyUsage.slice(-7).map((day: any, index: number) => {
+                  const maxCredits = Math.max(...creditTrends.dailyUsage.map((d: any) => d.credits))
+                  const heightPercentage = maxCredits > 0 ? (day.credits / maxCredits) * 100 : 0
+                  
+                  return (
+                    <div key={day.date} className="text-center">
+                      <div className="h-24 flex items-end justify-center mb-2">
+                        <div 
+                          className="w-8 bg-blue-500 rounded-t transition-all hover:bg-blue-600 cursor-pointer"
+                          style={{ height: `${Math.max(heightPercentage, 5)}%` }}
+                          title={`${day.date}: ${formatCurrency(day.credits)} 크레딧 (₩${formatCurrency(day.revenue)})`}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600">{new Date(day.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</p>
+                      <p className="text-xs font-medium text-slate-900">{formatCurrency(day.credits)}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 월별 수익 현황 */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">최근 6개월 수익 현황</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-3 text-sm font-semibold text-slate-700">월</th>
+                      <th className="text-right py-3 text-sm font-semibold text-slate-700">수익</th>
+                      <th className="text-right py-3 text-sm font-semibold text-slate-700">거래 수</th>
+                      <th className="text-right py-3 text-sm font-semibold text-slate-700">평균 거래액</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {creditTrends.monthlyRevenue.map((month: any, index: number) => (
+                      <tr key={month.month} className="hover:bg-slate-50">
+                        <td className="py-3 text-sm text-slate-900">{month.month}</td>
+                        <td className="py-3 text-sm font-medium text-slate-900 text-right">
+                          ₩{formatCurrency(month.revenue)}
+                        </td>
+                        <td className="py-3 text-sm text-slate-600 text-right">
+                          {formatCurrency(month.transactions)}
+                        </td>
+                        <td className="py-3 text-sm text-slate-600 text-right">
+                          ₩{month.transactions > 0 ? formatCurrency(Math.round(month.revenue / month.transactions)) : '0'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 조직별 크래딧 현황 */}
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
