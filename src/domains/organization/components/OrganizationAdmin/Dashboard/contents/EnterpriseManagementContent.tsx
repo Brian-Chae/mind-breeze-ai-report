@@ -64,10 +64,18 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
 
   const loadComparisonData = async () => {
     try {
+      console.log('🔄 [EnterpriseManagement] 비교 분석 데이터 로딩 시작...')
       const comparison = await systemAdminService.getEnterpriseComparisonAnalytics()
       setComparisonAnalytics(comparison)
+      console.log('✅ [EnterpriseManagement] 비교 분석 데이터 로딩 완료')
     } catch (error) {
-      console.error('비교 분석 데이터 로드 실패:', error)
+      console.error('❌ [EnterpriseManagement] 비교 분석 데이터 로드 실패:', error)
+      // 실패해도 빈 데이터로 설정
+      setComparisonAnalytics({
+        topPerformers: [],
+        industryBenchmarks: [],
+        monthlyGrowthRanking: []
+      })
     }
   }
 
@@ -86,10 +94,22 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
     try {
       console.log('🔄 [EnterpriseManagement] 기업 데이터 로딩 시작...')
       
-      const [overviews, registrations] = await Promise.all([
+      const [overviewsResult, registrationsResult] = await Promise.allSettled([
         systemAdminService.getAllEnterpriseOverview(),
         systemAdminService.getRecentEnterpriseRegistrations(30)
       ])
+      
+      // 성공한 결과만 사용
+      const overviews = overviewsResult.status === 'fulfilled' ? overviewsResult.value : []
+      const registrations = registrationsResult.status === 'fulfilled' ? registrationsResult.value : []
+      
+      // 개별 실패 로그
+      if (overviewsResult.status === 'rejected') {
+        console.error('❌ getAllEnterpriseOverview 실패:', overviewsResult.reason)
+      }
+      if (registrationsResult.status === 'rejected') {
+        console.error('❌ getRecentEnterpriseRegistrations 실패:', registrationsResult.reason)
+      }
       
       console.log('✅ [EnterpriseManagement] 로딩된 기업 수:', overviews.length)
       console.log('📋 [EnterpriseManagement] 기업 목록:', overviews.map(e => ({ 
