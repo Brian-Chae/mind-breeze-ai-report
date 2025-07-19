@@ -299,6 +299,15 @@ export const SystemDashboardContent: React.FC = () => {
     return `${days}일 전`
   }
 
+  const formatStorage = (sizeInGB: number): string => {
+    if (sizeInGB >= 1) {
+      return `${sizeInGB.toFixed(1)}GB`
+    } else {
+      const sizeInMB = sizeInGB * 1024
+      return `${sizeInMB.toFixed(0)}MB`
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -456,7 +465,7 @@ export const SystemDashboardContent: React.FC = () => {
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
                 <span className="text-sm font-medium text-slate-700">저장소 사용량</span>
-                <span className="text-lg font-bold text-slate-900">{systemStats.totalStorageUsed}GB</span>
+                <span className="text-lg font-bold text-slate-900">{formatStorage(systemStats.totalStorageUsed)}</span>
               </div>
             </div>
           </div>
