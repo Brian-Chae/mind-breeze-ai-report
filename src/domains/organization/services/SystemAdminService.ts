@@ -32,7 +32,7 @@ export interface SystemStats {
   todayMeasurements: number
   thisWeekMeasurements: number
   thisMonthMeasurements: number
-  averageReportsPerUser: number
+  averageReportsPerMeasurement: number
   totalStorageUsed: number // GB
   averageSessionDuration: number // minutes
 }
@@ -655,8 +655,8 @@ export class SystemAdminService extends BaseService {
           return creditDate >= monthStart && c.amount < 0
         }).reduce((sum, credit) => sum + Math.abs(credit.amount), 0)
 
-        const averageReportsPerUser = users.length > 0 
-          ? reports.length / users.length 
+        const averageReportsPerMeasurement = sessions.length > 0 
+          ? reports.length / sessions.length 
           : 0
 
         // 시스템 건강도 계산 (단순화된 버전)
@@ -688,7 +688,7 @@ export class SystemAdminService extends BaseService {
           todayMeasurements,
           thisWeekMeasurements,
           thisMonthMeasurements,
-          averageReportsPerUser,
+          averageReportsPerMeasurement,
           totalStorageUsed,
           averageSessionDuration
         }

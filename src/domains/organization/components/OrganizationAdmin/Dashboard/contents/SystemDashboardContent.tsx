@@ -62,7 +62,7 @@ export const SystemDashboardContent: React.FC = () => {
     todayMeasurements: 0,
     thisWeekMeasurements: 0,
     thisMonthMeasurements: 0,
-    averageReportsPerUser: 0,
+    averageReportsPerMeasurement: 0,
     totalStorageUsed: 0,
     averageSessionDuration: 0
   })
@@ -119,7 +119,7 @@ export const SystemDashboardContent: React.FC = () => {
           todayMeasurements: 145,
           thisWeekMeasurements: 892,
           thisMonthMeasurements: 3456,
-          averageReportsPerUser: 6.8,
+          averageReportsPerMeasurement: 0.85,
           totalStorageUsed: 2800,
           averageSessionDuration: 25.5
         })
@@ -228,7 +228,7 @@ export const SystemDashboardContent: React.FC = () => {
         todayMeasurements: 0,
         thisWeekMeasurements: 0,
         thisMonthMeasurements: 0,
-        averageReportsPerUser: 0,
+        averageReportsPerMeasurement: 0,
         totalStorageUsed: 0,
         averageSessionDuration: 0
       })
@@ -466,8 +466,8 @@ export const SystemDashboardContent: React.FC = () => {
                 <span className="text-lg font-bold text-slate-900">{(systemStats.averageSessionDuration / 1000).toFixed(1)}초</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm font-medium text-slate-700">사용자당 리포트</span>
-                <span className="text-lg font-bold text-slate-900">{systemStats.averageReportsPerUser}</span>
+                <span className="text-sm font-medium text-slate-700">측정당 리포트 수</span>
+                <span className="text-lg font-bold text-slate-900">{systemStats.averageReportsPerMeasurement.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
                 <span className="text-sm font-medium text-slate-700">저장소 사용량</span>
