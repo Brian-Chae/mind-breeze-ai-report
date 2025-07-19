@@ -335,7 +335,7 @@ export class TestDataInitializer {
         engineUsed: engines[Math.floor(Math.random() * engines.length)],
         status,
         qualityScore: status === 'completed' ? Math.floor(Math.random() * 30) + 70 : null,
-        processingTime: status === 'completed' ? Math.random() * 5 + 1 : null, // 1-6분
+        processingTime: status === 'completed' ? Math.random() * 105 + 15 : null, // 15-120초
         creditsCost: Math.floor(Math.random() * 20) + 10, // 10-30 크레딧
         downloadCount: status === 'completed' ? Math.floor(Math.random() * 3) : 0,
         reportData: status === 'completed' ? {
