@@ -56,6 +56,8 @@ export const SystemDashboardContent: React.FC = () => {
     systemHealth: 'healthy',
     uptime: '99.9%',
     totalCreditsUsed: 0,
+    todayCreditsUsed: 0,
+    monthlyCreditsUsed: 0,
     monthlyGrowth: 0,
     todayMeasurements: 0,
     thisWeekMeasurements: 0,
@@ -111,6 +113,8 @@ export const SystemDashboardContent: React.FC = () => {
           systemHealth: 'healthy',
           uptime: '99.9%',
           totalCreditsUsed: 125000,
+          todayCreditsUsed: 2340,
+          monthlyCreditsUsed: 45600,
           monthlyGrowth: 12.5,
           todayMeasurements: 145,
           thisWeekMeasurements: 892,
@@ -218,6 +222,8 @@ export const SystemDashboardContent: React.FC = () => {
         systemHealth: 'error',
         uptime: '0%',
         totalCreditsUsed: 0,
+        todayCreditsUsed: 0,
+        monthlyCreditsUsed: 0,
         monthlyGrowth: 0,
         todayMeasurements: 0,
         thisWeekMeasurements: 0,
@@ -482,10 +488,8 @@ export const SystemDashboardContent: React.FC = () => {
                 <span className="text-lg font-bold text-slate-900">{systemStats.monthlyCreditsUsed?.toLocaleString() || '0'}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm font-medium text-slate-700">활성률</span>
-                <span className="text-lg font-bold text-slate-900">
-                  {((systemStats.activeUsers / systemStats.totalUsers) * 100).toFixed(1)}%
-                </span>
+                <span className="text-sm font-medium text-slate-700">총 사용된 크래딧</span>
+                <span className="text-lg font-bold text-slate-900">{systemStats.totalCreditsUsed.toLocaleString()}</span>
               </div>
             </div>
           </div>
