@@ -651,10 +651,10 @@ export class SystemAdminService extends BaseService {
           errorRate < 0.05 ? 'healthy' : 
           errorRate < 0.15 ? 'warning' : 'error'
 
-        // 평균 세션 지속시간 계산 (분)
-        const validSessions = sessions.filter(s => s.duration && s.duration > 0)
-        const averageSessionDuration = validSessions.length > 0
-          ? validSessions.reduce((sum, s) => sum + (s.duration || 0), 0) / validSessions.length
+        // 평균 AI 리포트 생성 시간 계산 (초)
+        const validReports = reports.filter(r => r.processingTime && r.processingTime > 0)
+        const averageSessionDuration = validReports.length > 0
+          ? validReports.reduce((sum, r) => sum + (r.processingTime || 0), 0) / validReports.length
           : 0
 
         // 저장공간 사용량 계산 (GB) - 예상치

@@ -456,8 +456,8 @@ export const SystemDashboardContent: React.FC = () => {
             <h3 className="text-lg font-semibold text-slate-900 mb-4">성능 지표</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm font-medium text-slate-700">평균 세션 시간</span>
-                <span className="text-lg font-bold text-slate-900">{systemStats.averageSessionDuration}분</span>
+                <span className="text-sm font-medium text-slate-700">AI 리포트 생성 시간</span>
+                <span className="text-lg font-bold text-slate-900">{systemStats.averageSessionDuration}초</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
                 <span className="text-sm font-medium text-slate-700">사용자당 리포트</span>
