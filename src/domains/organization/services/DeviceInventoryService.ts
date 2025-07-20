@@ -74,10 +74,10 @@ class DeviceInventoryService extends BaseService {
       
       // 기본값 설정
       const now = new Date();
-      const deviceInventory: Omit<DeviceInventory, 'id'> = {
+      const deviceInventoryData = {
         deviceType: deviceData.deviceType || this.DEFAULT_DEVICE_TYPE,
         registrationDate: deviceData.registrationDate || now,
-        status: 'AVAILABLE',
+        status: 'AVAILABLE' as const,
         purchaseCost: deviceData.purchaseCost,
         supplier: deviceData.supplier,
         warrantyPeriod: deviceData.warrantyPeriod || this.DEFAULT_WARRANTY_PERIOD,
@@ -86,18 +86,27 @@ class DeviceInventoryService extends BaseService {
         updatedAt: now
       };
 
+      // undefined 값들을 제거하는 함수
+      const removeUndefinedFields = (obj: any): any => {
+        return Object.fromEntries(
+          Object.entries(obj).filter(([_, value]) => value !== undefined && value !== null)
+        );
+      };
+
+      const cleanedData = removeUndefinedFields(deviceInventoryData);
+
       // Firestore에 저장
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
       await setDoc(docRef, {
-        ...deviceInventory,
-        registrationDate: Timestamp.fromDate(deviceInventory.registrationDate),
+        ...cleanedData,
+        registrationDate: Timestamp.fromDate(cleanedData.registrationDate),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
       const result: DeviceInventory = {
         id: deviceId,
-        ...deviceInventory
+        ...cleanedData
       };
 
       // 캐시 무효화
