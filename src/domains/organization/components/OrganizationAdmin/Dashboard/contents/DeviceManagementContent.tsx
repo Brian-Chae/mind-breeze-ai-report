@@ -44,6 +44,7 @@ import systemAdminService, {
   DeviceManagementAction 
 } from '../../../../services/SystemAdminService'
 import serviceManagementService from '../../../../services/ServiceManagementService'
+import DeviceInventorySection from '../../Devices/DeviceInventorySection'
 import { 
   ServiceRequest, 
   ServiceStatistics, 
@@ -217,69 +218,7 @@ export default function DeviceManagementContent() {
 
   // 재고 관리 탭 렌더링
   const renderInventoryTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">재고 관리</h2>
-            <p className="text-slate-600 mt-1">전체 디바이스 재고 현황 및 관리</p>
-          </div>
-          <div className="flex gap-3">
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              신규 등록
-            </button>
-            <button className="border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              재고 리포트
-            </button>
-          </div>
-        </div>
-        
-        {/* 재고 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">총 재고</p>
-                <p className="text-2xl font-bold text-blue-900">{systemOverview?.totalDevices || 0}</p>
-              </div>
-              <HardDrive className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-          
-          <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">사용 가능</p>
-                <p className="text-2xl font-bold text-green-900">{systemOverview ? systemOverview.totalDevices - systemOverview.activeDevices : 0}</p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          
-          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-700">배정됨</p>
-                <p className="text-2xl font-bold text-orange-900">{systemOverview?.activeDevices || 0}</p>
-              </div>
-              <Users className="w-8 h-8 text-orange-600" />
-            </div>
-          </div>
-          
-          <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-red-700">점검 필요</p>
-                <p className="text-2xl font-bold text-red-900">{systemOverview?.devicesNeedingAttention || 0}</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <DeviceInventorySection />
   )
 
   // 배정 탭 렌더링
