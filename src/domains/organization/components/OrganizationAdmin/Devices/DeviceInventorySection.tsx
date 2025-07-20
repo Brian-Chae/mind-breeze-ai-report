@@ -573,7 +573,7 @@ const DeviceInventorySection: React.FC = () => {
                   value={newDevice.notes || ''}
                   onChange={(e) => setNewDevice(prev => ({ ...prev, notes: e.target.value }))}
                   rows={3}
-                  className="border-slate-300 focus:border-orange-500 focus:ring-orange-500 resize-none"
+                  className="bg-slate-50 border-slate-300 focus:border-orange-500 focus:ring-orange-500 focus:bg-white resize-none"
                 />
                 <p className="text-xs text-slate-500">최대 500자까지 입력 가능합니다</p>
               </div>
