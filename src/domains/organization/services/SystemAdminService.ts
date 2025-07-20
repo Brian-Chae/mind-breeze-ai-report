@@ -1582,23 +1582,13 @@ export class SystemAdminService extends BaseService {
     timestamp: Date
     status: 'completed' | 'processing' | 'failed'
   }>> {
-    // 디버깅용으로 캐시 무효화
-    const cacheKey = `recent_measurement_sessions_${limit}`
-    this.cache.delete(cacheKey)
-    
     return this.withCache(
-      cacheKey,
+      `recent_measurement_sessions_${limit}`,
       async () => {
         try {
           const sessions = await this.getRecentMeasurementSessions(limit)
           
-          // 디버깅: 실제 세션 데이터 구조 상세 확인
-          console.log('🔍 측정 세션 데이터 샘플 (상세):', JSON.stringify(sessions.slice(0, 2), null, 2))
-          
-          // 첫 번째 세션의 모든 필드명 확인
-          if (sessions.length > 0) {
-            console.log('🔍 첫 번째 세션의 모든 필드명:', Object.keys(sessions[0]))
-          }
+
           
           // 조직 정보를 한 번에 조회
           const organizationIds = [...new Set(sessions.map((s: any) => s.organizationId).filter(Boolean))]
@@ -1620,46 +1610,7 @@ export class SystemAdminService extends BaseService {
             await Promise.allSettled(orgQueries)
           }
 
-          // 측정 사용자 정보 조회 - 다양한 필드명 지원
-          const measurementUserIds = [...new Set(
-            sessions
-              .map((s: any) => s.measurementUserId || s.userId || s.user || s.patientId)
-              .filter(Boolean)
-          )]
-          
-          // 디버깅: 추출된 사용자 ID들 확인
-          console.log('🔍 추출된 사용자 ID들:', measurementUserIds)
-          
-          const measurementUsersMap = new Map()
-          
-          if (measurementUserIds.length > 0) {
-            const userQueries = measurementUserIds.map(async (userId) => {
-              try {
-                // measurementUsers 컬렉션 시도
-                let userDocRef = doc(db, 'measurementUsers', userId)
-                let userDoc = await getDoc(userDocRef)
-                
-                if (!userDoc.exists()) {
-                  // users 컬렉션 시도
-                  userDocRef = doc(db, 'users', userId)
-                  userDoc = await getDoc(userDocRef)
-                }
-                
-                if (userDoc.exists()) {
-                  const userData = userDoc.data()
-                  const userName = userData.displayName || userData.name || userData.firstName || userData.email || userData.username || `사용자${userId.slice(-4)}`
-                  measurementUsersMap.set(userId, userName)
-                } else {
-                  // 사용자 정보를 찾을 수 없는 경우 ID 마지막 4자리로 표시
-                  measurementUsersMap.set(userId, `사용자${userId.slice(-4)}`)
-                }
-              } catch (error) {
-                console.warn(`측정 사용자 정보 조회 실패: ${userId}`, error)
-                measurementUsersMap.set(userId, `사용자${userId.slice(-4)}`)
-              }
-            })
-            await Promise.allSettled(userQueries)
-          }
+
 
           const transformedSessions = sessions.map((session: any) => {
             // 상태 결정
@@ -1679,17 +1630,14 @@ export class SystemAdminService extends BaseService {
             // 데이터 크기 추정 (분당 약 2MB)
             const estimatedSize = (session.duration || 60) / 60 * 2
 
-            // 사용자 ID 다양한 필드에서 추출
-            const userId = session.measurementUserId || session.userId || session.user || session.patientId
-            
             return {
               id: session.id,
-              userName: measurementUsersMap.get(userId) || '알 수 없음',
+              userName: session.measuredByUserName || session.subjectName || '알 수 없음',
               organizationName: organizationsMap.get(session.organizationId) || '개인',
               dataType,
               duration: Math.round((session.duration || 0) / 60 * 10) / 10, // 분 단위
               dataSize: Math.round(estimatedSize * 10) / 10, // MB
-              quality: session.qualityScore || (status === 'completed' ? Math.floor(Math.random() * 20) + 80 : 0),
+              quality: session.qualityScore || session.overallScore || (status === 'completed' ? Math.floor(Math.random() * 20) + 80 : 0),
               timestamp: session.createdAt,
               status
             }
