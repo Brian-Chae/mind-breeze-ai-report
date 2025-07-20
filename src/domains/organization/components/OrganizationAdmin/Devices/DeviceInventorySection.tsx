@@ -27,17 +27,17 @@ import {
   Trash2,
   Building2
 } from 'lucide-react';
-import { Button } from '../../../../../shared/components/ui/button';
-import { Input } from '../../../../../shared/components/ui/input';
+import { Button } from '@ui/button';
+import { Input } from '@ui/input';
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '../../../../../shared/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../../shared/components/ui/card';
-import { Badge } from '../../../../../shared/components/ui/badge';
+} from '@ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
+import { Badge } from '@ui/badge';
 import {
   Table,
   TableBody,
@@ -45,7 +45,7 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '../../../../../shared/components/ui/table';
+} from '@ui/table';
 import {
   Dialog,
   DialogContent,
@@ -53,9 +53,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '../../../../../shared/components/ui/dialog';
+} from '@ui/dialog';
 import { Label } from '../../../../../../components/ui/label';
-import { Textarea } from '../../../../../shared/components/ui/textarea';
+import { Textarea } from '@ui/textarea';
 import { toast } from 'sonner';
 
 import { deviceInventoryService } from '../../../services/DeviceInventoryService';
@@ -305,20 +305,20 @@ const DeviceInventorySection: React.FC = () => {
 
   const getStatusBadge = (status: DeviceInventory['status']) => {
     const statusConfig = {
-      'AVAILABLE': { color: 'bg-green-100 text-green-800', label: '사용 가능' },
-      'ASSIGNED': { color: 'bg-blue-100 text-blue-800', label: '배정 완료' },
-      'IN_USE': { color: 'bg-yellow-100 text-yellow-800', label: '사용 중' },
-      'MAINTENANCE': { color: 'bg-orange-100 text-orange-800', label: '점검 중' },
-      'RETURNED': { color: 'bg-gray-100 text-gray-800', label: '반납 완료' },
-      'DISPOSED': { color: 'bg-red-100 text-red-800', label: '폐기' }
+      'AVAILABLE': { variant: 'default' as const, label: '사용 가능' },
+      'ASSIGNED': { variant: 'secondary' as const, label: '배정 완료' },
+      'IN_USE': { variant: 'outline' as const, label: '사용 중' },
+      'MAINTENANCE': { variant: 'destructive' as const, label: '점검 중' },
+      'RETURNED': { variant: 'secondary' as const, label: '반납 완료' },
+      'DISPOSED': { variant: 'destructive' as const, label: '폐기' }
     };
     
     const config = statusConfig[status] || statusConfig['AVAILABLE'];
     
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <Badge variant={config.variant}>
         {config.label}
-      </span>
+      </Badge>
     );
   };
 
@@ -337,15 +337,17 @@ const DeviceInventorySection: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <div className="flex items-center justify-center py-32">
-            <div className="text-center">
-              <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">재고 데이터 로드 중</h3>
-              <p className="text-slate-600">잠시만 기다려주세요...</p>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center py-32">
+              <div className="text-center">
+                <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">재고 데이터 로드 중</h3>
+                <p className="text-slate-600">잠시만 기다려주세요...</p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -353,207 +355,223 @@ const DeviceInventorySection: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* 헤더 및 통계 카드 */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">재고 관리</h2>
-            <p className="text-slate-600 mt-1">전체 디바이스 재고 현황 및 관리</p>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold text-slate-900">재고 관리</CardTitle>
+              <p className="text-slate-600 mt-1">전체 디바이스 재고 현황 및 관리</p>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                신규 등록
+              </Button>
+              <Button 
+                onClick={loadData}
+                variant="outline"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+              <Button variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                재고 리포트
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setIsRegisterModalOpen(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              신규 등록
-            </button>
-            <button 
-              onClick={loadData}
-              className="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              새로고침
-            </button>
-            <button className="border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              재고 리포트
-            </button>
-          </div>
-        </div>
+        </CardHeader>
         
-        {/* 재고 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">총 재고</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
-              </div>
-              <HardDrive className="w-8 h-8 text-blue-600" />
-            </div>
+        <CardContent>
+          {/* 재고 통계 카드 */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">총 재고</p>
+                    <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+                  </div>
+                  <HardDrive className="w-8 h-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-700">사용 가능</p>
+                    <p className="text-2xl font-bold text-green-900">{stats.available}</p>
+                  </div>
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-700">배정됨</p>
+                    <p className="text-2xl font-bold text-orange-900">{stats.assigned + stats.inUse}</p>
+                  </div>
+                  <Users className="w-8 h-8 text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-red-700">점검 필요</p>
+                    <p className="text-2xl font-bold text-red-900">{stats.maintenance}</p>
+                  </div>
+                  <AlertCircle className="w-8 h-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          
-          <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">사용 가능</p>
-                <p className="text-2xl font-bold text-green-900">{stats.available}</p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          
-          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-700">배정됨</p>
-                <p className="text-2xl font-bold text-orange-900">{stats.assigned + stats.inUse}</p>
-              </div>
-              <Users className="w-8 h-8 text-orange-600" />
-            </div>
-          </div>
-          
-          <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-red-700">점검 필요</p>
-                <p className="text-2xl font-bold text-red-900">{stats.maintenance}</p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-red-600" />
-            </div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* 디바이스 목록 */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">디바이스 재고 목록</h3>
-            <p className="text-sm text-slate-600">등록된 모든 디바이스 현황 ({filteredDevices.length}개)</p>
-          </div>
-          <div className="flex gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                placeholder="디바이스 ID 또는 타입 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg font-semibold text-slate-900">디바이스 재고 목록</CardTitle>
+              <p className="text-sm text-slate-600">등록된 모든 디바이스 현황 ({filteredDevices.length}개)</p>
             </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="상태 필터" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">모든 상태</SelectItem>
-                <SelectItem value="AVAILABLE">사용 가능</SelectItem>
-                <SelectItem value="ASSIGNED">배정 완료</SelectItem>
-                <SelectItem value="IN_USE">사용 중</SelectItem>
-                <SelectItem value="MAINTENANCE">점검 중</SelectItem>
-                <SelectItem value="RETURNED">반납 완료</SelectItem>
-                <SelectItem value="DISPOSED">폐기</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* 테이블 */}
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-semibold text-slate-700">디바이스 ID</TableHead>
-                <TableHead className="font-semibold text-slate-700">종류</TableHead>
-                <TableHead className="font-semibold text-slate-700">등록일</TableHead>
-                <TableHead className="font-semibold text-slate-700">상태</TableHead>
-                <TableHead className="font-semibold text-slate-700">보증 기간</TableHead>
-                <TableHead className="font-semibold text-slate-700">공급업체</TableHead>
-                <TableHead className="font-semibold text-slate-700">액션</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDevices.map((device) => (
-                <TableRow key={device.id} className="hover:bg-slate-50 transition-colors">
-                  <TableCell className="font-medium text-slate-900">{device.id}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-700">{device.deviceType}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-slate-600">{formatDate(device.registrationDate)}</TableCell>
-                  <TableCell>{getStatusBadge(device.status)}</TableCell>
-                  <TableCell className="text-slate-600">
-                    {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
-                  </TableCell>
-                  <TableCell className="text-slate-600">{device.supplier || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {/* 상태 변경 드롭다운 */}
-                      <Select
-                        value={device.status}
-                        onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
-                      >
-                        <SelectTrigger className="w-28 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="AVAILABLE">사용 가능</SelectItem>
-                          <SelectItem value="ASSIGNED">배정 완료</SelectItem>
-                          <SelectItem value="IN_USE">사용 중</SelectItem>
-                          <SelectItem value="MAINTENANCE">점검 중</SelectItem>
-                          <SelectItem value="RETURNED">반납 완료</SelectItem>
-                          <SelectItem value="DISPOSED">폐기</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
-                      {/* 배정 버튼 */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAssignDevice(device)}
-                        disabled={device.status !== 'AVAILABLE'}
-                        className="h-8 px-2 text-xs"
-                        title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
-                      >
-                        <UserPlus className="w-3 h-3" />
-                      </Button>
-                      
-                      {/* 삭제 버튼 */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteDevice(device.id)}
-                        className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="디바이스 삭제"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+            <div className="flex gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  placeholder="디바이스 ID 또는 타입 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
               
-              {filteredDevices.length === 0 && (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="상태 필터" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 상태</SelectItem>
+                  <SelectItem value="AVAILABLE">사용 가능</SelectItem>
+                  <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                  <SelectItem value="IN_USE">사용 중</SelectItem>
+                  <SelectItem value="MAINTENANCE">점검 중</SelectItem>
+                  <SelectItem value="RETURNED">반납 완료</SelectItem>
+                  <SelectItem value="DISPOSED">폐기</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {/* 테이블 */}
+          <div className="overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-slate-500">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>조건에 맞는 디바이스가 없습니다.</p>
-                  </TableCell>
+                  <TableHead className="font-semibold">디바이스 ID</TableHead>
+                  <TableHead className="font-semibold">종류</TableHead>
+                  <TableHead className="font-semibold">등록일</TableHead>
+                  <TableHead className="font-semibold">상태</TableHead>
+                  <TableHead className="font-semibold">보증 기간</TableHead>
+                  <TableHead className="font-semibold">공급업체</TableHead>
+                  <TableHead className="font-semibold">액션</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredDevices.map((device) => (
+                  <TableRow key={device.id}>
+                    <TableCell className="font-medium">{device.id}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-slate-500" />
+                        <span>{device.deviceType}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-600">{formatDate(device.registrationDate)}</TableCell>
+                    <TableCell>{getStatusBadge(device.status)}</TableCell>
+                    <TableCell className="text-slate-600">
+                      {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
+                    </TableCell>
+                    <TableCell className="text-slate-600">{device.supplier || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {/* 상태 변경 드롭다운 */}
+                        <Select
+                          value={device.status}
+                          onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
+                        >
+                          <SelectTrigger className="w-28 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="AVAILABLE">사용 가능</SelectItem>
+                            <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                            <SelectItem value="IN_USE">사용 중</SelectItem>
+                            <SelectItem value="MAINTENANCE">점검 중</SelectItem>
+                            <SelectItem value="RETURNED">반납 완료</SelectItem>
+                            <SelectItem value="DISPOSED">폐기</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* 배정 버튼 */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAssignDevice(device)}
+                          disabled={device.status !== 'AVAILABLE'}
+                          className="h-8 px-2 text-xs"
+                          title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
+                        >
+                          <UserPlus className="w-3 h-3" />
+                        </Button>
+                        
+                        {/* 삭제 버튼 */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteDevice(device.id)}
+                          className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                          title="디바이스 삭제"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {filteredDevices.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                      <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>조건에 맞는 디바이스가 없습니다.</p>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 디바이스 등록 모달 */}
       <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-        <DialogContent className="max-w-2xl bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
-          <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 rounded-xl">
                 <Plus className="w-6 h-6 text-green-600" />
@@ -567,7 +585,7 @@ const DeviceInventorySection: React.FC = () => {
             </div>
           </DialogHeader>
 
-          <div className="py-6 space-y-8 bg-white">
+          <div className="py-6 space-y-8">
             {/* 기본 정보 섹션 */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
@@ -728,7 +746,7 @@ const DeviceInventorySection: React.FC = () => {
             </div>
           </div>
 
-          <DialogFooter className="pt-6 border-t border-slate-200 gap-3 bg-white">
+          <DialogFooter className="gap-3">
             <Button
               variant="outline"
               onClick={() => setIsRegisterModalOpen(false)}
@@ -758,24 +776,24 @@ const DeviceInventorySection: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 디바이스 배정 모달 */}
-      <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
-        <DialogContent className="max-w-2xl bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
-          <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <UserPlus className="w-6 h-6 text-blue-600" />
+              {/* 디바이스 배정 모달 */}
+        <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <UserPlus className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-bold text-slate-900">디바이스 배정</DialogTitle>
+                  <DialogDescription className="text-slate-600 mt-1">
+                    {selectedDevice?.id}를 조직에 배정합니다
+                  </DialogDescription>
+                </div>
               </div>
-              <div>
-                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 배정</DialogTitle>
-                <DialogDescription className="text-slate-600 mt-1">
-                  {selectedDevice?.id}를 조직에 배정합니다
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
+            </DialogHeader>
 
-          <div className="py-6 space-y-8 bg-white">
+            <div className="py-6 space-y-8">
             {/* 조직 선택 섹션 */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
@@ -927,7 +945,7 @@ const DeviceInventorySection: React.FC = () => {
             </div>
           </div>
 
-          <DialogFooter className="pt-6 border-t border-slate-200 gap-3 bg-white">
+          <DialogFooter className="gap-3">
             <Button
               variant="outline"
               onClick={() => setIsAssignModalOpen(false)}
