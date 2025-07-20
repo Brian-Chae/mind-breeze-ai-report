@@ -411,8 +411,8 @@ const DeviceInventorySection: React.FC = () => {
 
       {/* 디바이스 등록 모달 */}
       <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader className="pb-6 border-b border-slate-200">
+        <DialogContent className="max-w-2xl bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
+          <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 rounded-xl">
                 <Plus className="w-6 h-6 text-green-600" />
@@ -426,7 +426,7 @@ const DeviceInventorySection: React.FC = () => {
             </div>
           </DialogHeader>
 
-          <div className="py-6 space-y-8">
+          <div className="py-6 space-y-8 bg-white">
             {/* 기본 정보 섹션 */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
@@ -580,7 +580,7 @@ const DeviceInventorySection: React.FC = () => {
             </div>
           </div>
 
-          <DialogFooter className="pt-6 border-t border-slate-200 gap-3">
+          <DialogFooter className="pt-6 border-t border-slate-200 gap-3 bg-white">
             <Button
               variant="outline"
               onClick={() => setIsRegisterModalOpen(false)}
