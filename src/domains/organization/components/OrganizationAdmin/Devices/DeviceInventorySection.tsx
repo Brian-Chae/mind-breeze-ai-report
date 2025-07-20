@@ -10,7 +10,20 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, AlertCircle, CheckCircle, Settings } from 'lucide-react';
+import { 
+  Plus, 
+  Search, 
+  Package, 
+  AlertCircle, 
+  CheckCircle, 
+  Settings,
+  Download,
+  RefreshCw,
+  HardDrive,
+  Users,
+  Activity,
+  Smartphone
+} from 'lucide-react';
 import { Button } from '../../../../../shared/components/ui/button';
 import { Input } from '../../../../../shared/components/ui/input';
 import { 
@@ -173,23 +186,23 @@ const DeviceInventorySection: React.FC = () => {
   // Render Helper Functions
   // ============================================================================
 
-  const getStatusBadgeVariant = (status: DeviceInventory['status']) => {
-    switch (status) {
-      case 'AVAILABLE':
-        return 'default';
-      case 'ASSIGNED':
-        return 'secondary';
-      case 'IN_USE':
-        return 'default';
-      case 'MAINTENANCE':
-        return 'destructive';
-      case 'RETURNED':
-        return 'outline';
-      case 'DISPOSED':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
+  const getStatusBadge = (status: DeviceInventory['status']) => {
+    const statusConfig = {
+      'AVAILABLE': { color: 'bg-green-100 text-green-800', label: '사용 가능' },
+      'ASSIGNED': { color: 'bg-blue-100 text-blue-800', label: '배정 완료' },
+      'IN_USE': { color: 'bg-yellow-100 text-yellow-800', label: '사용 중' },
+      'MAINTENANCE': { color: 'bg-orange-100 text-orange-800', label: '점검 중' },
+      'RETURNED': { color: 'bg-gray-100 text-gray-800', label: '반납 완료' },
+      'DISPOSED': { color: 'bg-red-100 text-red-800', label: '폐기' }
+    };
+    
+    const config = statusConfig[status] || statusConfig['AVAILABLE'];
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+        {config.label}
+      </span>
+    );
   };
 
   const formatDate = (date: Date) => {
@@ -206,10 +219,15 @@ const DeviceInventorySection: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">디바이스 데이터를 불러오는 중...</p>
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center">
+              <RefreshCw className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">재고 데이터 로드 중</h3>
+              <p className="text-slate-600">잠시만 기다려주세요...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -217,151 +235,179 @@ const DeviceInventorySection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 재고</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">전체 디바이스</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">사용 가능</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.available}</div>
-            <p className="text-xs text-muted-foreground">배정 대기중</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">사용 중</CardTitle>
-            <Settings className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.inUse}</div>
-            <p className="text-xs text-muted-foreground">활성 사용</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">점검 필요</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.maintenance}</div>
-            <p className="text-xs text-muted-foreground">유지보수</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 검색 및 액션 바 */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="디바이스 ID 또는 타입 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-64"
-            />
+      {/* 헤더 및 통계 카드 */}
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">재고 관리</h2>
+            <p className="text-slate-600 mt-1">전체 디바이스 재고 현황 및 관리</p>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setIsRegisterModalOpen(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              신규 등록
+            </button>
+            <button 
+              onClick={loadData}
+              className="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              새로고침
+            </button>
+            <button className="border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              재고 리포트
+            </button>
+          </div>
+        </div>
+        
+        {/* 재고 통계 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700">총 재고</p>
+                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+              </div>
+              <HardDrive className="w-8 h-8 text-blue-600" />
+            </div>
           </div>
           
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="상태 필터" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">모든 상태</SelectItem>
-              <SelectItem value="AVAILABLE">🟢 사용 가능</SelectItem>
-              <SelectItem value="ASSIGNED">🔵 배정 완료</SelectItem>
-              <SelectItem value="IN_USE">🟡 사용 중</SelectItem>
-              <SelectItem value="MAINTENANCE">🔧 점검 중</SelectItem>
-              <SelectItem value="RETURNED">🔄 반납 완료</SelectItem>
-              <SelectItem value="DISPOSED">❌ 폐기</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700">사용 가능</p>
+                <p className="text-2xl font-bold text-green-900">{stats.available}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+          </div>
+          
+          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-700">배정됨</p>
+                <p className="text-2xl font-bold text-orange-900">{stats.assigned + stats.inUse}</p>
+              </div>
+              <Users className="w-8 h-8 text-orange-600" />
+            </div>
+          </div>
+          
+          <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-700">점검 필요</p>
+                <p className="text-2xl font-bold text-red-900">{stats.maintenance}</p>
+              </div>
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+          </div>
         </div>
-
-        <Button onClick={() => setIsRegisterModalOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          신규 디바이스 등록
-        </Button>
       </div>
 
-      {/* 디바이스 목록 테이블 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>디바이스 재고 목록</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* 디바이스 목록 */}
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">디바이스 재고 목록</h3>
+            <p className="text-sm text-slate-600">등록된 모든 디바이스 현황 ({filteredDevices.length}개)</p>
+          </div>
+          <div className="flex gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="디바이스 ID 또는 타입 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="상태 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 상태</SelectItem>
+                <SelectItem value="AVAILABLE">사용 가능</SelectItem>
+                <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                <SelectItem value="IN_USE">사용 중</SelectItem>
+                <SelectItem value="MAINTENANCE">점검 중</SelectItem>
+                <SelectItem value="RETURNED">반납 완료</SelectItem>
+                <SelectItem value="DISPOSED">폐기</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* 테이블 */}
+        <div className="overflow-hidden rounded-xl border border-slate-200">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead>디바이스 ID</TableHead>
-                <TableHead>종류</TableHead>
-                <TableHead>등록일</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>보증 기간</TableHead>
-                <TableHead>공급업체</TableHead>
-                <TableHead>액션</TableHead>
+                <TableHead className="font-semibold text-slate-700">디바이스 ID</TableHead>
+                <TableHead className="font-semibold text-slate-700">종류</TableHead>
+                <TableHead className="font-semibold text-slate-700">등록일</TableHead>
+                <TableHead className="font-semibold text-slate-700">상태</TableHead>
+                <TableHead className="font-semibold text-slate-700">보증 기간</TableHead>
+                <TableHead className="font-semibold text-slate-700">공급업체</TableHead>
+                <TableHead className="font-semibold text-slate-700">액션</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredDevices.map((device) => (
-                <TableRow key={device.id}>
-                  <TableCell className="font-mono">{device.id}</TableCell>
-                  <TableCell>{device.deviceType}</TableCell>
-                  <TableCell>{formatDate(device.registrationDate)}</TableCell>
+                <TableRow key={device.id} className="hover:bg-slate-50 transition-colors">
+                  <TableCell className="font-medium text-slate-900">{device.id}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(device.status)}>
-                      {DeviceStatusLabels[device.status]}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-slate-500" />
+                      <span className="text-slate-700">{device.deviceType}</span>
+                    </div>
                   </TableCell>
-                  <TableCell>{device.warrantyPeriod || 12}개월</TableCell>
-                  <TableCell>{device.supplier || '-'}</TableCell>
+                  <TableCell className="text-slate-600">{formatDate(device.registrationDate)}</TableCell>
+                  <TableCell>{getStatusBadge(device.status)}</TableCell>
+                  <TableCell className="text-slate-600">
+                    {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
+                  </TableCell>
+                  <TableCell className="text-slate-600">{device.supplier || '-'}</TableCell>
                   <TableCell>
-                    <Select
-                      value={device.status}
-                      onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AVAILABLE">🟢 사용 가능</SelectItem>
-                        <SelectItem value="ASSIGNED">🔵 배정 완료</SelectItem>
-                        <SelectItem value="IN_USE">🟡 사용 중</SelectItem>
-                        <SelectItem value="MAINTENANCE">🔧 점검 중</SelectItem>
-                        <SelectItem value="RETURNED">🔄 반납 완료</SelectItem>
-                        <SelectItem value="DISPOSED">❌ 폐기</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={device.status}
+                        onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
+                      >
+                        <SelectTrigger className="w-32 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AVAILABLE">사용 가능</SelectItem>
+                          <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                          <SelectItem value="IN_USE">사용 중</SelectItem>
+                          <SelectItem value="MAINTENANCE">점검 중</SelectItem>
+                          <SelectItem value="RETURNED">반납 완료</SelectItem>
+                          <SelectItem value="DISPOSED">폐기</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
               
               {filteredDevices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    조건에 맞는 디바이스가 없습니다.
+                  <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>조건에 맞는 디바이스가 없습니다.</p>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* 디바이스 등록 모달 */}
       <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
