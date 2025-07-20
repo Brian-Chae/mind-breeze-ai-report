@@ -463,16 +463,16 @@ const DeviceInventorySection: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="LINK_BAND_1.0">
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-4 h-4 text-slate-500" />
+                          LINK BAND 1.0
+                        </div>
+                      </SelectItem>
                       <SelectItem value="LINK_BAND_2.0">
                         <div className="flex items-center gap-2">
                           <Smartphone className="w-4 h-4 text-slate-500" />
                           LINK BAND 2.0
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="LINK_BAND_3.0">
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="w-4 h-4 text-slate-500" />
-                          LINK BAND 3.0
                         </div>
                       </SelectItem>
                     </SelectContent>
