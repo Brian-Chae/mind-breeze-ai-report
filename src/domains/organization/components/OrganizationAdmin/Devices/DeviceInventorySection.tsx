@@ -498,7 +498,6 @@ const DeviceInventorySection: React.FC = () => {
                 <TableHead className="font-semibold text-slate-700">등록일</TableHead>
                 <TableHead className="font-semibold text-slate-700">상태</TableHead>
                 <TableHead className="font-semibold text-slate-700">보증 기간</TableHead>
-                <TableHead className="font-semibold text-slate-700">공급업체</TableHead>
                 <TableHead className="font-semibold text-slate-700">액션</TableHead>
               </TableRow>
             </TableHeader>
@@ -517,7 +516,6 @@ const DeviceInventorySection: React.FC = () => {
                   <TableCell className="text-slate-600">
                     {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
                   </TableCell>
-                  <TableCell className="text-slate-600">{device.supplier || '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {/* 상태 변경 드롭다운 */}
@@ -567,7 +565,7 @@ const DeviceInventorySection: React.FC = () => {
               
               {filteredDevices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                  <TableCell colSpan={6} className="text-center py-12 text-slate-500">
                     <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>조건에 맞는 디바이스가 없습니다.</p>
                   </TableCell>
