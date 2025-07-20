@@ -22,7 +22,10 @@ import {
   HardDrive,
   Users,
   Activity,
-  Smartphone
+  Smartphone,
+  UserPlus,
+  Trash2,
+  Building2
 } from 'lucide-react';
 import { Button } from '../../../../../shared/components/ui/button';
 import { Input } from '../../../../../shared/components/ui/input';
@@ -62,6 +65,18 @@ import {
   InventoryStats,
   DeviceStatusLabels
 } from '../../../types/device';
+import companyService from '../../../services/CompanyService';
+
+// 배정을 위한 타입 정의
+interface DeviceAssignment {
+  deviceId: string;
+  organizationId: string;
+  organizationName: string;
+  assignmentType: 'rental' | 'purchase';
+  rentalPeriod?: 1 | 3; // 개월
+  salePrice?: number;
+  notes?: string;
+}
 
 const DeviceInventorySection: React.FC = () => {
   // ============================================================================
@@ -95,6 +110,18 @@ const DeviceInventorySection: React.FC = () => {
     purchaseCost: 297000
   });
 
+  // 배정 모달 상태
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<DeviceInventory | null>(null);
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [orgSearchTerm, setOrgSearchTerm] = useState('');
+  const [assignment, setAssignment] = useState<Partial<DeviceAssignment>>({
+    assignmentType: 'rental',
+    rentalPeriod: 1,
+    salePrice: 297000
+  });
+
   // ============================================================================
   // Data Loading
   // ============================================================================
@@ -120,6 +147,17 @@ const DeviceInventorySection: React.FC = () => {
       toast.error('디바이스 데이터를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOrganizations = async () => {
+    try {
+      // 최근 조직 목록을 가져오기 (임시로 100개 제한)
+      const orgs = await companyService.getRecentOrganizations(100);
+      setOrganizations(orgs);
+    } catch (error) {
+      console.error('조직 목록 로딩 실패:', error);
+      toast.error('조직 목록을 불러올 수 없습니다.');
     }
   };
 
@@ -177,6 +215,73 @@ const DeviceInventorySection: React.FC = () => {
     }
   };
 
+  const handleAssignDevice = (device: DeviceInventory) => {
+    setSelectedDevice(device);
+    setAssignment({
+      deviceId: device.id,
+      assignmentType: 'rental',
+      rentalPeriod: 1,
+      salePrice: 297000
+    });
+    setIsAssignModalOpen(true);
+    // 모달 열 때 조직 목록 로드
+    loadOrganizations();
+  };
+
+  const handleDeleteDevice = async (deviceId: string) => {
+    if (!confirm('정말로 이 디바이스를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      // TODO: DeviceInventoryService에 deleteDevice 메서드 구현 필요
+      // await deviceInventoryService.deleteDevice(deviceId);
+      toast.info('삭제 기능은 추후 구현 예정입니다.');
+      // await loadData();
+    } catch (error) {
+      console.error('디바이스 삭제 실패:', error);
+      toast.error('디바이스 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (!assignment.organizationId || !selectedDevice) {
+      toast.error('조직을 선택해주세요.');
+      return;
+    }
+
+    try {
+      setIsAssigning(true);
+      
+      // 디바이스 상태를 ASSIGNED로 변경
+      await deviceInventoryService.updateDeviceStatus(selectedDevice.id, 'ASSIGNED');
+      
+      // TODO: 배정 정보를 별도 컬렉션에 저장하는 로직 추가
+      // await deviceAssignmentService.createAssignment(assignment);
+      
+      toast.success(`${selectedDevice.id}가 ${assignment.organizationName}에 성공적으로 배정되었습니다.`);
+      
+      // 모달 닫기 및 초기화
+      setIsAssignModalOpen(false);
+      setSelectedDevice(null);
+      setAssignment({
+        assignmentType: 'rental',
+        rentalPeriod: 1,
+        salePrice: 297000
+      });
+      setOrgSearchTerm('');
+      
+      // 데이터 새로고침
+      await loadData();
+      
+    } catch (error) {
+      console.error('디바이스 배정 실패:', error);
+      toast.error('디바이스 배정 중 오류가 발생했습니다.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   // ============================================================================
   // Data Filtering
   // ============================================================================
@@ -188,6 +293,11 @@ const DeviceInventorySection: React.FC = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  const filteredOrganizations = organizations.filter(org => 
+    org.organizationName?.toLowerCase().includes(orgSearchTerm.toLowerCase()) ||
+    org.companyCode?.toLowerCase().includes(orgSearchTerm.toLowerCase())
+  );
 
   // ============================================================================
   // Render Helper Functions
@@ -382,11 +492,12 @@ const DeviceInventorySection: React.FC = () => {
                   <TableCell className="text-slate-600">{device.supplier || '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
+                      {/* 상태 변경 드롭다운 */}
                       <Select
                         value={device.status}
                         onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
                       >
-                        <SelectTrigger className="w-32 h-8">
+                        <SelectTrigger className="w-28 h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -398,6 +509,29 @@ const DeviceInventorySection: React.FC = () => {
                           <SelectItem value="DISPOSED">폐기</SelectItem>
                         </SelectContent>
                       </Select>
+                      
+                      {/* 배정 버튼 */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAssignDevice(device)}
+                        disabled={device.status !== 'AVAILABLE'}
+                        className="h-8 px-2 text-xs"
+                        title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
+                      >
+                        <UserPlus className="w-3 h-3" />
+                      </Button>
+                      
+                      {/* 삭제 버튼 */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteDevice(device.id)}
+                        className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="디바이스 삭제"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -617,6 +751,205 @@ const DeviceInventorySection: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   등록하기
+                </div>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 디바이스 배정 모달 */}
+      <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+        <DialogContent className="max-w-2xl bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
+          <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <UserPlus className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 배정</DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  {selectedDevice?.id}를 조직에 배정합니다
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-6 space-y-8 bg-white">
+            {/* 조직 선택 섹션 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                <h3 className="text-lg font-semibold text-slate-900">조직 선택</h3>
+                <span className="text-sm text-slate-500">(필수)</span>
+              </div>
+
+              {/* 조직 검색 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">조직 검색</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    placeholder="조직명 또는 회사코드로 검색..."
+                    value={orgSearchTerm}
+                    onChange={(e) => setOrgSearchTerm(e.target.value)}
+                    className="pl-10 h-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* 조직 목록 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">
+                  등록된 조직 목록 <span className="text-red-500">*</span>
+                </Label>
+                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg">
+                  {filteredOrganizations.length === 0 ? (
+                    <div className="p-4 text-center text-slate-500">
+                      <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>검색 결과가 없습니다</p>
+                    </div>
+                  ) : (
+                    filteredOrganizations.map((org) => (
+                      <div
+                        key={org.id}
+                        className={`p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${
+                          assignment.organizationId === org.id ? 'bg-blue-50 border-blue-200' : ''
+                        }`}
+                        onClick={() => setAssignment(prev => ({
+                          ...prev,
+                          organizationId: org.id,
+                          organizationName: org.organizationName
+                        }))}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-slate-900">{org.organizationName}</div>
+                            <div className="text-sm text-slate-600">코드: {org.companyCode}</div>
+                          </div>
+                          {assignment.organizationId === org.id && (
+                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 배정 조건 섹션 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+                <h3 className="text-lg font-semibold text-slate-900">배정 조건</h3>
+                <span className="text-sm text-slate-500">(필수)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 배정 유형 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-slate-700">
+                    배정 유형 <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={assignment.assignmentType}
+                    onValueChange={(value: 'rental' | 'purchase') => 
+                      setAssignment(prev => ({ ...prev, assignmentType: value }))
+                    }
+                  >
+                    <SelectTrigger className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rental">렌탈</SelectItem>
+                      <SelectItem value="purchase">구매</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 렌탈 기간 (렌탈인 경우) */}
+                {assignment.assignmentType === 'rental' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">
+                      렌탈 기간 <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={assignment.rentalPeriod?.toString()}
+                      onValueChange={(value) => 
+                        setAssignment(prev => ({ ...prev, rentalPeriod: Number(value) as 1 | 3 }))
+                      }
+                    >
+                      <SelectTrigger className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1개월</SelectItem>
+                        <SelectItem value="3">3개월</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* 판매 가격 (구매인 경우) */}
+                {assignment.assignmentType === 'purchase' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">
+                      판매 가격 (원) <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      placeholder="297,000"
+                      value={assignment.salePrice || ''}
+                      onChange={(e) => setAssignment(prev => ({ 
+                        ...prev, 
+                        salePrice: e.target.value ? Number(e.target.value) : 297000 
+                      }))}
+                      className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500"
+                    />
+                    <p className="text-xs text-slate-500">기본값: 297,000원</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 배정 메모 */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">배정 메모</Label>
+                <Textarea
+                  placeholder="배정에 대한 특이사항이나 추가 정보를 입력하세요..."
+                  value={assignment.notes || ''}
+                  onChange={(e) => setAssignment(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  className="bg-slate-50 border-slate-300 focus:border-orange-500 focus:ring-orange-500 focus:bg-white resize-none"
+                />
+                <p className="text-xs text-slate-500">최대 500자까지 입력 가능합니다</p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-6 border-t border-slate-200 gap-3 bg-white">
+            <Button
+              variant="outline"
+              onClick={() => setIsAssignModalOpen(false)}
+              disabled={isAssigning}
+              className="h-10 px-6 border-slate-300 text-slate-700 hover:bg-slate-50"
+            >
+              취소
+            </Button>
+            <Button 
+              onClick={handleConfirmAssignment} 
+              disabled={isAssigning || !assignment.organizationId}
+              className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-400"
+            >
+              {isAssigning ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  배정 중...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  배정하기
                 </div>
               )}
             </Button>
