@@ -73,9 +73,11 @@ const DeviceInventorySection: React.FC = () => {
   // 등록 모달 상태
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [newDevice, setNewDevice] = useState<CreateDeviceInventoryRequest>({
+  const [newDevice, setNewDevice] = useState<CreateDeviceInventoryRequest & { deviceName: string }>({
+    deviceName: '',
     deviceType: 'LINK_BAND_2.0',
-    warrantyPeriod: 12
+    warrantyPeriod: 12,
+    registrationDate: new Date()
   });
 
   // ============================================================================
@@ -114,15 +116,19 @@ const DeviceInventorySection: React.FC = () => {
     try {
       setIsRegistering(true);
       
-      await deviceInventoryService.createDevice(newDevice);
+      // deviceName을 제외한 나머지 데이터만 서비스에 전달
+      const { deviceName, ...deviceData } = newDevice;
+      await deviceInventoryService.createDevice(deviceData, deviceName);
       
       toast.success('새로운 디바이스가 성공적으로 등록되었습니다.');
 
       // 모달 닫기 및 초기화
       setIsRegisterModalOpen(false);
       setNewDevice({
+        deviceName: '',
         deviceType: 'LINK_BAND_2.0',
-        warrantyPeriod: 12
+        warrantyPeriod: 12,
+        registrationDate: new Date()
       });
 
       // 데이터 새로고침
@@ -363,11 +369,22 @@ const DeviceInventorySection: React.FC = () => {
           <DialogHeader>
             <DialogTitle>📝 신규 디바이스 등록</DialogTitle>
             <DialogDescription>
-              새로운 디바이스를 재고에 등록합니다. 디바이스 ID는 자동으로 생성됩니다.
+              새로운 디바이스를 재고에 등록합니다.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="deviceName">디바이스 이름 *</Label>
+              <Input
+                id="deviceName"
+                placeholder="예: LXB-02630003"
+                value={newDevice.deviceName}
+                onChange={(e) => setNewDevice(prev => ({ ...prev, deviceName: e.target.value }))}
+                required
+              />
+            </div>
+
             <div>
               <Label htmlFor="deviceType">디바이스 종류 *</Label>
               <Select
@@ -382,6 +399,23 @@ const DeviceInventorySection: React.FC = () => {
                   <SelectItem value="LINK_BAND_3.0">LINK BAND 3.0</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="registrationDate">등록 일자 *</Label>
+              <Input
+                id="registrationDate"
+                value={newDevice.registrationDate?.toLocaleString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  hour12: true
+                })}
+                readOnly
+                className="bg-gray-50 cursor-not-allowed"
+              />
             </div>
 
             <div>
@@ -446,7 +480,10 @@ const DeviceInventorySection: React.FC = () => {
             >
               취소
             </Button>
-            <Button onClick={handleRegisterDevice} disabled={isRegistering}>
+            <Button 
+              onClick={handleRegisterDevice} 
+              disabled={isRegistering || !newDevice.deviceName.trim()}
+            >
               {isRegistering ? '등록 중...' : '등록'}
             </Button>
           </DialogFooter>

@@ -55,13 +55,22 @@ class DeviceInventoryService extends BaseService {
    * 새로운 디바이스 재고 등록
    */
   async createDevice(
-    deviceData: CreateDeviceInventoryRequest
+    deviceData: CreateDeviceInventoryRequest,
+    customDeviceId?: string
   ): Promise<DeviceInventory> {
     return await this.measureAndLog('createDevice', async () => {
       this.log('디바이스 등록 시작', { deviceData });
 
-      // 자동 ID 생성 (LXB-YYYYMMDD-XXX 형식)
-      const deviceId = await this.generateDeviceId();
+      // 사용자 지정 ID가 있으면 사용, 없으면 자동 생성
+      const deviceId = customDeviceId || await this.generateDeviceId();
+
+      // 사용자 지정 ID인 경우 중복 검사
+      if (customDeviceId) {
+        const existingDevice = await getDoc(doc(this.db, this.COLLECTION_NAME, customDeviceId));
+        if (existingDevice.exists()) {
+          throw new Error(`디바이스 이름 '${customDeviceId}'는 이미 존재합니다.`);
+        }
+      }
       
       // 기본값 설정
       const now = new Date();
