@@ -86,6 +86,7 @@ const DeviceInventorySection: React.FC = () => {
   // 등록 모달 상태
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [deviceIdSuffix, setDeviceIdSuffix] = useState(''); // LXB- 뒤 부분만 저장
   const [newDevice, setNewDevice] = useState<CreateDeviceInventoryRequest & { deviceName: string }>({
     deviceName: '',
     deviceType: 'LINK_BAND_2.0',
@@ -129,14 +130,18 @@ const DeviceInventorySection: React.FC = () => {
     try {
       setIsRegistering(true);
       
+      // LXB- + 입력한 suffix로 완전한 디바이스 이름 조합
+      const fullDeviceName = `LXB-${deviceIdSuffix}`;
+      
       // deviceName을 제외한 나머지 데이터만 서비스에 전달
       const { deviceName, ...deviceData } = newDevice;
-      await deviceInventoryService.createDevice(deviceData, deviceName);
+      await deviceInventoryService.createDevice(deviceData, fullDeviceName);
       
       toast.success('새로운 디바이스가 성공적으로 등록되었습니다.');
 
       // 모달 닫기 및 초기화
       setIsRegisterModalOpen(false);
+      setDeviceIdSuffix('');
       setNewDevice({
         deviceName: '',
         deviceType: 'LINK_BAND_2.0',
@@ -440,15 +445,22 @@ const DeviceInventorySection: React.FC = () => {
                   <Label htmlFor="deviceName" className="text-sm font-medium text-slate-700">
                     디바이스 이름 <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="deviceName"
-                    placeholder="예: LXB-02630003"
-                    value={newDevice.deviceName}
-                    onChange={(e) => setNewDevice(prev => ({ ...prev, deviceName: e.target.value }))}
-                    className="h-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                  <p className="text-xs text-slate-500">고유한 디바이스 식별자를 입력하세요</p>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-600 font-medium pointer-events-none">
+                      LXB-
+                    </div>
+                    <Input
+                      id="deviceName"
+                      placeholder="02630003"
+                      value={deviceIdSuffix}
+                      onChange={(e) => setDeviceIdSuffix(e.target.value)}
+                      className="h-10 pl-12 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    디바이스 고유 번호를 입력하세요 (완성 예: LXB-{deviceIdSuffix || '02630003'})
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -591,7 +603,7 @@ const DeviceInventorySection: React.FC = () => {
             </Button>
             <Button 
               onClick={handleRegisterDevice} 
-              disabled={isRegistering || !newDevice.deviceName.trim()}
+              disabled={isRegistering || !deviceIdSuffix.trim()}
               className="h-10 px-6 bg-green-600 hover:bg-green-700 text-white disabled:bg-slate-400"
             >
               {isRegistering ? (
