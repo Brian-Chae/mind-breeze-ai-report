@@ -560,24 +560,6 @@ const DeviceInventorySection: React.FC = () => {
                     {/* 액션 */}
                     <TableCell className="py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        {/* 상태 변경 드롭다운 */}
-                        <Select
-                          value={device.status}
-                          onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
-                        >
-                          <SelectTrigger className="w-32 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="AVAILABLE">사용 가능</SelectItem>
-                            <SelectItem value="ASSIGNED">배정 완료</SelectItem>
-                            <SelectItem value="IN_USE">사용 중</SelectItem>
-                            <SelectItem value="MAINTENANCE">점검 중</SelectItem>
-                            <SelectItem value="RETURNED">반납 완료</SelectItem>
-                            <SelectItem value="DISPOSED">폐기</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
                         <Button
                           size="sm"
                           variant="outline"
