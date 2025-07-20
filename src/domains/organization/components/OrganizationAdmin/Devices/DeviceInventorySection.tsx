@@ -91,7 +91,8 @@ const DeviceInventorySection: React.FC = () => {
     deviceName: '',
     deviceType: 'LINK_BAND_2.0',
     warrantyPeriod: 12,
-    registrationDate: new Date()
+    registrationDate: new Date(),
+    purchaseCost: 297000
   });
 
   // ============================================================================
@@ -146,7 +147,8 @@ const DeviceInventorySection: React.FC = () => {
         deviceName: '',
         deviceType: 'LINK_BAND_2.0',
         warrantyPeriod: 12,
-        registrationDate: new Date()
+        registrationDate: new Date(),
+        purchaseCost: 297000
       });
 
       // 데이터 새로고침
@@ -549,15 +551,15 @@ const DeviceInventorySection: React.FC = () => {
                   <Input
                     id="purchaseCost"
                     type="number"
-                    placeholder="500,000"
+                    placeholder="297,000"
                     value={newDevice.purchaseCost || ''}
                     onChange={(e) => setNewDevice(prev => ({ 
                       ...prev, 
-                      purchaseCost: e.target.value ? Number(e.target.value) : undefined 
+                      purchaseCost: e.target.value ? Number(e.target.value) : 297000 
                     }))}
                     className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500"
                   />
-                  <p className="text-xs text-slate-500">디바이스 구매 비용을 입력하세요</p>
+                  <p className="text-xs text-slate-500">디바이스 구매 비용 (기본값: 297,000원)</p>
                 </div>
 
                 <div className="space-y-2">
