@@ -39,6 +39,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../shared/components/ui/card';
 import { Badge } from '../../../../../shared/components/ui/badge';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '../../../../../shared/components/ui/table';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -480,102 +488,102 @@ const DeviceInventorySection: React.FC = () => {
           </div>
         </div>
 
-        {/* 디바이스 카드 목록 */}
-        {filteredDevices.length === 0 ? (
-          <Card className="p-8 bg-white border border-gray-200">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl">
-                <Package className="w-8 h-8 text-blue-600" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">조건에 맞는 디바이스가 없습니다</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? '검색 조건에 맞는 디바이스가 없습니다.' 
-                    : '아직 등록된 디바이스가 없습니다.'}
-                </p>
-              </div>
-            </div>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredDevices.map((device) => (
-              <div key={device.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                {/* 디바이스 정보 헤더 */}
-                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Smartphone className="w-5 h-5 text-gray-500" />
-                        <span className="text-lg font-semibold text-gray-900">{device.id}</span>
+        {/* 예쁜 테이블 */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="font-semibold text-gray-700 py-4">디바이스 ID</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4">종류</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4">보증 기간</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4">상태</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4">등록일</TableHead>
+                <TableHead className="font-semibold text-gray-700 py-4 text-right">액션</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredDevices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full">
+                        <Package className="w-6 h-6 text-gray-400" />
                       </div>
-                      
-                      {/* 디바이스 정보 Badge들 */}
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                          {device.deviceType}
-                        </Badge>
-                        
-                        {device.warrantyPeriod && (
-                          <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
-                            보증 {device.warrantyPeriod}개월
-                          </Badge>
-                        )}
-                        
-                        {getStatusBadge(device.status)}
+                      <div>
+                        <p className="text-gray-600 font-medium">조건에 맞는 디바이스가 없습니다</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {searchTerm || statusFilter !== 'all' 
+                            ? '검색 조건을 변경해보세요.' 
+                            : '새로운 디바이스를 등록해보세요.'}
+                        </p>
                       </div>
                     </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredDevices.map((device) => (
+                  <TableRow key={device.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
+                    {/* 디바이스 ID */}
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        <Smartphone className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium text-gray-900">{device.id}</span>
+                      </div>
+                    </TableCell>
                     
-                    <div className="flex items-center space-x-6">
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500 mb-1">등록일</div>
-                        <div className="text-sm text-gray-700">
-                          {formatDate(device.registrationDate)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 디바이스 관리 영역 */}
-                <div className="p-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="font-medium text-gray-900">디바이스 관리</span>
-                        </div>
+                    {/* 종류 */}
+                    <TableCell className="py-4">
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        {device.deviceType}
+                      </Badge>
+                    </TableCell>
+                    
+                    {/* 보증 기간 */}
+                    <TableCell className="py-4">
+                      <span className="text-sm text-gray-700">
+                        {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
+                      </span>
+                    </TableCell>
+                    
+                    {/* 상태 */}
+                    <TableCell className="py-4">
+                      {getStatusBadge(device.status)}
+                    </TableCell>
+                    
+                    {/* 등록일 */}
+                    <TableCell className="py-4">
+                      <span className="text-sm text-gray-600">
+                        {formatDate(device.registrationDate)}
+                      </span>
+                    </TableCell>
+                    
+                    {/* 액션 */}
+                    <TableCell className="py-4 text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        {/* 상태 변경 드롭다운 */}
+                        <Select
+                          value={device.status}
+                          onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="AVAILABLE">사용 가능</SelectItem>
+                            <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                            <SelectItem value="IN_USE">사용 중</SelectItem>
+                            <SelectItem value="MAINTENANCE">점검 중</SelectItem>
+                            <SelectItem value="RETURNED">반납 완료</SelectItem>
+                            <SelectItem value="DISPOSED">폐기</SelectItem>
+                          </SelectContent>
+                        </Select>
                         
-                        <div className="text-center">
-                          <div className="text-xs text-gray-500 mb-1">상태 변경</div>
-                          <Select
-                            value={device.status}
-                            onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
-                          >
-                            <SelectTrigger className="w-32 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="AVAILABLE">사용 가능</SelectItem>
-                              <SelectItem value="ASSIGNED">배정 완료</SelectItem>
-                              <SelectItem value="IN_USE">사용 중</SelectItem>
-                              <SelectItem value="MAINTENANCE">점검 중</SelectItem>
-                              <SelectItem value="RETURNED">반납 완료</SelectItem>
-                              <SelectItem value="DISPOSED">폐기</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      {/* 액션 버튼들 */}
-                      <div className="flex items-center space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleAssignDevice(device)}
                           disabled={device.status !== 'AVAILABLE'}
-                          className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors"
+                          className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors px-3 py-1.5 h-auto"
                           title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
                         >
                           <UserPlus className="w-4 h-4 mr-1" />
@@ -586,20 +594,20 @@ const DeviceInventorySection: React.FC = () => {
                           size="sm" 
                           variant="outline"
                           onClick={() => handleDeleteDevice(device.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
+                          className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors px-3 py-1.5 h-auto"
                           title="디바이스 삭제"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           삭제
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* 디바이스 등록 모달 */}
