@@ -411,126 +411,200 @@ const DeviceInventorySection: React.FC = () => {
 
       {/* 디바이스 등록 모달 */}
       <Dialog open={isRegisterModalOpen} onOpenChange={setIsRegisterModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>📝 신규 디바이스 등록</DialogTitle>
-            <DialogDescription>
-              새로운 디바이스를 재고에 등록합니다.
-            </DialogDescription>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader className="pb-6 border-b border-slate-200">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-100 rounded-xl">
+                <Plus className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900">신규 디바이스 등록</DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  새로운 LINK BAND 디바이스를 재고에 등록합니다
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="deviceName">디바이스 이름 *</Label>
-              <Input
-                id="deviceName"
-                placeholder="예: LXB-02630003"
-                value={newDevice.deviceName}
-                onChange={(e) => setNewDevice(prev => ({ ...prev, deviceName: e.target.value }))}
-                required
-              />
+          <div className="py-6 space-y-8">
+            {/* 기본 정보 섹션 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                <h3 className="text-lg font-semibold text-slate-900">기본 정보</h3>
+                <span className="text-sm text-slate-500">(필수)</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="deviceName" className="text-sm font-medium text-slate-700">
+                    디바이스 이름 <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="deviceName"
+                    placeholder="예: LXB-02630003"
+                    value={newDevice.deviceName}
+                    onChange={(e) => setNewDevice(prev => ({ ...prev, deviceName: e.target.value }))}
+                    className="h-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-slate-500">고유한 디바이스 식별자를 입력하세요</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deviceType" className="text-sm font-medium text-slate-700">
+                    디바이스 종류 <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={newDevice.deviceType}
+                    onValueChange={(value) => setNewDevice(prev => ({ ...prev, deviceType: value }))}
+                  >
+                    <SelectTrigger className="h-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LINK_BAND_2.0">
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-4 h-4 text-slate-500" />
+                          LINK BAND 2.0
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="LINK_BAND_3.0">
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-4 h-4 text-slate-500" />
+                          LINK BAND 3.0
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="registrationDate" className="text-sm font-medium text-slate-700">
+                    등록 일자 <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="registrationDate"
+                    value={newDevice.registrationDate?.toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: 'numeric',
+                      hour12: true
+                    })}
+                    readOnly
+                    className="h-10 bg-slate-50 border-slate-300 cursor-not-allowed text-slate-600"
+                  />
+                  <p className="text-xs text-slate-500">현재 시간으로 자동 설정됩니다</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="warrantyPeriod" className="text-sm font-medium text-slate-700">
+                    보증 기간 <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={newDevice.warrantyPeriod?.toString()}
+                    onValueChange={(value) => setNewDevice(prev => ({ ...prev, warrantyPeriod: Number(value) }))}
+                  >
+                    <SelectTrigger className="h-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6">6개월</SelectItem>
+                      <SelectItem value="12">12개월 (권장)</SelectItem>
+                      <SelectItem value="24">24개월</SelectItem>
+                      <SelectItem value="36">36개월</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="deviceType">디바이스 종류 *</Label>
-              <Select
-                value={newDevice.deviceType}
-                onValueChange={(value) => setNewDevice(prev => ({ ...prev, deviceType: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="LINK_BAND_2.0">LINK BAND 2.0</SelectItem>
-                  <SelectItem value="LINK_BAND_3.0">LINK BAND 3.0</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* 추가 정보 섹션 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+                <h3 className="text-lg font-semibold text-slate-900">추가 정보</h3>
+                <span className="text-sm text-slate-500">(선택)</span>
+              </div>
 
-            <div>
-              <Label htmlFor="registrationDate">등록 일자 *</Label>
-              <Input
-                id="registrationDate"
-                value={newDevice.registrationDate?.toLocaleString('ko-KR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric',
-                  hour12: true
-                })}
-                readOnly
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="purchaseCost" className="text-sm font-medium text-slate-700">
+                    구매 비용 (원)
+                  </Label>
+                  <Input
+                    id="purchaseCost"
+                    type="number"
+                    placeholder="500,000"
+                    value={newDevice.purchaseCost || ''}
+                    onChange={(e) => setNewDevice(prev => ({ 
+                      ...prev, 
+                      purchaseCost: e.target.value ? Number(e.target.value) : undefined 
+                    }))}
+                    className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500"
+                  />
+                  <p className="text-xs text-slate-500">디바이스 구매 비용을 입력하세요</p>
+                </div>
 
-            <div>
-              <Label htmlFor="purchaseCost">구매 비용 (원)</Label>
-              <Input
-                id="purchaseCost"
-                type="number"
-                placeholder="예: 500000"
-                value={newDevice.purchaseCost || ''}
-                onChange={(e) => setNewDevice(prev => ({ 
-                  ...prev, 
-                  purchaseCost: e.target.value ? Number(e.target.value) : undefined 
-                }))}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supplier" className="text-sm font-medium text-slate-700">
+                    공급업체
+                  </Label>
+                  <Input
+                    id="supplier"
+                    placeholder="LOOXID LABS"
+                    value={newDevice.supplier || ''}
+                    onChange={(e) => setNewDevice(prev => ({ ...prev, supplier: e.target.value }))}
+                    className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500"
+                  />
+                  <p className="text-xs text-slate-500">디바이스 제조사 또는 공급업체</p>
+                </div>
+              </div>
 
-            <div>
-              <Label htmlFor="supplier">공급업체</Label>
-              <Input
-                id="supplier"
-                placeholder="예: LOOXID LABS"
-                value={newDevice.supplier || ''}
-                onChange={(e) => setNewDevice(prev => ({ ...prev, supplier: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="warrantyPeriod">보증 기간 *</Label>
-              <Select
-                value={newDevice.warrantyPeriod?.toString()}
-                onValueChange={(value) => setNewDevice(prev => ({ ...prev, warrantyPeriod: Number(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6">6개월</SelectItem>
-                  <SelectItem value="12">12개월</SelectItem>
-                  <SelectItem value="24">24개월</SelectItem>
-                  <SelectItem value="36">36개월</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">메모</Label>
-              <Textarea
-                id="notes"
-                placeholder="특이사항이나 메모를 입력하세요..."
-                value={newDevice.notes || ''}
-                onChange={(e) => setNewDevice(prev => ({ ...prev, notes: e.target.value }))}
-                rows={3}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
+                  메모
+                </Label>
+                <Textarea
+                  id="notes"
+                  placeholder="디바이스에 대한 특이사항이나 추가 정보를 입력하세요..."
+                  value={newDevice.notes || ''}
+                  onChange={(e) => setNewDevice(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  className="border-slate-300 focus:border-orange-500 focus:ring-orange-500 resize-none"
+                />
+                <p className="text-xs text-slate-500">최대 500자까지 입력 가능합니다</p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-6 border-t border-slate-200 gap-3">
             <Button
               variant="outline"
               onClick={() => setIsRegisterModalOpen(false)}
               disabled={isRegistering}
+              className="h-10 px-6 border-slate-300 text-slate-700 hover:bg-slate-50"
             >
               취소
             </Button>
             <Button 
               onClick={handleRegisterDevice} 
               disabled={isRegistering || !newDevice.deviceName.trim()}
+              className="h-10 px-6 bg-green-600 hover:bg-green-700 text-white disabled:bg-slate-400"
             >
-              {isRegistering ? '등록 중...' : '등록'}
+              {isRegistering ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  등록 중...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  등록하기
+                </div>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
