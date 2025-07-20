@@ -39,14 +39,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../../shared/components/ui/card';
 import { Badge } from '../../../../../shared/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '../../../../../shared/components/ui/table';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -333,20 +325,20 @@ const DeviceInventorySection: React.FC = () => {
 
   const getStatusBadge = (status: DeviceInventory['status']) => {
     const statusConfig = {
-      'AVAILABLE': { color: 'bg-green-100 text-green-800', label: '사용 가능' },
-      'ASSIGNED': { color: 'bg-blue-100 text-blue-800', label: '배정 완료' },
-      'IN_USE': { color: 'bg-yellow-100 text-yellow-800', label: '사용 중' },
-      'MAINTENANCE': { color: 'bg-orange-100 text-orange-800', label: '점검 중' },
-      'RETURNED': { color: 'bg-gray-100 text-gray-800', label: '반납 완료' },
-      'DISPOSED': { color: 'bg-red-100 text-red-800', label: '폐기' }
+      'AVAILABLE': { color: 'bg-green-50 text-green-700 border-green-200', label: '사용 가능' },
+      'ASSIGNED': { color: 'bg-blue-50 text-blue-700 border-blue-200', label: '배정 완료' },
+      'IN_USE': { color: 'bg-yellow-50 text-yellow-700 border-yellow-200', label: '사용 중' },
+      'MAINTENANCE': { color: 'bg-orange-50 text-orange-700 border-orange-200', label: '점검 중' },
+      'RETURNED': { color: 'bg-gray-50 text-gray-700 border-gray-200', label: '반납 완료' },
+      'DISPOSED': { color: 'bg-red-50 text-red-700 border-red-200', label: '폐기' }
     };
     
     const config = statusConfig[status] || statusConfig['AVAILABLE'];
     
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <Badge variant="outline" className={`text-xs ${config.color}`}>
         {config.label}
-      </span>
+      </Badge>
     );
   };
 
@@ -488,92 +480,126 @@ const DeviceInventorySection: React.FC = () => {
           </div>
         </div>
 
-        {/* 테이블 */}
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-semibold text-slate-700">디바이스 ID</TableHead>
-                <TableHead className="font-semibold text-slate-700">종류</TableHead>
-                <TableHead className="font-semibold text-slate-700">등록일</TableHead>
-                <TableHead className="font-semibold text-slate-700">상태</TableHead>
-                <TableHead className="font-semibold text-slate-700">보증 기간</TableHead>
-                <TableHead className="font-semibold text-slate-700">액션</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDevices.map((device) => (
-                <TableRow key={device.id} className="hover:bg-slate-50 transition-colors">
-                  <TableCell className="font-medium text-slate-900">{device.id}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-700">{device.deviceType}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-slate-600">{formatDate(device.registrationDate)}</TableCell>
-                  <TableCell>{getStatusBadge(device.status)}</TableCell>
-                  <TableCell className="text-slate-600">
-                    {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {/* 상태 변경 드롭다운 */}
-                      <Select
-                        value={device.status}
-                        onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
-                      >
-                        <SelectTrigger className="w-28 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="AVAILABLE">사용 가능</SelectItem>
-                          <SelectItem value="ASSIGNED">배정 완료</SelectItem>
-                          <SelectItem value="IN_USE">사용 중</SelectItem>
-                          <SelectItem value="MAINTENANCE">점검 중</SelectItem>
-                          <SelectItem value="RETURNED">반납 완료</SelectItem>
-                          <SelectItem value="DISPOSED">폐기</SelectItem>
-                        </SelectContent>
-                      </Select>
+        {/* 디바이스 카드 목록 */}
+        {filteredDevices.length === 0 ? (
+          <Card className="p-8 bg-white border border-gray-200">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-xl">
+                <Package className="w-8 h-8 text-blue-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">조건에 맞는 디바이스가 없습니다</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm || statusFilter !== 'all' 
+                    ? '검색 조건에 맞는 디바이스가 없습니다.' 
+                    : '아직 등록된 디바이스가 없습니다.'}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredDevices.map((device) => (
+              <div key={device.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                {/* 디바이스 정보 헤더 */}
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Smartphone className="w-5 h-5 text-gray-500" />
+                        <span className="text-lg font-semibold text-gray-900">{device.id}</span>
+                      </div>
                       
-                      {/* 배정 버튼 */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAssignDevice(device)}
-                        disabled={device.status !== 'AVAILABLE'}
-                        className="h-8 px-2 text-xs"
-                        title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
-                      >
-                        <UserPlus className="w-3 h-3" />
-                      </Button>
-                      
-                      {/* 삭제 버튼 */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteDevice(device.id)}
-                        className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="디바이스 삭제"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      {/* 디바이스 정보 Badge들 */}
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          {device.deviceType}
+                        </Badge>
+                        
+                        {device.warrantyPeriod && (
+                          <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
+                            보증 {device.warrantyPeriod}개월
+                          </Badge>
+                        )}
+                        
+                        {getStatusBadge(device.status)}
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              
-              {filteredDevices.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-slate-500">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>조건에 맞는 디바이스가 없습니다.</p>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                    
+                    <div className="flex items-center space-x-6">
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-1">등록일</div>
+                        <div className="text-sm text-gray-700">
+                          {formatDate(device.registrationDate)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 디바이스 관리 영역 */}
+                <div className="p-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="font-medium text-gray-900">디바이스 관리</span>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 mb-1">상태 변경</div>
+                          <Select
+                            value={device.status}
+                            onValueChange={(value) => handleStatusChange(device.id, value as DeviceInventory['status'])}
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="AVAILABLE">사용 가능</SelectItem>
+                              <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                              <SelectItem value="IN_USE">사용 중</SelectItem>
+                              <SelectItem value="MAINTENANCE">점검 중</SelectItem>
+                              <SelectItem value="RETURNED">반납 완료</SelectItem>
+                              <SelectItem value="DISPOSED">폐기</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      {/* 액션 버튼들 */}
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAssignDevice(device)}
+                          disabled={device.status !== 'AVAILABLE'}
+                          className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors"
+                          title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
+                        >
+                          <UserPlus className="w-4 h-4 mr-1" />
+                          배정하기
+                        </Button>
+                        
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleDeleteDevice(device.id)}
+                          className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
+                          title="디바이스 삭제"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          삭제
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 디바이스 등록 모달 */}
