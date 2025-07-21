@@ -218,12 +218,11 @@ class MeasurementUserManagementService {
         queryConstraints.push(where('isActive', '==', filter.isActive));
       }
 
-      // 쿼리 생성 (where 조건들만 먼저)
+      // 쿼리 생성 (인덱스 오류를 피하기 위해 orderBy 제거 후 클라이언트에서 정렬)
       const whereConstraints = queryConstraints;
       const q = query(
         collection(db, this.collectionName), 
-        ...whereConstraints,
-        orderBy('createdAt', 'desc')
+        ...whereConstraints
       );
       const snapshot = await getDocs(q);
       
@@ -237,6 +236,13 @@ class MeasurementUserManagementService {
         lastReportDate: doc.data().lastReportDate?.toDate(),
         tokenExpiresAt: doc.data().tokenExpiresAt?.toDate()
       })) as MeasurementUser[];
+
+      // 클라이언트 사이드에서 createdAt 기준으로 정렬
+      users.sort((a, b) => {
+        const dateA = a.createdAt || new Date(0);
+        const dateB = b.createdAt || new Date(0);
+        return dateB.getTime() - dateA.getTime(); // 최신순 정렬
+      });
 
       // 클라이언트 사이드 텍스트 검색
       if (filter.searchTerm) {
