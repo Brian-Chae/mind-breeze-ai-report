@@ -488,107 +488,223 @@ const DeviceInventorySection: React.FC = () => {
           </div>
         </div>
 
-        {/* 예쁜 테이블 */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50 border-b border-gray-200">
-                <TableHead className="font-semibold text-gray-700 py-4">디바이스 ID</TableHead>
-                <TableHead className="font-semibold text-gray-700 py-4">종류</TableHead>
-                <TableHead className="font-semibold text-gray-700 py-4">보증 기간</TableHead>
-                <TableHead className="font-semibold text-gray-700 py-4">상태</TableHead>
-                <TableHead className="font-semibold text-gray-700 py-4">등록일</TableHead>
-                <TableHead className="font-semibold text-gray-700 py-4 text-right">액션</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDevices.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full">
-                        <Package className="w-6 h-6 text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 font-medium">조건에 맞는 디바이스가 없습니다</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {searchTerm || statusFilter !== 'all' 
-                            ? '검색 조건을 변경해보세요.' 
-                            : '새로운 디바이스를 등록해보세요.'}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
+        {/* 배정 대기 목록 */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-green-50 border-b border-green-200 px-6 py-4">
+              <div className="flex items-center space-x-2">
+                <Package className="w-5 h-5 text-green-600" />
+                <h3 className="text-lg font-semibold text-green-800">배정 대기 목록</h3>
+                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                  {filteredDevices.filter(device => device.status === 'AVAILABLE').length}개
+                </Badge>
+              </div>
+            </div>
+            
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 border-b border-gray-200">
+                  <TableHead className="font-semibold text-gray-700 py-4">디바이스 ID</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">종류</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">보증 기간</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">상태</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">등록일</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4 text-right">액션</TableHead>
                 </TableRow>
-              ) : (
-                filteredDevices.map((device) => (
-                  <TableRow key={device.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
-                    {/* 디바이스 ID */}
-                    <TableCell className="py-4">
-                      <div className="flex items-center space-x-2">
-                        <Smartphone className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">{device.id}</span>
-                      </div>
-                    </TableCell>
-                    
-                    {/* 종류 */}
-                    <TableCell className="py-4">
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        {device.deviceType}
-                      </Badge>
-                    </TableCell>
-                    
-                    {/* 보증 기간 */}
-                    <TableCell className="py-4">
-                      <span className="text-sm text-gray-700">
-                        {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
-                      </span>
-                    </TableCell>
-                    
-                    {/* 상태 */}
-                    <TableCell className="py-4">
-                      {getStatusBadge(device.status)}
-                    </TableCell>
-                    
-                    {/* 등록일 */}
-                    <TableCell className="py-4">
-                      <span className="text-sm text-gray-600">
-                        {formatDate(device.registrationDate)}
-                      </span>
-                    </TableCell>
-                    
-                    {/* 액션 */}
-                    <TableCell className="py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAssignDevice(device)}
-                          disabled={device.status !== 'AVAILABLE'}
-                          className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors px-3 py-1.5 h-auto"
-                          title={device.status !== 'AVAILABLE' ? '사용 가능한 디바이스만 배정할 수 있습니다' : '디바이스 배정'}
-                        >
-                          <UserPlus className="w-4 h-4 mr-1" />
-                          배정하기
-                        </Button>
-                        
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleDeleteDevice(device.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors px-3 py-1.5 h-auto"
-                          title="디바이스 삭제"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          삭제
-                        </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredDevices.filter(device => device.status === 'AVAILABLE').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
+                          <Package className="w-6 h-6 text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium">배정 대기 중인 디바이스가 없습니다</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {searchTerm 
+                              ? '검색 조건에 맞는 배정 대기 디바이스가 없습니다.' 
+                              : '새로운 디바이스를 등록해보세요.'}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredDevices
+                    .filter(device => device.status === 'AVAILABLE')
+                    .map((device) => (
+                      <TableRow key={device.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
+                        {/* 디바이스 ID */}
+                        <TableCell className="py-4">
+                          <div className="flex items-center space-x-2">
+                            <Smartphone className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-900">{device.id}</span>
+                          </div>
+                        </TableCell>
+                        
+                        {/* 종류 */}
+                        <TableCell className="py-4">
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {device.deviceType}
+                          </Badge>
+                        </TableCell>
+                        
+                        {/* 보증 기간 */}
+                        <TableCell className="py-4">
+                          <span className="text-sm text-gray-700">
+                            {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
+                          </span>
+                        </TableCell>
+                        
+                        {/* 상태 */}
+                        <TableCell className="py-4">
+                          {getStatusBadge(device.status)}
+                        </TableCell>
+                        
+                        {/* 등록일 */}
+                        <TableCell className="py-4">
+                          <span className="text-sm text-gray-600">
+                            {formatDate(device.registrationDate)}
+                          </span>
+                        </TableCell>
+                        
+                        {/* 액션 */}
+                        <TableCell className="py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAssignDevice(device)}
+                              className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors px-3 py-1.5 h-auto"
+                              title="디바이스 배정"
+                            >
+                              <UserPlus className="w-4 h-4 mr-1" />
+                              배정하기
+                            </Button>
+                            
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDeleteDevice(device.id)}
+                              className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors px-3 py-1.5 h-auto"
+                              title="디바이스 삭제"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              삭제
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* 배정 완료 목록 */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
+              <div className="flex items-center space-x-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-blue-800">배정 완료 목록</h3>
+                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                  {filteredDevices.filter(device => device.status !== 'AVAILABLE').length}개
+                </Badge>
+              </div>
+            </div>
+            
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 border-b border-gray-200">
+                  <TableHead className="font-semibold text-gray-700 py-4">디바이스 ID</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">종류</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">보증 기간</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">상태</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">등록일</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4 text-right">액션</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDevices.filter(device => device.status !== 'AVAILABLE').length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-12">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full">
+                          <Users className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium">배정 완료된 디바이스가 없습니다</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {searchTerm 
+                              ? '검색 조건에 맞는 배정 완료 디바이스가 없습니다.' 
+                              : '디바이스를 배정하면 여기에 표시됩니다.'}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredDevices
+                    .filter(device => device.status !== 'AVAILABLE')
+                    .map((device) => (
+                      <TableRow key={device.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
+                        {/* 디바이스 ID */}
+                        <TableCell className="py-4">
+                          <div className="flex items-center space-x-2">
+                            <Smartphone className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-900">{device.id}</span>
+                          </div>
+                        </TableCell>
+                        
+                        {/* 종류 */}
+                        <TableCell className="py-4">
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {device.deviceType}
+                          </Badge>
+                        </TableCell>
+                        
+                        {/* 보증 기간 */}
+                        <TableCell className="py-4">
+                          <span className="text-sm text-gray-700">
+                            {device.warrantyPeriod ? `${device.warrantyPeriod}개월` : '-'}
+                          </span>
+                        </TableCell>
+                        
+                        {/* 상태 */}
+                        <TableCell className="py-4">
+                          {getStatusBadge(device.status)}
+                        </TableCell>
+                        
+                        {/* 등록일 */}
+                        <TableCell className="py-4">
+                          <span className="text-sm text-gray-600">
+                            {formatDate(device.registrationDate)}
+                          </span>
+                        </TableCell>
+                        
+                        {/* 액션 */}
+                        <TableCell className="py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDeleteDevice(device.id)}
+                              className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors px-3 py-1.5 h-auto"
+                              title="디바이스 삭제"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              삭제
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
