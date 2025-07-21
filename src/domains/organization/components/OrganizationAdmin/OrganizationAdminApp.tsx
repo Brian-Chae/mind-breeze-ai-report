@@ -41,7 +41,7 @@ import FirebaseService from '@core/services/FirebaseService'
 
 // 섹션별 컴포넌트 import
 import DashboardSection from './Dashboard/DashboardSection'
-import SystemAdminDashboard from './Dashboard/SystemAdminDashboard'
+import UnifiedAdminApp from '../UnifiedAdmin/UnifiedAdminApp'
 import OrganizationSection from './Organization/OrganizationSection'
 import MembersSection from './Members/MembersSection'
 import UsersSection from './Users/UsersSection'
@@ -433,12 +433,8 @@ export default function OrganizationAdminApp() {
     
     switch (currentSection) {
       case 'dashboard':
-        // 사용자 타입에 따라 다른 대시보드 렌더링
-        if (userType === 'SYSTEM_ADMIN') {
-          return <SystemAdminDashboard />
-        } else {
-          return <DashboardSection />
-        }
+        // 조직 관리자용 대시보드 (시스템 관리자는 별도 앱 사용)
+        return <DashboardSection />
       
       // 시스템 관리자 전용 섹션들
       case 'system':
@@ -506,18 +502,14 @@ export default function OrganizationAdminApp() {
         }
       
       default:
-        // 기본값도 사용자 타입에 따라 다르게
-        if (userType === 'SYSTEM_ADMIN') {
-          return <SystemAdminDashboard />
-        } else {
-          return <DashboardSection />
-        }
+        // 기본값은 조직 대시보드 (시스템 관리자는 별도 앱 사용)
+        return <DashboardSection />
     }
   }
 
-  // 시스템 관리자인 경우 새로운 사이드바 시스템 사용
+  // 시스템 관리자인 경우 통합 관리자 시스템 사용
   if (currentContext.user && (currentContext.user as any).userType === 'SYSTEM_ADMIN') {
-    return <SystemAdminDashboard onLogout={handleLogout} />
+    return <UnifiedAdminApp onLogout={handleLogout} />
   }
 
   return (

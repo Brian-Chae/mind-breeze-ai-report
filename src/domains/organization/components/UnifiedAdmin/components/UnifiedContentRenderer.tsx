@@ -1,9 +1,21 @@
 import React from 'react'
 import { UnifiedContentRendererProps } from '../types/unified-admin'
 
-// 기존 콘텐츠 컴포넌트들 임포트 (Phase 2에서 실제 연결 예정)
-// import { SystemDashboardContent } from '../../Dashboard/contents/SystemDashboardContent'
-// ... 기타 콘텐츠 컴포넌트들
+// 기존 시스템 관리자 콘텐츠 컴포넌트들 임포트
+import {
+  SystemDashboardContent,
+  SystemAnalyticsContent,
+  SystemMonitoringContent,
+  CreditManagementContent,
+  EnterpriseManagementContent,
+  DeviceManagementContent,
+  ReportManagementContent,
+  MeasurementDataContent,
+  UserManagementContent
+} from '../../OrganizationAdmin/Dashboard/contents'
+
+// 조직 관리자 콘텐츠 임포트 (Phase 3에서 연결 예정)
+import DashboardSection from '../../OrganizationAdmin/Dashboard/DashboardSection'
 
 /**
  * 통합 콘텐츠 렌더러 컴포넌트
@@ -16,36 +28,60 @@ export const UnifiedContentRenderer: React.FC<UnifiedContentRendererProps> = ({
   onNavigate
 }) => {
   const renderContent = () => {
-    // Phase 1에서는 플레이스홀더 반환
-    // Phase 2-3에서 실제 컴포넌트 연결 예정
+    // Phase 2: 시스템 관리자 컴포넌트 연결 완료
+    // Phase 3: 조직 관리자 컴포넌트 연결 예정
     switch (activeMenu) {
       case 'dashboard':
-        return <DashboardPlaceholder userType={userType} />
+        if (userType === 'SYSTEM_ADMIN') {
+          return <SystemDashboardContent />
+        } else {
+          return <DashboardSection />
+        }
       
       case 'enterprises':
-        return <EnterprisePlaceholder />
+        return <EnterpriseManagementContent onClose={() => {}} />
       
       case 'devices':
-        return <DevicesPlaceholder />
+        return <DeviceManagementContent onClose={() => {}} />
       
       case 'users':
-        return <UsersPlaceholder />
+        return <UserManagementContent />
       
       case 'reports':
-        return <ReportsPlaceholder />
+        return <ReportManagementContent />
       
       case 'measurements':
-        return <MeasurementsPlaceholder />
+        return <MeasurementDataContent />
       
       case 'credits':
-        return <CreditsPlaceholder />
+        return <CreditManagementContent isVisible={true} onClose={() => {}} />
       
       case 'analytics':
-        return <AnalyticsPlaceholder />
+        return (
+          <SystemAnalyticsContent 
+            systemStats={{
+              totalOrganizations: 45,
+              totalUsers: 1250,
+              activeUsers: 980,
+              totalReports: 8450,
+              systemHealth: 'healthy',
+              uptime: '99.9%',
+              totalCreditsUsed: 125000,
+              monthlyGrowth: 12.5,
+              todayMeasurements: 145,
+              thisWeekMeasurements: 892,
+              thisMonthMeasurements: 3456,
+              averageReportsPerUser: 6.8,
+              totalStorageUsed: 2800,
+              averageSessionDuration: 25.5
+            }} 
+          />
+        )
       
       case 'monitoring':
-        return <MonitoringPlaceholder />
+        return <SystemMonitoringContent isVisible={true} onClose={() => {}} />
       
+      // 조직 관리자 전용 메뉴들 (Phase 3에서 구현)
       case 'organization':
         return <OrganizationPlaceholder />
       

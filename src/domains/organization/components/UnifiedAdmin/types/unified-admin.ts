@@ -9,6 +9,7 @@ export type AdminUserType =
   | 'SYSTEM_ADMIN'
   | 'ORGANIZATION_ADMIN'
   | 'ORGANIZATION_MEMBER'
+  | 'INDIVIDUAL_USER'
 
 // 권한 타입
 export type AdminPermission = 
