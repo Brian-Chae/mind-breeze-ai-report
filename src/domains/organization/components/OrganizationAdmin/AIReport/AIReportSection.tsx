@@ -60,8 +60,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest') // 정렬 옵션
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all') // 기간 필터
   
-  // AI Report 설정을 위한 organization ID (임시로 하드코딩)
-  const organizationId = 'temp-org-id' // TODO: 실제 조직 ID로 교체 필요
+  // AI Report 설정을 위한 organization ID
+  const currentContext = enterpriseAuthService.getCurrentContext()
+  const organizationId = currentContext.organization?.id || ''
   
   // 렌더러 시스템 초기화
   useEffect(() => {

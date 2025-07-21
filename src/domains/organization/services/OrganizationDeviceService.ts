@@ -33,6 +33,12 @@ class OrganizationDeviceService extends BaseService {
 
   // 1. 전체 기기 관리 - 전체 기기 목록 조회
   async getAllDevices(organizationId: string, filters?: DeviceFilterOptions, search?: DeviceSearchOptions): Promise<OrganizationDevice[]> {
+    // organizationId 유효성 검사
+    if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
+      this.warn('getAllDevices: 유효하지 않은 organizationId', { organizationId })
+      return []
+    }
+
     return this.withCache(
       `all_devices_${organizationId}_${JSON.stringify(filters)}_${JSON.stringify(search)}`,
       async () => {
@@ -61,7 +67,7 @@ class OrganizationDeviceService extends BaseService {
           this.log('전체 기기 목록 조회 완료', { organizationId, count: devices.length })
           return devices
         } catch (error) {
-          this.error('전체 기기 목록 조회 실패', error as Error, { organizationId })
+          this.error('전체 기기 목록 조회 실패', error as Error, { organizationId, filters, search })
           return []
         }
       },
@@ -71,6 +77,12 @@ class OrganizationDeviceService extends BaseService {
 
   // 2. 렌탈 관리 - 렌탈 기기 목록 조회
   async getRentalDevices(organizationId: string): Promise<RentalDevice[]> {
+    // organizationId 유효성 검사
+    if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
+      this.warn('getRentalDevices: 유효하지 않은 organizationId', { organizationId })
+      return []
+    }
+
     return this.withCache(
       `rental_devices_${organizationId}`,
       async () => {
@@ -100,6 +112,12 @@ class OrganizationDeviceService extends BaseService {
 
   // 3. 구매 관리 - 구매 기기 목록 조회
   async getPurchaseDevices(organizationId: string): Promise<PurchaseDevice[]> {
+    // organizationId 유효성 검사
+    if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
+      this.warn('getPurchaseDevices: 유효하지 않은 organizationId', { organizationId })
+      return []
+    }
+
     return this.withCache(
       `purchase_devices_${organizationId}`,
       async () => {
@@ -177,6 +195,12 @@ class OrganizationDeviceService extends BaseService {
 
   // 6. A/S 및 환불 현황 조회
   async getServiceRequests(organizationId: string, type?: 'SERVICE' | 'REFUND'): Promise<OrganizationServiceRequest[]> {
+    // organizationId 유효성 검사
+    if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
+      this.warn('getServiceRequests: 유효하지 않은 organizationId', { organizationId, type })
+      return []
+    }
+
     return this.withCache(
       `service_requests_${organizationId}_${type || 'all'}`,
       async () => {
@@ -214,6 +238,12 @@ class OrganizationDeviceService extends BaseService {
 
   // 7. 디바이스 통계 조회
   async getDeviceStats(organizationId: string): Promise<OrganizationDeviceStats> {
+    // organizationId 유효성 검사
+    if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
+      this.warn('getDeviceStats: 유효하지 않은 organizationId', { organizationId })
+      return this.getDefaultStats()
+    }
+
     return this.withCache(
       `device_stats_${organizationId}`,
       async () => {

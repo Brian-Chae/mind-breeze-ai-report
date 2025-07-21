@@ -45,6 +45,7 @@ import {
 } from '@ui/dropdown-menu'
 import { toast } from 'sonner'
 import organizationDeviceService from '../../../services/OrganizationDeviceService'
+import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { 
   OrganizationDevice, 
   RentalDevice, 
@@ -75,12 +76,19 @@ export default function DevicesSection({ subSection, onNavigate }: DevicesSectio
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [autoRefresh, setAutoRefresh] = useState(false)
 
-  // 현재 조직 ID (실제로는 컨텍스트나 프로퍼티에서 가져와야 함)
-  const organizationId = 'current-org-id' // TODO: 실제 구현에서는 context에서 가져오기
+  // 현재 조직 ID를 enterpriseAuthService에서 가져오기
+  const currentContext = enterpriseAuthService.getCurrentContext()
+  const organizationId = currentContext.organization?.id
 
   useEffect(() => {
-    loadAllData()
-  }, [])
+    // organizationId가 유효한 경우에만 데이터 로드
+    if (organizationId) {
+      loadAllData()
+    } else {
+      console.warn('DevicesSection: 유효한 organizationId가 없습니다.', { currentContext })
+      setIsLoading(false)
+    }
+  }, [organizationId])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
