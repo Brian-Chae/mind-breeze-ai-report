@@ -17,6 +17,7 @@ import {
   getDocs, 
   updateDoc, 
   setDoc,
+  deleteDoc,
   query, 
   where, 
   orderBy, 
@@ -363,6 +364,41 @@ class DeviceInventoryService extends BaseService {
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
 
       this.log('디바이스 배정 정보 업데이트 완료', { deviceId, organizationId });
+    });
+  }
+
+  /**
+   * 디바이스 삭제
+   */
+  async deleteDevice(deviceId: string): Promise<void> {
+    return await this.measureAndLog('deleteDevice', async () => {
+      this.log('디바이스 삭제 시작', { deviceId });
+
+      // 디바이스 존재 확인
+      const device = await this.getDeviceById(deviceId);
+      if (!device) {
+        const error = new Error('디바이스를 찾을 수 없습니다');
+        this.error('디바이스를 찾을 수 없음', error, { deviceId });
+        throw error;
+      }
+
+      // 배정된 디바이스는 삭제 전 확인
+      if (device.status === 'ASSIGNED' || device.status === 'IN_USE') {
+        const error = new Error('배정되거나 사용 중인 디바이스는 삭제할 수 없습니다');
+        this.error('배정된 디바이스 삭제 시도', error, { deviceId, status: device.status });
+        throw error;
+      }
+
+      // Firestore에서 삭제
+      const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
+      await deleteDoc(docRef);
+
+      // 캐시 무효화
+      await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
+      await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
+      await this.cache.delete(`${this.COLLECTION_NAME}:available`);
+
+      this.log('디바이스 삭제 완료', { deviceId });
     });
   }
 

@@ -138,6 +138,11 @@ const DeviceInventorySection: React.FC = () => {
     salePrice: 297000
   });
 
+  // 삭제 모달 상태
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deviceToDelete, setDeviceToDelete] = useState<DeviceInventory | null>(null);
+
   // ============================================================================
   // Data Loading
   // ============================================================================
@@ -272,20 +277,39 @@ const DeviceInventorySection: React.FC = () => {
     loadOrganizations();
   };
 
-  const handleDeleteDevice = async (deviceId: string) => {
-    if (!confirm('정말로 이 디바이스를 삭제하시겠습니까?')) {
-      return;
-    }
+  const handleDeleteDevice = (device: DeviceInventory) => {
+    setDeviceToDelete(device);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deviceToDelete) return;
 
     try {
-      // TODO: DeviceInventoryService에 deleteDevice 메서드 구현 필요
-      // await deviceInventoryService.deleteDevice(deviceId);
-      toast.info('삭제 기능은 추후 구현 예정입니다.');
-      // await loadData();
-    } catch (error) {
+      setIsDeleting(true);
+      
+      await deviceInventoryService.deleteDevice(deviceToDelete.id);
+      
+      toast.success(`${deviceToDelete.id}가 성공적으로 삭제되었습니다.`);
+      
+      // 모달 닫기 및 초기화
+      setIsDeleteModalOpen(false);
+      setDeviceToDelete(null);
+      
+      // 데이터 새로고침
+      await loadData();
+      
+    } catch (error: any) {
       console.error('디바이스 삭제 실패:', error);
-      toast.error('디바이스 삭제 중 오류가 발생했습니다.');
+      toast.error(error.message || '디바이스 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDeviceToDelete(null);
   };
 
   const handleConfirmAssignment = async () => {
@@ -612,7 +636,7 @@ const DeviceInventorySection: React.FC = () => {
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => handleDeleteDevice(device.id)}
+                              onClick={() => handleDeleteDevice(device)}
                               className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors px-3 py-1.5 h-auto"
                               title="디바이스 삭제"
                             >
@@ -731,7 +755,7 @@ const DeviceInventorySection: React.FC = () => {
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => handleDeleteDevice(device.id)}
+                              onClick={() => handleDeleteDevice(device)}
                               className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors px-3 py-1.5 h-auto"
                               title="디바이스 삭제"
                             >
@@ -1149,6 +1173,75 @@ const DeviceInventorySection: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <UserPlus className="w-4 h-4" />
                   배정하기
+                </div>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 디바이스 삭제 확인 모달 */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="max-w-md bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
+          <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-red-100 rounded-xl">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 삭제</DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  이 작업은 되돌릴 수 없습니다
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-6 bg-white">
+            <div className="text-center space-y-4">
+              <div className="text-lg font-medium text-slate-900">
+                정말로 <span className="font-bold text-red-600">{deviceToDelete?.id}</span>를 삭제하시겠습니까?
+              </div>
+              <div className="text-sm text-slate-600">
+                삭제된 디바이스는 복구할 수 없으며, 모든 관련 데이터가 영구적으로 제거됩니다.
+              </div>
+              {deviceToDelete?.status === 'ASSIGNED' && (
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="text-sm text-orange-800 font-medium">
+                    ⚠️ 이 디바이스는 현재 배정된 상태입니다
+                  </div>
+                  <div className="text-xs text-orange-700 mt-1">
+                    배정된 디바이스는 삭제할 수 없습니다
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-200 bg-white pt-4">
+            <Button
+              variant="outline"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+              className="flex-1"
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting || deviceToDelete?.status === 'ASSIGNED'}
+              className="flex-1 bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <div className="flex items-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>삭제 중...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Trash2 className="w-4 h-4" />
+                  <span>삭제하기</span>
                 </div>
               )}
             </Button>
