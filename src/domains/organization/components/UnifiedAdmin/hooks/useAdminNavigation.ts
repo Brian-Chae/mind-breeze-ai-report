@@ -17,7 +17,8 @@ export const useAdminNavigation = (): AdminNavigationHook => {
   const getCurrentMenuFromURL = useCallback(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean)
     if (pathSegments.length >= 2) {
-      return pathSegments[1] // /admin/dashboard -> dashboard
+      // /admin/ai-reports -> ai-reports
+      return pathSegments[1]
     }
     return 'dashboard'
   }, [location.pathname])
