@@ -107,7 +107,7 @@ class MeasurementUserManagementService {
       }
 
       // 권한 확인
-      if (!enterpriseAuthService.hasPermission('measurement_users.create')) {
+      if (currentUser.userType !== 'ORGANIZATION_ADMIN' && currentUser.userType !== 'SYSTEM_ADMIN' && !enterpriseAuthService.hasPermission('measurement_users.create')) {
         throw new Error('측정 대상자 등록 권한이 없습니다.');
       }
 
@@ -196,8 +196,8 @@ class MeasurementUserManagementService {
       ];
 
       // 권한에 따른 필터링
-      if (enterpriseAuthService.hasPermission('measurement_users.view.all')) {
-        // ORGANIZATION_ADMIN: 모든 데이터 접근 가능
+      if (currentUser.userType === 'ORGANIZATION_ADMIN' || currentUser.userType === 'SYSTEM_ADMIN' || enterpriseAuthService.hasPermission('measurement_users.view.all')) {
+        // ORGANIZATION_ADMIN/SYSTEM_ADMIN: 모든 데이터 접근 가능
       } else if (enterpriseAuthService.hasPermission('measurement_users.view.own')) {
         // ORGANIZATION_MEMBER: 자신이 등록한 것만
         queryConstraints.push(where('createdByUserId', '==', currentUser.id));
@@ -271,7 +271,8 @@ class MeasurementUserManagementService {
       const currentUser = enterpriseAuthService.getCurrentContext().user;
       
       // 권한 확인
-      if (!enterpriseAuthService.hasPermission('measurement_users.view.all') && 
+      if (currentUser?.userType !== 'ORGANIZATION_ADMIN' && currentUser?.userType !== 'SYSTEM_ADMIN' && 
+          !enterpriseAuthService.hasPermission('measurement_users.view.all') && 
           userData.createdByUserId !== currentUser?.id) {
         throw new Error('해당 측정 대상자에 대한 접근 권한이 없습니다.');
       }
@@ -304,9 +305,9 @@ class MeasurementUserManagementService {
       }
 
       // 권한 확인
-      const hasEditAll = enterpriseAuthService.hasPermission('measurement_users.edit.all');
-      const hasEditOwn = enterpriseAuthService.hasPermission('measurement_users.edit.own');
       const currentUser = enterpriseAuthService.getCurrentContext().user;
+      const hasEditAll = currentUser?.userType === 'ORGANIZATION_ADMIN' || currentUser?.userType === 'SYSTEM_ADMIN' || enterpriseAuthService.hasPermission('measurement_users.edit.all');
+      const hasEditOwn = enterpriseAuthService.hasPermission('measurement_users.edit.own');
       
       if (!hasEditAll && !(hasEditOwn && existing.createdByUserId === currentUser?.id)) {
         throw new Error('수정 권한이 없습니다.');
@@ -342,9 +343,9 @@ class MeasurementUserManagementService {
       }
 
       // 권한 확인
-      const hasDeleteAll = enterpriseAuthService.hasPermission('measurement_users.delete.all');
-      const hasDeleteOwn = enterpriseAuthService.hasPermission('measurement_users.delete.own');
       const currentUser = enterpriseAuthService.getCurrentContext().user;
+      const hasDeleteAll = currentUser?.userType === 'ORGANIZATION_ADMIN' || currentUser?.userType === 'SYSTEM_ADMIN' || enterpriseAuthService.hasPermission('measurement_users.delete.all');
+      const hasDeleteOwn = enterpriseAuthService.hasPermission('measurement_users.delete.own');
       
       if (!hasDeleteAll && !(hasDeleteOwn && existing.createdByUserId === currentUser?.id)) {
         throw new Error('삭제 권한이 없습니다.');
@@ -674,7 +675,7 @@ class MeasurementUserManagementService {
       }
 
       // 권한 확인
-      if (!enterpriseAuthService.hasPermission('measurement_users.create')) {
+      if (currentUser.userType !== 'ORGANIZATION_ADMIN' && currentUser.userType !== 'SYSTEM_ADMIN' && !enterpriseAuthService.hasPermission('measurement_users.create')) {
         throw new Error('측정 대상자 등록 권한이 없습니다.');
       }
 
