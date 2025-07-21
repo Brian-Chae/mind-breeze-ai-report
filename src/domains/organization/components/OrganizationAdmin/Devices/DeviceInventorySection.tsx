@@ -1347,7 +1347,7 @@ const DeviceInventorySection: React.FC = () => {
               variant="outline"
               onClick={handleCancelUnassign}
               disabled={isUnassigning}
-              className="flex-1"
+              className="flex-1 text-slate-700 border-slate-300 hover:bg-slate-50"
             >
               취소
             </Button>
