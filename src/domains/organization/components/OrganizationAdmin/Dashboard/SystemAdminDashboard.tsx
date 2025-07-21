@@ -8,7 +8,8 @@ import {
   EnterpriseManagementContent,
   DeviceManagementContent,
   ReportManagementContent,
-  MeasurementDataContent
+  MeasurementDataContent,
+  UserManagementContent
 } from './contents'
 
 interface SystemAdminDashboardProps {
@@ -73,6 +74,8 @@ export default function SystemAdminDashboard({ onLogout }: SystemAdminDashboardP
         return <EnterpriseManagementContent onClose={() => setActiveMenu('dashboard')} />
       case 'devices':
         return <DeviceManagementContent onClose={() => setActiveMenu('dashboard')} />
+      case 'users':
+        return <UserManagementContent />
       case 'reports':
         return <ReportManagementContent />
       case 'measurements':

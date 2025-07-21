@@ -35,7 +35,12 @@ import {
   HardDrive,
   Shield,
   Cpu,
-  Monitor
+  Monitor,
+  Table,
+  Phone,
+  Mail,
+  User,
+  Package
 } from 'lucide-react'
 import systemAdminService, { 
   SystemDeviceOverview, 
@@ -45,6 +50,7 @@ import systemAdminService, {
 } from '../../../../services/SystemAdminService'
 import serviceManagementService from '../../../../services/ServiceManagementService'
 import DeviceInventorySection from '../../Devices/DeviceInventorySection'
+import SalesManagementTab from '../components/SalesManagementTab'
 import { 
   ServiceRequest, 
   ServiceStatistics, 
@@ -56,7 +62,25 @@ export default function DeviceManagementContent() {
   const [systemOverview, setSystemOverview] = useState<SystemDeviceOverview | null>(null)
   const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null)
   const [organizationBreakdown, setOrganizationBreakdown] = useState<OrganizationDeviceBreakdown | null>(null)
+  const [topOrganizations, setTopOrganizations] = useState<Array<{
+    name: string
+    usageHours: number
+    utilizationRate: number
+    devices: number
+  }>>([])
+  const [isLoadingTopOrgs, setIsLoadingTopOrgs] = useState(false)
   const [usageAnalytics, setUsageAnalytics] = useState<DeviceUsageAnalytics | null>(null)
+  const [deviceUsageStats, setDeviceUsageStats] = useState<{
+    assignedDevicesCount: number
+    totalMeasurements: number
+    averageMeasurementsPerDevice: number
+    todayUsedDevicesCount: number
+  }>({
+    assignedDevicesCount: 0,
+    totalMeasurements: 0,
+    averageMeasurementsPerDevice: 0,
+    todayUsedDevicesCount: 0
+  })
   
   // A/S 관련 상태
   const [serviceStatistics, setServiceStatistics] = useState<ServiceStatistics | null>(null)
@@ -69,23 +93,80 @@ export default function DeviceManagementContent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterType, setFilterType] = useState<string>('all')
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'assignment' | 'usage' | 'rental' | 'service'>('overview')
-  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'usage' | 'rental' | 'sales' | 'service'>('overview')
+  const [rentalAutoRefresh, setRentalAutoRefresh] = useState(false)
+  const [salesAutoRefresh, setSalesAutoRefresh] = useState(false)
+  
+  // 기기별 사용 현황 상태
+  const [deviceUsageList, setDeviceUsageList] = useState<Array<{
+    deviceId: string
+    deviceName: string
+    deviceType: string
+    organizationName: string
+    usageType: 'purchase' | 'rental'
+    rentalPeriod?: number
+    totalMeasurements: number
+    lastUsedDate: Date
+    status: 'active' | 'inactive' | 'maintenance'
+  }>>([])
+  const [usageLoading, setUsageLoading] = useState(false)
+
+  // 렌탈 관련 상태
+  const [rentalStats, setRentalStats] = useState({
+    totalContracts: 0,
+    activeRentals: 0,
+    scheduledReturns: 0,
+    overdueRentals: 0,
+    monthlyRevenue: 0,
+    returnedThisWeek: 0
+  })
+  
+  const [scheduledReturns, setScheduledReturns] = useState<Array<{
+    id: string
+    deviceId: string
+    organization: string
+    contact: string
+    contactPhone?: string
+    scheduledDate: Date
+    daysUntil: number
+    isOverdue: boolean
+  }>>([])
+  
+  const [rentalLoading, setRentalLoading] = useState(false)
 
   useEffect(() => {
     loadSystemOverview()
     loadServiceData()
+    loadDeviceUsageList()
+    loadTopOrganizations()
+    loadDeviceUsageStats()
+    loadRentalData()
   }, [])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
-    if (autoRefresh) {
+    if (rentalAutoRefresh && activeTab === 'overview') {
       interval = setInterval(loadSystemOverview, 30000) // 30초마다 새로고침
     }
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [autoRefresh])
+  }, [rentalAutoRefresh, activeTab])
+
+  // 렌탈 자동 새로고침
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (rentalAutoRefresh && activeTab === 'rental') {
+      interval = setInterval(() => {
+        loadRentalData()
+      }, 5000) // 5초마다 새로고침
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [rentalAutoRefresh, activeTab])
 
   const loadSystemOverview = async () => {
     setIsLoading(true)
@@ -112,6 +193,73 @@ export default function DeviceManagementContent() {
     }
   }
 
+  // 조직별 통계 로드
+  const loadTopOrganizations = async () => {
+    setIsLoadingTopOrgs(true)
+    try {
+      const topOrgStats = await systemAdminService.getTopOrganizationUsageStats()
+      setTopOrganizations(topOrgStats)
+    } catch (error) {
+      console.error('조직별 통계 로드 실패:', error)
+    } finally {
+      setIsLoadingTopOrgs(false)
+    }
+  }
+
+  // 디바이스 사용 통계 로드
+  const loadDeviceUsageStats = async () => {
+    try {
+      const stats = await systemAdminService.getDeviceUsageStatsSummary()
+      setDeviceUsageStats(stats)
+    } catch (error) {
+      console.error('디바이스 사용 통계 로드 실패:', error)
+    }
+  }
+
+  const loadRentalData = async () => {
+    setRentalLoading(true)
+    try {
+      // 렌탈 통계 조회
+      const stats = await systemAdminService.getRentalStatistics()
+      console.log('[DEBUG] 렌탈 통계:', stats)
+      setRentalStats(stats)
+      
+      // 회수 일정 조회
+      const returns = await systemAdminService.getScheduledReturns()
+      console.log('[DEBUG] 회수 일정 데이터:', returns)
+      console.log('[DEBUG] 회수 일정 데이터 길이:', returns.length)
+      setScheduledReturns(returns)
+    } catch (error) {
+      console.error('렌탈 데이터 로드 실패:', error)
+    } finally {
+      setRentalLoading(false)
+    }
+  }
+
+  // 렌탈 회수 처리
+  const handleRentalReturn = async (deviceId: string) => {
+    try {
+      setRentalLoading(true)
+      
+      // 회수 처리
+      await systemAdminService.processRentalReturn(deviceId, {
+        actualReturnDate: new Date(),
+        returnCondition: '정상',
+        returnNotes: '시스템에서 회수 처리됨'
+      })
+      
+      // 데이터 다시 로드
+      await loadRentalData()
+      
+      alert('렌탈 회수 처리가 완료되었습니다.')
+    } catch (error) {
+      console.error('렌탈 회수 처리 실패:', error)
+      alert(`렌탈 회수 처리에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
+    } finally {
+      setRentalLoading(false)
+    }
+  }
+
   const loadOrganizationBreakdown = async (organizationId: string) => {
     try {
       const breakdown = await systemAdminService.getOrganizationDeviceBreakdown(organizationId)
@@ -130,6 +278,20 @@ export default function DeviceManagementContent() {
       setActiveTab('usage')
     } catch (error) {
       console.error('디바이스 사용 분석 로드 실패:', error)
+    }
+  }
+
+  // 기기별 사용 현황 로드
+  const loadDeviceUsageList = async () => {
+    setUsageLoading(true)
+    try {
+      const deviceUsageData = await systemAdminService.getDeviceUsageStatusList()
+      setDeviceUsageList(deviceUsageData)
+    } catch (error) {
+      console.error('기기별 사용 현황 로드 실패:', error)
+      setDeviceUsageList([])
+    } finally {
+      setUsageLoading(false)
     }
   }
 
@@ -221,78 +383,12 @@ export default function DeviceManagementContent() {
     <DeviceInventorySection />
   )
 
-  // 배정 탭 렌더링
-  const renderAssignmentTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">디바이스 배정</h2>
-            <p className="text-slate-600 mt-1">조직별 디바이스 배정 및 관리</p>
-          </div>
-          <div className="flex gap-3">
-            <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              새 배정
-            </button>
-          </div>
-        </div>
-
-        {/* 기업별 배정 현황 */}
-        <div className="grid grid-cols-1 gap-4">
-          {filteredOrganizations.slice(0, 5).map((org) => (
-            <div key={org.organizationId} className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-100 rounded-xl">
-                    <Building2 className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{org.organizationName}</h3>
-                    <p className="text-sm text-slate-600">총 {org.totalDevices}개 디바이스</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-green-600">{org.activeDevices}</p>
-                    <p className="text-xs text-slate-600">활성</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-slate-600">{org.offlineDevices}</p>
-                    <p className="text-xs text-slate-600">오프라인</p>
-                  </div>
-                  <button 
-                    onClick={() => loadOrganizationBreakdown(org.organizationId)}
-                    className="border border-slate-300 text-slate-700 px-3 py-1 rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    상세보기
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-
   // 사용 현황 탭 렌더링
   const renderUsageTab = () => {
-    // 실제 사용 통계 계산 (실제 Firestore 데이터로 교체 가능)
-    const usageStats = {
-      totalUsageHours: systemOverview ? Math.round(systemOverview.totalDevices * 18.7) : 0,
-      averageUtilizationRate: systemOverview ? Math.round((systemOverview.activeDevices / systemOverview.totalDevices) * 100) : 0,
-      averageSessionDuration: 24.6,
-      activeDevicesCount: systemOverview?.activeDevices || 0
-    };
+    // 실제 Firebase 데이터 사용
+    const usageStats = deviceUsageStats;
 
-    const topOrganizations = [
-      { name: 'LOOXID LABS INC.', usageHours: 480, utilizationRate: 92, devices: 12 },
-      { name: 'Samsung Electronics', usageHours: 356, utilizationRate: 87, devices: 8 },
-      { name: 'LG Electronics', usageHours: 298, utilizationRate: 84, devices: 6 },
-      { name: 'SK Telecom', usageHours: 245, utilizationRate: 78, devices: 5 },
-      { name: 'Naver Corp', usageHours: 189, utilizationRate: 73, devices: 4 }
-    ];
+    // 실제 Firebase 데이터에서 가져온 조직별 통계 사용
 
     return (
       <div className="space-y-6">
@@ -304,10 +400,14 @@ export default function DeviceManagementContent() {
             </div>
             <div className="flex gap-3">
               <button 
-                onClick={() => loadSystemOverview()}
+                onClick={() => {
+                  loadSystemOverview()
+                  loadTopOrganizations()
+                  loadDeviceUsageStats()
+                }}
                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className={`w-4 h-4 ${isLoadingTopOrgs ? 'animate-spin' : ''}`} />
                 새로고침
               </button>
             </div>
@@ -318,12 +418,12 @@ export default function DeviceManagementContent() {
             <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-indigo-100 rounded-xl">
-                  <Activity className="w-6 h-6 text-indigo-600" />
+                  <Smartphone className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-indigo-700">총 사용 시간</p>
-                  <p className="text-2xl font-bold text-indigo-900">{usageStats.totalUsageHours.toLocaleString()}h</p>
-                  <p className="text-xs text-indigo-600">이번 달</p>
+                  <p className="text-sm font-medium text-indigo-700">활성 디바이스 수</p>
+                  <p className="text-2xl font-bold text-indigo-900">{usageStats.assignedDevicesCount || 0}</p>
+                  <p className="text-xs text-indigo-600">총 배정된 디바이스</p>
                 </div>
               </div>
             </div>
@@ -331,12 +431,12 @@ export default function DeviceManagementContent() {
             <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-emerald-100 rounded-xl">
-                  <TrendingUp className="w-6 h-6 text-emerald-600" />
+                  <Activity className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-emerald-700">평균 가동률</p>
-                  <p className="text-2xl font-bold text-emerald-900">{usageStats.averageUtilizationRate}%</p>
-                  <p className="text-xs text-emerald-600">+5.2% vs 지난달</p>
+                  <p className="text-sm font-medium text-emerald-700">총 측정 횟수</p>
+                  <p className="text-2xl font-bold text-emerald-900">{usageStats.totalMeasurements?.toLocaleString() || 0}</p>
+                  <p className="text-xs text-emerald-600">누적 측정 횟수</p>
                 </div>
               </div>
             </div>
@@ -344,12 +444,12 @@ export default function DeviceManagementContent() {
             <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-amber-100 rounded-xl">
-                  <Clock className="w-6 h-6 text-amber-600" />
+                  <BarChart3 className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-amber-700">평균 세션</p>
-                  <p className="text-2xl font-bold text-amber-900">{usageStats.averageSessionDuration}분</p>
-                  <p className="text-xs text-amber-600">세션당</p>
+                  <p className="text-sm font-medium text-amber-700">기기당 평균 측정</p>
+                  <p className="text-2xl font-bold text-amber-900">{usageStats.averageMeasurementsPerDevice || 0}회</p>
+                  <p className="text-xs text-amber-600">디바이스당 평균</p>
                 </div>
               </div>
             </div>
@@ -357,12 +457,12 @@ export default function DeviceManagementContent() {
             <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-100 rounded-xl">
-                  <Gauge className="w-6 h-6 text-blue-600" />
+                  <Calendar className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-700">활성 디바이스</p>
-                  <p className="text-2xl font-bold text-blue-900">{usageStats.activeDevicesCount}</p>
-                  <p className="text-xs text-blue-600">현재 온라인</p>
+                  <p className="text-sm font-medium text-blue-700">오늘 사용된 디바이스</p>
+                  <p className="text-2xl font-bold text-blue-900">{usageStats.todayUsedDevicesCount || 0}</p>
+                  <p className="text-xs text-blue-600">오늘 측정 기록</p>
                 </div>
               </div>
             </div>
@@ -375,31 +475,161 @@ export default function DeviceManagementContent() {
               TOP 5 조직별 사용 현황
             </h3>
             <div className="space-y-3">
-              {topOrganizations.map((org, index) => (
-                <div key={org.name} className="bg-white rounded-lg p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                      index === 0 ? 'bg-yellow-500' :
-                      index === 1 ? 'bg-slate-400' :
-                      index === 2 ? 'bg-amber-600' :
-                      'bg-slate-300'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900">{org.name}</h4>
-                      <p className="text-sm text-slate-600">{org.devices}개 디바이스</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-slate-900">{org.usageHours}시간</p>
-                    <p className={`text-sm ${org.utilizationRate >= 85 ? 'text-green-600' : org.utilizationRate >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      가동률 {org.utilizationRate}%
-                    </p>
-                  </div>
+              {isLoadingTopOrgs ? (
+                <div className="bg-white rounded-lg p-4 text-center text-slate-500">
+                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
+                  조직별 통계를 불러오는 중...
                 </div>
-              ))}
+              ) : topOrganizations.length === 0 ? (
+                <div className="bg-white rounded-lg p-4 text-center text-slate-500">
+                  조직별 사용 데이터가 없습니다.
+                </div>
+              ) : (
+                topOrganizations.map((org, index) => (
+                  <div key={org.name} className="bg-white rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                        index === 0 ? 'bg-yellow-500' :
+                        index === 1 ? 'bg-slate-400' :
+                        index === 2 ? 'bg-amber-600' :
+                        'bg-slate-300'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-900">{org.name}</h4>
+                        <p className="text-sm text-slate-600">{org.devices}개 디바이스</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-slate-900">{org.usageHours}시간</p>
+                      <p className={`text-sm ${org.utilizationRate >= 85 ? 'text-green-600' : org.utilizationRate >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        가동률 {org.utilizationRate}%
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
+          </div>
+
+          {/* 기기별 사용 현황 테이블 */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Table className="w-5 h-5 text-indigo-600" />
+                기기별 사용 현황
+              </h3>
+              <button 
+                onClick={loadDeviceUsageList}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                새로고침
+              </button>
+            </div>
+            
+            {usageLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-indigo-600 mr-2" />
+                <span className="text-slate-600">데이터를 불러오는 중...</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">기기명</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">기기종류</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">사용 기업명</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">사용 방식</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">총 측정횟수</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">최근 사용일</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-900">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deviceUsageList.length > 0 ? (
+                      deviceUsageList.map((device) => (
+                        <tr key={device.deviceId} className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="h-4 w-4 text-indigo-600" />
+                              <span className="font-medium text-slate-900">{device.deviceName}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                              {device.deviceType}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4 text-slate-400" />
+                              <span className="text-slate-700">{device.organizationName}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              {device.usageType === 'purchase' ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                  구매
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    렌탈
+                                  </span>
+                                  <span className="text-xs text-slate-600">
+                                    {device.rentalPeriod}개월
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              <Activity className="h-4 w-4 text-purple-600" />
+                              <span className="font-medium text-slate-900">
+                                {device.totalMeasurements}회
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4 text-slate-400" />
+                              <span className="text-slate-700">
+                                {device.lastUsedDate.toLocaleDateString('ko-KR', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              device.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                              device.status === 'maintenance' ? 'bg-amber-100 text-amber-800' :
+                              'bg-slate-100 text-slate-800'
+                            }`}>
+                              {device.status === 'active' ? '활성' :
+                               device.status === 'maintenance' ? '유지보수' : '비활성'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-slate-500">
+                          사용 현황 데이터가 없습니다.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -408,38 +638,50 @@ export default function DeviceManagementContent() {
 
   // 렌탈 관리 탭 렌더링
   const renderRentalTab = () => {
-    // 렌탈 통계 계산 (실제 Firestore 데이터로 교체 가능)
-    const rentalStats = {
-      totalContracts: systemOverview ? Math.round(systemOverview.totalDevices * 0.7) : 0,
-      activeRentals: systemOverview ? Math.round(systemOverview.activeDevices * 0.8) : 0,
-      scheduledReturns: 12,
-      overdueRentals: 3,
-      monthlyRevenue: 18750000, // 1,875만원
-      returnedThisWeek: 8
-    };
-
-    const scheduledReturns = [
-      { id: 'LXB-001', organization: 'LOOXID LABS INC.', contact: '김영수', scheduledDate: new Date(2024, 1, 25), daysUntil: 2, isOverdue: false },
-      { id: 'LXB-005', organization: 'Samsung Electronics', contact: '박민지', scheduledDate: new Date(2024, 1, 26), daysUntil: 3, isOverdue: false },
-      { id: 'LXB-012', organization: 'LG Electronics', contact: '이준호', scheduledDate: new Date(2024, 1, 28), daysUntil: 5, isOverdue: false },
-      { id: 'LXB-009', organization: 'SK Telecom', contact: '최서영', scheduledDate: new Date(2024, 1, 20), daysUntil: -3, isOverdue: true },
-      { id: 'LXB-018', organization: 'Naver Corp', contact: '정성민', scheduledDate: new Date(2024, 1, 19), daysUntil: -4, isOverdue: true }
-    ];
 
     return (
       <div className="space-y-6">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">렌탈 관리</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-slate-900">렌탈 관리</h2>
+                {rentalAutoRefresh && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
+                    5초마다 자동 새로고침
+                  </div>
+                )}
+              </div>
               <p className="text-slate-600 mt-1">렌탈 디바이스 회수 및 스케줄 관리</p>
             </div>
             <div className="flex gap-3">
               <button 
-                onClick={() => loadSystemOverview()}
-                className="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+                onClick={() => setRentalAutoRefresh(!rentalAutoRefresh)}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                  rentalAutoRefresh 
+                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                }`}
               >
-                <RefreshCw className="w-4 h-4" />
+                {rentalAutoRefresh ? (
+                  <>
+                    <Pause className="w-4 h-4" />
+                    자동새로고침 중지
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    자동새로고침 시작
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={() => loadRentalData()}
+                className="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+                disabled={rentalLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${rentalLoading ? 'animate-spin' : ''}`} />
                 새로고침
               </button>
               <button className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
@@ -449,6 +691,13 @@ export default function DeviceManagementContent() {
             </div>
           </div>
 
+          {rentalLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-orange-600 mr-3" />
+              <span className="text-slate-600 text-lg">렌탈 데이터를 불러오는 중...</span>
+            </div>
+          ) : (
+            <>
           {/* 렌탈 현황 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
@@ -517,58 +766,149 @@ export default function DeviceManagementContent() {
             </div>
           </div>
 
-          {/* 회수 일정 목록 */}
+          {/* 렌탈 기기 목록 */}
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-orange-600" />
-              회수 일정 ({scheduledReturns.length}건)
+              <Package className="w-5 h-5 text-orange-600" />
+              렌탈 기기 목록 ({scheduledReturns.length}건)
             </h3>
-            <div className="space-y-3">
-              {scheduledReturns.map((rental) => (
-                <div key={rental.id} className={`rounded-lg p-4 flex items-center justify-between ${
-                  rental.isOverdue 
-                    ? 'bg-red-50 border border-red-200' 
-                    : rental.daysUntil <= 3 
-                      ? 'bg-yellow-50 border border-yellow-200'
-                      : 'bg-white border border-slate-200'
-                }`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-semibold ${
+            
+            {/* 필터 버튼 */}
+            <div className="mb-4 flex gap-2">
+              <button className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm font-medium">
+                연체 ({scheduledReturns.filter(r => r.isOverdue).length})
+              </button>
+              <button className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium">
+                회수 임박 ({scheduledReturns.filter(r => !r.isOverdue && r.daysUntil <= 7).length})
+              </button>
+              <button className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                정상 ({scheduledReturns.filter(r => !r.isOverdue && r.daysUntil > 7).length})
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700">상태</th>
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700">디바이스 ID</th>
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700">고객사</th>
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700">담당자 정보</th>
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700">디바이스 정보</th>
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700">렌탈 기간</th>
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-slate-700 text-center">액션</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduledReturns.map((rental) => (
+                    <tr key={rental.id} className={`border-b ${
                       rental.isOverdue 
-                        ? 'bg-red-100 text-red-800' 
-                        : rental.daysUntil <= 3
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {rental.isOverdue ? '연체' : `D-${rental.daysUntil}`}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-900">
-                        {rental.id} - {rental.organization}
-                      </h4>
-                      <p className="text-sm text-slate-600">
-                        담당자: {rental.contact} | 예정일: {rental.scheduledDate.toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {rental.isOverdue && (
-                      <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-                        {Math.abs(rental.daysUntil)}일 연체
-                      </span>
-                    )}
-                    <button className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
-                      rental.isOverdue 
-                        ? 'bg-red-600 hover:bg-red-700' 
-                        : 'bg-orange-600 hover:bg-orange-700'
-                    }`}>
-                      {rental.isOverdue ? '연체 처리' : '회수 처리'}
-                    </button>
-                  </div>
+                        ? 'bg-red-50 hover:bg-red-100' 
+                        : rental.daysUntil <= 7 
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'hover:bg-slate-50'
+                    } transition-colors`}>
+                      {/* 상태 */}
+                      <td className="py-3 px-2">
+                        <div className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold ${
+                          rental.isOverdue 
+                            ? 'bg-red-100 text-red-800' 
+                            : rental.daysUntil <= 7
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                        }`}>
+                          {rental.isOverdue 
+                            ? `D+${Math.abs(rental.daysUntil)} 연체` 
+                            : rental.daysUntil === 0 
+                              ? 'D-Day'
+                              : `D-${rental.daysUntil}`}
+                        </div>
+                      </td>
+                      
+                      {/* 디바이스 ID */}
+                      <td className="py-3 px-2">
+                        <span className="font-mono text-sm font-medium text-slate-900">{rental.id}</span>
+                      </td>
+                      
+                      {/* 고객사 */}
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-1">
+                          <Building2 className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm font-medium text-slate-900">{rental.organization}</span>
+                        </div>
+                      </td>
+                      
+                      {/* 담당자 정보 */}
+                      <td className="py-3 px-2">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3 text-slate-400" />
+                            <span className="text-sm text-slate-700">{rental.contact}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            <span className="text-xs text-slate-600">{rental.contactPhone || '010-0000-0000'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Mail className="w-3 h-3 text-slate-400" />
+                            <span className="text-xs text-slate-600">email@company.com</span>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      {/* 디바이스 정보 */}
+                      <td className="py-3 px-2">
+                        <div className="space-y-0.5">
+                          <span className="text-sm font-medium text-slate-900">LINK BAND 2.0</span>
+                        </div>
+                      </td>
+                      
+                      {/* 렌탈 기간 */}
+                      <td className="py-3 px-2">
+                        <div className="space-y-0.5">
+                          <div className="text-sm text-slate-700">
+                            시작일: {new Date(rental.scheduledDate.getTime() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR')}
+                          </div>
+                          <div className={`text-sm ${rental.isOverdue ? 'text-red-700 font-semibold' : 'text-slate-700'}`}>
+                            종료일: {rental.scheduledDate.toLocaleDateString('ko-KR')}
+                          </div>
+                        </div>
+                      </td>
+                      
+                      {/* 액션 */}
+                      <td className="py-3 px-2 text-center">
+                        <div className="flex gap-2 justify-center">
+                          <button 
+                            onClick={() => handleRentalReturn(rental.id)}
+                            disabled={rentalLoading}
+                            className={`px-3 py-1.5 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                              rental.isOverdue 
+                                ? 'bg-red-600 hover:bg-red-700' 
+                                : 'bg-orange-600 hover:bg-orange-700'
+                            }`}
+                          >
+                            {rentalLoading ? '처리중...' : rental.isOverdue ? '연체 처리' : '회수 처리'}
+                          </button>
+                          <button className="px-3 py-1.5 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
+                            상세보기
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {scheduledReturns.length === 0 && (
+                <div className="text-center py-8 text-slate-500">
+                  <Package className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>렌탈 기기가 없습니다.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -881,19 +1221,19 @@ export default function DeviceManagementContent() {
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-2">
           <div className="flex gap-2 overflow-x-auto">
             {[
-              { id: 'overview', label: '전체 현황', icon: Monitor, color: 'blue' },
-              { id: 'inventory', label: '재고 관리', icon: HardDrive, color: 'green' },
-              { id: 'assignment', label: '배정', icon: Building2, color: 'purple' },
-              { id: 'usage', label: '사용 현황', icon: BarChart3, color: 'indigo' },
-              { id: 'rental', label: '렌탈관리', icon: RefreshCw, color: 'orange' },
-              { id: 'service', label: 'A/S', icon: Wrench, color: 'red' }
+              { id: 'overview', label: '전체 현황', icon: Monitor },
+              { id: 'inventory', label: '재고 관리', icon: HardDrive },
+              { id: 'usage', label: '사용 현황', icon: BarChart3 },
+              { id: 'rental', label: '렌탈관리', icon: RefreshCw },
+              { id: 'sales', label: '판매기기관리', icon: Package },
+              { id: 'service', label: 'A/S', icon: Wrench }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? `bg-gradient-to-r from-${tab.color}-500 to-${tab.color}-600 text-white shadow-lg`
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -1004,14 +1344,19 @@ export default function DeviceManagementContent() {
           {/* 재고 관리 탭 */}
           {activeTab === 'inventory' && renderInventoryTab()}
 
-          {/* 배정 탭 */}
-          {activeTab === 'assignment' && renderAssignmentTab()}
-
           {/* 사용 현황 탭 */}
           {activeTab === 'usage' && renderUsageTab()}
 
           {/* 렌탈관리 탭 */}
           {activeTab === 'rental' && renderRentalTab()}
+
+          {/* 판매기기관리 탭 */}
+          {activeTab === 'sales' && (
+            <SalesManagementTab 
+              autoRefresh={salesAutoRefresh}
+              onAutoRefreshChange={setSalesAutoRefresh}
+            />
+          )}
 
           {/* A/S 탭 */}
           {activeTab === 'service' && renderServiceTab()}

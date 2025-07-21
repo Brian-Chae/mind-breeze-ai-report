@@ -16,7 +16,8 @@ import {
   Activity,
   TrendingUp,
   Shield,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react'
 
 export type SystemAdminMenuItem = 
@@ -26,6 +27,7 @@ export type SystemAdminMenuItem =
   | 'credits'
   | 'enterprises'
   | 'devices'
+  | 'users'
   | 'reports'
   | 'measurements'
 
@@ -57,6 +59,48 @@ export const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
       badge: null
     },
     {
+      id: 'enterprises' as SystemAdminMenuItem,
+      label: '기업관리',
+      icon: Building2,
+      description: '기업 현황 및 관리',
+      badge: notifications.enterprises || null
+    },
+    {
+      id: 'devices' as SystemAdminMenuItem,
+      label: '디바이스관리',
+      icon: Smartphone,
+      description: 'LINK BAND 디바이스 관리',
+      badge: notifications.devices || null
+    },
+    {
+      id: 'users' as SystemAdminMenuItem,
+      label: '사용자관리',
+      icon: Users,
+      description: '전체 사용자 관리',
+      badge: null
+    },
+    {
+      id: 'reports' as SystemAdminMenuItem,
+      label: '리포트관리',
+      icon: FileText,
+      description: 'AI 리포트 현황',
+      badge: null
+    },
+    {
+      id: 'measurements' as SystemAdminMenuItem,
+      label: '측정데이터관리',
+      icon: Database,
+      description: '측정 데이터 현황',
+      badge: null
+    },
+    {
+      id: 'credits' as SystemAdminMenuItem,
+      label: '크래딧관리',
+      icon: CreditCard,
+      description: '기업별 크레딧 현황',
+      badge: notifications.credits || null
+    },
+    {
       id: 'analytics' as SystemAdminMenuItem,
       label: '사용량 분석',
       icon: BarChart3,
@@ -70,41 +114,6 @@ export const SystemAdminSidebar: React.FC<SystemAdminSidebarProps> = ({
       description: '실시간 시스템 상태',
       badge: systemHealth !== 'healthy' ? 1 : null,
       badgeVariant: (systemHealth === 'error' ? 'destructive' : 'secondary') as "default" | "destructive" | "outline" | "secondary"
-    },
-    {
-      id: 'credits' as SystemAdminMenuItem,
-      label: '크레딧 관리',
-      icon: CreditCard,
-      description: '기업별 크레딧 현황',
-      badge: notifications.credits || null
-    },
-    {
-      id: 'enterprises' as SystemAdminMenuItem,
-      label: '기업 관리',
-      icon: Building2,
-      description: '기업 현황 및 관리',
-      badge: notifications.enterprises || null
-    },
-    {
-      id: 'devices' as SystemAdminMenuItem,
-      label: '디바이스 관리',
-      icon: Smartphone,
-      description: 'LINK BAND 디바이스 관리',
-      badge: notifications.devices || null
-    },
-    {
-      id: 'reports' as SystemAdminMenuItem,
-      label: '리포트 관리',
-      icon: FileText,
-      description: 'AI 리포트 현황',
-      badge: null
-    },
-    {
-      id: 'measurements' as SystemAdminMenuItem,
-      label: '측정 데이터 관리',
-      icon: Database,
-      description: '측정 데이터 현황',
-      badge: null
     }
   ]
 

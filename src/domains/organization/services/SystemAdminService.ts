@@ -1,5 +1,5 @@
 import { BaseService } from '@core/services/BaseService'
-import { db } from '@core/services/firebase'
+import { db, auth } from '@core/services/firebase'
 import { 
   collection, 
   doc, 
@@ -11,12 +11,41 @@ import {
   limit as firestoreLimit,
   Timestamp,
   QuerySnapshot,
-  DocumentData 
+  DocumentData,
+  addDoc,
+  updateDoc,
+  writeBatch,
+  runTransaction,
+  serverTimestamp,
+  increment
 } from 'firebase/firestore'
+import { createUserWithEmailAndPassword, updateProfile, deleteUser } from 'firebase/auth'
 import enterpriseAuthService from './EnterpriseAuthService'
-import { OrganizationInfo } from './CompanyService'
+import { OrganizationInfo, OrganizationService } from './CompanyService'
 import { OrganizationMember } from '../types/member'
 import { MeasurementUser } from '@domains/individual/services/MeasurementUserManagementService'
+import { OrganizationSize } from '../types/organization'
+import { 
+  DeviceSale, 
+  ServiceRequest,
+  SalesStatistics,
+  SalesListItem,
+  CreateSaleRequest,
+  CreateServiceRequestData,
+  CompleteServiceRequestData,
+  SalesSearchFilters,
+  SalesPaginationOptions,
+  calculateWarrantyRemainingDays,
+  getWarrantyStatus
+} from '../types/sales'
+import { 
+  DeviceSaleDocument,
+  ServiceRequestDocument,
+  transformSaleToDocument,
+  transformServiceRequestToDocument,
+  FIRESTORE_COLLECTIONS,
+  getCollectionPath
+} from '../types/sales-firestore'
 
 export interface SystemStats {
   totalOrganizations: number
@@ -2105,7 +2134,7 @@ export class SystemAdminService extends BaseService {
         }
       }
       
-      this.log('info', '무료 크레딧 지급 배치 처리 완료', { success, failed, total: actions.length })
+      this.log('무료 크레딧 지급 배치 처리 완료', { success, failed, total: actions.length })
       
       return { success, failed, results }
     })
@@ -2140,7 +2169,8 @@ export class SystemAdminService extends BaseService {
           type: 'system_event',
           description: `조직 크레딧 상태 변경: ${status} (${reason})`,
           severity: status === 'suspended' ? 'warning' : 'info',
-          metadata: { status, reason }
+          metadata: { status, reason },
+          timestamp: new Date()
         })
         
         this.log('info', '조직 크레딧 상태 업데이트 완료', {
@@ -3078,7 +3108,7 @@ export class SystemAdminService extends BaseService {
         }
       })
     } catch (error) {
-      this.log('error', '최근 활동 조회 실패', { organizationId, error })
+      this.error('최근 활동 조회 실패', error as Error, { organizationId })
       return []
     }
   }
@@ -3412,7 +3442,7 @@ export class SystemAdminService extends BaseService {
         return breakdown
 
       } catch (error) {
-        this.log('error', '조직 디바이스 현황 조회 실패', { organizationId, error })
+        this.error('조직 디바이스 현황 조회 실패', error as Error, { organizationId })
         throw new Error('조직 디바이스 현황을 조회할 수 없습니다.')
       }
     })
@@ -3582,7 +3612,7 @@ export class SystemAdminService extends BaseService {
         return analytics
 
       } catch (error) {
-        this.log('error', '디바이스 사용 분석 조회 실패', { organizationId, error })
+        this.error('디바이스 사용 분석 조회 실패', error as Error, { organizationId })
         throw new Error('디바이스 사용 분석을 조회할 수 없습니다.')
       }
     })
@@ -4274,6 +4304,1855 @@ export class SystemAdminService extends BaseService {
         throw error
       }
     })
+  }
+
+  /**
+   * 디바이스 사용 통계 요약 조회
+   */
+  async getDeviceUsageStatsSummary(): Promise<{
+    assignedDevicesCount: number
+    totalMeasurements: number
+    averageMeasurementsPerDevice: number
+    todayUsedDevicesCount: number
+  }> {
+    return this.measureAndLog('getDeviceUsageStatsSummary', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // 1. 배정된 디바이스 수 계산 (deviceInventory에서 ASSIGNED 상태인 것들)
+        const inventorySnapshot = await getDocs(collection(db, 'deviceInventory'))
+        const assignedDevices = inventorySnapshot.docs.filter(doc => {
+          const data = doc.data()
+          return data.status === 'ASSIGNED' || data.status === 'IN_USE'
+        })
+        const assignedDevicesCount = assignedDevices.length
+
+        // 2. 총 측정 횟수 계산 (measurementSessions 컬렉션에서)
+        let totalMeasurements = 0
+        const measurementsQuery = query(collection(db, 'measurementSessions'))
+        const measurementsSnapshot = await getDocs(measurementsQuery)
+        totalMeasurements = measurementsSnapshot.size
+
+        // 3. 기기당 평균 측정 횟수 계산
+        const averageMeasurementsPerDevice = assignedDevicesCount > 0 
+          ? Math.round(totalMeasurements / assignedDevicesCount) 
+          : 0
+
+        // 4. 오늘 사용된 디바이스 수 계산
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayDeviceIds = new Set<string>()
+
+        // 오늘 날짜의 측정 세션에서 사용된 디바이스 ID들을 수집
+        for (const doc of measurementsSnapshot.docs) {
+          const session = doc.data()
+          const sessionDate = session.createdAt?.toDate?.() || new Date(session.createdAt)
+          
+          if (sessionDate >= today && session.deviceId) {
+            todayDeviceIds.add(session.deviceId)
+          }
+        }
+
+        const todayUsedDevicesCount = todayDeviceIds.size
+
+        this.log('디바이스 사용 통계 조회 완료', {
+          assignedDevicesCount,
+          totalMeasurements,
+          averageMeasurementsPerDevice,
+          todayUsedDevicesCount
+        })
+
+        return {
+          assignedDevicesCount,
+          totalMeasurements,
+          averageMeasurementsPerDevice,
+          todayUsedDevicesCount
+        }
+
+      } catch (error) {
+        this.error('디바이스 사용 통계 조회 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 조직별 디바이스 사용 통계 TOP 5 조회
+   */
+  async getTopOrganizationUsageStats(): Promise<Array<{
+    name: string
+    usageHours: number
+    utilizationRate: number
+    devices: number
+  }>> {
+    return this.measureAndLog('getTopOrganizationUsageStats', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // deviceInventory 컬렉션에서 모든 디바이스 조회
+        const inventorySnapshot = await getDocs(collection(db, 'deviceInventory'))
+        const inventoryDevices = inventorySnapshot.docs
+
+        // 조직별 통계 계산
+        const organizationStats = new Map<string, {
+          name: string
+          deviceCount: number
+          totalUsageHours: number
+          activeDevices: number
+        }>()
+
+        for (const deviceDoc of inventoryDevices) {
+          const device = deviceDoc.data()
+          
+          // 배정된 조직이 있는 경우에만 통계에 포함
+          if (device.assignedOrganizationName) {
+            const orgName = device.assignedOrganizationName
+            
+            if (!organizationStats.has(orgName)) {
+              organizationStats.set(orgName, {
+                name: orgName,
+                deviceCount: 0,
+                totalUsageHours: 0,
+                activeDevices: 0
+              })
+            }
+
+            const stats = organizationStats.get(orgName)!
+            stats.deviceCount++
+            
+            // 사용 시간 계산 (임시 로직 - 실제로는 측정 세션에서 가져와야 함)
+            if (device.status === 'IN_USE' || device.status === 'ASSIGNED') {
+              stats.activeDevices++
+              // 배정일로부터 경과 시간을 기반으로 사용 시간 추정
+              if (device.assignedAt) {
+                const assignedDate = device.assignedAt.toDate?.() || new Date(device.assignedAt)
+                const daysSinceAssigned = Math.floor((Date.now() - assignedDate.getTime()) / (1000 * 60 * 60 * 24))
+                stats.totalUsageHours += Math.min(daysSinceAssigned * 8, 480) // 최대 60일 * 8시간
+              }
+            }
+          }
+        }
+
+        // 사용량 기준으로 정렬하고 TOP 5 반환
+        const topOrganizations = Array.from(organizationStats.values())
+          .map(org => ({
+            name: org.name,
+            usageHours: org.totalUsageHours,
+            utilizationRate: org.deviceCount > 0 ? Math.round((org.activeDevices / org.deviceCount) * 100) : 0,
+            devices: org.deviceCount
+          }))
+          .sort((a, b) => b.usageHours - a.usageHours)
+          .slice(0, 5)
+
+        this.log('조직별 사용 통계 조회 완료', {
+          totalOrganizations: organizationStats.size,
+          topCount: topOrganizations.length
+        })
+
+        return topOrganizations
+
+      } catch (error) {
+        this.error('조직별 사용 통계 조회 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 기기별 사용 현황 조회
+   */
+  async getDeviceUsageStatusList(): Promise<Array<{
+    deviceId: string
+    deviceName: string
+    deviceType: string
+    organizationName: string
+    usageType: 'purchase' | 'rental'
+    rentalPeriod?: number
+    totalMeasurements: number
+    lastUsedDate: Date
+    status: 'active' | 'inactive' | 'maintenance'
+  }>> {
+    return this.measureAndLog('getDeviceUsageStatusList', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // deviceInventory 컬렉션에서 모든 디바이스 조회
+        const inventorySnapshot = await getDocs(collection(db, 'deviceInventory'))
+        const inventoryDevices = inventorySnapshot.docs
+        
+
+        const deviceUsageList = []
+
+        for (const deviceDoc of inventoryDevices) {
+          const device = deviceDoc.data()
+          const deviceId = deviceDoc.id
+          
+
+          // 조직 정보 조회
+          let organizationName = '-'
+          // 먼저 저장된 조직명을 사용
+          if (device.assignedOrganizationName) {
+            organizationName = device.assignedOrganizationName
+          } 
+          // 조직명이 없고 조직 ID만 있는 경우에만 조회
+          else if (device.assignedOrganizationId) {
+            try {
+              const orgDoc = await getDoc(doc(db, 'organizations', device.assignedOrganizationId))
+              if (orgDoc.exists()) {
+                organizationName = orgDoc.data().name || '알 수 없음'
+              }
+            } catch (error) {
+              console.error(`조직 정보 조회 실패 (${device.assignedOrganizationId}):`, error)
+              organizationName = '조회 실패'
+            }
+          }
+
+          // 측정 세션 수 조회
+          let totalMeasurements = 0
+          try {
+            const sessionsQuery = query(
+              collection(db, 'measurementSessions'),
+              where('deviceId', '==', deviceId)
+            )
+            const sessionsSnapshot = await getDocs(sessionsQuery)
+            totalMeasurements = sessionsSnapshot.size
+          } catch (error) {
+            console.error(`측정 세션 조회 실패 (${deviceId}):`, error)
+          }
+
+          // 마지막 사용일 계산
+          let lastUsedDate = new Date(0)
+          if (device.assignedAt) {
+            lastUsedDate = device.assignedAt.toDate?.() || new Date(device.assignedAt)
+          } else if (device.updatedAt) {
+            lastUsedDate = device.updatedAt.toDate?.() || new Date(device.updatedAt)
+          } else if (device.registrationDate) {
+            lastUsedDate = device.registrationDate.toDate?.() || new Date(device.registrationDate)
+          }
+
+          // 사용 방식 결정 (인벤토리는 모두 구매로 가정)
+          const usageType: 'purchase' | 'rental' = 'purchase'
+          const rentalPeriod = undefined
+
+          // 상태 결정
+          let status: 'active' | 'inactive' | 'maintenance' = 'inactive'
+          if (device.status === 'IN_USE' || device.status === 'ASSIGNED') {
+            status = 'active'
+          } else if (device.status === 'MAINTENANCE') {
+            status = 'maintenance'
+          }
+
+          deviceUsageList.push({
+            deviceId,
+            deviceName: deviceId, // 시리얼 넘버가 ID
+            deviceType: device.deviceType || 'LINK_BAND_2.0',
+            organizationName,
+            usageType,
+            rentalPeriod,
+            totalMeasurements,
+            lastUsedDate,
+            status
+          })
+        }
+
+        // 최근 사용일 기준으로 정렬
+        deviceUsageList.sort((a, b) => b.lastUsedDate.getTime() - a.lastUsedDate.getTime())
+
+        this.log('기기별 사용 현황 조회 완료', { 
+          count: deviceUsageList.length,
+          activeDevices: deviceUsageList.filter(d => d.status === 'active').length
+        })
+
+        return deviceUsageList
+
+      } catch (error) {
+        this.error('기기별 사용 현황 조회 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  // ============================================================================
+  // 렌탈 관리 메서드
+  // ============================================================================
+
+  /**
+   * 렌탈 통계 조회
+   */
+  async getRentalStatistics(): Promise<{
+    totalContracts: number
+    activeRentals: number
+    scheduledReturns: number
+    overdueRentals: number
+    monthlyRevenue: number
+    returnedThisWeek: number
+  }> {
+    return this.measureAndLog('getRentalStatistics', async () => {
+      try {
+        
+        // 현재 날짜 기준 계산
+        const now = new Date()
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
+        const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        
+        // deviceRentals 컬렉션 조회
+        const rentalsSnapshot = await getDocs(collection(db, 'deviceRentals'))
+        
+        let totalContracts = 0
+        let activeRentals = 0
+        let scheduledReturns = 0
+        let overdueRentals = 0
+        let monthlyRevenue = 0
+        let returnedThisWeek = 0
+        
+        rentalsSnapshot.forEach((doc) => {
+          const rental = doc.data()
+          totalContracts++
+          
+          // 상태별 카운트
+          if (rental.status === 'ACTIVE') {
+            activeRentals++
+          } else if (rental.status === 'OVERDUE') {
+            overdueRentals++
+          }
+          
+          // 이번 주 반납 예정
+          if (rental.returnScheduledDate) {
+            const returnDate = rental.returnScheduledDate.toDate()
+            if (returnDate >= startOfWeek && returnDate <= endOfWeek) {
+              scheduledReturns++
+            }
+          }
+          
+          // 이번 주 반납 완료
+          if (rental.actualReturnDate && rental.status === 'COMPLETED') {
+            const actualReturn = rental.actualReturnDate.toDate()
+            if (actualReturn >= startOfWeek && actualReturn <= endOfWeek) {
+              returnedThisWeek++
+            }
+          }
+          
+          // 이번 달 수익 계산 (활성 렌탈만)
+          if (rental.status === 'ACTIVE' && rental.monthlyFee) {
+            monthlyRevenue += rental.monthlyFee
+          }
+        })
+        
+        this.log('렌탈 통계 조회 완료', {
+          totalContracts,
+          activeRentals,
+          overdueRentals
+        })
+        
+        return {
+          totalContracts,
+          activeRentals,
+          scheduledReturns,
+          overdueRentals,
+          monthlyRevenue,
+          returnedThisWeek
+        }
+        
+      } catch (error) {
+        this.error('렌탈 통계 조회 실패', error as Error)
+        // 에러 시 기본값 반환
+        return {
+          totalContracts: 0,
+          activeRentals: 0,
+          scheduledReturns: 0,
+          overdueRentals: 0,
+          monthlyRevenue: 0,
+          returnedThisWeek: 0
+        }
+      }
+    })
+  }
+
+  /**
+   * 회수 일정 목록 조회
+   */
+  async getScheduledReturns(): Promise<Array<{
+    id: string
+    deviceId: string
+    organization: string
+    contact: string
+    contactPhone?: string
+    contactEmail?: string
+    scheduledDate: Date
+    daysUntil: number
+    isOverdue: boolean
+  }>> {
+    return this.measureAndLog('getScheduledReturns', async () => {
+      try {
+        const now = new Date()
+        
+        // 모든 렌탈 조회 후 클라이언트에서 필터링 (임시)
+        const rentalsQuery = query(
+          collection(db, 'deviceRentals'),
+          orderBy('createdAt', 'desc')
+        )
+        
+        const rentalsSnapshot = await getDocs(rentalsQuery)
+        const scheduledReturns: Array<{
+          id: string
+          deviceId: string
+          organization: string
+          contact: string
+          contactPhone?: string
+          contactEmail?: string
+          scheduledDate: Date
+          daysUntil: number
+          isOverdue: boolean
+        }> = []
+        
+        console.log(`[DEBUG] 총 렌탈 문서 수: ${rentalsSnapshot.size}`)
+        
+        rentalsSnapshot.forEach((doc) => {
+          const rental = doc.data()
+          console.log(`[DEBUG] 렌탈 문서 ${doc.id}:`, {
+            deviceId: rental.deviceId,
+            organizationName: rental.organizationName,
+            status: rental.status,
+            returnScheduledDate: rental.returnScheduledDate,
+            contactName: rental.contactName
+          })
+          
+          // 활성 렌탈만 처리
+          const activeStatuses = ['ACTIVE', 'SCHEDULED_RETURN', 'OVERDUE']
+          if (!activeStatuses.includes(rental.status)) {
+            console.log(`[DEBUG] 비활성 렌탈 (${rental.status}) - 건너뜀`)
+            return
+          }
+          
+          if (rental.returnScheduledDate) {
+            const scheduledDate = rental.returnScheduledDate.toDate()
+            const diffTime = scheduledDate.getTime() - now.getTime()
+            const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+            
+            const returnItem = {
+              id: rental.deviceId || doc.id,
+              deviceId: rental.deviceId,
+              organization: rental.organizationName || '알 수 없음',
+              contact: rental.contactName || '담당자 미정',
+              contactPhone: rental.contactPhone,
+              contactEmail: rental.contactEmail,
+              scheduledDate,
+              daysUntil,
+              isOverdue: daysUntil < 0
+            }
+            
+            console.log(`[DEBUG] 회수 일정 항목 추가:`, returnItem)
+            scheduledReturns.push(returnItem)
+          } else {
+            console.log(`[DEBUG] returnScheduledDate 없음 - 건너뜀`)
+          }
+        })
+        
+        this.log('회수 일정 조회 완료', {
+          count: scheduledReturns.length,
+          overdueCount: scheduledReturns.filter(r => r.isOverdue).length
+        })
+        
+        return scheduledReturns
+        
+      } catch (error) {
+        console.error('[DEBUG] getScheduledReturns 에러:', error)
+        this.error('회수 일정 조회 실패', error as Error, {
+          stack: error instanceof Error ? error.stack : undefined
+        })
+        return []
+      }
+    })
+  }
+
+  /**
+   * 렌탈 생성
+   */
+  async createRental(rentalData: {
+    deviceId: string
+    organizationId: string
+    organizationName: string
+    contractType: 'RENTAL' | 'LEASE'
+    rentalPeriod: number
+    monthlyFee: number
+    depositAmount: number
+    contactName: string
+    contactEmail: string
+    contactPhone: string
+    startDate?: Date
+    notes?: string
+  }): Promise<string> {
+    return this.measureAndLog('createRental', async () => {
+      try {
+        const now = new Date()
+        
+        // 시작일 설정 (기본값: 오늘)
+        const startDate = rentalData.startDate || now
+        
+        // 종료일 계산
+        const endDate = new Date(startDate)
+        endDate.setMonth(endDate.getMonth() + rentalData.rentalPeriod)
+        
+        // 반납 예정일 설정 (종료일과 동일)
+        const returnScheduledDate = new Date(endDate)
+        
+        // 총 계약 금액 계산
+        const totalContractValue = rentalData.monthlyFee * rentalData.rentalPeriod
+        
+        // 렌탈 문서 생성
+        const rentalDoc = {
+          deviceId: rentalData.deviceId,
+          organizationId: rentalData.organizationId,
+          organizationName: rentalData.organizationName,
+          contractType: rentalData.contractType,
+          rentalPeriod: rentalData.rentalPeriod,
+          startDate: Timestamp.fromDate(startDate),
+          endDate: Timestamp.fromDate(endDate),
+          monthlyFee: rentalData.monthlyFee,
+          depositAmount: rentalData.depositAmount,
+          totalContractValue,
+          contactName: rentalData.contactName,
+          contactEmail: rentalData.contactEmail,
+          contactPhone: rentalData.contactPhone,
+          status: 'ACTIVE',
+          returnScheduledDate: Timestamp.fromDate(returnScheduledDate),
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          createdBy: 'system', // 실제로는 현재 사용자 ID
+          notes: rentalData.notes || ''
+        }
+        
+        // Firestore에 저장
+        const docRef = await addDoc(collection(db, 'deviceRentals'), rentalDoc)
+        
+        // deviceInventory 업데이트 (렌탈 상태 반영)
+        await updateDoc(doc(db, 'deviceInventory', rentalData.deviceId), {
+          status: 'IN_USE',
+          currentRentalId: docRef.id,
+          updatedAt: Timestamp.now()
+        })
+        
+        this.log('렌탈 생성 완료', {
+          rentalId: docRef.id,
+          deviceId: rentalData.deviceId,
+          organizationId: rentalData.organizationId
+        })
+        
+        return docRef.id
+        
+      } catch (error) {
+        this.error('렌탈 생성 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 렌탈 회수 처리
+   */
+  async processRentalReturn(rentalId: string, returnData?: {
+    actualReturnDate?: Date
+    returnCondition?: string
+    returnNotes?: string
+  }): Promise<void> {
+    return this.measureAndLog('processRentalReturn', async () => {
+      try {
+        const now = new Date()
+        const actualReturnDate = returnData?.actualReturnDate || now
+        
+        // 렌탈 계약 조회 (deviceId로 검색)
+        const rentalsQuery = query(
+          collection(db, 'deviceRentals'),
+          where('deviceId', '==', rentalId),
+          where('status', 'in', ['ACTIVE', 'SCHEDULED_RETURN', 'OVERDUE'])
+        )
+        
+        const rentalsSnapshot = await getDocs(rentalsQuery)
+        
+        if (rentalsSnapshot.empty) {
+          throw new Error(`활성 렌탈 계약을 찾을 수 없습니다: ${rentalId}`)
+        }
+        
+        const batch = writeBatch(db)
+        
+        // 렌탈 계약 상태 업데이트
+        rentalsSnapshot.forEach((rentalDoc) => {
+          batch.update(rentalDoc.ref, {
+            status: 'RETURNED',
+            actualReturnDate: Timestamp.fromDate(actualReturnDate),
+            returnProcessedAt: Timestamp.now(),
+            returnCondition: returnData?.returnCondition || '정상',
+            returnNotes: returnData?.returnNotes || '',
+            updatedAt: Timestamp.now()
+          })
+        })
+        
+        // 디바이스 인벤토리 상태 업데이트 (AVAILABLE로 변경)
+        const deviceRef = doc(db, 'deviceInventory', rentalId)
+        batch.update(deviceRef, {
+          status: 'AVAILABLE',
+          currentRentalId: null,
+          businessType: null,
+          rentalOrganizationId: null,
+          rentalOrganizationName: null,
+          rentalOrganizationCode: null,
+          rentalStartDate: null,
+          rentalEndDate: null,
+          // 🔄 하위 호환성을 위해 기존 필드들도 정리
+          assignedOrganizationId: null,
+          assignedOrganizationName: null,
+          assignedOrganizationCode: null,
+          assignedAt: null,
+          updatedAt: Timestamp.now()
+        })
+        
+        await batch.commit()
+        
+        this.log('렌탈 회수 처리 완료', {
+          deviceId: rentalId,
+          actualReturnDate: actualReturnDate.toISOString(),
+          returnCondition: returnData?.returnCondition || '정상'
+        })
+        
+      } catch (error) {
+        this.error('렌탈 회수 처리 실패', error as Error, {
+          deviceId: rentalId,
+          error: error instanceof Error ? error.message : String(error)
+        })
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 연체 상태 업데이트 (정기 실행용)
+   */
+  async updateOverdueRentals(): Promise<void> {
+    return this.measureAndLog('updateOverdueRentals', async () => {
+      try {
+        const now = new Date()
+        
+        // 활성 렌탈 중 반납 예정일이 지난 것들 조회
+        const overdueQuery = query(
+          collection(db, 'deviceRentals'),
+          where('status', '==', 'ACTIVE'),
+          where('returnScheduledDate', '<', Timestamp.fromDate(now))
+        )
+        
+        const overdueSnapshot = await getDocs(overdueQuery)
+        const batch = writeBatch(db)
+        let updateCount = 0
+        
+        overdueSnapshot.forEach((doc) => {
+          const rental = doc.data()
+          const returnDate = rental.returnScheduledDate.toDate()
+          const overdueDays = Math.ceil((now.getTime() - returnDate.getTime()) / (1000 * 60 * 60 * 24))
+          
+          // 연체료 계산 (일일 렌탈료의 10% 추가)
+          const dailyFee = rental.monthlyFee / 30
+          const overdueAmount = Math.round(dailyFee * 1.1 * overdueDays)
+          
+          batch.update(doc.ref, {
+            status: 'OVERDUE',
+            overdueStartDate: rental.returnScheduledDate,
+            overdueDays,
+            overdueAmount,
+            updatedAt: Timestamp.now()
+          })
+          
+          updateCount++
+        })
+        
+        if (updateCount > 0) {
+          await batch.commit()
+        }
+        
+        this.log('연체 상태 업데이트 완료', {
+          updatedCount: updateCount
+        })
+        
+      } catch (error) {
+        this.error('연체 상태 업데이트 실패', error as Error)
+      }
+    })
+  }
+
+  // ============================================================================
+  // 판매 관리 메서드들 (Sales Management Methods)
+  // ============================================================================
+
+  /**
+   * 판매 통계 조회
+   */
+  async getSalesStatistics(): Promise<SalesStatistics> {
+    return this.measureAndLog('getSalesStatistics', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const now = new Date()
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        
+        // 전체 판매 데이터 조회
+        const allSalesSnapshot = await getDocs(collection(db, 'deviceSales'))
+        const allSales = allSalesSnapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          saleDate: doc.data().saleDate.toDate()
+        }))
+
+        // 기본 통계 계산
+        const totalSales = allSales.length
+        const totalRevenue = allSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+        const averageSalePrice = totalSales > 0 ? totalRevenue / totalSales : 0
+
+        // 월별 통계
+        const monthlySales = allSales.filter(sale => sale.saleDate >= monthStart)
+        const monthlyTotalSales = monthlySales.length
+        const monthlyRevenue = monthlySales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+
+        // 일별 통계
+        const todaySales = allSales.filter(sale => sale.saleDate >= todayStart)
+        const todayTotalSales = todaySales.length
+        const todayRevenue = todaySales.reduce((sum, sale) => sum + sale.totalAmount, 0)
+
+        // 보증 관련 통계
+        const activeWarranties = allSales.filter(sale => {
+          const warrantyEndDate = sale.warrantyEndDate?.toDate ? sale.warrantyEndDate.toDate() : new Date(sale.warrantyEndDate)
+          return warrantyEndDate > now
+        }).length
+
+        const expiredWarranties = totalSales - activeWarranties
+
+        // A/S 요청 통계
+        const serviceRequestsSnapshot = await getDocs(
+          query(collection(db, 'serviceRequests'), where('status', '==', 'PENDING'))
+        )
+        const pendingServiceRequests = serviceRequestsSnapshot.size
+
+        // 월별 추세 데이터 (최근 12개월)
+        const monthlyTrend = []
+        for (let i = 11; i >= 0; i--) {
+          const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+          const nextMonthDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+          
+          const monthSales = allSales.filter(sale => 
+            sale.saleDate >= monthDate && sale.saleDate < nextMonthDate
+          )
+          
+          const serviceRequests = await getDocs(
+            query(
+              collection(db, 'serviceRequests'),
+              where('requestDate', '>=', Timestamp.fromDate(monthDate)),
+              where('requestDate', '<', Timestamp.fromDate(nextMonthDate))
+            )
+          )
+
+          monthlyTrend.push({
+            month: monthDate.toISOString().substring(0, 7), // YYYY-MM
+            sales: monthSales.length,
+            revenue: monthSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+            serviceRequests: serviceRequests.size
+          })
+        }
+
+        // 상위 고객사 (매출 기준)
+        const organizationSales = allSales.reduce((acc, sale) => {
+          if (!acc[sale.organizationId]) {
+            acc[sale.organizationId] = {
+              organizationId: sale.organizationId,
+              organizationName: sale.organizationName,
+              totalSales: 0,
+              totalRevenue: 0
+            }
+          }
+          acc[sale.organizationId].totalSales += 1
+          acc[sale.organizationId].totalRevenue += sale.totalAmount
+          return acc
+        }, {} as Record<string, any>)
+
+        const topCustomers = Object.values(organizationSales)
+          .sort((a: any, b: any) => b.totalRevenue - a.totalRevenue)
+          .slice(0, 10)
+
+        return {
+          totalSales,
+          monthlyTotalSales,
+          todayTotalSales,
+          totalRevenue,
+          monthlyRevenue,
+          todayRevenue,
+          activeWarranties,
+          expiredWarranties,
+          pendingServiceRequests,
+          averageSalePrice,
+          customerSatisfactionRate: 4.2, // TODO: 실제 계산
+          monthlyTrend,
+          topCustomers
+        }
+
+      } catch (error) {
+        this.error('판매 통계 조회 실패', error as Error)
+        throw new Error('판매 통계 조회에 실패했습니다.')
+      }
+    })
+  }
+
+  /**
+   * 판매 기기 목록 조회
+   */
+  async getSalesListItems(
+    filters?: SalesSearchFilters,
+    pagination?: SalesPaginationOptions
+  ): Promise<SalesListItem[]> {
+    return this.measureAndLog('getSalesListItems', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        // 🎯 deviceInventory 컬렉션에서 SOLD 상태인 디바이스들을 조회
+        let salesQuery = collection(db, 'deviceInventory')
+        
+        // 디버깅: 모든 디바이스 상태 확인
+        console.log('[DEBUG] 모든 deviceInventory 문서 상태 확인 시작')
+        const allDevicesSnapshot = await getDocs(collection(db, 'deviceInventory'))
+        console.log('[DEBUG] 총 deviceInventory 문서 수:', allDevicesSnapshot.size)
+        
+        const statusCounts = new Map()
+        allDevicesSnapshot.docs.forEach(doc => {
+          const data = doc.data()
+          const status = data.status || 'undefined'
+          statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
+          
+          // SOLD 상태 또는 판매 관련 필드가 있는 디바이스만 로깅
+          if (status === 'SOLD' || data.businessType === 'SALE' || data.soldToOrganizationName) {
+            console.log('[DEBUG] 판매 관련 디바이스 발견:', {
+              id: doc.id,
+              status: data.status,
+              businessType: data.businessType,
+              soldToOrganizationName: data.soldToOrganizationName,
+              saleDate: data.saleDate,
+              salePrice: data.salePrice,
+              assignedOrganizationName: data.assignedOrganizationName  // 하위 호환용
+            })
+          }
+        })
+        
+        console.log('[DEBUG] 디바이스 상태별 카운트:', Object.fromEntries(statusCounts))
+        
+        // 🎯 판매 디바이스 조회 전략 변경 - 더 관대한 조건으로 수정
+        // businessType이 SALE인 것 또는 soldToOrganizationName이 있는 것들을 조회
+        console.log('[DEBUG] 쿼리 전략 변경 - businessType 또는 판매 정보 기준으로 조회')
+        
+        // 일단 모든 디바이스를 가져와서 클라이언트에서 필터링
+        let queryConstraints = []
+        
+        if (filters?.organizationId) {
+          queryConstraints.push(where('soldToOrganizationId', '==', filters.organizationId))
+        }
+        
+        if (filters?.dateRange) {
+          queryConstraints.push(
+            where('saleDate', '>=', Timestamp.fromDate(filters.dateRange.start)),
+            where('saleDate', '<=', Timestamp.fromDate(filters.dateRange.end))
+          )
+        }
+
+        // 정렬 - saleDate 기준으로 변경
+        const sortBy = pagination?.sortBy || 'saleDate'
+        const sortOrder = pagination?.sortOrder || 'desc'
+        queryConstraints.push(orderBy(sortBy, sortOrder))
+
+        // 제한
+        if (pagination?.limit) {
+          queryConstraints.push(firestoreLimit(pagination.limit))
+        }
+
+        const salesSnapshot = await getDocs(query(salesQuery, ...queryConstraints))
+        
+        console.log('[DEBUG] getSalesListItems - 판매 디바이스 조회 결과:', {
+          totalDocs: salesSnapshot.size,
+          queryConstraints: queryConstraints.map(c => ({ type: c.type, field: c.fieldPath?.toString() }))
+        })
+        
+        // 조회된 문서들 디버깅
+        salesSnapshot.docs.forEach(doc => {
+          const data = doc.data()
+          console.log('[DEBUG] 판매 디바이스 문서:', {
+            id: doc.id,
+            status: data.status,
+            businessType: data.businessType,
+            soldToOrganizationName: data.soldToOrganizationName,
+            saleDate: data.saleDate,
+            salePrice: data.salePrice
+          })
+        })
+        
+        // A/S 요청 데이터도 함께 조회 (디바이스 ID 기준으로)
+        const serviceRequestsSnapshot = await getDocs(collection(db, 'serviceRequests'))
+        const serviceRequests = new Map()
+        
+        serviceRequestsSnapshot.docs.forEach(doc => {
+          const data = doc.data()
+          const deviceId = data.deviceId
+          if (!serviceRequests.has(deviceId)) {
+            serviceRequests.set(deviceId, { active: 0, total: 0 })
+          }
+          serviceRequests.get(deviceId).total += 1
+          if (data.status !== 'COMPLETED') {
+            serviceRequests.get(deviceId).active += 1
+          }
+        })
+
+        // 🎯 클라이언트 사이드 필터링 - 판매 관련 디바이스만 추출
+        const salesListItems: SalesListItem[] = salesSnapshot.docs
+          .filter(doc => {
+            const data = doc.data()
+            // SOLD 상태이거나 businessType이 SALE이거나 판매 정보가 있는 경우
+            const isSold = data.status === 'SOLD'
+            const isSaleType = data.businessType === 'SALE'
+            const hasSaleInfo = data.soldToOrganizationName || data.saleDate
+            const isLegacySale = data.assignedOrganizationName && (data.businessType === 'SALE' || data.status === 'SOLD')
+            
+            const isSalesDevice = isSold || isSaleType || hasSaleInfo || isLegacySale
+            
+            console.log('[DEBUG] 디바이스 필터링:', {
+              id: doc.id,
+              status: data.status,
+              businessType: data.businessType,
+              hasSaleInfo: hasSaleInfo,
+              isLegacySale: isLegacySale,
+              isSalesDevice: isSalesDevice
+            })
+            
+            return isSalesDevice
+          })
+          .map(doc => {
+          const data = doc.data()
+          
+          // 🎯 새로운 필드들에서 데이터 추출
+          const saleDate = data.saleDate?.toDate() || data.createdAt?.toDate() || new Date()
+          const salePrice = data.salePrice || 297000  // 기본 가격
+          
+          console.log('[DEBUG] 판매 디바이스 매핑:', {
+            deviceId: doc.id,
+            organizationName: data.soldToOrganizationName || data.assignedOrganizationName || '알 수 없음',
+            saleDate: saleDate,
+            salePrice: salePrice,
+            contactName: data.contactName || '담당자명',
+            warrantyPeriod: data.warrantyPeriod || 12
+          })
+          
+          // 보증 기간 계산 (판매일 + 보증 기간)
+          const warrantyPeriod = data.warrantyPeriod || 12 // 개월
+          const warrantyEndDate = new Date(saleDate)
+          warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyPeriod)
+          
+          const warrantyRemainingDays = calculateWarrantyRemainingDays(warrantyEndDate)
+          const isWarrantyExpired = warrantyRemainingDays <= 0
+          
+          const serviceInfo = serviceRequests.get(doc.id) || { active: 0, total: 0 }
+
+          return {
+            id: doc.id,
+            deviceId: doc.id,  // 디바이스 ID가 문서 ID
+            deviceSerialNumber: doc.id,  // 디바이스 시리얼 번호
+            deviceModel: data.deviceType || 'LINK_BAND_2.0',
+            organizationName: data.soldToOrganizationName || data.assignedOrganizationName || '알 수 없음',
+            contactName: data.contactName || '담당자명',  // 🎯 실제 저장된 담당자명 사용
+            contactEmail: data.contactEmail || 'contact@company.com',  // 🎯 실제 저장된 이메일 사용
+            contactPhone: data.contactPhone || '010-0000-0000',  // 🎯 실제 저장된 전화번호 사용
+            saleDate,
+            salePrice,
+            warrantyEndDate,
+            warrantyRemainingDays,
+            isWarrantyExpired,
+            status: 'ACTIVE',  // 판매된 디바이스는 기본적으로 ACTIVE
+            activeServiceRequests: serviceInfo.active,
+            totalServiceRequests: serviceInfo.total
+          }
+        })
+
+        // 보증 상태 필터 적용 (클라이언트 사이드)
+        if (filters?.warrantyStatus) {
+          return salesListItems.filter(item => {
+            const warrantyStatus = getWarrantyStatus(item.warrantyEndDate)
+            return warrantyStatus === filters.warrantyStatus
+          })
+        }
+
+        console.log('[DEBUG] getSalesListItems 최종 결과:', {
+          totalItems: salesListItems.length,
+          items: salesListItems.map(item => ({
+            deviceId: item.deviceId,
+            organizationName: item.organizationName,
+            saleDate: item.saleDate,
+            warrantyStatus: item.warrantyStatus
+          }))
+        })
+        
+        return salesListItems
+
+      } catch (error) {
+        this.error('판매 기기 목록 조회 실패', error as Error)
+        throw new Error('판매 기기 목록 조회에 실패했습니다.')
+      }
+    })
+  }
+
+  /**
+   * 새 판매 생성 (디바이스 배정에서 판매로 설정할 때 호출)
+   */
+  async createSale(request: CreateSaleRequest): Promise<string> {
+    return this.measureAndLog('createSale', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const now = Timestamp.now()
+        const saleDate = request.saleDate ? Timestamp.fromDate(request.saleDate) : now
+        const warrantyPeriodMonths = request.warrantyPeriodMonths || 12
+        const warrantyEndDate = new Date(saleDate.toDate())
+        warrantyEndDate.setMonth(warrantyEndDate.getMonth() + warrantyPeriodMonths)
+
+        // 디바이스가 이미 판매되었는지 확인
+        const existingSaleQuery = query(
+          collection(db, 'deviceSales'),
+          where('deviceId', '==', request.deviceId)
+        )
+        const existingSaleSnapshot = await getDocs(existingSaleQuery)
+        
+        if (!existingSaleSnapshot.empty) {
+          throw new Error('이미 판매된 디바이스입니다.')
+        }
+
+        // 판매 정보 생성
+        const saleData: Omit<DeviceSaleDocument, 'id'> = {
+          deviceId: request.deviceId,
+          deviceSerialNumber: request.deviceId, // TODO: 실제 시리얼 번호로 교체
+          deviceModel: 'LINK_BAND_2.0', // TODO: 실제 모델명으로 교체
+          organizationId: request.organizationId,
+          organizationName: '', // TODO: 조직명 조회해서 설정
+          saleDate,
+          salePrice: request.salePrice,
+          totalAmount: request.salePrice,
+          contactName: request.contactName,
+          contactEmail: request.contactEmail,
+          contactPhone: request.contactPhone,
+          department: request.department,
+          warrantyStartDate: saleDate,
+          warrantyEndDate: Timestamp.fromDate(warrantyEndDate),
+          warrantyPeriodMonths,
+          status: 'ACTIVE',
+          createdAt: now,
+          updatedAt: now,
+          createdBy: enterpriseAuthService.getCurrentContext().user?.id || 'system',
+          notes: request.notes,
+          saleYear: saleDate.toDate().getFullYear(),
+          saleMonth: saleDate.toDate().getMonth() + 1,
+          saleDay: saleDate.toDate().getDate(),
+          warrantyExpiryYear: warrantyEndDate.getFullYear(),
+          warrantyExpiryMonth: warrantyEndDate.getMonth() + 1
+        }
+
+        // Firestore에 저장
+        const saleRef = await addDoc(collection(db, 'deviceSales'), saleData)
+
+        // 조직별 컬렉션에도 저장
+        const orgSaleData = { ...saleData }
+        delete (orgSaleData as any).organizationId
+        delete (orgSaleData as any).organizationName
+        
+        await addDoc(
+          collection(db, `organizations/${request.organizationId}/deviceSales`),
+          orgSaleData
+        )
+
+        // 디바이스 상태를 'SOLD'로 업데이트 (디바이스 인벤토리가 있다면)
+        try {
+          const deviceRef = doc(db, 'deviceInventory', request.deviceId)
+          await updateDoc(deviceRef, {
+            status: 'ASSIGNED', // 또는 'SOLD'
+            assignedOrganizationId: request.organizationId,
+            assignedAt: now,
+            updatedAt: now
+          })
+        } catch (deviceError) {
+          this.warn('디바이스 상태 업데이트 실패', { 
+            deviceId: request.deviceId,
+            error: deviceError instanceof Error ? deviceError.message : String(deviceError)
+          })
+        }
+
+        this.log('판매 생성 완료', {
+          saleId: saleRef.id,
+          deviceId: request.deviceId,
+          organizationId: request.organizationId
+        })
+
+        return saleRef.id
+
+      } catch (error) {
+        this.error('판매 생성 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * A/S 요청 생성
+   */
+  async createServiceRequest(request: CreateServiceRequestData): Promise<string> {
+    return this.measureAndLog('createServiceRequest', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const now = Timestamp.now()
+
+        // 판매 정보 확인
+        const saleDoc = await getDoc(doc(db, 'deviceSales', request.saleId))
+        if (!saleDoc.exists()) {
+          throw new Error('판매 정보를 찾을 수 없습니다.')
+        }
+
+        const saleData = saleDoc.data()
+
+        // A/S 요청 데이터 생성
+        const serviceRequestData: Omit<ServiceRequestDocument, 'id'> = {
+          saleId: request.saleId,
+          deviceId: saleData.deviceId,
+          deviceSerialNumber: saleData.deviceSerialNumber,
+          deviceModel: saleData.deviceModel,
+          organizationId: saleData.organizationId,
+          organizationName: saleData.organizationName,
+          requestDate: now,
+          serviceType: request.serviceType,
+          issueDescription: request.issueDescription,
+          urgency: request.urgency,
+          requestedBy: request.requestedBy,
+          status: 'PENDING',
+          createdAt: now,
+          updatedAt: now,
+          requestYear: now.toDate().getFullYear(),
+          requestMonth: now.toDate().getMonth() + 1,
+          isWarrantyService: now.toDate() <= saleData.warrantyEndDate.toDate()
+        }
+
+        // Firestore에 저장
+        const serviceRequestRef = await addDoc(collection(db, 'serviceRequests'), serviceRequestData)
+
+        // 조직별 컬렉션에도 저장
+        const orgServiceRequestData = { ...serviceRequestData }
+        delete (orgServiceRequestData as any).organizationId
+        delete (orgServiceRequestData as any).organizationName
+        
+        await addDoc(
+          collection(db, `organizations/${saleData.organizationId}/serviceRequests`),
+          orgServiceRequestData
+        )
+
+        this.log('A/S 요청 생성 완료', {
+          serviceRequestId: serviceRequestRef.id,
+          saleId: request.saleId,
+          serviceType: request.serviceType
+        })
+
+        return serviceRequestRef.id
+
+      } catch (error) {
+        this.error('A/S 요청 생성 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * A/S 요청 완료 처리
+   */
+  async completeServiceRequest(request: CompleteServiceRequestData): Promise<void> {
+    return this.measureAndLog('completeServiceRequest', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const now = Timestamp.now()
+
+        // A/S 요청 정보 확인
+        const serviceRequestDoc = await getDoc(doc(db, 'serviceRequests', request.serviceRequestId))
+        if (!serviceRequestDoc.exists()) {
+          throw new Error('A/S 요청을 찾을 수 없습니다.')
+        }
+
+        const serviceRequestData = serviceRequestDoc.data()
+
+        // 업데이트 데이터 준비
+        const updateData = {
+          status: 'COMPLETED' as const,
+          actualCompletionDate: now,
+          resolutionDescription: request.resolutionDescription,
+          serviceCost: request.serviceCost || 0,
+          replacementDeviceId: request.replacementDeviceId,
+          updatedAt: now,
+          completionYear: now.toDate().getFullYear(),
+          completionMonth: now.toDate().getMonth() + 1
+        }
+
+        // 메인 컬렉션 업데이트
+        await updateDoc(doc(db, 'serviceRequests', request.serviceRequestId), updateData)
+
+        // 조직별 컬렉션도 업데이트
+        const orgServiceRequestQuery = query(
+          collection(db, `organizations/${serviceRequestData.organizationId}/serviceRequests`),
+          where('id', '==', request.serviceRequestId)
+        )
+        const orgServiceRequestSnapshot = await getDocs(orgServiceRequestQuery)
+        
+        if (!orgServiceRequestSnapshot.empty) {
+          const batch = writeBatch(db)
+          orgServiceRequestSnapshot.docs.forEach(doc => {
+            batch.update(doc.ref, updateData)
+          })
+          await batch.commit()
+        }
+
+        this.log('A/S 요청 완료 처리 완료', {
+          serviceRequestId: request.serviceRequestId,
+          completionDate: now.toDate().toISOString()
+        })
+
+      } catch (error) {
+        this.error('A/S 요청 완료 처리 실패', error as Error)
+        throw error
+      }
+    })
+  }
+
+  // ============================================================================
+  // 기업 등록 관련 메서드 (시스템 관리자 전용)
+  // ============================================================================
+
+  /**
+   * 이메일이 이미 사용 중인지 확인합니다.
+   */
+  async checkEmailExists(email: string): Promise<boolean> {
+    return this.measureAndLog('checkEmailExists', async () => {
+      try {
+        this.log(`이메일 존재 확인 시작: ${email}`, { email })
+        
+        // Firebase 사용자 목록에서 이메일 확인
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('email', '==', email),
+          firestoreLimit(1)
+        )
+        
+        this.log('Firestore 쿼리 실행 중...', { 
+          collection: 'users',
+          field: 'email',
+          value: email 
+        })
+        
+        const querySnapshot = await getDocs(usersQuery)
+        const exists = !querySnapshot.empty
+        
+        this.log(`이메일 존재 확인 결과: ${exists}`, { 
+          email,
+          exists,
+          documentCount: querySnapshot.size,
+          documents: querySnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            email: doc.data().email,
+            userType: doc.data().userType 
+          }))
+        })
+        
+        return exists
+      } catch (error) {
+        this.error('이메일 중복 확인 실패', error as Error, { email })
+        throw new Error('이메일 중복 확인 중 오류가 발생했습니다.')
+      }
+    })
+  }
+
+  /**
+   * 시스템 관리자가 새로운 기업을 등록합니다.
+   * 크레딧 할당, 커스텀 구독 설정 등 추가 기능을 제공합니다.
+   */
+  async createEnterpriseWithAdmin(data: {
+    // 기본 정보
+    companyName: string
+    businessNumber?: string
+    industry: string
+    size: OrganizationSize
+    employeeCount?: number
+    
+    // 주소
+    address: {
+      street: string
+      city: string
+      state: string
+      zipCode: string
+      country: string
+    }
+    
+    // 담당자 정보
+    contact: {
+      name: string
+      email: string
+      phone: string
+      position?: string
+    }
+    
+    // 관리자 계정
+    adminName: string
+    adminEmail: string
+    adminPassword: string
+    
+    // 크레딧 설정 (시스템 관리자 전용)
+    creditSettings: {
+      initialCredits: number
+      promotionCredits: number
+      creditExpireDate?: Date
+    }
+    
+    // 구독 설정 (시스템 관리자 전용)
+    subscriptionOverride: {
+      plan: 'TRIAL' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE' | 'CUSTOM'
+      customPrice?: number
+      trialDays?: number
+      specialTerms?: string
+    }
+    
+    // 시스템 메모
+    systemNotes?: string
+  }): Promise<{
+    success: boolean
+    organizationId?: string
+    organizationCode?: string
+    adminUserId?: string
+    error?: string
+  }> {
+    try {
+      // 시스템 관리자 권한 확인
+      this.validateSystemAdminAccess()
+      
+      this.log('시스템 관리자 기업 등록 시작', {
+        companyName: data.companyName,
+        adminEmail: data.adminEmail
+      })
+
+      // ⚠️ 중요: 이메일 중복 검사 (보안 필수)
+      this.log('이메일 중복 검사 시작', { 
+        adminEmail: data.adminEmail,
+        contactEmail: data.contact.email 
+      })
+      
+      // 관리자 이메일 중복 검사
+      const adminEmailExists = await this.checkEmailExists(data.adminEmail)
+      if (adminEmailExists) {
+        this.error('관리자 이메일 중복 발견', new Error(`이미 존재하는 이메일: ${data.adminEmail}`))
+        return {
+          success: false,
+          error: `이미 등록된 관리자 이메일입니다: ${data.adminEmail}`
+        }
+      }
+      
+      // 담당자 이메일 중복 검사 (관리자 이메일과 다른 경우에만)
+      if (data.contact.email !== data.adminEmail) {
+        const contactEmailExists = await this.checkEmailExists(data.contact.email)
+        if (contactEmailExists) {
+          this.error('담당자 이메일 중복 발견', new Error(`이미 존재하는 이메일: ${data.contact.email}`))
+          return {
+            success: false,
+            error: `이미 등록된 담당자 이메일입니다: ${data.contact.email}`
+          }
+        }
+      }
+      
+      this.log('이메일 중복 검사 통과', { 
+        adminEmail: data.adminEmail,
+        contactEmail: data.contact.email 
+      })
+
+      // OrganizationService를 사용하여 기업 등록
+      const registrationResult = await OrganizationService.registerOrganization({
+          organizationName: data.companyName,
+          businessNumber: data.businessNumber || '',
+          industry: data.industry,
+          contactEmail: data.contact.email,
+          contactPhone: data.contact.phone,
+          address: `${data.address.street}, ${data.address.city}, ${data.address.state} ${data.address.zipCode}`,
+          
+          adminName: data.adminName,
+          adminEmail: data.adminEmail,
+          adminPassword: data.adminPassword,
+          adminPhone: data.contact.phone,
+          adminAddress: `${data.address.street}, ${data.address.city}`,
+          adminEmployeeId: 'ADMIN001',
+          adminDepartment: '관리부',
+          adminPosition: data.contact.position || '관리자',
+          
+          initialMemberCount: data.employeeCount || 10,
+          servicePackage: this.mapSubscriptionPlanToPackage(data.subscriptionOverride.plan)
+        })
+
+        if (!registrationResult.success) {
+          throw new Error(registrationResult.error || '기업 등록에 실패했습니다')
+        }
+
+        const organizationId = registrationResult.organizationId!
+        const organizationCode = registrationResult.organizationCode!
+        const currentUser = enterpriseAuthService.getCurrentContext().user
+
+        // 크레딧 할당 (시스템 관리자 전용)
+        if (data.creditSettings.initialCredits > 0 || data.creditSettings.promotionCredits > 0) {
+          await this.assignCreditsToOrganization(organizationId, {
+            initialCredits: data.creditSettings.initialCredits,
+            promotionCredits: data.creditSettings.promotionCredits,
+            expireDate: data.creditSettings.creditExpireDate,
+            assignedBy: currentUser?.id || 'system',
+            reason: '시스템 관리자 기업 등록'
+          })
+        }
+
+        // 커스텀 구독 설정
+        if (data.subscriptionOverride.customPrice || data.subscriptionOverride.specialTerms) {
+          await updateDoc(doc(db, 'organizations', organizationId), {
+            subscription: {
+              plan: data.subscriptionOverride.plan,
+              customPrice: data.subscriptionOverride.customPrice,
+              specialTerms: data.subscriptionOverride.specialTerms,
+              trialDays: data.subscriptionOverride.trialDays || 30,
+              updatedAt: serverTimestamp(),
+              updatedBy: currentUser?.id || 'system'
+            }
+          })
+        }
+
+        // 시스템 노트 저장
+        if (data.systemNotes) {
+          await addDoc(collection(db, 'organizations', organizationId, 'systemNotes'), {
+            note: data.systemNotes,
+            createdBy: currentUser?.id || 'system',
+            createdAt: serverTimestamp(),
+            type: 'ENTERPRISE_REGISTRATION'
+          })
+        }
+
+        this.log('시스템 관리자 기업 등록 완료', {
+          organizationId,
+          organizationCode,
+          totalCredits: (data.creditSettings.initialCredits || 0) + (data.creditSettings.promotionCredits || 0)
+        })
+
+        return {
+          success: true,
+          organizationId,
+          organizationCode,
+          adminUserId: currentUser?.id
+        }
+
+    } catch (error) {
+      this.error('시스템 관리자 기업 등록 실패', error as Error, {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '기업 등록 중 오류가 발생했습니다'
+      }
+    }
+  }
+
+  /**
+   * 조직에 크레딧을 할당합니다.
+   */
+  private async assignCreditsToOrganization(
+    organizationId: string,
+    creditData: {
+      initialCredits: number
+      promotionCredits: number
+      expireDate?: Date
+      assignedBy: string
+      reason: string
+    }
+  ): Promise<void> {
+    const creditDoc = {
+      organizationId,
+      type: 'SYSTEM_ADMIN_ASSIGNMENT',
+      initialCredits: creditData.initialCredits || 0,
+      promotionCredits: creditData.promotionCredits || 0,
+      totalCredits: (creditData.initialCredits || 0) + (creditData.promotionCredits || 0),
+      usedCredits: 0,
+      remainingCredits: (creditData.initialCredits || 0) + (creditData.promotionCredits || 0),
+      expireDate: creditData.expireDate ? Timestamp.fromDate(creditData.expireDate) : null,
+      assignedBy: creditData.assignedBy,
+      assignedAt: serverTimestamp(),
+      reason: creditData.reason,
+      status: 'ACTIVE'
+    }
+
+    // Firestore 트랜잭션으로 크레딧 할당
+    await runTransaction(db, async (transaction) => {
+      const orgRef = doc(db, 'organizations', organizationId)
+      const creditRef = doc(collection(db, 'organizationCredits'))
+      
+      const orgDoc = await transaction.get(orgRef)
+      if (!orgDoc.exists()) {
+        throw new Error('조직을 찾을 수 없습니다')
+      }
+      
+      // 조직 문서 업데이트
+      transaction.update(orgRef, {
+        creditBalance: increment(creditDoc.totalCredits),
+        hasPromotionCredits: creditData.promotionCredits > 0,
+        lastCreditUpdate: serverTimestamp()
+      })
+      
+      // 크레딧 이력 생성
+      transaction.set(creditRef, creditDoc)
+    })
+
+    this.log('크레딧 할당 완료', {
+      organizationId,
+      totalCredits: creditDoc.totalCredits,
+      assignedBy: creditData.assignedBy
+    })
+  }
+
+  /**
+   * 구독 플랜을 서비스 패키지로 변환
+   */
+  private mapSubscriptionPlanToPackage(plan: 'TRIAL' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE' | 'CUSTOM'): 'BASIC' | 'PREMIUM' | 'ENTERPRISE' {
+    switch (plan) {
+      case 'TRIAL':
+      case 'BASIC':
+        return 'BASIC'
+      case 'PREMIUM':
+        return 'PREMIUM'
+      case 'ENTERPRISE':
+      case 'CUSTOM':
+        return 'ENTERPRISE'
+      default:
+        return 'BASIC'
+    }
+  }
+
+  // ============================================
+  // 사용자 관리 API
+  // ============================================
+
+  /**
+   * 전체 사용자 현황 조회 (Firestore users 컬렉션 기반)
+   */
+  async getAllUsersOverview(): Promise<UserOverview[]> {
+    return this.measureAndLog('getAllUsersOverview', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const usersQuery = query(
+          collection(db, 'users'),
+          orderBy('createdAt', 'desc')
+        )
+
+        const usersSnapshot = await getDocs(usersQuery)
+        const userOverviews: UserOverview[] = []
+
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data()
+          
+          // 조직 정보 조회 (조직 멤버인 경우)
+          let organizationInfo = undefined
+          if (userData.organizationId) {
+            try {
+              const [orgDoc, memberDoc] = await Promise.all([
+                getDoc(doc(db, 'organizations', userData.organizationId)),
+                getDocs(query(
+                  collection(db, 'organizationMembers'),
+                  where('userId', '==', userDoc.id),
+                  limit(1)
+                ))
+              ])
+
+              if (orgDoc.exists()) {
+                const orgData = orgDoc.data()
+                const memberData = memberDoc.docs[0]?.data()
+                
+                organizationInfo = {
+                  organizationId: userData.organizationId,
+                  organizationName: orgData.name || '조직명 없음',
+                  role: memberData?.role || userData.userType,
+                  joinedAt: memberData?.createdAt?.toDate?.() || userData.createdAt?.toDate?.() || new Date()
+                }
+              }
+            } catch (error) {
+              console.warn('조직 정보 조회 실패:', error)
+            }
+          }
+
+          // 활동 통계 조회
+          let activityStats = {
+            totalMeasurements: 0,
+            measurementsThisMonth: 0,
+            totalReports: 0,
+            reportsThisMonth: 0,
+            averageSessionDuration: 0,
+            loginFrequency: 0
+          }
+
+          try {
+            const thisMonth = new Date()
+            thisMonth.setDate(1)
+            thisMonth.setHours(0, 0, 0, 0)
+
+            // 측정 세션 통계
+            const [allSessions, monthSessions, allReports, monthReports] = await Promise.all([
+              getDocs(query(collection(db, 'measurementSessions'), where('userId', '==', userDoc.id))),
+              getDocs(query(
+                collection(db, 'measurementSessions'),
+                where('userId', '==', userDoc.id),
+                where('createdAt', '>=', thisMonth.getTime())
+              )),
+              getDocs(query(collection(db, 'aiReports'), where('userId', '==', userDoc.id))),
+              getDocs(query(
+                collection(db, 'aiReports'),
+                where('userId', '==', userDoc.id),
+                where('createdAt', '>=', thisMonth.getTime())
+              ))
+            ])
+
+            const totalSessionDuration = allSessions.docs.reduce((sum, doc) => {
+              return sum + (doc.data().duration || 0)
+            }, 0)
+
+            activityStats = {
+              totalMeasurements: allSessions.docs.length,
+              measurementsThisMonth: monthSessions.docs.length,
+              totalReports: allReports.docs.length,
+              reportsThisMonth: monthReports.docs.length,
+              averageSessionDuration: allSessions.docs.length > 0 
+                ? Math.round(totalSessionDuration / allSessions.docs.length) 
+                : 0,
+              loginFrequency: this.calculateLoginFrequency(userData.lastActiveAt)
+            }
+          } catch (error) {
+            console.warn('활동 통계 조회 실패:', error)
+          }
+
+          // 사용자 상태 결정
+          const lastActiveDate = userData.lastActiveAt?.toDate?.() || userData.lastLoginAt?.toDate?.()
+          const daysSinceActive = lastActiveDate 
+            ? Math.floor((Date.now() - lastActiveDate.getTime()) / (24 * 60 * 60 * 1000))
+            : 999
+
+          let status: 'active' | 'suspended' | 'pending_verification' | 'inactive'
+          if (userData.isSuspended) {
+            status = 'suspended'
+          } else if (!userData.emailVerified) {
+            status = 'pending_verification'
+          } else if (daysSinceActive > 30) {
+            status = 'inactive'
+          } else {
+            status = 'active'
+          }
+
+          const userOverview: UserOverview = {
+            userId: userDoc.id,
+            email: userData.email || '',
+            displayName: userData.displayName || userData.name || '이름 없음',
+            userType: userData.userType || 'INDIVIDUAL_USER',
+            organizationInfo,
+            profile: {
+              phoneNumber: userData.phoneNumber,
+              registeredAt: userData.createdAt?.toDate?.() || new Date(),
+              lastLoginAt: userData.lastLoginAt?.toDate?.(),
+              lastActiveAt: userData.lastActiveAt?.toDate?.(),
+              emailVerified: userData.emailVerified || false,
+              profileCompleted: !!(userData.displayName && userData.phoneNumber)
+            },
+            activityStats,
+            systemInfo: {
+              status,
+              accountCreationMethod: userData.registrationSource || 'self_registration',
+              lastIPAddress: userData.lastIPAddress,
+              deviceInfo: {
+                lastUsedDevice: userData.lastDeviceInfo?.deviceType || 'unknown',
+                deviceCount: userData.deviceIds?.length || 0
+              }
+            },
+            permissions: this.parsePermissions(userData.permissions),
+            flags: {
+              isFirstTimeUser: activityStats.totalMeasurements === 0,
+              needsPasswordReset: userData.needsPasswordReset || false,
+              hasCompletedOnboarding: userData.hasCompletedOnboarding || false,
+              isSuspended: userData.isSuspended || false,
+              isHighValueUser: activityStats.totalReports > 10 || activityStats.totalMeasurements > 20
+            }
+          }
+
+          userOverviews.push(userOverview)
+        }
+
+        this.log('사용자 현황 조회 완료', { userCount: userOverviews.length })
+        return userOverviews
+
+      } catch (error) {
+        this.log('error', '사용자 현황 조회 실패', { error })
+        throw new Error('사용자 현황을 조회할 수 없습니다.')
+      }
+    })
+  }
+
+  /**
+   * 로그인 빈도 계산
+   */
+  private calculateLoginFrequency(lastActiveAt: any): number {
+    if (!lastActiveAt) return 0
+
+    const lastActive = lastActiveAt.toDate?.() || new Date(lastActiveAt)
+    const daysSinceActive = Math.floor((Date.now() - lastActive.getTime()) / (24 * 60 * 60 * 1000))
+
+    if (daysSinceActive <= 1) return 7 // 매일
+    if (daysSinceActive <= 3) return 5 // 자주
+    if (daysSinceActive <= 7) return 3 // 보통
+    if (daysSinceActive <= 30) return 1 // 가끔
+    return 0 // 비활성
+  }
+
+  /**
+   * 권한 문자열 파싱
+   */
+  private parsePermissions(permissions: any): string[] {
+    if (!permissions) return []
+    if (typeof permissions === 'string') {
+      try {
+        return JSON.parse(permissions)
+      } catch {
+        return [permissions]
+      }
+    }
+    if (Array.isArray(permissions)) return permissions
+    return []
+  }
+
+  /**
+   * 사용자 통계 요약 조회
+   */
+  async getUserManagementStats(): Promise<{
+    totalUsers: number
+    activeUsers: number
+    organizationUsers: number
+    individualUsers: number
+    suspendedUsers: number
+    newUsersThisMonth: number
+    usersByType: Record<string, number>
+  }> {
+    return this.measureAndLog('getUserManagementStats', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const usersSnapshot = await getDocs(collection(db, 'users'))
+        const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+        const thisMonth = new Date()
+        thisMonth.setDate(1)
+        thisMonth.setHours(0, 0, 0, 0)
+
+        const stats = {
+          totalUsers: users.length,
+          activeUsers: 0,
+          organizationUsers: 0,
+          individualUsers: 0,
+          suspendedUsers: 0,
+          newUsersThisMonth: 0,
+          usersByType: {} as Record<string, number>
+        }
+
+        users.forEach(user => {
+          // 활성 사용자 카운트 (30일 이내 활동)
+          const lastActive = user.lastActiveAt?.toDate?.() || user.lastLoginAt?.toDate?.()
+          if (lastActive) {
+            const daysSinceActive = Math.floor((Date.now() - lastActive.getTime()) / (24 * 60 * 60 * 1000))
+            if (daysSinceActive <= 30) {
+              stats.activeUsers++
+            }
+          }
+
+          // 조직/개인 사용자 구분
+          if (user.organizationId) {
+            stats.organizationUsers++
+          } else {
+            stats.individualUsers++
+          }
+
+          // 정지된 사용자
+          if (user.isSuspended) {
+            stats.suspendedUsers++
+          }
+
+          // 이번 달 신규 가입자
+          const createdAt = user.createdAt?.toDate?.() || new Date(user.createdAt)
+          if (createdAt >= thisMonth) {
+            stats.newUsersThisMonth++
+          }
+
+          // 사용자 타입별 통계
+          const userType = user.userType || 'INDIVIDUAL_USER'
+          stats.usersByType[userType] = (stats.usersByType[userType] || 0) + 1
+        })
+
+        return stats
+
+      } catch (error) {
+        this.log('error', '사용자 통계 조회 실패', { error })
+        throw new Error('사용자 통계를 조회할 수 없습니다.')
+      }
+    })
+  }
+}
+
+// 사용자 관리 관련 인터페이스들
+export interface UserOverview {
+  userId: string
+  email: string
+  displayName: string
+  userType: 'SYSTEM_ADMIN' | 'ORGANIZATION_ADMIN' | 'ORGANIZATION_MEMBER' | 'INDIVIDUAL_USER'
+  organizationInfo?: {
+    organizationId: string
+    organizationName: string
+    role: string
+    joinedAt: Date
+  }
+  profile: {
+    phoneNumber?: string
+    registeredAt: Date
+    lastLoginAt?: Date
+    lastActiveAt?: Date
+    emailVerified: boolean
+    profileCompleted: boolean
+  }
+  activityStats: {
+    totalMeasurements: number
+    measurementsThisMonth: number
+    totalReports: number
+    reportsThisMonth: number
+    averageSessionDuration: number
+    loginFrequency: number
+  }
+  systemInfo: {
+    status: 'active' | 'suspended' | 'pending_verification' | 'inactive'
+    accountCreationMethod: 'self_registration' | 'admin_invite' | 'organization_invite'
+    lastIPAddress?: string
+    deviceInfo?: {
+      lastUsedDevice: string
+      deviceCount: number
+    }
+  }
+  permissions: string[]
+  flags: {
+    isFirstTimeUser: boolean
+    needsPasswordReset: boolean
+    hasCompletedOnboarding: boolean
+    isSuspended: boolean
+    isHighValueUser: boolean
   }
 }
 

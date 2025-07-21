@@ -209,7 +209,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
           <div className="flex items-center space-x-3">
             <CreditCard className="w-6 h-6 text-blue-600" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900">기업별 크레딧 관리</h2>
+              <h2 className="text-xl font-bold text-gray-900">기관별 크레딧 관리</h2>
               <p className="text-sm text-gray-500">
                 무료 크레딧 지급 및 사용량 모니터링
               </p>
@@ -248,7 +248,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
                       <Users className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">총 조직 수</p>
+                      <p className="text-sm text-gray-500">총 기관 수</p>
                       <p className="text-xl font-bold text-gray-900">{creditInfos.length}</p>
                     </div>
                   </div>
@@ -288,7 +288,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
                       <AlertTriangle className="w-5 h-5 text-red-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">문제 있는 조직</p>
+                      <p className="text-sm text-gray-500">문제 있는 기관</p>
                       <p className="text-xl font-bold text-gray-900">
                         {creditInfos.filter(info => info.status !== 'active' || info.alerts.length > 0).length}
                       </p>
@@ -304,7 +304,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
-                        placeholder="조직명 또는 ID 검색..."
+                        placeholder="기관명 또는 ID 검색..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 w-64"
@@ -354,7 +354,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
               {/* 조직별 크레딧 현황 */}
               <Card className="overflow-hidden">
                 <div className="p-4 border-b">
-                  <h3 className="text-lg font-semibold text-gray-900">조직별 크레딧 현황</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">기관별 크레딧 현황</h3>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -375,7 +375,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
                             className="w-4 h-4"
                           />
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">조직명</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">기관명</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">플랜</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">크레딧 잔액</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">이번 달 사용량</th>
@@ -514,7 +514,7 @@ export default function EnterpriseCreditManagementPanel({ isVisible, onClose }: 
 
                   {filteredInfos.length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-gray-500">조건에 맞는 조직이 없습니다.</p>
+                      <p className="text-gray-500">조건에 맞는 기관이 없습니다.</p>
                     </div>
                   )}
                 </div>
@@ -585,7 +585,7 @@ function GrantCreditsModal({ organizations, onClose, onGrant, systemSettings }: 
             <div>
               <h3 className="text-lg font-bold text-gray-900">무료 크레딧 지급</h3>
               <p className="text-sm text-gray-500">
-                {organizations.length}개 조직에 무료 크레딧을 지급합니다
+                {organizations.length}개 기관에 무료 크레딧을 지급합니다
               </p>
             </div>
           </div>
@@ -597,7 +597,7 @@ function GrantCreditsModal({ organizations, onClose, onGrant, systemSettings }: 
         <div className="p-6 space-y-6">
           {/* 대상 조직 */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-3">대상 조직</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">대상 기관</h4>
             <div className="space-y-2 max-h-32 overflow-y-auto">
               {organizations.map((org) => (
                 <div key={org.organizationId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
@@ -683,8 +683,8 @@ function GrantCreditsModal({ organizations, onClose, onGrant, systemSettings }: 
           <div className="p-4 bg-gray-50 rounded-lg">
             <h4 className="text-sm font-medium text-gray-700 mb-2">지급 요약</h4>
             <div className="space-y-1 text-sm">
-              <p>• 대상 조직: {organizations.length}개</p>
-              <p>• 조직당 지급: {amount.toLocaleString()} 크레딧</p>
+              <p>• 대상 기관: {organizations.length}개</p>
+              <p>• 기관당 지급: {amount.toLocaleString()} 크레딧</p>
               <p>• 총 지급량: {(amount * organizations.length).toLocaleString()} 크레딧</p>
               <p>• 만료 기간: {expiryDays ? `${expiryDays}일` : '무제한'}</p>
             </div>

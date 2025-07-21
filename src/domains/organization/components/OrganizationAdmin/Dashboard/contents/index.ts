@@ -10,4 +10,5 @@ export { default as DeviceManagementContent } from './DeviceManagementContent'
 
 // 새로 구현된 콘텐츠들
 export { default as ReportManagementContent } from './ReportManagementContent'
-export { default as MeasurementDataContent } from './MeasurementDataContent' 
+export { default as MeasurementDataContent } from './MeasurementDataContent'
+export { default as UserManagementContent } from './UserManagementContent' 

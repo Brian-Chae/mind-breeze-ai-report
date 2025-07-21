@@ -93,6 +93,7 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
   // 기기별 사용 현황 상태
   const [deviceUsageList, setDeviceUsageList] = useState<DeviceUsageStatus[]>([])
   const [usageLoading, setUsageLoading] = useState(false)
+  
 
   useEffect(() => {
     loadSystemOverview()
@@ -134,43 +135,12 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
   const loadDeviceUsageList = async () => {
     setUsageLoading(true)
     try {
-      // 임시 데이터 - 실제로는 API에서 가져와야 함
-      const mockData: DeviceUsageStatus[] = [
-        {
-          deviceId: 'LXB-023832',
-          deviceName: 'LXB-023832',
-          deviceType: 'LINK BAND 2.0',
-          organizationName: 'LOOXID LABS INC.',
-          usageType: 'rental',
-          rentalPeriod: 1,
-          totalMeasurements: 12,
-          lastUsedDate: new Date('2025-07-21'),
-          status: 'active'
-        },
-        {
-          deviceId: 'LXB-02630004',
-          deviceName: 'LXB-02630004',
-          deviceType: 'LINK BAND 2.0',
-          organizationName: 'LOOXID LABS INC.',
-          usageType: 'purchase',
-          totalMeasurements: 8,
-          lastUsedDate: new Date('2025-07-20'),
-          status: 'active'
-        },
-        {
-          deviceId: 'LXB-02630003',
-          deviceName: 'LXB-02630003',
-          deviceType: 'LINK BAND 2.0',
-          organizationName: '-',
-          usageType: 'purchase',
-          totalMeasurements: 0,
-          lastUsedDate: new Date('2025-07-19'),
-          status: 'inactive'
-        }
-      ]
-      setDeviceUsageList(mockData)
+      const deviceUsageData = await systemAdminService.getDeviceUsageStatusList()
+      setDeviceUsageList(deviceUsageData)
     } catch (error) {
       console.error('기기별 사용 현황 로드 실패:', error)
+      // 에러 시 빈 배열로 설정
+      setDeviceUsageList([])
     } finally {
       setUsageLoading(false)
     }
@@ -291,12 +261,12 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
 
         <CardContent className="p-0 h-full bg-gray-50">
           <Tabs defaultValue="overview" className="h-full">
-            <TabsList className="grid w-full grid-cols-5 border-b rounded-none bg-white">
-              <TabsTrigger value="overview">전체 현황</TabsTrigger>
-              <TabsTrigger value="organizations">기업별 현황</TabsTrigger>
-              <TabsTrigger value="usage">사용현황</TabsTrigger>
-              <TabsTrigger value="analytics">사용 분석</TabsTrigger>
-              <TabsTrigger value="management">디바이스 관리</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 border-b rounded-none bg-gray-100">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">전체 현황</TabsTrigger>
+              <TabsTrigger value="organizations" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">기업별 현황</TabsTrigger>
+              <TabsTrigger value="usage" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">사용현황</TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">사용 분석</TabsTrigger>
+              <TabsTrigger value="management" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">디바이스 관리</TabsTrigger>
             </TabsList>
 
             {/* 전체 현황 탭 */}
@@ -496,9 +466,16 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                             </tr>
                           </thead>
                           <tbody>
-                            {deviceUsageList.map((device) => (
-                              <tr key={device.deviceId} className="border-b border-gray-100 hover:bg-gray-50">
-                                <td className="py-3 px-4">
+                            {deviceUsageList.length === 0 ? (
+                              <tr>
+                                <td colSpan={7} className="py-8 text-center text-gray-500">
+                                  등록된 기기가 없습니다.
+                                </td>
+                              </tr>
+                            ) : (
+                              deviceUsageList.map((device) => (
+                                <tr key={device.deviceId} className="border-b border-gray-100 hover:bg-gray-50">
+                                  <td className="py-3 px-4">
                                   <div className="flex items-center gap-2">
                                     <Smartphone className="h-4 w-4 text-blue-600" />
                                     <span className="font-medium text-gray-900">{device.deviceName}</span>
@@ -566,7 +543,8 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                                   </Badge>
                                 </td>
                               </tr>
-                            ))}
+                              ))
+                            )}
                           </tbody>
                         </table>
                       </div>

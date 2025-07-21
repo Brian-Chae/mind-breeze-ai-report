@@ -64,19 +64,34 @@ import {
   DeviceInventory,
   CreateDeviceInventoryRequest,
   InventoryStats,
-  DeviceStatusLabels
+  DeviceStatusLabels,
+  DeviceStatus,
+  BusinessType,
+  CreateSalesContractRequest
 } from '../../../types/device';
 import companyService from '../../../services/CompanyService';
+import systemAdminService from '../../../services/SystemAdminService';
 
-// 배정을 위한 타입 정의
-interface DeviceAssignment {
+// 🎯 렌탈/판매 처리를 위한 타입 정의
+interface DeviceBusinessAssignment {
   deviceId: string;
   organizationId: string;
   organizationName: string;
-  assignmentType: 'rental' | 'purchase';
+  businessType: 'rental' | 'sale'; // 🎯 assignmentType → businessType 변경
+  
+  // 렌탈 관련 정보
   rentalPeriod?: 1 | 3; // 개월
+  monthlyFee?: number;
+  depositAmount?: number;
+  
+  // 판매 관련 정보
   salePrice?: number;
+  
+  // 공통 정보
   notes?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
 }
 
 const DeviceInventorySection: React.FC = () => {
@@ -88,11 +103,14 @@ const DeviceInventorySection: React.FC = () => {
   const [stats, setStats] = useState<InventoryStats>({
     total: 0,
     available: 0,
-    assigned: 0,
+    rented: 0,      // 🎯 assigned → rented 변경
+    sold: 0,        // 🎯 새로 추가
     inUse: 0,
     maintenance: 0,
     returned: 0,
-    disposed: 0
+    disposed: 0,
+    // 🔄 하위 호환성을 위해 assigned 유지
+    assigned: 0
   });
   
   const [loading, setLoading] = useState(true);
@@ -101,18 +119,36 @@ const DeviceInventorySection: React.FC = () => {
   
 
   
-  // 배정된 조직 정보 조회
-  const getAssignedOrganization = (device: DeviceInventory) => {
-    // 디바이스 객체에서 직접 배정 정보 읽기
-    if (device.assignedOrganizationName && device.assignedOrganizationCode) {
+  // 🎯 렌탈/판매된 조직 정보 조회
+  const getBusinessOrganization = (device: DeviceInventory) => {
+    // 새로운 데이터 구조 우선 확인
+    if (device.businessType === BusinessType.RENTAL && device.rentalOrganizationName) {
       return {
-        name: device.assignedOrganizationName,
-        code: device.assignedOrganizationCode
+        name: device.rentalOrganizationName,
+        code: device.rentalOrganizationCode || '-',
+        type: '렌탈' as const
       };
     }
     
-    // 배정되지 않은 경우
-    return { name: '-', code: '-' };
+    if (device.businessType === BusinessType.SALE && device.soldToOrganizationName) {
+      return {
+        name: device.soldToOrganizationName,
+        code: device.soldToOrganizationCode || '-',
+        type: '판매' as const
+      };
+    }
+    
+    // 🔄 기존 데이터 구조 (하위 호환성)
+    if (device.assignedOrganizationName && device.assignedOrganizationCode) {
+      return {
+        name: device.assignedOrganizationName,
+        code: device.assignedOrganizationCode,
+        type: '배정' as const // 임시 - 추후 마이그레이션 필요
+      };
+    }
+    
+    // 처리되지 않은 경우
+    return { name: '-', code: '-', type: '-' as const };
   };
   
   // 등록 모달 상태
@@ -127,16 +163,21 @@ const DeviceInventorySection: React.FC = () => {
     purchaseCost: 297000
   });
 
-  // 배정 모달 상태
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
+  // 🎯 렌탈/판매 처리 모달 상태
+  const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceInventory | null>(null);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [orgSearchTerm, setOrgSearchTerm] = useState('');
-  const [assignment, setAssignment] = useState<Partial<DeviceAssignment>>({
-    assignmentType: 'rental',
+  const [businessAssignment, setBusinessAssignment] = useState<Partial<DeviceBusinessAssignment>>({
+    businessType: 'rental', // 🎯 assignmentType → businessType 변경
     rentalPeriod: 1,
-    salePrice: 297000
+    salePrice: 297000,
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    monthlyFee: undefined,
+    depositAmount: undefined
   });
 
   // 삭제 모달 상태
@@ -144,10 +185,10 @@ const DeviceInventorySection: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<DeviceInventory | null>(null);
 
-  // 배정 해제 모달 상태
-  const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
-  const [isUnassigning, setIsUnassigning] = useState(false);
-  const [deviceToUnassign, setDeviceToUnassign] = useState<DeviceInventory | null>(null);
+  // 🎯 반납/회수 처리 모달 상태
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
+  const [deviceToReturn, setDeviceToReturn] = useState<DeviceInventory | null>(null);
 
   // ============================================================================
   // Data Loading
@@ -270,15 +311,20 @@ const DeviceInventorySection: React.FC = () => {
     }
   };
 
-  const handleAssignDevice = (device: DeviceInventory) => {
+  const handleBusinessDevice = (device: DeviceInventory) => {
     setSelectedDevice(device);
-    setAssignment({
+    setBusinessAssignment({
       deviceId: device.id,
-      assignmentType: 'rental',
+      businessType: 'rental',
       rentalPeriod: 1,
-      salePrice: 297000
+      salePrice: 297000,
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      monthlyFee: undefined,
+      depositAmount: undefined
     });
-    setIsAssignModalOpen(true);
+    setIsBusinessModalOpen(true);
     // 모달 열 때 조직 목록 로드
     loadOrganizations();
   };
@@ -318,74 +364,124 @@ const DeviceInventorySection: React.FC = () => {
     setDeviceToDelete(null);
   };
 
-  const handleUnassignDevice = (device: DeviceInventory) => {
-    setDeviceToUnassign(device);
-    setIsUnassignModalOpen(true);
+  const handleReturnDevice = (device: DeviceInventory) => {
+    setDeviceToReturn(device);
+    setIsReturnModalOpen(true);
   };
 
-  const handleConfirmUnassign = async () => {
-    if (!deviceToUnassign) return;
+  const handleConfirmReturn = async () => {
+    if (!deviceToReturn) return;
 
     try {
-      setIsUnassigning(true);
+      setIsReturning(true);
       
-      await deviceInventoryService.unassignDevice(deviceToUnassign.id);
+      await deviceInventoryService.unassignDevice(deviceToReturn.id);
       
-      toast.success(`${deviceToUnassign.id}의 배정이 해제되었습니다.`);
+      toast.success(`${deviceToReturn.id}의 반납/회수가 완료되었습니다.`);
       
       // 모달 닫기 및 초기화
-      setIsUnassignModalOpen(false);
-      setDeviceToUnassign(null);
+      setIsReturnModalOpen(false);
+      setDeviceToReturn(null);
       
       // 데이터 새로고침
       await loadData();
       
     } catch (error: any) {
-      console.error('디바이스 배정 해제 실패:', error);
-      toast.error(error.message || '디바이스 배정 해제 중 오류가 발생했습니다.');
+      console.error('디바이스 반납/회수 실패:', error);
+      toast.error(error.message || '디바이스 반납/회수 중 오류가 발생했습니다.');
     } finally {
-      setIsUnassigning(false);
+      setIsReturning(false);
     }
   };
 
-  const handleCancelUnassign = () => {
-    setIsUnassignModalOpen(false);
-    setDeviceToUnassign(null);
+  const handleCancelReturn = () => {
+    setIsReturnModalOpen(false);
+    setDeviceToReturn(null);
   };
 
-  const handleConfirmAssignment = async () => {
-    if (!assignment.organizationId || !selectedDevice) {
+  const handleConfirmBusiness = async () => {
+    if (!businessAssignment.organizationId || !selectedDevice) {
       toast.error('조직을 선택해주세요.');
       return;
     }
 
+    // 렌탈/판매인 경우 필수 정보 검증
+    if (businessAssignment.businessType === 'rental' || businessAssignment.businessType === 'sale') {
+      if (!businessAssignment.contactName || !businessAssignment.contactEmail || !businessAssignment.contactPhone) {
+        const businessTypeLabel = businessAssignment.businessType === 'rental' ? '렌탈' : '판매';
+        toast.error(`${businessTypeLabel} 담당자 정보를 모두 입력해주세요.`);
+        return;
+      }
+    }
+
     // 선택된 조직 정보 찾기
-    const selectedOrganization = organizations.find(org => org.id === assignment.organizationId);
+    const selectedOrganization = organizations.find(org => org.id === businessAssignment.organizationId);
     if (!selectedOrganization) {
       toast.error('선택된 조직 정보를 찾을 수 없습니다.');
       return;
     }
 
     try {
-      setIsAssigning(true);
+      setIsProcessing(true);
       
-      // 디바이스 배정 정보 업데이트 (상태 변경 + 조직 정보 저장)
+      // 디바이스 렌탈/판매 정보 업데이트 (상태 변경 + 조직 정보 저장)
       await deviceInventoryService.updateDeviceAssignment(
         selectedDevice.id,
         selectedOrganization.id,
         selectedOrganization.organizationName,
-        selectedOrganization.organizationCode
+        selectedOrganization.organizationCode,
+        businessAssignment.businessType,
+        {
+          contactName: businessAssignment.contactName,
+          contactEmail: businessAssignment.contactEmail,
+          contactPhone: businessAssignment.contactPhone,
+          salePrice: businessAssignment.salePrice
+        }
       );
       
-      toast.success(`${selectedDevice.id}가 ${selectedOrganization.organizationName}에 성공적으로 배정되었습니다.`);
+      // 렌탈인 경우 렌탈 계약 생성
+      if (businessAssignment.businessType === 'rental' && businessAssignment.rentalPeriod) {
+        try {
+          // 월 렌탈료와 보증금 설정 (사용자가 입력한 값 또는 기본값 사용)
+          const monthlyFee = businessAssignment.monthlyFee || (businessAssignment.rentalPeriod === 1 ? 50000 : 40000);
+          const depositAmount = businessAssignment.depositAmount || 100000;
+          
+          await systemAdminService.createRental({
+            deviceId: selectedDevice.id,
+            organizationId: selectedOrganization.id,
+            organizationName: selectedOrganization.organizationName,
+            contractType: 'RENTAL',
+            rentalPeriod: businessAssignment.rentalPeriod,
+            monthlyFee: monthlyFee,
+            depositAmount: depositAmount,
+            contactName: businessAssignment.contactName!,
+            contactEmail: businessAssignment.contactEmail!,
+            contactPhone: businessAssignment.contactPhone!,
+            startDate: new Date(),
+            notes: businessAssignment.notes || ''
+          });
+          
+          toast.success(`${selectedDevice.id}가 ${selectedOrganization.organizationName}에 렌탈로 처리되었습니다.`);
+        } catch (rentalError) {
+          console.error('렌탈 계약 생성 실패:', rentalError);
+          toast.error('렌탈 계약 생성 중 오류가 발생했습니다. 관리자에게 문의하세요.');
+        }
+      } else if (businessAssignment.businessType === 'sale') {
+        toast.success(`${selectedDevice.id}가 ${selectedOrganization.organizationName}에 판매로 처리되었습니다.`);
+      }
       
       // 모달 닫기 및 초기화
-      setIsAssignModalOpen(false);
+      setIsBusinessModalOpen(false);
       setSelectedDevice(null);
-      setAssignment({
-        assignmentType: 'rental',
+      setBusinessAssignment({
+        businessType: 'rental',
         rentalPeriod: 1,
-        salePrice: 297000
+        salePrice: 297000,
+        contactName: '',
+        contactEmail: '',
+        contactPhone: '',
+        monthlyFee: undefined,
+        depositAmount: undefined
       });
       setOrgSearchTerm('');
       
@@ -393,10 +489,10 @@ const DeviceInventorySection: React.FC = () => {
       await loadData();
       
     } catch (error) {
-      console.error('디바이스 배정 실패:', error);
-      toast.error('디바이스 배정 중 오류가 발생했습니다.');
+      console.error('디바이스 렌탈/판매 처리 실패:', error);
+      toast.error('디바이스 렌탈/판매 처리 중 오류가 발생했습니다.');
     } finally {
-      setIsAssigning(false);
+      setIsProcessing(false);
     }
   };
 
@@ -424,8 +520,10 @@ const DeviceInventorySection: React.FC = () => {
   const getStatusBadge = (status: DeviceInventory['status']) => {
     const statusConfig = {
       'AVAILABLE': { color: 'bg-green-50 text-green-700 border-green-200', label: '사용 가능' },
-      'ASSIGNED': { color: 'bg-blue-50 text-blue-700 border-blue-200', label: '배정 완료' },
-      'IN_USE': { color: 'bg-yellow-50 text-yellow-700 border-yellow-200', label: '사용 중' },
+      'RENTED': { color: 'bg-blue-50 text-blue-700 border-blue-200', label: '렌탈중' }, // 🎯 새로 추가
+      'SOLD': { color: 'bg-purple-50 text-purple-700 border-purple-200', label: '판매완료' }, // 🎯 새로 추가  
+      'ASSIGNED': { color: 'bg-blue-50 text-blue-700 border-blue-200', label: '판매완료' }, // 🎯 하위 호환성: ASSIGNED → 판매완료
+      'IN_USE': { color: 'bg-yellow-50 text-yellow-700 border-yellow-200', label: '렌탈중' }, // 🎯 수정: 사용중 → 렌탈중
       'MAINTENANCE': { color: 'bg-orange-50 text-orange-700 border-orange-200', label: '점검 중' },
       'RETURNED': { color: 'bg-gray-50 text-gray-700 border-gray-200', label: '반납 완료' },
       'DISPOSED': { color: 'bg-red-50 text-red-700 border-red-200', label: '폐기' }
@@ -524,8 +622,8 @@ const DeviceInventorySection: React.FC = () => {
           <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-700">배정됨</p>
-                <p className="text-2xl font-bold text-orange-900">{stats.assigned + stats.inUse}</p>
+                <p className="text-sm font-medium text-orange-700">렌탈/판매</p>
+                <p className="text-2xl font-bold text-orange-900">{(stats.rented || stats.assigned || 0) + (stats.sold || 0) + stats.inUse}</p>
               </div>
               <Users className="w-8 h-8 text-orange-600" />
             </div>
@@ -568,7 +666,9 @@ const DeviceInventorySection: React.FC = () => {
               <SelectContent>
                 <SelectItem value="all">모든 상태</SelectItem>
                 <SelectItem value="AVAILABLE">사용 가능</SelectItem>
-                <SelectItem value="ASSIGNED">배정 완료</SelectItem>
+                <SelectItem value="RENTED">렌탈 중</SelectItem>
+                <SelectItem value="SOLD">판매 완료</SelectItem>
+                <SelectItem value="ASSIGNED">처리 완료</SelectItem>
                 <SelectItem value="IN_USE">사용 중</SelectItem>
                 <SelectItem value="MAINTENANCE">점검 중</SelectItem>
                 <SelectItem value="RETURNED">반납 완료</SelectItem>
@@ -666,12 +766,12 @@ const DeviceInventorySection: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleAssignDevice(device)}
+                              onClick={() => handleBusinessDevice(device)}
                               className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors px-3 py-1.5 h-auto"
                               title="디바이스 배정"
                             >
                               <UserPlus className="w-4 h-4 mr-1" />
-                              배정하기
+                              렌탈/판매
                             </Button>
                             
                             <Button 
@@ -693,12 +793,12 @@ const DeviceInventorySection: React.FC = () => {
             </Table>
           </div>
 
-          {/* 배정 완료 목록 */}
+          {/* 🎯 렌탈/판매 완료 목록 */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
               <div className="flex items-center space-x-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-blue-800">배정 완료 목록</h3>
+                <h3 className="text-lg font-semibold text-blue-800">렌탈/판매 완료 목록</h3>
                 <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                   {filteredDevices.filter(device => device.status !== 'AVAILABLE').length}개
                 </Badge>
@@ -712,7 +812,7 @@ const DeviceInventorySection: React.FC = () => {
                   <TableHead className="font-semibold text-gray-700 py-4">종류</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">보증 기간</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">상태</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">배정 기관</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">렌탈/판매 기관</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">등록일</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4 text-right">액션</TableHead>
                 </TableRow>
@@ -726,11 +826,11 @@ const DeviceInventorySection: React.FC = () => {
                           <Users className="w-6 h-6 text-blue-400" />
                         </div>
                         <div>
-                          <p className="text-gray-600 font-medium">배정 완료된 디바이스가 없습니다</p>
+                          <p className="text-gray-600 font-medium">렌탈/판매 완료된 디바이스가 없습니다</p>
                           <p className="text-sm text-gray-500 mt-1">
                             {searchTerm 
-                              ? '검색 조건에 맞는 배정 완료 디바이스가 없습니다.' 
-                              : '디바이스를 배정하면 여기에 표시됩니다.'}
+                              ? '검색 조건에 맞는 렌탈/판매 완료 디바이스가 없습니다.' 
+                              : '디바이스를 렌탈 또는 판매 처리하면 여기에 표시됩니다.'}
                           </p>
                         </div>
                       </div>
@@ -768,17 +868,20 @@ const DeviceInventorySection: React.FC = () => {
                           {getStatusBadge(device.status)}
                         </TableCell>
                         
-                        {/* 배정 기관 */}
+                        {/* 렌탈/판매 기관 */}
                         <TableCell className="py-4">
                           <div className="space-y-1">
                             <div className="flex items-center space-x-2">
                               <Building2 className="w-4 h-4 text-gray-400" />
                               <span className="text-sm font-medium text-gray-900">
-                                {getAssignedOrganization(device).name}
+                                {getBusinessOrganization(device).name}
                               </span>
+                              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                {getBusinessOrganization(device).type}
+                              </Badge>
                             </div>
                             <div className="text-xs text-gray-500">
-                              {getAssignedOrganization(device).code}
+                              {getBusinessOrganization(device).code}
                             </div>
                           </div>
                         </TableCell>
@@ -796,12 +899,12 @@ const DeviceInventorySection: React.FC = () => {
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => handleUnassignDevice(device)}
+                              onClick={() => handleReturnDevice(device)}
                               className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:border-orange-400 transition-colors px-3 py-1.5 h-auto"
-                              title="디바이스 배정 해제"
+                              title="디바이스 반납/회수"
                             >
                               <UserMinus className="w-4 h-4 mr-1" />
-                              배정 해제
+                              반납/회수
                             </Button>
                             
                             <Button 
@@ -1033,8 +1136,8 @@ const DeviceInventorySection: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 디바이스 배정 모달 */}
-      <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+      {/* 디바이스 렌탈/판매 처리 모달 */}
+      <Dialog open={isBusinessModalOpen} onOpenChange={setIsBusinessModalOpen}>
         <DialogContent className="max-w-2xl bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
           <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
             <div className="flex items-center gap-4">
@@ -1042,9 +1145,9 @@ const DeviceInventorySection: React.FC = () => {
                 <UserPlus className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 배정</DialogTitle>
+                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 렌탈/판매 처리</DialogTitle>
                 <DialogDescription className="text-slate-600 mt-1">
-                  {selectedDevice?.id}를 조직에 배정합니다
+                  {selectedDevice?.id}를 조직에 렌탈 또는 판매 처리합니다
                 </DialogDescription>
               </div>
             </div>
@@ -1089,9 +1192,9 @@ const DeviceInventorySection: React.FC = () => {
                       <div
                         key={org.id}
                         className={`p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${
-                          assignment.organizationId === org.id ? 'bg-blue-50 border-blue-200' : ''
+                          businessAssignment.organizationId === org.id ? 'bg-blue-50 border-blue-200' : ''
                         }`}
-                        onClick={() => setAssignment(prev => ({
+                        onClick={() => setBusinessAssignment(prev => ({
                           ...prev,
                           organizationId: org.id,
                           organizationName: org.organizationName
@@ -1102,7 +1205,7 @@ const DeviceInventorySection: React.FC = () => {
                             <div className="font-medium text-slate-900">{org.organizationName}</div>
                             <div className="text-sm text-slate-600">코드: {org.organizationCode || 'N/A'}</div>
                           </div>
-                          {assignment.organizationId === org.id && (
+                          {businessAssignment.organizationId === org.id && (
                             <CheckCircle className="w-5 h-5 text-blue-600" />
                           )}
                         </div>
@@ -1122,15 +1225,15 @@ const DeviceInventorySection: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 배정 유형 */}
+                {/* 비즈니스 유형 */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700">
-                    배정 유형 <span className="text-red-500">*</span>
+                    비즈니스 유형 <span className="text-red-500">*</span>
                   </Label>
                   <Select
-                    value={assignment.assignmentType}
-                    onValueChange={(value: 'rental' | 'purchase') => 
-                      setAssignment(prev => ({ ...prev, assignmentType: value }))
+                    value={businessAssignment.businessType}
+                    onValueChange={(value: 'rental' | 'sale') => 
+                      setBusinessAssignment(prev => ({ ...prev, businessType: value }))
                     }
                   >
                     <SelectTrigger className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500">
@@ -1138,21 +1241,21 @@ const DeviceInventorySection: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="rental">렌탈</SelectItem>
-                      <SelectItem value="purchase">구매</SelectItem>
+                      <SelectItem value="sale">판매</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* 렌탈 기간 (렌탈인 경우) */}
-                {assignment.assignmentType === 'rental' && (
+                {businessAssignment.businessType === 'rental' && (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700">
                       렌탈 기간 <span className="text-red-500">*</span>
                     </Label>
                     <Select
-                      value={assignment.rentalPeriod?.toString()}
+                      value={businessAssignment.rentalPeriod?.toString()}
                       onValueChange={(value) => 
-                        setAssignment(prev => ({ ...prev, rentalPeriod: Number(value) as 1 | 3 }))
+                        setBusinessAssignment(prev => ({ ...prev, rentalPeriod: Number(value) as 1 | 3 }))
                       }
                     >
                       <SelectTrigger className="h-10 border-slate-300 focus:border-orange-500 focus:ring-orange-500">
@@ -1166,8 +1269,8 @@ const DeviceInventorySection: React.FC = () => {
                   </div>
                 )}
 
-                {/* 판매 가격 (구매인 경우) */}
-                {assignment.assignmentType === 'purchase' && (
+                {/* 판매 가격 (판매인 경우) */}
+                {businessAssignment.businessType === 'sale' && (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700">
                       판매 가격 (원) <span className="text-red-500">*</span>
@@ -1175,8 +1278,8 @@ const DeviceInventorySection: React.FC = () => {
                     <Input
                       type="number"
                       placeholder="297,000"
-                      value={assignment.salePrice || ''}
-                      onChange={(e) => setAssignment(prev => ({ 
+                      value={businessAssignment.salePrice || ''}
+                      onChange={(e) => setBusinessAssignment(prev => ({ 
                         ...prev, 
                         salePrice: e.target.value ? Number(e.target.value) : 297000 
                       }))}
@@ -1187,13 +1290,112 @@ const DeviceInventorySection: React.FC = () => {
                 )}
               </div>
 
-              {/* 배정 메모 */}
+              {/* 렌탈/판매 담당자 정보 (렌탈 또는 판매인 경우) */}
+              {(businessAssignment.businessType === 'rental' || businessAssignment.businessType === 'sale') && (
+                <>
+                  <div className="flex items-center gap-2 mb-4 mt-6">
+                    <div className={`w-1 h-6 rounded-full ${businessAssignment.businessType === 'rental' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {businessAssignment.businessType === 'rental' ? '렌탈' : '판매'} 담당자 정보
+                    </h3>
+                    <span className="text-sm text-slate-500">(필수)</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* 담당자 이름 */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-700">
+                        담당자 이름 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        placeholder="홍길동"
+                        value={businessAssignment.contactName || ''}
+                        onChange={(e) => setBusinessAssignment(prev => ({ ...prev, contactName: e.target.value }))}
+                        className={`h-10 border-slate-300 ${businessAssignment.businessType === 'rental' ? 'focus:border-green-500 focus:ring-green-500' : 'focus:border-purple-500 focus:ring-purple-500'}`}
+                      />
+                    </div>
+
+                    {/* 담당자 이메일 */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-700">
+                        담당자 이메일 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="email"
+                        placeholder="example@company.com"
+                        value={businessAssignment.contactEmail || ''}
+                        onChange={(e) => setBusinessAssignment(prev => ({ ...prev, contactEmail: e.target.value }))}
+                        className={`h-10 border-slate-300 ${businessAssignment.businessType === 'rental' ? 'focus:border-green-500 focus:ring-green-500' : 'focus:border-purple-500 focus:ring-purple-500'}`}
+                      />
+                    </div>
+
+                    {/* 담당자 연락처 */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-700">
+                        담당자 연락처 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        placeholder="010-0000-0000"
+                        value={businessAssignment.contactPhone || ''}
+                        onChange={(e) => setBusinessAssignment(prev => ({ ...prev, contactPhone: e.target.value }))}
+                        className={`h-10 border-slate-300 ${businessAssignment.businessType === 'rental' ? 'focus:border-green-500 focus:ring-green-500' : 'focus:border-purple-500 focus:ring-purple-500'}`}
+                      />
+                    </div>
+
+                    {/* 월 렌탈료 (렌탈인 경우만) */}
+                    {businessAssignment.businessType === 'rental' && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          월 렌탈료 (원) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder={businessAssignment.rentalPeriod === 1 ? "50,000" : "40,000"}
+                          value={businessAssignment.monthlyFee || ''}
+                          onChange={(e) => setBusinessAssignment(prev => ({ 
+                            ...prev, 
+                            monthlyFee: e.target.value ? Number(e.target.value) : undefined 
+                          }))}
+                          className="h-10 border-slate-300 focus:border-green-500 focus:ring-green-500"
+                        />
+                        <p className="text-xs text-slate-500">
+                          기본값: {businessAssignment.rentalPeriod === 1 ? "50,000원" : "40,000원"}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 보증금 (렌탈인 경우만) */}
+                    {businessAssignment.businessType === 'rental' && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                          보증금 (원) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="100,000"
+                          value={businessAssignment.depositAmount || ''}
+                          onChange={(e) => setBusinessAssignment(prev => ({ 
+                            ...prev, 
+                            depositAmount: e.target.value ? Number(e.target.value) : undefined 
+                          }))}
+                          className="h-10 border-slate-300 focus:border-green-500 focus:ring-green-500"
+                        />
+                        <p className="text-xs text-slate-500">기본값: 100,000원</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 처리 메모 */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-700">배정 메모</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  {businessAssignment.businessType === 'rental' ? '렌탈' : '판매'} 메모
+                </Label>
                 <Textarea
-                  placeholder="배정에 대한 특이사항이나 추가 정보를 입력하세요..."
-                  value={assignment.notes || ''}
-                  onChange={(e) => setAssignment(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder={`${businessAssignment.businessType === 'rental' ? '렌탈' : '판매'}에 대한 특이사항이나 추가 정보를 입력하세요...`}
+                  value={businessAssignment.notes || ''}
+                  onChange={(e) => setBusinessAssignment(prev => ({ ...prev, notes: e.target.value }))}
                   rows={3}
                   className="bg-slate-50 border-slate-300 focus:border-orange-500 focus:ring-orange-500 focus:bg-white resize-none"
                 />
@@ -1205,26 +1407,26 @@ const DeviceInventorySection: React.FC = () => {
           <DialogFooter className="pt-6 border-t border-slate-200 gap-3 bg-white">
             <Button
               variant="outline"
-              onClick={() => setIsAssignModalOpen(false)}
-              disabled={isAssigning}
+              onClick={() => setIsBusinessModalOpen(false)}
+              disabled={isProcessing}
               className="h-10 px-6 border-slate-300 text-slate-700 hover:bg-slate-50"
             >
               취소
             </Button>
             <Button 
-              onClick={handleConfirmAssignment} 
-              disabled={isAssigning || !assignment.organizationId}
+              onClick={handleConfirmBusiness} 
+              disabled={isProcessing || !businessAssignment.organizationId}
               className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-400"
             >
-              {isAssigning ? (
+              {isProcessing ? (
                 <div className="flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  배정 중...
+                  처리 중...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <UserPlus className="w-4 h-4" />
-                  배정하기
+                  렌탈/판매 처리
                 </div>
               )}
             </Button>
@@ -1301,8 +1503,8 @@ const DeviceInventorySection: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 디바이스 배정 해제 확인 모달 */}
-      <Dialog open={isUnassignModalOpen} onOpenChange={setIsUnassignModalOpen}>
+      {/* 디바이스 반납/회수 확인 모달 */}
+      <Dialog open={isReturnModalOpen} onOpenChange={setIsReturnModalOpen}>
         <DialogContent className="max-w-md bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
           <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
             <div className="flex items-center gap-4">
@@ -1310,9 +1512,9 @@ const DeviceInventorySection: React.FC = () => {
                 <UserMinus className="w-6 h-6 text-orange-600" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 배정 해제</DialogTitle>
+                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 반납/회수</DialogTitle>
                 <DialogDescription className="text-slate-600 mt-1">
-                  디바이스를 배정 대기 상태로 되돌립니다
+                  디바이스를 재고 대기 상태로 되돌립니다
                 </DialogDescription>
               </div>
             </div>
@@ -1321,21 +1523,24 @@ const DeviceInventorySection: React.FC = () => {
           <div className="py-6 bg-white">
             <div className="text-center space-y-4">
               <div className="text-lg font-medium text-slate-900">
-                <span className="font-bold text-orange-600">{deviceToUnassign?.id}</span>의 배정을 해제하시겠습니까?
+                <span className="font-bold text-orange-600">{deviceToReturn?.id}</span>의 반납/회수를 진행하시겠습니까?
               </div>
               <div className="text-sm text-slate-600">
-                배정 해제 후 디바이스는 다시 배정 대기 목록으로 이동합니다.
+                반납/회수 후 디바이스는 다시 재고 대기 목록으로 이동합니다.
               </div>
-              {deviceToUnassign && (
+              {deviceToReturn && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="text-sm text-blue-800 font-medium">
-                    현재 배정 정보
+                    현재 렌탈/판매 정보
                   </div>
                   <div className="text-xs text-blue-700 mt-1">
-                    기관: {deviceToUnassign.assignedOrganizationName || '-'}
+                    기관: {getBusinessOrganization(deviceToReturn).name}
                   </div>
                   <div className="text-xs text-blue-700">
-                    코드: {deviceToUnassign.assignedOrganizationCode || '-'}
+                    코드: {getBusinessOrganization(deviceToReturn).code}
+                  </div>
+                  <div className="text-xs text-blue-700">
+                    유형: {getBusinessOrganization(deviceToReturn).type}
                   </div>
                 </div>
               )}
@@ -1345,27 +1550,27 @@ const DeviceInventorySection: React.FC = () => {
           <DialogFooter className="border-t border-slate-200 bg-white pt-4">
             <Button
               variant="outline"
-              onClick={handleCancelUnassign}
-              disabled={isUnassigning}
+              onClick={handleCancelReturn}
+              disabled={isReturning}
               className="flex-1 text-slate-700 border-slate-300 hover:bg-slate-50"
             >
               취소
             </Button>
             <Button
               variant="outline"
-              onClick={handleConfirmUnassign}
-              disabled={isUnassigning}
+              onClick={handleConfirmReturn}
+              disabled={isReturning}
               className="flex-1 bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
             >
-              {isUnassigning ? (
+              {isReturning ? (
                 <div className="flex items-center space-x-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>해제 중...</span>
+                  <span>처리 중...</span>
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
                   <UserMinus className="w-4 h-4" />
-                  <span>배정 해제</span>
+                  <span>반납/회수</span>
                 </div>
               )}
             </Button>

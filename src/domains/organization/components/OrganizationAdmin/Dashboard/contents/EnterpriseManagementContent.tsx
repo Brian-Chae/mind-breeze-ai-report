@@ -38,6 +38,7 @@ import systemAdminService, {
   ReportAnalytics, 
   EnterpriseManagementAction 
 } from '../../../../services/SystemAdminService'
+import CreateEnterpriseModal from '../modals/CreateEnterpriseModal'
 
 interface EnterpriseManagementContentProps {}
 
@@ -55,6 +56,7 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
   const [performanceDashboard, setPerformanceDashboard] = useState<any>(null)
   const [comparisonAnalytics, setComparisonAnalytics] = useState<any>(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -297,68 +299,6 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
         {/* 기업 현황 탭 */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            {/* 제어 패널 */}
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="기업명, 코드, 이메일로 검색..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
-                    />
-                  </div>
-                  
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
-                  >
-                    <option value="all" className="text-slate-900">전체 상태</option>
-                    <option value="active" className="text-slate-900">활성</option>
-                    <option value="trial" className="text-slate-900">트라이얼</option>
-                    <option value="suspended" className="text-slate-900">정지</option>
-                    <option value="pending" className="text-slate-900">대기</option>
-                  </select>
-
-                  <select
-                    value={filterRisk}
-                    onChange={(e) => setFilterRisk(e.target.value)}
-                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
-                  >
-                    <option value="all" className="text-slate-900">전체 위험도</option>
-                    <option value="low" className="text-slate-900">낮음</option>
-                    <option value="medium" className="text-slate-900">보통</option>
-                    <option value="high" className="text-slate-900">높음</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={autoRefresh}
-                      onChange={(e) => setAutoRefresh(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                    />
-                    자동 새로고침
-                  </label>
-                  
-                  <button
-                    onClick={loadData}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    새로고침
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* 요약 통계 */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-shadow">
@@ -416,157 +356,188 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
               </div>
             </div>
 
+            {/* 제어 패널 */}
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="기업명, 코드, 이메일로 검색..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2.5 w-64 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900 placeholder-slate-500"
+                    />
+                  </div>
+                  
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
+                  >
+                    <option value="all" className="text-slate-900">전체 상태</option>
+                    <option value="active" className="text-slate-900">활성</option>
+                    <option value="trial" className="text-slate-900">트라이얼</option>
+                    <option value="suspended" className="text-slate-900">정지</option>
+                    <option value="pending" className="text-slate-900">대기</option>
+                  </select>
+
+                  <select
+                    value={filterRisk}
+                    onChange={(e) => setFilterRisk(e.target.value)}
+                    className="px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-slate-900"
+                  >
+                    <option value="all" className="text-slate-900">전체 위험도</option>
+                    <option value="low" className="text-slate-900">낮음</option>
+                    <option value="medium" className="text-slate-900">보통</option>
+                    <option value="high" className="text-slate-900">높음</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={autoRefresh}
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    자동 새로고침
+                  </label>
+                  
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                    기업등록
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* 기업 목록 */}
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {filteredEnterprises.map((enterprise) => (
-                <div key={enterprise.organizationId} className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-4">
-                      {/* 기업 기본 정보 */}
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-900">{enterprise.organizationName}</h3>
-                          <p className="text-sm text-slate-600">{enterprise.companyCode}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(enterprise.status.organizationStatus)}`}>
-                            {getStatusText(enterprise.status.organizationStatus)}
-                          </span>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getPlanColor(enterprise.status.plan)}`}>
-                            {getPlanText(enterprise.status.plan)}
-                          </span>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getRiskColor(enterprise.status.riskLevel)}`}>
-                            {getRiskText(enterprise.status.riskLevel)} 위험
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 관리자 정보 */}
-                      <div className="flex items-center gap-6 text-sm text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4" />
-                          {enterprise.adminInfo.email}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          가입: {enterprise.adminInfo.registeredAt.toLocaleDateString()}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Activity className="w-4 h-4" />
-                          마지막 로그인: {enterprise.adminInfo.lastLogin.toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      {/* 통계 정보 */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-slate-50 p-3 rounded-xl">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Users className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm font-medium text-slate-900">멤버</span>
-                          </div>
-                          <p className="text-lg font-bold text-slate-900">{enterprise.memberStats.totalMembers}</p>
-                          <p className="text-xs text-slate-600">{enterprise.memberStats.activeMembers} 활성</p>
-                        </div>
-                        
-                        <div className="bg-slate-50 p-3 rounded-xl">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FileText className="w-4 h-4 text-emerald-600" />
-                            <span className="text-sm font-medium text-slate-900">리포트</span>
-                          </div>
-                          <p className="text-lg font-bold text-slate-900">{enterprise.usageStats.totalReports}</p>
-                          <p className="text-xs text-slate-600">{enterprise.usageStats.reportsThisMonth} 이번달</p>
-                        </div>
-                        
-                        <div className="bg-slate-50 p-3 rounded-xl">
-                          <div className="flex items-center gap-2 mb-1">
-                            <CreditCard className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm font-medium text-slate-900">크래딧</span>
-                          </div>
-                          <p className="text-lg font-bold text-slate-900">{enterprise.creditInfo.currentBalance}</p>
-                          <p className="text-xs text-slate-600">{enterprise.creditInfo.usedThisMonth} 사용</p>
-                        </div>
-                        
-                        <div className="bg-slate-50 p-3 rounded-xl">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Activity className="w-4 h-4 text-orange-600" />
-                            <span className="text-sm font-medium text-slate-900">건강점수</span>
-                          </div>
-                          <p className="text-lg font-bold text-slate-900">{enterprise.status.healthScore}/100</p>
-                          <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
-                            <div 
-                              className="bg-orange-500 h-1.5 rounded-full transition-all" 
-                              style={{ width: `${enterprise.status.healthScore}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 성과 지표 */}
-                      <div className="flex items-center gap-6 text-sm">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-emerald-600" />
-                          <span className="text-slate-900">참여율: {enterprise.performance.engagementRate.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-purple-600" />
-                          <span className="text-slate-900">도입률: {enterprise.performance.adoptionRate.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-red-600" />
-                          <span className="text-slate-900">이탈위험: {enterprise.performance.churnRisk.toFixed(1)}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 액션 버튼들 */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => loadPerformanceDashboard(enterprise.organizationId)}
-                        disabled={dashboardLoading}
-                        className="px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all text-sm font-medium disabled:opacity-50"
-                      >
-                        {dashboardLoading ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <TrendingUp className="w-4 h-4 mr-1" />
-                            성과 분석
-                          </>
-                        )}
-                      </button>
-                      
-                      <button
-                        onClick={() => {
-                          setSelectedOrganization(enterprise.organizationId)
-                          loadReportAnalytics(enterprise.organizationId)
-                        }}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="상세 리포트 분석"
-                      >
-                        <Eye className="w-4 h-4 text-slate-600" />
-                      </button>
-                      
-                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="기업 설정">
-                        <Settings className="w-4 h-4 text-slate-600" />
-                      </button>
-                      
-                      <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="더 많은 옵션">
-                        <MoreHorizontal className="w-4 h-4 text-slate-600" />
-                      </button>
-                    </div>
-                  </div>
+            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">등록된 기업</h2>
+                  <p className="text-slate-600 mt-1">전체 기업 목록 및 상세 정보</p>
                 </div>
-              ))}
+              </div>
 
-              {filteredEnterprises.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-100 rounded-full mb-4">
-                    <Search className="w-6 h-6 text-slate-400" />
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">기업정보</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">관리자</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">상태</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">멤버</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">리포트</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">크레딧</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">건강점수</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">작업</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {filteredEnterprises.map((enterprise) => (
+                      <tr key={enterprise.organizationId} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="font-medium text-slate-900">{enterprise.organizationName}</div>
+                            <div className="text-sm text-slate-600">{enterprise.companyCode}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm text-slate-900">{enterprise.adminInfo.email}</div>
+                            <div className="text-xs text-slate-600">가입: {enterprise.adminInfo.registeredAt.toLocaleDateString()}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(enterprise.status.organizationStatus)}`}>
+                              {getStatusText(enterprise.status.organizationStatus)}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPlanColor(enterprise.status.plan)}`}>
+                              {getPlanText(enterprise.status.plan)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-slate-900">
+                            <div className="font-semibold">{enterprise.memberStats.totalMembers}</div>
+                            <div className="text-xs text-slate-600">{enterprise.memberStats.activeMembers} 활성</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-slate-900">
+                            <div className="font-semibold">{enterprise.usageStats.totalReports}</div>
+                            <div className="text-xs text-slate-600">{enterprise.usageStats.reportsThisMonth} 이번달</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-slate-900">
+                            <div className="font-semibold">{enterprise.creditInfo.currentBalance}</div>
+                            <div className="text-xs text-slate-600">{enterprise.creditInfo.usedThisMonth} 사용</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-semibold text-slate-900">{enterprise.status.healthScore}/100</div>
+                            <div className="w-16 bg-slate-200 rounded-full h-2">
+                              <div 
+                                className="bg-orange-500 h-2 rounded-full transition-all" 
+                                style={{ width: `${enterprise.status.healthScore}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => loadPerformanceDashboard(enterprise.organizationId)}
+                              disabled={dashboardLoading}
+                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                              title="성과 분석"
+                            >
+                              {dashboardLoading ? (
+                                <RefreshCw className="w-4 h-4 text-slate-600 animate-spin" />
+                              ) : (
+                                <TrendingUp className="w-4 h-4 text-slate-600" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedOrganization(enterprise.organizationId)
+                                loadReportAnalytics(enterprise.organizationId)
+                              }}
+                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                              title="상세 리포트 분석"
+                            >
+                              <Eye className="w-4 h-4 text-slate-600" />
+                            </button>
+                            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="기업 설정">
+                              <Settings className="w-4 h-4 text-slate-600" />
+                            </button>
+                            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="더 많은 옵션">
+                              <MoreHorizontal className="w-4 h-4 text-slate-600" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {filteredEnterprises.length === 0 && (
+                  <div className="text-center py-12 text-slate-500">
+                    <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>조건에 맞는 기업이 없습니다.</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">기업을 찾을 수 없습니다</h3>
-                  <p className="text-slate-600">검색 조건을 변경해보세요.</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -819,6 +790,18 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
           </>
         )}
       </div>
+      
+      {/* 기업 등록 모달 */}
+      {isCreateModalOpen && (
+        <CreateEnterpriseModal 
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            setIsCreateModalOpen(false)
+            loadData() // 목록 새로고침
+          }}
+        />
+      )}
     </div>
   )
 } 

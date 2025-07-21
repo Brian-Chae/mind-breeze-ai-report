@@ -327,17 +327,24 @@ class DeviceInventoryService extends BaseService {
   }
 
   /**
-   * 디바이스 배정 정보 업데이트
+   * 디바이스 렌탈/판매 처리 업데이트
    */
   async updateDeviceAssignment(
     deviceId: string, 
     organizationId: string,
     organizationName: string,
-    organizationCode: string
+    organizationCode: string,
+    businessType: 'rental' | 'sale' = 'rental',
+    contactInfo?: {
+      contactName?: string;
+      contactEmail?: string;
+      contactPhone?: string;
+      salePrice?: number;
+    }
   ): Promise<void> {
     return await this.measureAndLog('updateDeviceAssignment', async () => {
-      this.log('디바이스 배정 정보 업데이트 시작', { 
-        deviceId, organizationId, organizationName, organizationCode 
+      this.log('디바이스 렌탈/판매 처리 시작', { 
+        deviceId, organizationId, organizationName, organizationCode, businessType 
       });
 
       // 디바이스 존재 확인
@@ -349,21 +356,56 @@ class DeviceInventoryService extends BaseService {
       }
 
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
-      await updateDoc(docRef, {
-        status: 'ASSIGNED',
-        assignedOrganizationId: organizationId,
-        assignedOrganizationName: organizationName,
-        assignedOrganizationCode: organizationCode,
-        assignedAt: serverTimestamp(),
+      
+      // 비즈니스 유형에 따라 다른 상태와 필드 설정
+      const updateData: any = {
         updatedAt: serverTimestamp()
-      });
+      };
+
+      if (businessType === 'rental') {
+        // 렌탈 처리
+        updateData.status = 'RENTED';
+        updateData.businessType = 'RENTAL';
+        updateData.rentalOrganizationId = organizationId;
+        updateData.rentalOrganizationName = organizationName;
+        updateData.rentalOrganizationCode = organizationCode;
+        updateData.rentalStartDate = serverTimestamp();
+        
+        // 🔄 하위 호환성을 위해 기존 필드도 유지
+        updateData.assignedOrganizationId = organizationId;
+        updateData.assignedOrganizationName = organizationName;
+        updateData.assignedOrganizationCode = organizationCode;
+        updateData.assignedAt = serverTimestamp();
+      } else if (businessType === 'sale') {
+        // 판매 처리
+        updateData.status = 'SOLD';
+        updateData.businessType = 'SALE';
+        updateData.soldToOrganizationId = organizationId;
+        updateData.soldToOrganizationName = organizationName;
+        updateData.soldToOrganizationCode = organizationCode;
+        updateData.saleDate = serverTimestamp();
+        
+        // 🎯 판매 담당자 정보 저장
+        if (contactInfo?.contactName) updateData.contactName = contactInfo.contactName;
+        if (contactInfo?.contactEmail) updateData.contactEmail = contactInfo.contactEmail;
+        if (contactInfo?.contactPhone) updateData.contactPhone = contactInfo.contactPhone;
+        if (contactInfo?.salePrice) updateData.salePrice = contactInfo.salePrice;
+        
+        // 🔄 하위 호환성을 위해 기존 필드도 유지
+        updateData.assignedOrganizationId = organizationId;
+        updateData.assignedOrganizationName = organizationName;
+        updateData.assignedOrganizationCode = organizationCode;
+        updateData.assignedAt = serverTimestamp();
+      }
+
+      await updateDoc(docRef, updateData);
 
       // 캐시 무효화
       await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
       await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
 
-      this.log('디바이스 배정 정보 업데이트 완료', { deviceId, organizationId });
+      this.log('디바이스 렌탈/판매 처리 완료', { deviceId, organizationId, businessType });
     });
   }
 
@@ -382,10 +424,10 @@ class DeviceInventoryService extends BaseService {
         throw error;
       }
 
-      // 배정된 디바이스는 삭제 전 확인
-      if (device.status === 'ASSIGNED' || device.status === 'IN_USE') {
-        const error = new Error('배정되거나 사용 중인 디바이스는 삭제할 수 없습니다');
-        this.error('배정된 디바이스 삭제 시도', error, { deviceId, status: device.status });
+      // 렌탈/판매 또는 사용 중인 디바이스는 삭제 전 확인
+      if (device.status === 'ASSIGNED' || device.status === 'RENTED' || device.status === 'SOLD' || device.status === 'IN_USE') {
+        const error = new Error('렌탈/판매 처리되었거나 사용 중인 디바이스는 삭제할 수 없습니다');
+        this.error('렌탈/판매 처리된 디바이스 삭제 시도', error, { deviceId, status: device.status });
         throw error;
       }
 
@@ -417,23 +459,71 @@ class DeviceInventoryService extends BaseService {
         throw error;
       }
 
-      // 배정되지 않은 디바이스는 해제할 수 없음
-      if (device.status !== 'ASSIGNED' && device.status !== 'IN_USE') {
-        const error = new Error('배정되지 않은 디바이스는 해제할 수 없습니다');
-        this.error('배정되지 않은 디바이스 해제 시도', error, { deviceId, status: device.status });
+      // 렌탈/판매되지 않은 디바이스는 해제할 수 없음
+      if (device.status !== 'ASSIGNED' && device.status !== 'RENTED' && device.status !== 'SOLD' && device.status !== 'IN_USE') {
+        const error = new Error('렌탈/판매 처리되지 않은 디바이스는 해제할 수 없습니다');
+        this.error('렌탈/판매되지 않은 디바이스 해제 시도', error, { deviceId, status: device.status });
         throw error;
       }
 
-      // Firestore에서 배정 정보 제거 및 상태 변경
+      // Firestore에서 렌탈/판매 정보 제거 및 상태 변경
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
-      await updateDoc(docRef, {
+      const updateData: any = {
         status: 'AVAILABLE',
+        updatedAt: serverTimestamp(),
+        // 🔄 기존 필드들 제거 (하위 호환성)
         assignedOrganizationId: null,
         assignedOrganizationName: null,
         assignedOrganizationCode: null,
         assignedAt: null,
-        updatedAt: serverTimestamp()
-      });
+        // 🎯 새로운 필드들 제거
+        businessType: null,
+        rentalOrganizationId: null,
+        rentalOrganizationName: null,
+        rentalOrganizationCode: null,
+        rentalStartDate: null,
+        rentalEndDate: null,
+        soldToOrganizationId: null,
+        soldToOrganizationName: null,
+        soldToOrganizationCode: null,
+        saleDate: null,
+        salePrice: null
+      };
+
+      await updateDoc(docRef, updateData);
+
+      // 🎯 렌탈 계약이 있는 경우 상태 업데이트
+      if (device.businessType === 'RENTAL' || device.status === 'RENTED') {
+        try {
+          // deviceRentals 컬렉션에서 해당 디바이스의 활성 렌탈 찾아서 완료 처리
+          const rentalsQuery = query(
+            collection(this.db, 'deviceRentals'),
+            where('deviceId', '==', deviceId),
+            where('status', 'in', ['ACTIVE', 'SCHEDULED_RETURN', 'OVERDUE'])
+          );
+          
+          const rentalsSnapshot = await getDocs(rentalsQuery);
+          
+          if (!rentalsSnapshot.empty) {
+            const batch = writeBatch(this.db);
+            
+            rentalsSnapshot.docs.forEach((rentalDoc) => {
+              batch.update(rentalDoc.ref, {
+                status: 'RETURNED', // 반납 완료 상태로 변경
+                actualReturnDate: serverTimestamp(),
+                returnProcessedAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+            });
+            
+            await batch.commit();
+            this.log('렌탈 계약 반납 처리 완료', { deviceId, rentalCount: rentalsSnapshot.size });
+          }
+        } catch (rentalError) {
+          this.error('렌탈 계약 업데이트 실패', rentalError as Error, { deviceId });
+          // 렌탈 계약 업데이트가 실패해도 디바이스 상태 변경은 완료되었으므로 에러를 던지지 않음
+        }
+      }
 
       // 캐시 무효화
       await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
@@ -466,11 +556,14 @@ class DeviceInventoryService extends BaseService {
       const stats: InventoryStats = {
         total: 0,
         available: 0,
-        assigned: 0,
+        rented: 0,
+        sold: 0,
         inUse: 0,
         maintenance: 0,
         returned: 0,
-        disposed: 0
+        disposed: 0,
+        // 🔄 하위 호환성을 위해 유지
+        assigned: 0
       };
 
       snapshot.docs.forEach(doc => {
@@ -481,7 +574,14 @@ class DeviceInventoryService extends BaseService {
           case 'AVAILABLE':
             stats.available++;
             break;
+          case 'RENTED':
+            stats.rented++;
+            break;
+          case 'SOLD':
+            stats.sold++;
+            break;
           case 'ASSIGNED':
+            // 🔄 기존 ASSIGNED 상태도 처리 (하위 호환성)
             stats.assigned++;
             break;
           case 'IN_USE':

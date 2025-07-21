@@ -7,20 +7,65 @@
 // 1. 디바이스 재고 (DeviceInventory) - 재고 관리 탭
 // ============================================================================
 
+// 🎯 새로운 디바이스 상태 정의
+export enum DeviceStatus {
+  AVAILABLE = 'AVAILABLE',    // 재고 (사용 가능)
+  RENTED = 'RENTED',         // 렌탈 완료
+  SOLD = 'SOLD',             // 판매 완료  
+  IN_USE = 'IN_USE',         // 사용 중 (렌탈/판매 공통)
+  MAINTENANCE = 'MAINTENANCE', // 수리 중
+  RETURNED = 'RETURNED',     // 반납됨
+  DISPOSED = 'DISPOSED'      // 폐기됨
+}
+
+// 🎯 비즈니스 유형 정의
+export enum BusinessType {
+  RENTAL = 'RENTAL',   // 렌탈 업무
+  SALE = 'SALE'        // 판매 업무
+}
+
 export interface DeviceInventory {
   id: string; // 디바이스 시리얼 넘버 (예: "LXB-010414")
   deviceType: 'LINK_BAND_2.0' | 'LINK_BAND_3.0' | string; // 기본값: LINK_BAND_2.0
   registrationDate: Date; // 등록일자 (기본값: 오늘)
-  status: 'AVAILABLE' | 'ASSIGNED' | 'IN_USE' | 'MAINTENANCE' | 'RETURNED' | 'DISPOSED';
+  status: DeviceStatus;
   purchaseCost?: number; // 구매 비용
   supplier?: string; // 공급업체
   warrantyPeriod?: number; // 보증 기간 (개월)
   notes?: string; // 메모
-  // 배정 정보
-  assignedOrganizationId?: string; // 배정된 조직 ID
-  assignedOrganizationName?: string; // 배정된 조직명
-  assignedOrganizationCode?: string; // 배정된 조직 코드
-  assignedAt?: Date; // 배정일시
+  
+  // 🎯 비즈니스 유형 정보
+  businessType?: BusinessType; // 렌탈 또는 판매
+  
+  // 렌탈 정보 (businessType이 RENTAL일 때만 사용)
+  rentalOrganizationId?: string;
+  rentalOrganizationName?: string;
+  rentalOrganizationCode?: string;
+  rentalStartDate?: Date;
+  rentalEndDate?: Date;
+  
+  // 판매 정보 (businessType이 SALE일 때만 사용)
+  soldToOrganizationId?: string;
+  soldToOrganizationName?: string;
+  soldToOrganizationCode?: string;
+  saleDate?: Date;
+  salePrice?: number;
+  
+  // 담당자 정보 (렌탈/판매 공통)
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  
+  // 🔄 기존 필드들 (하위 호환성을 위해 유지, 단계적으로 제거 예정)
+  // @deprecated - rentalOrganizationId 또는 soldToOrganizationId 사용
+  assignedOrganizationId?: string; 
+  // @deprecated - rentalOrganizationName 또는 soldToOrganizationName 사용
+  assignedOrganizationName?: string; 
+  // @deprecated - rentalOrganizationCode 또는 soldToOrganizationCode 사용
+  assignedOrganizationCode?: string; 
+  // @deprecated - rentalStartDate 또는 saleDate 사용
+  assignedAt?: Date; 
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,17 +84,73 @@ export interface CreateDeviceInventoryRequest {
 export interface InventoryStats {
   total: number;
   available: number;
-  assigned: number;
+  rented: number;      // 🎯 ASSIGNED → RENTED 변경
+  sold: number;        // 🎯 새로 추가
   inUse: number;
   maintenance: number;
   returned: number;
   disposed: number;
+  
+  // 🔄 하위 호환성을 위해 유지 (단계적으로 제거 예정)
+  // @deprecated - rented 사용
+  assigned?: number;
 }
 
 // ============================================================================
-// 2. 디바이스 배정 (DeviceAssignment) - 배정 탭
+// 2. 🎯 판매 계약 관리 (SalesContract) - 판매기기관리 탭
 // ============================================================================
 
+export interface SalesContract {
+  id: string;
+  deviceId: string; // DeviceInventory.id 참조
+  deviceSerialNumber: string; // 빠른 조회용
+  
+  // 구매 조직 정보
+  organizationId: string;
+  organizationName: string;
+  organizationCode?: string;
+  
+  // 판매 정보
+  saleDate: Date;
+  salePrice: number;
+  warrantyEndDate: Date; // 보증 만료일
+  status: 'ACTIVE' | 'WARRANTY_EXPIRED' | 'RECALLED'; // 판매 상태
+  
+  // 담당자 정보
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  
+  // 관리자 정보
+  soldBy: string; // 판매 담당 관리자
+  notes?: string;
+  
+  // A/S 관련 정보 (판매기기관리에서 추적)
+  serviceRequestCount: number; // A/S 요청 건수
+  lastServiceDate?: Date; // 마지막 A/S 일자
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 판매 처리 요청 데이터
+export interface CreateSalesContractRequest {
+  deviceId: string;
+  organizationId: string;
+  organizationName: string;
+  salePrice: number;
+  warrantyPeriod?: number; // 보증 기간 (개월, 기본값: 12)
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  notes?: string;
+}
+
+// ============================================================================
+// 3. 🔄 기존 DeviceAssignment (하위 호환성을 위해 유지)
+// ============================================================================
+
+// @deprecated - SalesContract와 RentalContract를 개별적으로 사용하세요
 export interface DeviceAssignment {
   id: string;
   deviceId: string; // DeviceInventory.id 참조
@@ -68,7 +169,7 @@ export interface DeviceAssignment {
   updatedAt: Date;
 }
 
-// 배정 요청 데이터
+// @deprecated - CreateSalesContractRequest 또는 렌탈 요청 사용
 export interface CreateDeviceAssignmentRequest {
   deviceId: string;
   organizationId: string;
@@ -281,17 +382,36 @@ export interface DeviceManagementDashboard {
 // 7. 공통 유틸리티 타입
 // ============================================================================
 
-// 디바이스 상태 라벨
+// 🎯 새로운 디바이스 상태 라벨
 export const DeviceStatusLabels = {
-  AVAILABLE: '🟢 대기',
+  [DeviceStatus.AVAILABLE]: '🟢 재고',
+  [DeviceStatus.RENTED]: '🔵 렌탈중',
+  [DeviceStatus.SOLD]: '🟠 판매완료',
+  [DeviceStatus.IN_USE]: '🟡 사용중',
+  [DeviceStatus.MAINTENANCE]: '🔧 점검중',
+  [DeviceStatus.RETURNED]: '🔄 반납완료',
+  [DeviceStatus.DISPOSED]: '❌ 폐기',
+  
+  // 🔄 하위 호환성을 위해 유지
+  AVAILABLE: '🟢 재고',
+  // @deprecated - RENTED 사용
   ASSIGNED: '🔵 배정완료',
+  RENTED: '🔵 렌탈중',
+  SOLD: '🟠 판매완료',
   IN_USE: '🟡 사용중',
   MAINTENANCE: '🔧 점검중',
   RETURNED: '🔄 반납완료',
   DISPOSED: '❌ 폐기'
 } as const;
 
-// 배정 상태 라벨
+// 판매 상태 라벨
+export const SalesStatusLabels = {
+  ACTIVE: '🟢 활성',
+  WARRANTY_EXPIRED: '⚠️ 보증만료',
+  RECALLED: '🔴 회수됨'
+} as const;
+
+// @deprecated - SalesStatusLabels 사용
 export const AssignmentStatusLabels = {
   ACTIVE: '🟢 활성',
   COMPLETED: '✅ 완료',

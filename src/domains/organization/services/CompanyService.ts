@@ -128,17 +128,21 @@ export class OrganizationService {
       const organizationCode = codeGeneration.organizationCode;
       console.log('✅ 조직 코드 생성 성공:', organizationCode);
 
-      // 사업자 등록번호 중복 확인
-      console.log('🔍 사업자 등록번호 중복 확인 중...');
-      const isDuplicate = await this.checkBusinessNumberExists(
-        registrationData.businessNumber
-      );
-      if (isDuplicate) {
-        console.error('❌ 사업자 등록번호 중복:', registrationData.businessNumber);
-        return {
-          success: false,
-          error: '이미 등록된 사업자 등록번호입니다.'
-        };
+      // 사업자 등록번호 중복 확인 (입력된 경우에만)
+      if (registrationData.businessNumber && registrationData.businessNumber.trim()) {
+        console.log('🔍 사업자 등록번호 중복 확인 중...', registrationData.businessNumber);
+        const isDuplicate = await this.checkBusinessNumberExists(
+          registrationData.businessNumber
+        );
+        if (isDuplicate) {
+          console.error('❌ 사업자 등록번호 중복:', registrationData.businessNumber);
+          return {
+            success: false,
+            error: '이미 등록된 사업자 등록번호입니다.'
+          };
+        }
+      } else {
+        console.log('ℹ️ 사업자 등록번호가 입력되지 않아 중복 확인을 건너뜁니다.');
       }
 
       // 관리자 이메일 중복 확인은 건너뛰기 (이미 존재하는 계정으로 등록)
