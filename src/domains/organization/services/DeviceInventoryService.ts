@@ -402,6 +402,48 @@ class DeviceInventoryService extends BaseService {
     });
   }
 
+  /**
+   * 디바이스 배정 해제
+   */
+  async unassignDevice(deviceId: string): Promise<void> {
+    return await this.measureAndLog('unassignDevice', async () => {
+      this.log('디바이스 배정 해제 시작', { deviceId });
+
+      // 디바이스 존재 확인
+      const device = await this.getDeviceById(deviceId);
+      if (!device) {
+        const error = new Error('디바이스를 찾을 수 없습니다');
+        this.error('디바이스를 찾을 수 없음', error, { deviceId });
+        throw error;
+      }
+
+      // 배정되지 않은 디바이스는 해제할 수 없음
+      if (device.status !== 'ASSIGNED' && device.status !== 'IN_USE') {
+        const error = new Error('배정되지 않은 디바이스는 해제할 수 없습니다');
+        this.error('배정되지 않은 디바이스 해제 시도', error, { deviceId, status: device.status });
+        throw error;
+      }
+
+      // Firestore에서 배정 정보 제거 및 상태 변경
+      const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
+      await updateDoc(docRef, {
+        status: 'AVAILABLE',
+        assignedOrganizationId: null,
+        assignedOrganizationName: null,
+        assignedOrganizationCode: null,
+        assignedAt: null,
+        updatedAt: serverTimestamp()
+      });
+
+      // 캐시 무효화
+      await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
+      await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
+      await this.cache.delete(`${this.COLLECTION_NAME}:available`);
+
+      this.log('디바이스 배정 해제 완료', { deviceId });
+    });
+  }
+
   // ============================================================================
   // 통계 및 분석
   // ============================================================================

@@ -24,6 +24,7 @@ import {
   Activity,
   Smartphone,
   UserPlus,
+  UserMinus,
   Trash2,
   Building2
 } from 'lucide-react';
@@ -142,6 +143,11 @@ const DeviceInventorySection: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<DeviceInventory | null>(null);
+
+  // 배정 해제 모달 상태
+  const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
+  const [isUnassigning, setIsUnassigning] = useState(false);
+  const [deviceToUnassign, setDeviceToUnassign] = useState<DeviceInventory | null>(null);
 
   // ============================================================================
   // Data Loading
@@ -310,6 +316,41 @@ const DeviceInventorySection: React.FC = () => {
   const handleCancelDelete = () => {
     setIsDeleteModalOpen(false);
     setDeviceToDelete(null);
+  };
+
+  const handleUnassignDevice = (device: DeviceInventory) => {
+    setDeviceToUnassign(device);
+    setIsUnassignModalOpen(true);
+  };
+
+  const handleConfirmUnassign = async () => {
+    if (!deviceToUnassign) return;
+
+    try {
+      setIsUnassigning(true);
+      
+      await deviceInventoryService.unassignDevice(deviceToUnassign.id);
+      
+      toast.success(`${deviceToUnassign.id}의 배정이 해제되었습니다.`);
+      
+      // 모달 닫기 및 초기화
+      setIsUnassignModalOpen(false);
+      setDeviceToUnassign(null);
+      
+      // 데이터 새로고침
+      await loadData();
+      
+    } catch (error: any) {
+      console.error('디바이스 배정 해제 실패:', error);
+      toast.error(error.message || '디바이스 배정 해제 중 오류가 발생했습니다.');
+    } finally {
+      setIsUnassigning(false);
+    }
+  };
+
+  const handleCancelUnassign = () => {
+    setIsUnassignModalOpen(false);
+    setDeviceToUnassign(null);
   };
 
   const handleConfirmAssignment = async () => {
@@ -752,6 +793,17 @@ const DeviceInventorySection: React.FC = () => {
                         {/* 액션 */}
                         <TableCell className="py-4 text-right">
                           <div className="flex items-center justify-end space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleUnassignDevice(device)}
+                              className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:border-orange-400 transition-colors px-3 py-1.5 h-auto"
+                              title="디바이스 배정 해제"
+                            >
+                              <UserMinus className="w-4 h-4 mr-1" />
+                              배정 해제
+                            </Button>
+                            
                             <Button 
                               size="sm" 
                               variant="outline"
@@ -1242,6 +1294,78 @@ const DeviceInventorySection: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Trash2 className="w-4 h-4" />
                   <span>삭제하기</span>
+                </div>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 디바이스 배정 해제 확인 모달 */}
+      <Dialog open={isUnassignModalOpen} onOpenChange={setIsUnassignModalOpen}>
+        <DialogContent className="max-w-md bg-white border-2 border-slate-300 shadow-2xl backdrop-blur-sm" style={{ backgroundColor: 'white' }}>
+          <DialogHeader className="pb-6 border-b border-slate-200 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-orange-100 rounded-xl">
+                <UserMinus className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900">디바이스 배정 해제</DialogTitle>
+                <DialogDescription className="text-slate-600 mt-1">
+                  디바이스를 배정 대기 상태로 되돌립니다
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-6 bg-white">
+            <div className="text-center space-y-4">
+              <div className="text-lg font-medium text-slate-900">
+                <span className="font-bold text-orange-600">{deviceToUnassign?.id}</span>의 배정을 해제하시겠습니까?
+              </div>
+              <div className="text-sm text-slate-600">
+                배정 해제 후 디바이스는 다시 배정 대기 목록으로 이동합니다.
+              </div>
+              {deviceToUnassign && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="text-sm text-blue-800 font-medium">
+                    현재 배정 정보
+                  </div>
+                  <div className="text-xs text-blue-700 mt-1">
+                    기관: {deviceToUnassign.assignedOrganizationName || '-'}
+                  </div>
+                  <div className="text-xs text-blue-700">
+                    코드: {deviceToUnassign.assignedOrganizationCode || '-'}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-200 bg-white pt-4">
+            <Button
+              variant="outline"
+              onClick={handleCancelUnassign}
+              disabled={isUnassigning}
+              className="flex-1"
+            >
+              취소
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleConfirmUnassign}
+              disabled={isUnassigning}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
+            >
+              {isUnassigning ? (
+                <div className="flex items-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>해제 중...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <UserMinus className="w-4 h-4" />
+                  <span>배정 해제</span>
                 </div>
               )}
             </Button>
