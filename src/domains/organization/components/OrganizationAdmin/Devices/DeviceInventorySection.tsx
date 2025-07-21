@@ -98,6 +98,66 @@ const DeviceInventorySection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
+  // 조직 정보 캐시
+  const [organizationsCache, setOrganizationsCache] = useState<Record<string, { name: string; code: string }>>({});
+  
+  // 디바이스 배정 정보 캐시 (deviceId -> organizationId 매핑)
+  const [deviceAssignments, setDeviceAssignments] = useState<Record<string, string>>({});
+  
+  // 조직 정보 로딩
+  const loadOrganizationsCache = async () => {
+    try {
+      const orgs = await companyService.getRecentOrganizations(1000); // 대량 로드
+      const cache: Record<string, { name: string; code: string }> = {};
+      
+      orgs.forEach(org => {
+        if (org.id) {
+          cache[org.id] = {
+            name: org.organizationName || '알 수 없는 조직',
+            code: org.organizationCode || 'N/A'
+          };
+        }
+      });
+      
+      setOrganizationsCache(cache);
+    } catch (error) {
+      console.error('조직 정보 로딩 실패:', error);
+    }
+  };
+  
+  // 디바이스 배정 정보 로딩
+  const loadDeviceAssignments = async () => {
+    try {
+      // DeviceAssignment 데이터를 로드하여 deviceId -> organizationId 매핑 생성
+      // 여기서는 임시로 빈 객체를 사용하고, 실제로는 DeviceAssignmentService를 통해 로드해야 함
+      const assignments: Record<string, string> = {};
+      
+      // 실제 구현에서는 다음과 같이 할 것:
+      // const assignmentData = await deviceAssignmentService.getAllActiveAssignments();
+      // assignmentData.forEach(assignment => {
+      //   assignments[assignment.deviceId] = assignment.organizationId;
+      // });
+      
+      setDeviceAssignments(assignments);
+    } catch (error) {
+      console.error('디바이스 배정 정보 로딩 실패:', error);
+    }
+  };
+  
+  // 배정된 조직 정보 조회
+  const getAssignedOrganization = (device: DeviceInventory) => {
+    const organizationId = deviceAssignments[device.id];
+    
+    if (!organizationId) {
+      return { name: '-', code: '-' };
+    }
+    
+    return organizationsCache[organizationId] || { 
+      name: '조직 정보 없음', 
+      code: 'N/A' 
+    };
+  };
+  
   // 등록 모달 상태
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -135,7 +195,9 @@ const DeviceInventorySection: React.FC = () => {
       setLoading(true);
       const [inventoryResponse, inventoryStats] = await Promise.all([
         deviceInventoryService.getAllInventory(),
-        deviceInventoryService.getInventoryStats()
+        deviceInventoryService.getInventoryStats(),
+        loadOrganizationsCache(),
+        loadDeviceAssignments()
       ]);
 
       if (inventoryResponse.success && inventoryResponse.data) {
@@ -283,6 +345,14 @@ const DeviceInventorySection: React.FC = () => {
       
       // 디바이스 상태를 ASSIGNED로 변경
       await deviceInventoryService.updateDeviceStatus(selectedDevice.id, 'ASSIGNED');
+      
+      // 배정 정보를 캐시에 추가
+      if (assignment.organizationId) {
+        setDeviceAssignments(prev => ({
+          ...prev,
+          [selectedDevice.id]: assignment.organizationId as string
+        }));
+      }
       
       // TODO: 배정 정보를 별도 컬렉션에 저장하는 로직 추가
       // await deviceAssignmentService.createAssignment(assignment);
@@ -622,6 +692,7 @@ const DeviceInventorySection: React.FC = () => {
                   <TableHead className="font-semibold text-gray-700 py-4">종류</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">보증 기간</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">상태</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">배정 기관</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">등록일</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4 text-right">액션</TableHead>
                 </TableRow>
@@ -629,7 +700,7 @@ const DeviceInventorySection: React.FC = () => {
               <TableBody>
                 {filteredDevices.filter(device => device.status !== 'AVAILABLE').length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12">
+                    <TableCell colSpan={7} className="text-center py-12">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full">
                           <Users className="w-6 h-6 text-blue-400" />
@@ -675,6 +746,21 @@ const DeviceInventorySection: React.FC = () => {
                         {/* 상태 */}
                         <TableCell className="py-4">
                           {getStatusBadge(device.status)}
+                        </TableCell>
+                        
+                        {/* 배정 기관 */}
+                        <TableCell className="py-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <Building2 className="w-4 h-4 text-gray-400" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {getAssignedOrganization(device).name}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {getAssignedOrganization(device).code}
+                            </div>
+                          </div>
                         </TableCell>
                         
                         {/* 등록일 */}
