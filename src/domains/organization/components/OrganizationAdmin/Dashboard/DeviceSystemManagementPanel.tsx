@@ -51,11 +51,25 @@ import {
   RotateCcw,
   Gauge,
   Signal,
-  HardDrive
+  HardDrive,
+  Table
 } from 'lucide-react'
 
 interface DeviceSystemManagementPanelProps {
   onClose: () => void
+}
+
+// 기기별 사용 현황 타입 정의
+interface DeviceUsageStatus {
+  deviceId: string
+  deviceName: string
+  deviceType: string
+  organizationName: string
+  usageType: 'purchase' | 'rental'
+  rentalPeriod?: number // 개월
+  totalMeasurements: number
+  lastUsedDate: Date
+  status: 'active' | 'inactive' | 'maintenance'
 }
 
 export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelProps> = ({ onClose }) => {
@@ -76,8 +90,13 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
     priority: 'medium'
   })
 
+  // 기기별 사용 현황 상태
+  const [deviceUsageList, setDeviceUsageList] = useState<DeviceUsageStatus[]>([])
+  const [usageLoading, setUsageLoading] = useState(false)
+
   useEffect(() => {
     loadSystemOverview()
+    loadDeviceUsageList()
   }, [])
 
   const loadSystemOverview = async () => {
@@ -108,6 +127,52 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
       setUsageAnalytics(analytics)
     } catch (error) {
       console.error('디바이스 사용 분석 로드 실패:', error)
+    }
+  }
+
+  // 기기별 사용 현황 로드
+  const loadDeviceUsageList = async () => {
+    setUsageLoading(true)
+    try {
+      // 임시 데이터 - 실제로는 API에서 가져와야 함
+      const mockData: DeviceUsageStatus[] = [
+        {
+          deviceId: 'LXB-023832',
+          deviceName: 'LXB-023832',
+          deviceType: 'LINK BAND 2.0',
+          organizationName: 'LOOXID LABS INC.',
+          usageType: 'rental',
+          rentalPeriod: 1,
+          totalMeasurements: 12,
+          lastUsedDate: new Date('2025-07-21'),
+          status: 'active'
+        },
+        {
+          deviceId: 'LXB-02630004',
+          deviceName: 'LXB-02630004',
+          deviceType: 'LINK BAND 2.0',
+          organizationName: 'LOOXID LABS INC.',
+          usageType: 'purchase',
+          totalMeasurements: 8,
+          lastUsedDate: new Date('2025-07-20'),
+          status: 'active'
+        },
+        {
+          deviceId: 'LXB-02630003',
+          deviceName: 'LXB-02630003',
+          deviceType: 'LINK BAND 2.0',
+          organizationName: '-',
+          usageType: 'purchase',
+          totalMeasurements: 0,
+          lastUsedDate: new Date('2025-07-19'),
+          status: 'inactive'
+        }
+      ]
+      setDeviceUsageList(mockData)
+    } catch (error) {
+      console.error('기기별 사용 현황 로드 실패:', error)
+    } finally {
+      setUsageLoading(false)
     }
   }
 
@@ -226,9 +291,10 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
 
         <CardContent className="p-0 h-full bg-gray-50">
           <Tabs defaultValue="overview" className="h-full">
-            <TabsList className="grid w-full grid-cols-4 border-b rounded-none bg-white">
+            <TabsList className="grid w-full grid-cols-5 border-b rounded-none bg-white">
               <TabsTrigger value="overview">전체 현황</TabsTrigger>
               <TabsTrigger value="organizations">기업별 현황</TabsTrigger>
+              <TabsTrigger value="usage">사용현황</TabsTrigger>
               <TabsTrigger value="analytics">사용 분석</TabsTrigger>
               <TabsTrigger value="management">디바이스 관리</TabsTrigger>
             </TabsList>
@@ -382,6 +448,132 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
                   </Card>
                 </>
               )}
+            </TabsContent>
+
+            {/* 사용현황 탭 */}
+            <TabsContent value="usage" className="h-full p-6 space-y-6 bg-gray-50">
+              <div className="space-y-6">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">기기별 사용 현황</h2>
+                    <p className="text-gray-600">전체 디바이스의 사용 현황을 확인할 수 있습니다</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={loadDeviceUsageList}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      새로고침
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 사용 현황 테이블 */}
+                <Card className="bg-white border border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Table className="h-5 w-5" />
+                      기기별 사용 현황 목록
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {usageLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="h-6 w-6 animate-spin text-blue-600 mr-2" />
+                        <span className="text-gray-600">데이터를 불러오는 중...</span>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">기기명</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">기기종류</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">사용 기업명</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">사용 방식</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">총 측정횟수</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">최근 사용일</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">상태</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {deviceUsageList.map((device) => (
+                              <tr key={device.deviceId} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-2">
+                                    <Smartphone className="h-4 w-4 text-blue-600" />
+                                    <span className="font-medium text-gray-900">{device.deviceName}</span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <Badge variant="outline" className="text-xs">
+                                    {device.deviceType}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-gray-400" />
+                                    <span className="text-gray-700">{device.organizationName}</span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-1">
+                                    {device.usageType === 'purchase' ? (
+                                      <Badge className="bg-green-100 text-green-800 text-xs">
+                                        구매
+                                      </Badge>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                          렌탈
+                                        </Badge>
+                                        <span className="text-xs text-gray-600">
+                                          {device.rentalPeriod}개월
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-1">
+                                    <Activity className="h-4 w-4 text-purple-600" />
+                                    <span className="font-medium text-gray-900">
+                                      {device.totalMeasurements}회
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-4 w-4 text-gray-400" />
+                                    <span className="text-gray-700">
+                                      {device.lastUsedDate.toLocaleDateString('ko-KR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <Badge 
+                                    className={
+                                      device.status === 'active' ? 'bg-green-100 text-green-800' :
+                                      device.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }
+                                  >
+                                    {device.status === 'active' ? '활성' :
+                                     device.status === 'maintenance' ? '유지보수' : '비활성'}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* 기업별 현황 탭 */}
