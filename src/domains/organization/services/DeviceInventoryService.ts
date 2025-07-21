@@ -325,6 +325,47 @@ class DeviceInventoryService extends BaseService {
     });
   }
 
+  /**
+   * 디바이스 배정 정보 업데이트
+   */
+  async updateDeviceAssignment(
+    deviceId: string, 
+    organizationId: string,
+    organizationName: string,
+    organizationCode: string
+  ): Promise<void> {
+    return await this.measureAndLog('updateDeviceAssignment', async () => {
+      this.log('디바이스 배정 정보 업데이트 시작', { 
+        deviceId, organizationId, organizationName, organizationCode 
+      });
+
+      // 디바이스 존재 확인
+      const device = await this.getDeviceById(deviceId);
+      if (!device) {
+        const error = new Error('디바이스를 찾을 수 없습니다');
+        this.error('디바이스를 찾을 수 없음', error, { deviceId });
+        throw error;
+      }
+
+      const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
+      await updateDoc(docRef, {
+        status: 'ASSIGNED',
+        assignedOrganizationId: organizationId,
+        assignedOrganizationName: organizationName,
+        assignedOrganizationCode: organizationCode,
+        assignedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      // 캐시 무효화
+      await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
+      await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
+      await this.cache.delete(`${this.COLLECTION_NAME}:available`);
+
+      this.log('디바이스 배정 정보 업데이트 완료', { deviceId, organizationId });
+    });
+  }
+
   // ============================================================================
   // 통계 및 분석
   // ============================================================================

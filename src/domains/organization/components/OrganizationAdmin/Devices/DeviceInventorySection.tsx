@@ -98,64 +98,20 @@ const DeviceInventorySection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  // 조직 정보 캐시
-  const [organizationsCache, setOrganizationsCache] = useState<Record<string, { name: string; code: string }>>({});
-  
-  // 디바이스 배정 정보 캐시 (deviceId -> organizationId 매핑)
-  const [deviceAssignments, setDeviceAssignments] = useState<Record<string, string>>({});
-  
-  // 조직 정보 로딩
-  const loadOrganizationsCache = async () => {
-    try {
-      const orgs = await companyService.getRecentOrganizations(1000); // 대량 로드
-      const cache: Record<string, { name: string; code: string }> = {};
-      
-      orgs.forEach(org => {
-        if (org.id) {
-          cache[org.id] = {
-            name: org.organizationName || '알 수 없는 조직',
-            code: org.organizationCode || 'N/A'
-          };
-        }
-      });
-      
-      setOrganizationsCache(cache);
-    } catch (error) {
-      console.error('조직 정보 로딩 실패:', error);
-    }
-  };
-  
-  // 디바이스 배정 정보 로딩
-  const loadDeviceAssignments = async () => {
-    try {
-      // DeviceAssignment 데이터를 로드하여 deviceId -> organizationId 매핑 생성
-      // 여기서는 임시로 빈 객체를 사용하고, 실제로는 DeviceAssignmentService를 통해 로드해야 함
-      const assignments: Record<string, string> = {};
-      
-      // 실제 구현에서는 다음과 같이 할 것:
-      // const assignmentData = await deviceAssignmentService.getAllActiveAssignments();
-      // assignmentData.forEach(assignment => {
-      //   assignments[assignment.deviceId] = assignment.organizationId;
-      // });
-      
-      setDeviceAssignments(assignments);
-    } catch (error) {
-      console.error('디바이스 배정 정보 로딩 실패:', error);
-    }
-  };
+
   
   // 배정된 조직 정보 조회
   const getAssignedOrganization = (device: DeviceInventory) => {
-    const organizationId = deviceAssignments[device.id];
-    
-    if (!organizationId) {
-      return { name: '-', code: '-' };
+    // 디바이스 객체에서 직접 배정 정보 읽기
+    if (device.assignedOrganizationName && device.assignedOrganizationCode) {
+      return {
+        name: device.assignedOrganizationName,
+        code: device.assignedOrganizationCode
+      };
     }
     
-    return organizationsCache[organizationId] || { 
-      name: '조직 정보 없음', 
-      code: 'N/A' 
-    };
+    // 배정되지 않은 경우
+    return { name: '-', code: '-' };
   };
   
   // 등록 모달 상태
@@ -195,9 +151,7 @@ const DeviceInventorySection: React.FC = () => {
       setLoading(true);
       const [inventoryResponse, inventoryStats] = await Promise.all([
         deviceInventoryService.getAllInventory(),
-        deviceInventoryService.getInventoryStats(),
-        loadOrganizationsCache(),
-        loadDeviceAssignments()
+        deviceInventoryService.getInventoryStats()
       ]);
 
       if (inventoryResponse.success && inventoryResponse.data) {
@@ -340,24 +294,25 @@ const DeviceInventorySection: React.FC = () => {
       return;
     }
 
+    // 선택된 조직 정보 찾기
+    const selectedOrganization = organizations.find(org => org.id === assignment.organizationId);
+    if (!selectedOrganization) {
+      toast.error('선택된 조직 정보를 찾을 수 없습니다.');
+      return;
+    }
+
     try {
       setIsAssigning(true);
       
-      // 디바이스 상태를 ASSIGNED로 변경
-      await deviceInventoryService.updateDeviceStatus(selectedDevice.id, 'ASSIGNED');
+      // 디바이스 배정 정보 업데이트 (상태 변경 + 조직 정보 저장)
+      await deviceInventoryService.updateDeviceAssignment(
+        selectedDevice.id,
+        selectedOrganization.id,
+        selectedOrganization.organizationName,
+        selectedOrganization.organizationCode
+      );
       
-      // 배정 정보를 캐시에 추가
-      if (assignment.organizationId) {
-        setDeviceAssignments(prev => ({
-          ...prev,
-          [selectedDevice.id]: assignment.organizationId as string
-        }));
-      }
-      
-      // TODO: 배정 정보를 별도 컬렉션에 저장하는 로직 추가
-      // await deviceAssignmentService.createAssignment(assignment);
-      
-      toast.success(`${selectedDevice.id}가 ${assignment.organizationName}에 성공적으로 배정되었습니다.`);
+      toast.success(`${selectedDevice.id}가 ${selectedOrganization.organizationName}에 성공적으로 배정되었습니다.`);
       
       // 모달 닫기 및 초기화
       setIsAssignModalOpen(false);

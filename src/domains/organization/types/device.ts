@@ -16,6 +16,11 @@ export interface DeviceInventory {
   supplier?: string; // 공급업체
   warrantyPeriod?: number; // 보증 기간 (개월)
   notes?: string; // 메모
+  // 배정 정보
+  assignedOrganizationId?: string; // 배정된 조직 ID
+  assignedOrganizationName?: string; // 배정된 조직명
+  assignedOrganizationCode?: string; // 배정된 조직 코드
+  assignedAt?: Date; // 배정일시
   createdAt: Date;
   updatedAt: Date;
 }
