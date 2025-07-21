@@ -14,8 +14,15 @@ import {
   UserManagementContent
 } from '../../OrganizationAdmin/Dashboard/contents'
 
-// 조직 관리자 콘텐츠 임포트 (Phase 3에서 연결 예정)
+// 조직 관리자 콘텐츠 임포트 
 import DashboardSection from '../../OrganizationAdmin/Dashboard/DashboardSection'
+
+// 통합 조직 관리자 콘텐츠들 임포트
+import OrganizationManagementContent from '../contents/OrganizationManagementContent'
+import OrganizationUserManagementContent from '../contents/OrganizationUserManagementContent'
+import OrganizationDeviceManagementContent from '../contents/OrganizationDeviceManagementContent'
+import AIReportManagementContent from '../contents/AIReportManagementContent'
+import OrganizationCreditManagementContent from '../contents/OrganizationCreditManagementContent'
 
 /**
  * 통합 콘텐츠 렌더러 컴포넌트
@@ -39,13 +46,21 @@ export const UnifiedContentRenderer: React.FC<UnifiedContentRendererProps> = ({
         }
       
       case 'enterprises':
-        return <EnterpriseManagementContent onClose={() => {}} />
+        return <EnterpriseManagementContent />
       
       case 'devices':
-        return <DeviceManagementContent onClose={() => {}} />
+        if (userType === 'SYSTEM_ADMIN') {
+          return <DeviceManagementContent />
+        } else {
+          return <OrganizationDeviceManagementContent />
+        }
       
       case 'users':
-        return <UserManagementContent />
+        if (userType === 'SYSTEM_ADMIN') {
+          return <UserManagementContent />
+        } else {
+          return <OrganizationUserManagementContent />
+        }
       
       case 'reports':
         return <ReportManagementContent />
@@ -54,7 +69,11 @@ export const UnifiedContentRenderer: React.FC<UnifiedContentRendererProps> = ({
         return <MeasurementDataContent />
       
       case 'credits':
-        return <CreditManagementContent isVisible={true} onClose={() => {}} />
+        if (userType === 'SYSTEM_ADMIN') {
+          return <CreditManagementContent />
+        } else {
+          return <OrganizationCreditManagementContent />
+        }
       
       case 'analytics':
         return (
@@ -71,7 +90,6 @@ export const UnifiedContentRenderer: React.FC<UnifiedContentRendererProps> = ({
               todayMeasurements: 145,
               thisWeekMeasurements: 892,
               thisMonthMeasurements: 3456,
-              averageReportsPerUser: 6.8,
               totalStorageUsed: 2800,
               averageSessionDuration: 25.5
             }} 
@@ -79,14 +97,14 @@ export const UnifiedContentRenderer: React.FC<UnifiedContentRendererProps> = ({
         )
       
       case 'monitoring':
-        return <SystemMonitoringContent isVisible={true} onClose={() => {}} />
+        return <SystemMonitoringContent />
       
-      // 조직 관리자 전용 메뉴들 (Phase 3에서 구현)
+      // 조직 관리자 전용 메뉴들 (Phase 3에서 구현 완료)
       case 'organization':
-        return <OrganizationPlaceholder />
+        return <OrganizationManagementContent />
       
       case 'ai-reports':
-        return <AIReportsPlaceholder />
+        return <AIReportManagementContent />
       
       default:
         return <DefaultPlaceholder activeMenu={activeMenu} />

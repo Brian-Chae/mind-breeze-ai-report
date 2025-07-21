@@ -10,6 +10,7 @@ export type AdminUserType =
   | 'ORGANIZATION_ADMIN'
   | 'ORGANIZATION_MEMBER'
   | 'INDIVIDUAL_USER'
+  | 'MEASUREMENT_SUBJECT'
 
 // 권한 타입
 export type AdminPermission = 

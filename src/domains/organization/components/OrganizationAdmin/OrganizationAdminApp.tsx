@@ -507,9 +507,12 @@ export default function OrganizationAdminApp() {
     }
   }
 
-  // 시스템 관리자인 경우 통합 관리자 시스템 사용
-  if (currentContext.user && (currentContext.user as any).userType === 'SYSTEM_ADMIN') {
-    return <UnifiedAdminApp onLogout={handleLogout} />
+  // 모든 관리자 타입에서 통합 관리자 시스템 사용
+  if (currentContext.user) {
+    const userType = (currentContext.user as any).userType
+    if (userType === 'SYSTEM_ADMIN' || userType === 'ORGANIZATION_ADMIN') {
+      return <UnifiedAdminApp onLogout={handleLogout} />
+    }
   }
 
   return (
