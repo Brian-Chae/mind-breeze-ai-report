@@ -37,11 +37,11 @@ export default function UserManagementTabs({
   // Tab configuration
   const tabs: TabInfo[] = [
     {
-      id: 'user-list',
-      label: '사용자 목록',
-      icon: Users,
-      description: '측정 대상자 관리',
-      badge: badges?.userList
+      id: 'report-management',
+      label: '리포트 관리',
+      icon: FileText,
+      description: 'AI 분석 리포트 관리',
+      badge: badges?.reportManagement
     },
     {
       id: 'measurement-history',
@@ -51,11 +51,11 @@ export default function UserManagementTabs({
       badge: badges?.measurementHistory
     },
     {
-      id: 'report-management',
-      label: '리포트 관리',
-      icon: FileText,
-      description: 'AI 분석 리포트 관리',
-      badge: badges?.reportManagement
+      id: 'user-list',
+      label: '사용자 목록',
+      icon: Users,
+      description: '측정 대상자 관리',
+      badge: badges?.userList
     }
   ]
 
