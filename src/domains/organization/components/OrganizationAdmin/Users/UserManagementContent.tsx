@@ -8,8 +8,7 @@
 import React, { useState, useEffect } from 'react'
 import { 
   Users, 
-  Loader2,
-  AlertCircle
+  Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
