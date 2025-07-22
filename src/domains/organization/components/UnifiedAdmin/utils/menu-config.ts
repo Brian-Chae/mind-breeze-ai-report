@@ -36,7 +36,7 @@ export const systemAdminMenuItems: UnifiedMenuItem[] = [
     id: 'enterprises',
     title: '기업관리',
     icon: Building2,
-    path: '/admin/enterprises',
+    path: '/admin/organizations',
     component: 'EnterpriseManagementContent',
     permissions: ['organization.manage'],
     description: '기업 현황 및 관리'
