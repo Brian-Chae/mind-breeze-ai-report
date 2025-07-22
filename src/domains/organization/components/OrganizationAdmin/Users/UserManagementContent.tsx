@@ -16,9 +16,13 @@ import measurementUserManagementService, { MeasurementUser } from '@domains/indi
 
 // Components
 import UserListTab from './tabs/UserListTab'
+import MeasurementHistoryTab from './tabs/MeasurementHistoryTab'
+import ReportManagementTab from './tabs/ReportManagementTab'
 import UserManagementSummary from './components/UserManagementSummary'
+import UserManagementTabs from './components/UserManagementTabs'
 
 export default function UserManagementContent() {
+  const [activeTab, setActiveTab] = useState('user-list')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [users, setUsers] = useState<MeasurementUser[]>([])
@@ -88,9 +92,33 @@ export default function UserManagementContent() {
           onExport={() => toast.info('내보내기 기능은 곧 추가될 예정입니다.')}
         />
 
-        {/* 사용자 목록 컨텐츠 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <UserListTab organizationId={organizationId!} />
+        {/* 탭 인터페이스 */}
+        <div className="space-y-6">
+          {/* 탭 버튼들 */}
+          <UserManagementTabs 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            badges={{
+              userList: users.length,
+              measurementHistory: undefined,
+              reportManagement: undefined
+            }}
+          />
+
+          {/* 탭 컨텐츠 */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            {activeTab === 'user-list' && (
+              <UserListTab organizationId={organizationId!} />
+            )}
+
+            {activeTab === 'measurement-history' && (
+              <MeasurementHistoryTab organizationId={organizationId!} />
+            )}
+
+            {activeTab === 'report-management' && (
+              <ReportManagementTab organizationId={organizationId!} />
+            )}
+          </div>
         </div>
       </div>
     </div>
