@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@shared/components/ui/dropdown-menu'
 import { UnifiedAdminSidebarProps, UnifiedMenuItem } from '../types/unified-admin'
-import { getMenuItemsByUserType } from '../utils/menu-config'
 
 /**
  * 통합 관리자 사이드바 컴포넌트
@@ -20,11 +19,11 @@ export const UnifiedAdminSidebar: React.FC<UnifiedAdminSidebarProps> = ({
   activeMenu,
   onMenuChange,
   userType,
+  menuItems,
   systemHealth = 'healthy',
   notifications = {},
   onLogout
 }) => {
-  const menuItems = getMenuItemsByUserType(userType)
 
   const getHealthStatusColor = () => {
     switch (systemHealth) {

@@ -53,6 +53,7 @@ export interface UnifiedAdminSidebarProps {
   activeMenu: string
   onMenuChange: (menuId: string) => void
   userType: AdminUserType
+  menuItems: UnifiedMenuItem[]
   systemHealth?: 'healthy' | 'warning' | 'error'
   notifications?: Record<string, number>
   onLogout?: () => void

@@ -20,6 +20,9 @@ import CompanyRegistrationSuccess from './landing/CompanyRegistrationSuccess';
 import CompanyJoinForm from './landing/CompanyJoinForm';
 import MeasurementSubjectAccess from './MeasurementSubjectAccess';
 import OrganizationAdminApp from '@domains/organization/components/OrganizationAdmin/OrganizationAdminApp';
+// 새로운 분리된 관리자 앱들
+import SystemAdminApp from '@domains/organization/components/SystemAdmin/SystemAdminApp';
+import NewOrganizationAdminApp from '@domains/organization/components/OrganizationAdmin/OrganizationAdminApp';
 // Enterprise Auth Service import 추가
 import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService';
 // AI Report App import 추가
@@ -95,6 +98,16 @@ const AppRouter = () => {
       const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
       const shouldRedirect = ['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath);
       
+      // 기존 /admin/* 경로 접근 시 새로운 분리된 경로로 자동 리디렉션
+      if (currentPath.startsWith('/admin/') || currentPath === '/admin') {
+        const newPath = getAdminRedirectPath(userType, currentPath);
+        if (newPath !== currentPath) {
+          console.log('🔄 Admin 경로 리디렉션:', currentPath, '→', newPath);
+          navigate(newPath, { replace: true });
+          return;
+        }
+      }
+      
       console.log('🔍 리다이렉션 체크:', {
         currentPath,
         publicPaths,
@@ -138,15 +151,64 @@ const AppRouter = () => {
   const getRedirectPath = (userType: string) => {
     switch (userType) {
       case 'SYSTEM_ADMIN':
-        return '/admin/dashboard';
+        return '/system-admin/dashboard';
       case 'ORGANIZATION_ADMIN':
-        return '/admin/dashboard';
+        return '/org-admin/dashboard';
       case 'ORGANIZATION_MEMBER':
         return '/welcome';
       case 'INDIVIDUAL_USER':
         return '/welcome';
       default:
         return '/';
+    }
+  };
+
+  // 기존 /admin/* 경로를 새로운 분리된 경로로 변환
+  const getAdminRedirectPath = (userType: string, currentPath: string) => {
+    // /admin 기본 경로인 경우
+    if (currentPath === '/admin') {
+      return userType === 'SYSTEM_ADMIN' ? '/system-admin/dashboard' : '/org-admin/dashboard';
+    }
+
+    // /admin/* 경로 변환
+    const adminSubPath = currentPath.replace('/admin', '');
+    
+    if (userType === 'SYSTEM_ADMIN') {
+      // 시스템 관리자 전용 경로들
+      const systemOnlyPaths = [
+        '/system',
+        '/organizations', 
+        '/users/all-users',
+        '/users/user-analytics', 
+        '/users/user-support',
+        '/system-analytics'
+      ];
+      
+      if (systemOnlyPaths.some(path => adminSubPath.startsWith(path))) {
+        return `/system-admin${adminSubPath}`;
+      }
+      
+      // 공통 경로는 시스템 관리자용으로
+      return `/system-admin${adminSubPath}`;
+    } else {
+      // 조직 관리자/멤버용 경로로 변환
+      const orgPaths = [
+        '/dashboard',
+        '/organization',
+        '/members', 
+        '/users',
+        '/ai-report',
+        '/ai-reports',
+        '/devices',
+        '/credits'
+      ];
+      
+      if (orgPaths.some(path => adminSubPath.startsWith(path))) {
+        return `/org-admin${adminSubPath}`;
+      }
+      
+      // 기본적으로는 조직 관리자 대시보드로
+      return '/org-admin/dashboard';
     }
   };
 
@@ -270,217 +332,51 @@ const AppRouter = () => {
         </ProtectedRoute>
       } />
       
-      {/* 관리자 라우트 */}
+      {/* 레거시 /admin 라우트 - 자동 리디렉션만 수행 */}
       <Route path="/admin" element={
         <ProtectedRoute>
-          <OrganizationAdminApp />
+          <div className="h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">리디렉션 중</h3>
+              <p className="text-gray-600">새로운 관리자 페이지로 이동하고 있습니다...</p>
+            </div>
+          </div>
         </ProtectedRoute>
       } />
-      <Route path="/admin/dashboard" element={
+      <Route path="/admin/*" element={
         <ProtectedRoute>
-          <OrganizationAdminApp />
+          <div className="h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">리디렉션 중</h3>
+              <p className="text-gray-600">새로운 관리자 페이지로 이동하고 있습니다...</p>
+            </div>
+          </div>
         </ProtectedRoute>
       } />
-      <Route path="/admin/organization" element={
+
+      {/* 새로운 분리된 시스템 관리자 라우트 */}
+      <Route path="/system-admin" element={
         <ProtectedRoute>
-          <OrganizationAdminApp />
+          <SystemAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/organization/company-info" element={
+      <Route path="/system-admin/*" element={
         <ProtectedRoute>
-          <OrganizationAdminApp />
+          <SystemAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/organization/departments" element={
+
+      {/* 새로운 분리된 조직 관리자 라우트 */}
+      <Route path="/org-admin" element={
         <ProtectedRoute>
-          <OrganizationAdminApp />
+          <NewOrganizationAdminApp />
         </ProtectedRoute>
       } />
-      <Route path="/admin/organization/structure" element={
+      <Route path="/org-admin/*" element={
         <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/members" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/members/member-list" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/members/member-invite" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/members/member-permissions" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users/user-list" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users/user-history" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users/user-reports" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/ai-report" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/ai-reports" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/ai-report/report-generation" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/ai-report/report-list" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/ai-report/measurement-data" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/devices" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/devices/device-inventory" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/devices/device-assignment" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/devices/device-monitoring" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/credits" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/credits/credit-dashboard" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/credits/credit-history" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/credits/credit-settings" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      
-      {/* 시스템 관리자 전용 라우트 */}
-      <Route path="/admin/system" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system/system-overview" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system/system-monitoring" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system/system-settings" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/organizations" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/organizations/organization-list" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/organizations/organization-analytics" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/organizations/organization-settings" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users/all-users" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users/user-analytics" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/users/user-support" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system-analytics" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system-analytics/usage-analytics" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system-analytics/performance-metrics" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/system-analytics/error-monitoring" element={
-        <ProtectedRoute>
-          <OrganizationAdminApp />
+          <NewOrganizationAdminApp />
         </ProtectedRoute>
       } />
     </Routes>
