@@ -7,6 +7,7 @@
 import React, { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import enterpriseAuthService from '../../services/EnterpriseAuthService'
+import { performLogout } from '../../utils/auth-utils'
 
 // 통합 컴포넌트들 임포트 (기존 UnifiedAdmin 재사용)
 import UnifiedAdminSidebar from '../UnifiedAdmin/components/UnifiedAdminSidebar'
@@ -84,10 +85,7 @@ export default function SystemAdminApp() {
         menuItems={navigation.menuItems}
         systemHealth={adminState.systemHealth}
         notifications={adminState.notifications}
-        onLogout={() => {
-          // 로그아웃 후 홈페이지로 리디렉션
-          navigate('/')
-        }}
+        onLogout={() => performLogout(navigate, '/', '시스템 관리자')}
       />
       
       {/* 메인 콘텐츠 영역 */}
@@ -98,8 +96,7 @@ export default function SystemAdminApp() {
           searchQuery={adminState.searchQuery}
           onSearchChange={adminState.setSearchQuery}
           userInfo={userInfo}
-          notifications={adminState.notifications}
-          onNotificationRead={adminState.markNotificationAsRead}
+          onLogout={() => performLogout(navigate, '/', '시스템 관리자 (헤더)')}
         />
         
         {/* 콘텐츠 영역 */}
