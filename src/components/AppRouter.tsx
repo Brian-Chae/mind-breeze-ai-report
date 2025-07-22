@@ -229,6 +229,10 @@ const AppRouter = () => {
     console.log('⚠️ Firestore 데이터 로드 중... 임시로 이메일 패턴 사용');
     const email = user.email?.toLowerCase();
     
+    if (email === 'admin-mindbreeze@looxidlabs.com') {
+      return 'SYSTEM_ADMIN';
+    }
+    
     if (email === 'brian.chae@looxidlabs.com') {
       return 'ORGANIZATION_ADMIN';
     }
