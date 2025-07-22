@@ -18,6 +18,8 @@ try {
 
 // 개발 환경 전역 함수 추가
 if (process.env.NODE_ENV === 'development') {
+  // 개발 도구 로드
+  import('./utils/dev-tools');
   // @ts-ignore
   window.addDevCredits = async (amount = 99999999999999) => {
     try {

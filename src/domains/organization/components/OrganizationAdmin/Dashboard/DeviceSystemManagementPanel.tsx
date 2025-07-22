@@ -424,133 +424,202 @@ export const DeviceSystemManagementPanel: React.FC<DeviceSystemManagementPanelPr
             <TabsContent value="usage" className="h-full p-6 space-y-6 bg-gray-50">
               <div className="space-y-6">
                 {/* 헤더 */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">기기별 사용 현황</h2>
-                    <p className="text-gray-600">전체 디바이스의 사용 현황을 확인할 수 있습니다</p>
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900">사용 현황</h2>
+                      <p className="text-slate-600 mt-1">디바이스 사용 통계 및 분석</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={loadDeviceUsageList}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${usageLoading ? 'animate-spin' : ''}`} />
+                        새로고침
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={loadDeviceUsageList}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      새로고침
-                    </Button>
-                  </div>
-                </div>
 
-                {/* 사용 현황 테이블 */}
-                <Card className="bg-white border border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Table className="h-5 w-5" />
-                      기기별 사용 현황 목록
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                  {/* 사용 통계 카드 */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-indigo-100 rounded-xl">
+                          <Smartphone className="w-6 h-6 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-indigo-700">활성 디바이스 수</p>
+                          <p className="text-2xl font-bold text-indigo-900">{deviceUsageList.filter(d => d.status === 'active').length}</p>
+                          <p className="text-xs text-indigo-600">총 배정된 디바이스</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-emerald-100 rounded-xl">
+                          <Activity className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-emerald-700">총 측정 횟수</p>
+                          <p className="text-2xl font-bold text-emerald-900">
+                            {deviceUsageList.reduce((sum, device) => sum + device.totalMeasurements, 0).toLocaleString()}
+                          </p>
+                          <p className="text-xs text-emerald-600">누적 측정 횟수</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-amber-100 rounded-xl">
+                          <BarChart3 className="w-6 h-6 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-amber-700">기기당 평균 측정</p>
+                          <p className="text-2xl font-bold text-amber-900">
+                            {deviceUsageList.length > 0 
+                              ? Math.round(deviceUsageList.reduce((sum, device) => sum + device.totalMeasurements, 0) / deviceUsageList.length)
+                              : 0}회
+                          </p>
+                          <p className="text-xs text-amber-600">디바이스당 평균</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-100 rounded-xl">
+                          <Calendar className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-blue-700">오늘 사용된 디바이스</p>
+                          <p className="text-2xl font-bold text-blue-900">
+                            {deviceUsageList.filter(d => {
+                              const today = new Date();
+                              const lastUsed = new Date(d.lastUsedDate);
+                              return lastUsed.toDateString() === today.toDateString();
+                            }).length}
+                          </p>
+                          <p className="text-xs text-blue-600">오늘 측정 기록</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 기기별 사용 현황 테이블 */}
+                  <div className="bg-white rounded-xl p-6 border border-slate-200">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <Table className="w-5 h-5 text-indigo-600" />
+                        기기별 사용 현황
+                      </h3>
+                    </div>
+                    
                     {usageLoading ? (
                       <div className="flex items-center justify-center py-8">
-                        <RefreshCw className="h-6 w-6 animate-spin text-blue-600 mr-2" />
-                        <span className="text-gray-600">데이터를 불러오는 중...</span>
+                        <RefreshCw className="h-6 w-6 animate-spin text-indigo-600 mr-2" />
+                        <span className="text-slate-600">데이터를 불러오는 중...</span>
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">기기명</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">기기종류</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">사용 기업명</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">사용 방식</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">총 측정횟수</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">최근 사용일</th>
-                              <th className="text-left py-3 px-4 font-medium text-gray-900">상태</th>
+                            <tr className="border-b border-slate-200">
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">기기명</th>
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">기기종류</th>
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">사용 기업명</th>
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">사용 방식</th>
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">총 측정횟수</th>
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">최근 사용일</th>
+                              <th className="text-left py-3 px-4 font-medium text-slate-900">상태</th>
                             </tr>
                           </thead>
                           <tbody>
                             {deviceUsageList.length === 0 ? (
                               <tr>
-                                <td colSpan={7} className="py-8 text-center text-gray-500">
+                                <td colSpan={7} className="py-8 text-center text-slate-500">
                                   등록된 기기가 없습니다.
                                 </td>
                               </tr>
                             ) : (
                               deviceUsageList.map((device) => (
-                                <tr key={device.deviceId} className="border-b border-gray-100 hover:bg-gray-50">
+                                <tr key={device.deviceId} className="border-b border-slate-100 hover:bg-slate-50">
                                   <td className="py-3 px-4">
-                                  <div className="flex items-center gap-2">
-                                    <Smartphone className="h-4 w-4 text-blue-600" />
-                                    <span className="font-medium text-gray-900">{device.deviceName}</span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <Badge variant="outline" className="text-xs">
-                                    {device.deviceType}
-                                  </Badge>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="h-4 w-4 text-gray-400" />
-                                    <span className="text-gray-700">{device.organizationName}</span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center gap-1">
-                                    {device.usageType === 'purchase' ? (
-                                      <Badge className="bg-green-100 text-green-800 text-xs">
-                                        구매
-                                      </Badge>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                          렌탈
-                                        </Badge>
-                                        <span className="text-xs text-gray-600">
-                                          {device.rentalPeriod}개월
+                                    <div className="flex items-center gap-2">
+                                      <Smartphone className="h-4 w-4 text-indigo-600" />
+                                      <span className="font-medium text-slate-900">{device.deviceName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                      {device.deviceType}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-2">
+                                      <Building2 className="h-4 w-4 text-slate-400" />
+                                      <span className="text-slate-700">{device.organizationName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-1">
+                                      {device.usageType === 'purchase' ? (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                          구매
                                         </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center gap-1">
-                                    <Activity className="h-4 w-4 text-purple-600" />
-                                    <span className="font-medium text-gray-900">
-                                      {device.totalMeasurements}회
+                                      ) : (
+                                        <div className="flex items-center gap-1">
+                                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            렌탈
+                                          </span>
+                                          <span className="text-xs text-slate-600">
+                                            {device.rentalPeriod}개월
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-1">
+                                      <Activity className="h-4 w-4 text-purple-600" />
+                                      <span className="font-medium text-slate-900">
+                                        {device.totalMeasurements}회
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4 text-slate-400" />
+                                      <span className="text-slate-700">
+                                        {device.lastUsedDate.toLocaleDateString('ko-KR', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric'
+                                        })}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      device.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                                      device.status === 'maintenance' ? 'bg-amber-100 text-amber-800' :
+                                      'bg-slate-100 text-slate-800'
+                                    }`}>
+                                      {device.status === 'active' ? '활성' :
+                                       device.status === 'maintenance' ? '유지보수' : '비활성'}
                                     </span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4 text-gray-400" />
-                                    <span className="text-gray-700">
-                                      {device.lastUsedDate.toLocaleDateString('ko-KR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                      })}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <Badge 
-                                    className={
-                                      device.status === 'active' ? 'bg-green-100 text-green-800' :
-                                      device.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }
-                                  >
-                                    {device.status === 'active' ? '활성' :
-                                     device.status === 'maintenance' ? '유지보수' : '비활성'}
-                                  </Badge>
-                                </td>
-                              </tr>
+                                  </td>
+                                </tr>
                               ))
                             )}
                           </tbody>
                         </table>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
