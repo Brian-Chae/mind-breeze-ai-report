@@ -4,7 +4,7 @@
  */
 
 import organizationManagementService from '../domains/organization/services/management/OrganizationManagementService'
-import { db } from '../firebase'
+import { db } from '../core/services/firebase'
 import { doc, updateDoc, getDoc } from 'firebase/firestore'
 
 // 개발 환경에서만 window 객체에 유틸리티 함수들 추가
