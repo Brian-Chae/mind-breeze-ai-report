@@ -31,7 +31,7 @@ import {
   Briefcase,
   Users
 } from 'lucide-react'
-import { useToast } from '@shared/hooks/use-toast'
+import { toast } from 'sonner'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
 import type { Organization, UpdateOrganizationData } from '@domains/organization/types/management/organization-management'
 
@@ -59,7 +59,7 @@ interface CompanyInfoTabProps {
 export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTabProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const { toast } = useToast()
+  
 
   // Initialize form with current organization data
   const {

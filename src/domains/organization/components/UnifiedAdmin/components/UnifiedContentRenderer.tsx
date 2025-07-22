@@ -18,11 +18,13 @@ import {
 import DashboardSection from '../../OrganizationAdmin/Dashboard/DashboardSection'
 
 // 통합 조직 관리자 콘텐츠들 임포트
-import OrganizationManagementContent from '../contents/OrganizationManagementContent'
-import OrganizationUserManagementContent from '../contents/OrganizationUserManagementContent'
-import OrganizationDeviceManagementContent from '../contents/OrganizationDeviceManagementContent'
-import AIReportManagementContent from '../contents/AIReportManagementContent'
-import OrganizationCreditManagementContent from '../contents/OrganizationCreditManagementContent'
+import {
+  OrganizationManagementContent,
+  OrganizationUserManagementContent,
+  OrganizationDeviceManagementContent,
+  AIReportManagementContent,
+  OrganizationCreditManagementContent
+} from '../contents'
 
 /**
  * 통합 콘텐츠 렌더러 컴포넌트

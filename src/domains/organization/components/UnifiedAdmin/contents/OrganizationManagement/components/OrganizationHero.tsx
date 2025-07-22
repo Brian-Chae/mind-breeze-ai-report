@@ -21,7 +21,7 @@ import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
-import { useToast } from '@shared/hooks/use-toast'
+import { toast } from 'sonner'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
 import type { Organization } from '@domains/organization/types/management/organization-management'
 
@@ -39,7 +39,7 @@ interface StatCard {
 
 export default function OrganizationHero({ organization }: OrganizationHeroProps) {
   const [uploadingLogo, setUploadingLogo] = useState(false)
-  const { toast } = useToast()
+  
 
   // Calculate activity rate
   const activityRate = organization.totalMembers > 0 

@@ -13,7 +13,7 @@ import {
   Shield,
   Loader2
 } from 'lucide-react'
-import { useToast } from '@shared/hooks/use-toast'
+import { toast } from 'sonner'
 import enterpriseAuthService from '@domains/organization/services/EnterpriseAuthService'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
 import type { Organization } from '@domains/organization/types/management/organization-management'
@@ -38,7 +38,6 @@ export default function OrganizationManagementContent() {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { toast } = useToast()
 
   // Get current organization context
   const currentContext = enterpriseAuthService.getCurrentContext()
@@ -93,18 +92,14 @@ export default function OrganizationManagementContent() {
       } catch (err) {
         console.error('Failed to load organization:', err)
         setError('조직 정보 로딩 중 오류가 발생했습니다.')
-        toast({
-          title: '오류',
-          description: '조직 정보를 불러오는데 실패했습니다.',
-          variant: 'destructive'
-        })
+        toast.error('조직 정보를 불러오는데 실패했습니다.')
       } finally {
         setLoading(false)
       }
     }
 
     loadOrganizationData()
-  }, [organizationId, toast])
+  }, [organizationId])
 
   // Subscribe to real-time organization updates
   useEffect(() => {

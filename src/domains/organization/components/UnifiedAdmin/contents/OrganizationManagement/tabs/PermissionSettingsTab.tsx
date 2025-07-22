@@ -37,7 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@ui/table"
-import { useToast } from '@shared/hooks/use-toast'
+import { toast } from 'sonner'
 
 interface PermissionSettingsTabProps {
   organizationId: string
@@ -172,7 +172,7 @@ export default function PermissionSettingsTab({ organizationId }: PermissionSett
     }, {} as Record<string, string[]>)
   )
   const [hasChanges, setHasChanges] = useState(false)
-  const { toast } = useToast()
+  
 
   // Handle permission toggle
   const handlePermissionToggle = (roleId: string, permissionId: string, enabled: boolean) => {

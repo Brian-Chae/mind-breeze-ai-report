@@ -42,9 +42,10 @@ import {
   TableHeader,
   TableRow,
 } from "@ui/table"
-import { useToast } from '@shared/hooks/use-toast'
+import { toast } from 'sonner'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
-import type { OrganizationMember } from '@domains/organization/types/management/organization-management'
+import type { OrganizationMember, Department } from '@domains/organization/types/management/organization-management'
+import MemberInviteModal from '../components/MemberInviteModal'
 
 interface MemberManagementTabProps {
   organizationId: string
@@ -74,14 +75,20 @@ const roleConfig = {
 
 export default function MemberManagementTab({ organizationId }: MemberManagementTabProps) {
   const [members, setMembers] = useState<OrganizationMember[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
   const [filteredMembers, setFilteredMembers] = useState<OrganizationMember[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<MemberFilters>({})
-  const { toast } = useToast()
+  
+  // Modal states
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  
+  
 
   useEffect(() => {
     loadMembers()
+    loadDepartments()
   }, [organizationId])
 
   useEffect(() => {
@@ -102,6 +109,15 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadDepartments = async () => {
+    try {
+      const departmentList = await organizationManagementService.getDepartments(organizationId)
+      setDepartments(departmentList)
+    } catch (error) {
+      console.error('Failed to load departments:', error)
     }
   }
 
@@ -139,10 +155,16 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
 
   // Handle member actions
   const handleInviteMember = () => {
-    toast({
-      title: '개발 중',
-      description: '구성원 초대 기능은 곧 제공될 예정입니다.'
-    })
+    setInviteModalOpen(true)
+  }
+
+  // Modal handlers
+  const handleInviteModalClose = () => {
+    setInviteModalOpen(false)
+  }
+
+  const handleInviteModalSuccess = () => {
+    loadMembers()
   }
 
   const handleEditMember = (memberId: string) => {
@@ -515,6 +537,15 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
           )}
         </CardContent>
       </Card>
+
+      {/* Member Invite Modal */}
+      <MemberInviteModal
+        isOpen={inviteModalOpen}
+        onClose={handleInviteModalClose}
+        onSuccess={handleInviteModalSuccess}
+        organizationId={organizationId}
+        departments={departments}
+      />
     </div>
   )
 }

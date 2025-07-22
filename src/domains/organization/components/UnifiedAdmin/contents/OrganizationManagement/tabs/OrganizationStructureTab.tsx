@@ -27,9 +27,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@ui/dropdown-menu"
-import { useToast } from '@shared/hooks/use-toast'
+import { toast } from 'sonner'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
-import type { DepartmentNode, CreateDepartmentData } from '@domains/organization/types/management/organization-management'
+import type { DepartmentNode, CreateDepartmentData, Department } from '@domains/organization/types/management/organization-management'
+import DepartmentFormModal from '../components/DepartmentFormModal'
 
 interface OrganizationStructureTabProps {
   organizationId: string
@@ -169,9 +170,17 @@ function DepartmentTreeItem({
 
 export default function OrganizationStructureTab({ organizationId }: OrganizationStructureTabProps) {
   const [departments, setDepartments] = useState<DepartmentNode[]>([])
+  const [flatDepartments, setFlatDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
-  const { toast } = useToast()
+  
+  // Modal states
+  const [departmentModalOpen, setDepartmentModalOpen] = useState(false)
+  const [departmentModalMode, setDepartmentModalMode] = useState<'create' | 'edit'>('create')
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | undefined>()
+  const [selectedParentId, setSelectedParentId] = useState<string | undefined>()
+  
+  
 
   useEffect(() => {
     loadDepartmentHierarchy()
@@ -181,6 +190,7 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
     try {
       setLoading(true)
       const hierarchy = await organizationManagementService.getDepartmentHierarchy(organizationId)
+      const flatList = await organizationManagementService.getDepartments(organizationId)
       
       // Set all nodes as expanded by default
       const allNodeIds = new Set<string>()
@@ -195,6 +205,7 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
       setExpandedNodes(allNodeIds)
       
       setDepartments(hierarchy)
+      setFlatDepartments(flatList)
     } catch (error) {
       console.error('Failed to load departments:', error)
       toast({
@@ -237,11 +248,13 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
 
   // Handle department actions
   const handleEditDepartment = (departmentId: string) => {
-    // TODO: Open edit department modal
-    toast({
-      title: '개발 중',
-      description: '부서 수정 기능은 곧 제공될 예정입니다.'
-    })
+    const department = flatDepartments.find(d => d.id === departmentId)
+    if (department) {
+      setSelectedDepartment(department)
+      setDepartmentModalMode('edit')
+      setSelectedParentId(undefined)
+      setDepartmentModalOpen(true)
+    }
   }
 
   const handleDeleteDepartment = async (departmentId: string) => {
@@ -263,11 +276,21 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
   }
 
   const handleAddDepartment = (parentId?: string) => {
-    // TODO: Open add department modal
-    toast({
-      title: '개발 중',
-      description: '부서 추가 기능은 곧 제공될 예정입니다.'
-    })
+    setSelectedDepartment(undefined)
+    setDepartmentModalMode('create')
+    setSelectedParentId(parentId)
+    setDepartmentModalOpen(true)
+  }
+
+  // Modal handlers
+  const handleDepartmentModalClose = () => {
+    setDepartmentModalOpen(false)
+    setSelectedDepartment(undefined)
+    setSelectedParentId(undefined)
+  }
+
+  const handleDepartmentModalSuccess = () => {
+    loadDepartmentHierarchy()
   }
 
   // Calculate statistics
@@ -406,6 +429,18 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
           )}
         </CardContent>
       </Card>
+
+      {/* Department Form Modal */}
+      <DepartmentFormModal
+        isOpen={departmentModalOpen}
+        onClose={handleDepartmentModalClose}
+        onSuccess={handleDepartmentModalSuccess}
+        organizationId={organizationId}
+        department={selectedDepartment}
+        departments={flatDepartments}
+        mode={departmentModalMode}
+        parentId={selectedParentId}
+      />
     </div>
   )
 }
