@@ -95,7 +95,7 @@ export default function OrganizationHero({ organization }: OrganizationHeroProps
                 )}
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <Calendar className="w-4 h-4" />
-                  설립: {organization.createdAt.toLocaleDateString()}
+                  설립: {organization.createdAt ? new Date(organization.createdAt).toLocaleDateString() : '정보 없음'}
                 </div>
               </div>
             </div>
