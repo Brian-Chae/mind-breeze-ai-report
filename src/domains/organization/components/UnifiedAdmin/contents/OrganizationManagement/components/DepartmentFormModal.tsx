@@ -123,25 +123,22 @@ export default function DepartmentFormModal({
           name: data.name,
           code: data.code,
           description: data.description,
-          parentId: data.parentId || undefined,
-          managerId: data.managerId || undefined,
+          parentId: data.parentId,
+          managerId: data.managerId,
           sortOrder: data.sortOrder || 0
         }
 
         await organizationManagementService.createDepartment(organizationId, createData)
         
-        toast({
-          title: '성공',
-          description: '부서가 성공적으로 생성되었습니다.'
-        })
+        toast.success('부서가 성공적으로 생성되었습니다.')
       } else {
         // 편집 모드
         const updateData = {
           name: data.name,
           code: data.code,
           description: data.description,
-          parentId: data.parentId || undefined,
-          managerId: data.managerId || undefined,
+          parentId: data.parentId,
+          managerId: data.managerId,
           sortOrder: data.sortOrder || 0
         }
 
@@ -151,23 +148,17 @@ export default function DepartmentFormModal({
           updateData
         )
         
-        toast({
-          title: '성공',
-          description: '부서 정보가 성공적으로 수정되었습니다.'
-        })
+        toast.success('부서 정보가 성공적으로 수정되었습니다.')
       }
 
       onSuccess()
       onClose()
     } catch (error) {
       console.error('Department operation failed:', error)
-      toast({
-        title: '오류',
-        description: mode === 'create' 
-          ? '부서 생성에 실패했습니다.' 
-          : '부서 수정에 실패했습니다.',
-        variant: 'destructive'
-      })
+      toast.error(mode === 'create' 
+        ? '부서 생성에 실패했습니다.' 
+        : '부서 수정에 실패했습니다.'
+      )
     } finally {
       setSaving(false)
     }
@@ -183,17 +174,17 @@ export default function DepartmentFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] bg-white">
+        <DialogHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Building2 className="w-5 h-5 text-blue-600" />
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md">
+              <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <DialogTitle>
+              <DialogTitle className="text-xl text-slate-900">
                 {mode === 'create' ? '새 부서 추가' : '부서 정보 수정'}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-slate-600">
                 {mode === 'create' 
                   ? '새로운 부서를 생성합니다.' 
                   : `${department?.name} 부서의 정보를 수정합니다.`
@@ -206,7 +197,7 @@ export default function DepartmentFormModal({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* 부서명 */}
           <div className="space-y-2">
-            <Label htmlFor="name">
+            <Label htmlFor="name" className="text-slate-900 font-medium">
               부서명 <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
@@ -215,7 +206,7 @@ export default function DepartmentFormModal({
                 id="name"
                 {...register('name')}
                 placeholder="개발팀"
-                className="pl-10"
+                className="pl-10 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 disabled={saving}
               />
             </div>
@@ -226,7 +217,7 @@ export default function DepartmentFormModal({
 
           {/* 부서 코드 */}
           <div className="space-y-2">
-            <Label htmlFor="code">
+            <Label htmlFor="code" className="text-slate-900 font-medium">
               부서 코드 <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
@@ -235,7 +226,7 @@ export default function DepartmentFormModal({
                 id="code"
                 {...register('code')}
                 placeholder="DEV_TEAM"
-                className="pl-10"
+                className="pl-10 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 disabled={saving}
               />
             </div>
@@ -249,19 +240,19 @@ export default function DepartmentFormModal({
 
           {/* 상위 부서 */}
           <div className="space-y-2">
-            <Label htmlFor="parentId">상위 부서</Label>
+            <Label htmlFor="parentId" className="text-slate-900 font-medium">상위 부서</Label>
             <div className="relative">
               <Network className="absolute left-3 top-3 w-4 h-4 text-slate-400 z-10" />
               <Select
-                value={watch('parentId') || ''}
-                onValueChange={(value) => setValue('parentId', value || undefined)}
+                value={watch('parentId') || 'none'}
+                onValueChange={(value) => setValue('parentId', value === 'none' ? undefined : value)}
                 disabled={saving}
               >
-                <SelectTrigger className="pl-10">
+                <SelectTrigger className="pl-10 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                   <SelectValue placeholder="상위 부서 선택 (선택사항)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">상위 부서 없음</SelectItem>
+                  <SelectItem value="none">상위 부서 없음</SelectItem>
                   {parentOptions.map((dept) => (
                     <SelectItem key={dept.id} value={dept.id}>
                       {'  '.repeat(dept.level)}{dept.name} ({dept.code})
@@ -274,7 +265,7 @@ export default function DepartmentFormModal({
 
           {/* 부서 설명 */}
           <div className="space-y-2">
-            <Label htmlFor="description">부서 설명</Label>
+            <Label htmlFor="description" className="text-slate-900 font-medium">부서 설명</Label>
             <div className="relative">
               <FileText className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
               <Textarea
@@ -282,7 +273,7 @@ export default function DepartmentFormModal({
                 {...register('description')}
                 placeholder="부서의 역할과 업무를 간단히 설명해주세요"
                 rows={3}
-                className="pl-10 resize-none"
+                className="pl-10 resize-none bg-slate-50 text-slate-700 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400"
                 disabled={saving}
               />
             </div>
@@ -290,12 +281,13 @@ export default function DepartmentFormModal({
 
           {/* 정렬 순서 */}
           <div className="space-y-2">
-            <Label htmlFor="sortOrder">정렬 순서</Label>
+            <Label htmlFor="sortOrder" className="text-slate-900 font-medium">정렬 순서</Label>
             <Input
               id="sortOrder"
               type="number"
               {...register('sortOrder', { valueAsNumber: true })}
               placeholder="0"
+              className="border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               disabled={saving}
             />
             <p className="text-xs text-slate-500">
@@ -303,13 +295,13 @@ export default function DepartmentFormModal({
             </p>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={saving}
-              className="gap-2"
+              className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
             >
               <X className="w-4 h-4" />
               취소
@@ -317,7 +309,7 @@ export default function DepartmentFormModal({
             <Button
               type="submit"
               disabled={saving || !isDirty}
-              className="gap-2"
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed transition-all duration-200"
             >
               <Save className="w-4 h-4" />
               {saving 

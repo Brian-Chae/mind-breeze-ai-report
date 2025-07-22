@@ -5,7 +5,6 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs'
 import { 
   Building2, 
   Users, 
@@ -147,65 +146,91 @@ export default function OrganizationManagementContent() {
         <OrganizationHero organization={organization} />
 
         {/* 탭 인터페이스 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-slate-50 rounded-t-2xl p-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    className="flex items-center gap-3 px-6 py-4 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-xl transition-all relative"
-                  >
-                    <Icon className="w-5 h-5" />
-                    <div className="text-left">
-                      <div className="font-medium flex items-center gap-2">
-                        {tab.label}
+        <div className="space-y-6">
+          {/* 탭 버튼들 - 빠른 액션과 동일한 스타일 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    h-auto p-3 rounded-xl shadow-md border transition-all duration-200 group
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-blue-500 shadow-lg transform scale-[1.02]' 
+                      : 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-lg'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3 pl-1">
+                    <div className={`
+                      p-1.5 rounded-lg transition-colors flex-shrink-0
+                      ${isActive 
+                        ? 'bg-white/20 group-hover:bg-white/30' 
+                        : 'bg-slate-100 group-hover:bg-slate-200'
+                      }
+                    `}>
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-600'}`} />
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm">{tab.label}</span>
                         {tab.badge !== undefined && tab.badge > 0 && (
-                          <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full">
+                          <span className={`
+                            text-xs font-medium px-1.5 py-0.5 rounded-full
+                            ${isActive 
+                              ? 'bg-white/20 text-white' 
+                              : 'bg-blue-100 text-blue-700'
+                            }
+                          `}>
                             {tab.badge}
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500 hidden sm:block">
+                      <p className={`
+                        text-xs
+                        ${isActive ? 'text-blue-100' : 'text-slate-500'}
+                      `}>
                         {tab.description}
-                      </div>
+                      </p>
                     </div>
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
 
-            <div className="p-6">
-              <TabsContent value="company-info" className="mt-0">
-                <CompanyInfoTab 
-                  organization={organization} 
-                  onUpdate={() => {
-                    // Refresh will happen automatically via subscription
-                  }}
-                />
-              </TabsContent>
+          {/* 탭 컨텐츠 */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            {activeTab === 'company-info' && (
+              <CompanyInfoTab 
+                organization={organization} 
+                onUpdate={() => {
+                  // Refresh will happen automatically via subscription
+                }}
+              />
+            )}
 
-              <TabsContent value="organization-structure" className="mt-0">
-                <OrganizationStructureTab 
-                  organizationId={organizationId!}
-                />
-              </TabsContent>
+            {activeTab === 'organization-structure' && (
+              <OrganizationStructureTab 
+                organizationId={organizationId!}
+              />
+            )}
 
-              <TabsContent value="member-management" className="mt-0">
-                <MemberManagementTab 
-                  organizationId={organizationId!}
-                />
-              </TabsContent>
+            {activeTab === 'member-management' && (
+              <MemberManagementTab 
+                organizationId={organizationId!}
+              />
+            )}
 
-              <TabsContent value="permission-settings" className="mt-0">
-                <PermissionSettingsTab 
-                  organizationId={organizationId!}
-                />
-              </TabsContent>
-            </div>
-          </Tabs>
+            {activeTab === 'permission-settings' && (
+              <PermissionSettingsTab 
+                organizationId={organizationId!}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

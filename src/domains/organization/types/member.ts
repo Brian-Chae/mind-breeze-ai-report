@@ -11,12 +11,12 @@ export type MemberRole =
 export type MemberStatus = 
   | 'ACTIVE'      // 활성
   | 'INACTIVE'    // 비활성
-  | 'PENDING'     // 대기 중 (초대 수락 대기)
+  | 'PENDING'     // 대기 중 (가입 대기)
   | 'SUSPENDED'   // 정지
   | 'RESIGNED';   // 퇴사
 
 export type InvitationStatus = 
-  | 'PENDING'    // 초대 대기 중
+  | 'PENDING'    // 가입 대기 중
   | 'ACCEPTED'   // 수락됨
   | 'EXPIRED'    // 만료됨
   | 'CANCELLED'  // 취소됨
@@ -38,7 +38,7 @@ export type PermissionResource =
   | 'CREDIT'            // 크레딧 관리
   | 'SETTINGS'          // 설정 관리
   | 'ANALYTICS'         // 분석 조회
-  | 'INVITATION'        // 초대 관리
+  | 'INVITATION'        // 가입 관리
   | 'BILLING';          // 결제 관리
 
 export interface Permission {

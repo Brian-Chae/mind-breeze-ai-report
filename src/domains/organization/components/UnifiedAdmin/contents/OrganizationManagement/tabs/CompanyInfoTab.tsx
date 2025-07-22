@@ -93,38 +93,53 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
   const onSubmit = async (data: FormData) => {
     setSaving(true)
     try {
+      console.log('Form submission started', { data, organizationId: organization.id })
+      
       const updateData: UpdateOrganizationData = {
         organizationName: data.organizationName,
-        businessNumber: data.businessNumber || undefined,
         industry: data.industry,
         size: data.size,
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
-        address: data.address,
-        website: data.website || undefined,
-        description: data.description || undefined,
-        establishedDate: data.establishedDate ? new Date(data.establishedDate) : undefined
+        address: data.address
       }
+
+      // Only add optional fields if they have values
+      if (data.businessNumber && data.businessNumber.trim()) {
+        updateData.businessNumber = data.businessNumber
+      }
+      if (data.website && data.website.trim()) {
+        updateData.website = data.website
+      }
+      if (data.description && data.description.trim()) {
+        updateData.description = data.description
+      }
+      if (data.establishedDate) {
+        updateData.establishedDate = new Date(data.establishedDate)
+      }
+
+      console.log('Update data prepared:', updateData)
 
       await organizationManagementService.updateOrganizationInfo(
         organization.id,
         updateData
       )
+      
+      console.log('Organization update completed successfully')
 
-      toast({
-        title: '성공',
-        description: '기업 정보가 성공적으로 업데이트되었습니다.'
-      })
+      toast.success('기업 정보가 성공적으로 업데이트되었습니다.')
 
       setIsEditing(false)
       onUpdate()
     } catch (error) {
       console.error('Failed to update organization:', error)
-      toast({
-        title: '오류',
-        description: '기업 정보 업데이트에 실패했습니다.',
-        variant: 'destructive'
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        organizationId: organization.id,
+        formData: data
       })
+      toast.error(`기업 정보 업데이트에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
     } finally {
       setSaving(false)
     }
@@ -167,7 +182,10 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
           </p>
         </div>
         {!isEditing && (
-          <Button onClick={() => setIsEditing(true)} className="gap-2">
+          <Button 
+            onClick={() => setIsEditing(true)} 
+            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+          >
             <Edit2 className="w-4 h-4" />
             정보 수정
           </Button>
@@ -183,13 +201,13 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 <Building2 className="w-6 h-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <CardTitle>기업 상세 정보</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-slate-900">기업 상세 정보</CardTitle>
+                <CardDescription className="text-slate-600">
                   {isEditing ? '기업 정보를 수정하고 저장하세요' : '등록된 기업 정보를 확인하세요'}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-slate-700 border-slate-300">
                   조직 코드: {organization.organizationCode}
                 </Badge>
               </div>
@@ -202,7 +220,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
               <h3 className="text-sm font-medium text-slate-900 mb-4">기본 정보</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="organizationName">
+                  <Label htmlFor="organizationName" className="text-slate-900 font-medium">
                     기업명 <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -211,7 +229,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       id="organizationName"
                       {...register('organizationName')}
                       disabled={!isEditing}
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                   {errors.organizationName && (
@@ -220,7 +238,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="businessNumber">사업자번호</Label>
+                  <Label htmlFor="businessNumber" className="text-slate-900 font-medium">사업자번호</Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                     <Input
@@ -228,13 +246,13 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       {...register('businessNumber')}
                       disabled={!isEditing}
                       placeholder="123-45-67890"
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="industry">
+                  <Label htmlFor="industry" className="text-slate-900 font-medium">
                     업종 <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -244,7 +262,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       onValueChange={(value) => setValue('industry', value)}
                       disabled={!isEditing}
                     >
-                      <SelectTrigger className="pl-10">
+                      <SelectTrigger className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100">
                         <SelectValue placeholder="업종 선택" />
                       </SelectTrigger>
                       <SelectContent>
@@ -262,7 +280,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="size">
+                  <Label htmlFor="size" className="text-slate-900 font-medium">
                     기업 규모 <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -272,7 +290,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       onValueChange={(value) => setValue('size', value as any)}
                       disabled={!isEditing}
                     >
-                      <SelectTrigger className="pl-10">
+                      <SelectTrigger className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100">
                         <SelectValue placeholder="규모 선택" />
                       </SelectTrigger>
                       <SelectContent>
@@ -290,7 +308,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="establishedDate">설립일</Label>
+                  <Label htmlFor="establishedDate" className="text-slate-900 font-medium">설립일</Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                     <Input
@@ -298,7 +316,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       type="date"
                       {...register('establishedDate')}
                       disabled={!isEditing}
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                 </div>
@@ -312,7 +330,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
               <h3 className="text-sm font-medium text-slate-900 mb-4">연락처 정보</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="contactEmail">
+                  <Label htmlFor="contactEmail" className="text-slate-900 font-medium">
                     이메일 <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -322,7 +340,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       type="email"
                       {...register('contactEmail')}
                       disabled={!isEditing}
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                   {errors.contactEmail && (
@@ -331,7 +349,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactPhone">
+                  <Label htmlFor="contactPhone" className="text-slate-900 font-medium">
                     전화번호 <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -341,7 +359,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       {...register('contactPhone')}
                       disabled={!isEditing}
                       placeholder="02-1234-5678"
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                   {errors.contactPhone && (
@@ -350,7 +368,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website">웹사이트</Label>
+                  <Label htmlFor="website" className="text-slate-900 font-medium">웹사이트</Label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                     <Input
@@ -358,7 +376,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       {...register('website')}
                       disabled={!isEditing}
                       placeholder="https://example.com"
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                   {errors.website && (
@@ -367,7 +385,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">
+                  <Label htmlFor="address" className="text-slate-900 font-medium">
                     주소 <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -376,7 +394,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                       id="address"
                       {...register('address')}
                       disabled={!isEditing}
-                      className="pl-10"
+                      className="pl-10 text-slate-900 disabled:text-slate-900 disabled:opacity-100"
                     />
                   </div>
                   {errors.address && (
@@ -392,7 +410,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
             <div>
               <h3 className="text-sm font-medium text-slate-900 mb-4">추가 정보</h3>
               <div className="space-y-2">
-                <Label htmlFor="description">기업 소개</Label>
+                <Label htmlFor="description" className="text-slate-900 font-medium">기업 소개</Label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                   <Textarea
@@ -401,7 +419,7 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                     disabled={!isEditing}
                     rows={4}
                     placeholder="기업에 대한 간단한 소개를 작성해주세요"
-                    className="pl-10 resize-none"
+                    className="pl-10 resize-none bg-slate-50 text-slate-900 border-slate-200 focus:bg-white focus:border-blue-500 disabled:text-slate-900 disabled:opacity-100 disabled:bg-slate-50"
                   />
                 </div>
               </div>
@@ -415,15 +433,15 @@ export default function CompanyInfoTab({ organization, onUpdate }: CompanyInfoTa
                   variant="outline"
                   onClick={handleCancel}
                   disabled={saving}
-                  className="gap-2"
+                  className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
                 >
                   <X className="w-4 h-4" />
                   취소
                 </Button>
                 <Button
                   type="submit"
-                  disabled={saving || !isDirty}
-                  className="gap-2"
+                  disabled={saving}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? '저장 중...' : '변경사항 저장'}

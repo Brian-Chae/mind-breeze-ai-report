@@ -5,7 +5,7 @@
  * 시스템 관리자 페이지 스타일에 맞춰 디자인됨
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Building2, 
   Users, 
@@ -34,7 +34,7 @@ import { Badge } from '@ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { toast } from 'sonner'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
-import type { Organization } from '@domains/organization/types/management/organization-management'
+import type { Organization, OrganizationStats } from '@domains/organization/types/management/organization-management'
 
 interface OrganizationHeroProps {
   organization: Organization
@@ -42,15 +42,36 @@ interface OrganizationHeroProps {
 
 export default function OrganizationHero({ organization }: OrganizationHeroProps) {
   const [isLoading, setIsLoading] = useState(false)
-  
-  // Calculate activity rate
-  const activityRate = organization.totalMembers > 0 
-    ? Math.round((organization.activeMembers / organization.totalMembers) * 100)
-    : 0
+  const [stats, setStats] = useState<OrganizationStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
 
-  // Calculate member growth (mock data for now)
-  const memberGrowthRate = 12 // +12% from last month
-  const departmentGrowth = 2 // +2 new departments
+  // Load organization statistics
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoadingStats(true)
+        const orgStats = await organizationManagementService.getOrganizationStats(organization.id)
+        setStats(orgStats)
+      } catch (error) {
+        console.error('Failed to load organization stats:', error)
+        toast.error('통계 데이터를 불러오는데 실패했습니다.')
+      } finally {
+        setLoadingStats(false)
+      }
+    }
+
+    loadStats()
+  }, [organization.id])
+
+  // Use real data from stats or fallback to organization data
+  const totalMembers = stats?.totalMembers ?? organization.totalMembers ?? 0
+  const activeMembers = stats?.activeMembers ?? organization.activeMembers ?? 0
+  const totalDepartments = stats?.totalDepartments ?? organization.totalDepartments ?? 0
+  const memberGrowthRate = Math.round(stats?.memberGrowthRate ?? 0)
+  const activityRate = Math.round(stats?.activityRate ?? 0)
+
+  // Calculate department growth (mock for now - could be enhanced later)
+  const departmentGrowth = 2
 
   // Get organization size text
   const getSizeText = (size: string) => {
@@ -245,158 +266,174 @@ export default function OrganizationHero({ organization }: OrganizationHeroProps
         </div>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">전체 구성원</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{organization.totalMembers}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="w-3 h-3 text-emerald-600" />
-                <span className="text-xs text-emerald-600 font-medium">+{memberGrowthRate}%</span>
-                <span className="text-xs text-slate-500">지난 달 대비</span>
+      {/* 통계 섹션과 빠른 액션을 좌우로 배치 */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* 통계 카드 섹션 (좌측 - 1/2 영역) */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">주요 통계</h2>
+                <p className="text-slate-600 mt-1">조직의 핵심 지표를 확인하세요</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium text-emerald-700">실시간 업데이트</span>
+                </div>
               </div>
             </div>
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Users className="w-6 h-6 text-blue-600" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {loadingStats ? (
+                // 로딩 상태 표시
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="bg-slate-50 rounded-xl p-4 h-24 flex items-center justify-between animate-pulse">
+                    <div className="flex-1">
+                      <div className="h-4 bg-slate-200 rounded w-20 mb-2"></div>
+                      <div className="h-6 bg-slate-200 rounded w-12 mb-1"></div>
+                      <div className="h-3 bg-slate-200 rounded w-24"></div>
+                    </div>
+                    <div className="p-2 bg-slate-200 rounded-lg ml-3 w-9 h-9"></div>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="bg-slate-50 rounded-xl p-4 hover:bg-slate-100 transition-colors h-24 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-600">전체 구성원</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{totalMembers.toLocaleString()}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {memberGrowthRate >= 0 ? (
+                          <TrendingUp className="w-3 h-3 text-emerald-600" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 text-red-600" />
+                        )}
+                        <span className={`text-xs font-medium ${memberGrowthRate >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {memberGrowthRate >= 0 ? '+' : ''}{memberGrowthRate.toFixed(1)}%
+                        </span>
+                        <span className="text-xs text-slate-500">지난 달 대비</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-blue-100 rounded-lg ml-3">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-xl p-4 hover:bg-slate-100 transition-colors h-24 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-600">활성 구성원</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{activeMembers.toLocaleString()}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <CheckCircle className="w-3 h-3 text-emerald-600" />
+                        <span className="text-xs text-emerald-600 font-medium">{activityRate}% 활성</span>
+                        <span className="text-xs text-slate-500">전체 대비</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-emerald-100 rounded-lg ml-3">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-xl p-4 hover:bg-slate-100 transition-colors h-24 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-600">부서 수</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{totalDepartments.toLocaleString()}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Building2 className="w-3 h-3 text-blue-600" />
+                        <span className="text-xs text-blue-600 font-medium">{stats?.activeDepartments || 0}개 활성</span>
+                        <span className="text-xs text-slate-500">전체 대비</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-purple-100 rounded-lg ml-3">
+                      <Building2 className="w-5 h-5 text-purple-600" />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-xl p-4 hover:bg-slate-100 transition-colors h-24 flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-600">서비스 플랜</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-1">{getPackageInfo(organization.servicePackage).text}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Award className="w-3 h-3 text-orange-600" />
+                        <span className="text-xs text-orange-600 font-medium">{getPaymentStatusInfo(organization.paymentStatus).text}</span>
+                        <span className="text-xs text-slate-500">상태</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-orange-100 rounded-lg ml-3">
+                      <CreditCard className="w-5 h-5 text-orange-600" />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">활성 구성원</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{organization.activeMembers}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <CheckCircle className="w-3 h-3 text-emerald-600" />
-                <span className="text-xs text-emerald-600 font-medium">{activityRate}% 활성</span>
-                <span className="text-xs text-slate-500">전체 대비</span>
-              </div>
-            </div>
-            <div className="p-3 bg-emerald-100 rounded-xl">
-              <CheckCircle className="w-6 h-6 text-emerald-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">부서 수</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{organization.totalDepartments}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <Plus className="w-3 h-3 text-blue-600" />
-                <span className="text-xs text-blue-600 font-medium">+{departmentGrowth}개</span>
-                <span className="text-xs text-slate-500">신규 부서</span>
-              </div>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <Building2 className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">서비스 플랜</p>
-              <p className="text-2xl font-bold text-slate-900 mt-2">{getPackageInfo(organization.servicePackage).text}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <Award className="w-3 h-3 text-orange-600" />
-                <span className="text-xs text-orange-600 font-medium">{getPaymentStatusInfo(organization.paymentStatus).text}</span>
-                <span className="text-xs text-slate-500">상태</span>
-              </div>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <CreditCard className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* 빠른 액션 */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">빠른 액션</h2>
-            <p className="text-slate-600 mt-1">자주 사용하는 작업을 빠르게 실행하세요</p>
+        {/* 빠른 액션 섹션 (우측 - 1/2 영역) */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">빠른 액션</h2>
+                <p className="text-slate-600 mt-1">자주 사용하는 작업을 빠르게 실행하세요</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button 
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl p-4 h-24 flex items-center justify-between transition-all duration-200 group shadow-md hover:shadow-lg"
+                onClick={() => handleQuickAction('구성원 초대')}
+              >
+                <div className="flex-1 text-left">
+                  <span className="font-semibold block">구성원 초대</span>
+                  <p className="text-xs text-blue-100 mt-0.5">새로운 팀원 추가</p>
+                </div>
+                <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors ml-3">
+                  <Users className="w-5 h-5" />
+                </div>
+              </button>
+              
+              <button 
+                className="bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-xl p-4 h-24 flex items-center justify-between transition-all duration-200 group"
+                onClick={() => handleQuickAction('부서 추가')}
+              >
+                <div className="flex-1 text-left">
+                  <span className="font-semibold block">부서 추가</span>
+                  <p className="text-xs text-slate-500 mt-0.5">조직 구조 확장</p>
+                </div>
+                <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors ml-3">
+                  <Building2 className="w-5 h-5 text-slate-600" />
+                </div>
+              </button>
+              
+              <button 
+                className="bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-xl p-4 h-24 flex items-center justify-between transition-all duration-200 group"
+                onClick={() => handleQuickAction('조직도 보기')}
+              >
+                <div className="flex-1 text-left">
+                  <span className="font-semibold block">조직도 보기</span>
+                  <p className="text-xs text-slate-500 mt-0.5">계층 구조 확인</p>
+                </div>
+                <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors ml-3">
+                  <Network className="w-5 h-5 text-slate-600" />
+                </div>
+              </button>
+              
+              <button 
+                className="bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-xl p-4 h-24 flex items-center justify-between transition-all duration-200 group"
+                onClick={() => handleQuickAction('정보 수정')}
+              >
+                <div className="flex-1 text-left">
+                  <span className="font-semibold block">정보 수정</span>
+                  <p className="text-xs text-slate-500 mt-0.5">기업 정보 관리</p>
+                </div>
+                <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors ml-3">
+                  <Edit2 className="w-5 h-5 text-slate-600" />
+                </div>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {organization.totalMembers + organization.totalDepartments}개 항목
-            </Badge>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button 
-            size="lg" 
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md hover:from-blue-600 hover:to-purple-700 h-auto p-6 group"
-            onClick={() => handleQuickAction('구성원 초대')}
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                <Users className="w-6 h-6" />
-              </div>
-              <div className="text-center">
-                <span className="font-semibold">구성원 초대</span>
-                <p className="text-xs text-blue-100 mt-1">새로운 팀원 추가</p>
-              </div>
-            </div>
-          </Button>
-          
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="h-auto p-6 hover:bg-slate-50 hover:border-slate-300 group"
-            onClick={() => handleQuickAction('부서 추가')}
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors">
-                <Building2 className="w-6 h-6 text-slate-600" />
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-slate-900">부서 추가</span>
-                <p className="text-xs text-slate-500 mt-1">조직 구조 확장</p>
-              </div>
-            </div>
-          </Button>
-          
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="h-auto p-6 hover:bg-slate-50 hover:border-slate-300 group"
-            onClick={() => handleQuickAction('조직도 보기')}
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors">
-                <Network className="w-6 h-6 text-slate-600" />
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-slate-900">조직도 보기</span>
-                <p className="text-xs text-slate-500 mt-1">계층 구조 확인</p>
-              </div>
-            </div>
-          </Button>
-          
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="h-auto p-6 hover:bg-slate-50 hover:border-slate-300 group"
-            onClick={() => handleQuickAction('정보 수정')}
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-slate-200 transition-colors">
-                <Edit2 className="w-6 h-6 text-slate-600" />
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-slate-900">정보 수정</span>
-                <p className="text-xs text-slate-500 mt-1">기업 정보 관리</p>
-              </div>
-            </div>
-          </Button>
         </div>
       </div>
     </div>

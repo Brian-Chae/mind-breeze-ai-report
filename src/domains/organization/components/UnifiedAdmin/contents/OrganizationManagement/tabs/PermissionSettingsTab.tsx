@@ -293,7 +293,7 @@ export default function PermissionSettingsTab({ organizationId }: PermissionSett
                         <CheckCircle2 className="w-4 h-4 text-blue-600" />
                       )}
                     </div>
-                    <p className="text-sm text-slate-600 mb-4">{role.description}</p>
+                    <p className="text-sm text-slate-900 mb-4">{role.description}</p>
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className={role.color}>
                         {role.memberCount}명
@@ -318,9 +318,9 @@ export default function PermissionSettingsTab({ organizationId }: PermissionSett
               <Shield className="w-6 h-6 text-orange-600" />
             </div>
             <div className="flex-1">
-              <CardTitle>{selectedRole.name} 권한 설정</CardTitle>
+              <CardTitle className="text-slate-900">{selectedRole.name} 권한 설정</CardTitle>
               <CardDescription>
-                {selectedRole.description} - 각 기능별 세부 권한을 설정하세요
+                <span className="text-slate-900">{selectedRole.description}</span> - <span className="text-slate-900">각 기능별 세부 권한을 설정하세요</span>
               </CardDescription>
             </div>
           </div>

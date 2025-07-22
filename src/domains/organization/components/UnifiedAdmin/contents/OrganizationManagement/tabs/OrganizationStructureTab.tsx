@@ -69,7 +69,7 @@ function DepartmentTreeItem({
           variant="ghost"
           size="sm"
           onClick={() => onToggle(node.id)}
-          className="w-6 h-6 p-0"
+          className="w-6 h-6 p-0 hover:bg-slate-100 text-slate-600"
           disabled={!hasChildren}
         >
           {hasChildren ? (
@@ -92,30 +92,30 @@ function DepartmentTreeItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="font-medium text-slate-900 truncate">{node.name}</h4>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs text-slate-700 border-slate-300">
               {node.code}
             </Badge>
             {node.level === 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
                 최상위
               </Badge>
             )}
           </div>
           <div className="flex items-center gap-4 text-sm text-slate-500">
             <div className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              <span>{node.memberCount}명</span>
+              <Users className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-600">{node.memberCount}명</span>
             </div>
             {node.managerName && (
               <div className="flex items-center gap-1">
-                <User className="w-3 h-3" />
-                <span>{node.managerName}</span>
+                <User className="w-3 h-3 text-slate-400" />
+                <span className="text-slate-600">{node.managerName}</span>
               </div>
             )}
             {hasChildren && (
               <div className="flex items-center gap-1">
-                <Building2 className="w-3 h-3" />
-                <span>{node.children.length}개 하위부서</span>
+                <Building2 className="w-3 h-3 text-slate-400" />
+                <span className="text-slate-600">{node.children.length}개 하위부서</span>
               </div>
             )}
           </div>
@@ -124,7 +124,11 @@ function DepartmentTreeItem({
         {/* Actions */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-8 h-8 p-0 hover:bg-slate-100 text-slate-600 hover:text-slate-900"
+            >
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -208,11 +212,7 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
       setFlatDepartments(flatList)
     } catch (error) {
       console.error('Failed to load departments:', error)
-      toast({
-        title: '오류',
-        description: '부서 정보를 불러오는데 실패했습니다.',
-        variant: 'destructive'
-      })
+      toast.error('부서 정보를 불러오는데 실패했습니다.')
     } finally {
       setLoading(false)
     }
@@ -260,18 +260,11 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
   const handleDeleteDepartment = async (departmentId: string) => {
     try {
       await organizationManagementService.deleteDepartment(organizationId, departmentId)
-      toast({
-        title: '성공',
-        description: '부서가 성공적으로 삭제되었습니다.'
-      })
+      toast.success('부서가 성공적으로 삭제되었습니다.')
       loadDepartmentHierarchy()
     } catch (error) {
       console.error('Failed to delete department:', error)
-      toast({
-        title: '오류',
-        description: '부서 삭제에 실패했습니다.',
-        variant: 'destructive'
-      })
+      toast.error('부서 삭제에 실패했습니다.')
     }
   }
 
@@ -289,8 +282,10 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
     setSelectedParentId(undefined)
   }
 
-  const handleDepartmentModalSuccess = () => {
-    loadDepartmentHierarchy()
+  const handleDepartmentModalSuccess = async () => {
+    // Force reload without cache
+    setLoading(true)
+    await loadDepartmentHierarchy()
   }
 
   // Calculate statistics
@@ -332,7 +327,10 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
             부서 계층 구조를 관리하고 조직도를 확인할 수 있습니다.
           </p>
         </div>
-        <Button onClick={() => handleAddDepartment()} className="gap-2">
+        <Button 
+          onClick={() => handleAddDepartment()} 
+          className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+        >
           <Plus className="w-4 h-4" />
           부서 추가
         </Button>
@@ -388,8 +386,8 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
               <Network className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <CardTitle>부서 조직도</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-slate-900">부서 조직도</CardTitle>
+              <CardDescription className="text-slate-900">
                 각 부서를 클릭하여 하위 부서를 펼치거나 접을 수 있습니다
               </CardDescription>
             </div>
@@ -407,7 +405,10 @@ export default function OrganizationStructureTab({ organizationId }: Organizatio
               <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">부서가 없습니다</h3>
               <p className="text-slate-600 mb-4">첫 번째 부서를 추가해보세요.</p>
-              <Button onClick={() => handleAddDepartment()} className="gap-2">
+              <Button 
+                onClick={() => handleAddDepartment()} 
+                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+              >
                 <Plus className="w-4 h-4" />
                 부서 추가
               </Button>

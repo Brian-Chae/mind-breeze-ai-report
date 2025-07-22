@@ -44,8 +44,8 @@ import {
 } from "@ui/table"
 import { toast } from 'sonner'
 import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
-import type { OrganizationMember, Department } from '@domains/organization/types/management/organization-management'
-import MemberInviteModal from '../components/MemberInviteModal'
+import type { OrganizationMember, Department, PendingMember } from '@domains/organization/types/management/organization-management'
+import MemberCreateModal from '../components/MemberInviteModal'
 
 interface MemberManagementTabProps {
   organizationId: string
@@ -58,6 +58,8 @@ interface MemberFilters {
   search?: string
 }
 
+type MemberStatusFilter = 'ALL' | 'ACTIVE' | 'PENDING' | 'SUSPENDED' | 'RESIGNED'
+
 // Status configuration
 const statusConfig = {
   ACTIVE: { label: '활성', color: 'bg-green-100 text-green-700' },
@@ -68,32 +70,37 @@ const statusConfig = {
 
 // Role configuration
 const roleConfig = {
-  ADMIN: { label: '관리자', color: 'bg-red-100 text-red-700' },
-  MANAGER: { label: '매니저', color: 'bg-blue-100 text-blue-700' },
-  MEMBER: { label: '구성원', color: 'bg-gray-100 text-gray-700' }
+  ORGANIZATION_ADMIN: { label: '조직 관리자', color: 'bg-red-100 text-red-700' },
+  DEPARTMENT_MANAGER: { label: '부서 관리자', color: 'bg-blue-100 text-blue-700' },
+  TEAM_LEADER: { label: '팀 리더', color: 'bg-purple-100 text-purple-700' },
+  SUPERVISOR: { label: '감독자', color: 'bg-orange-100 text-orange-700' },
+  EMPLOYEE: { label: '일반 직원', color: 'bg-gray-100 text-gray-700' },
+  ORGANIZATION_MEMBER: { label: '조직 구성원', color: 'bg-green-100 text-green-700' }
 }
 
 export default function MemberManagementTab({ organizationId }: MemberManagementTabProps) {
   const [members, setMembers] = useState<OrganizationMember[]>([])
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [filteredMembers, setFilteredMembers] = useState<OrganizationMember[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<MemberFilters>({})
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<MemberStatusFilter>('ALL')
   
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false)
-  
-  
 
   useEffect(() => {
     loadMembers()
+    loadPendingMembers()
     loadDepartments()
+    checkAndCreateAdminMember()
   }, [organizationId])
 
   useEffect(() => {
     applyFilters()
-  }, [members, filters])
+  }, [members, pendingMembers, filters, selectedStatusFilter])
 
   const loadMembers = async () => {
     try {
@@ -102,13 +109,19 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
       setMembers(memberList)
     } catch (error) {
       console.error('Failed to load members:', error)
-      toast({
-        title: '오류',
-        description: '구성원 목록을 불러오는데 실패했습니다.',
-        variant: 'destructive'
-      })
+      toast.error('구성원 목록을 불러오는데 실패했습니다.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPendingMembers = async () => {
+    try {
+      const pendingMemberList = await organizationManagementService.getPendingMembers(organizationId)
+      setPendingMembers(pendingMemberList)
+    } catch (error) {
+      console.error('Failed to load pending members:', error)
+      toast.error('가입 대기 구성원 목록을 불러오는데 실패했습니다.')
     }
   }
 
@@ -121,10 +134,86 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
     }
   }
 
-  const applyFilters = () => {
-    let filtered = [...members]
+  const checkAndCreateAdminMember = async () => {
+    try {
+      // 현재 구성원 수 확인
+      const currentMembers = await organizationManagementService.getMembers(organizationId)
+      
+      // 구성원이 없으면 관리자 구성원 자동 생성
+      if (currentMembers.length === 0) {
+        console.log('구성원이 없음. 관리자 구성원 자동 생성 중...')
+        await organizationManagementService.addAdminMemberToExistingOrganization(organizationId)
+        
+        // 구성원 목록 다시 로드
+        setTimeout(() => {
+          loadMembers()
+        }, 1000)
+        
+        toast.success('관리자 구성원이 자동으로 추가되었습니다.')
+      }
+    } catch (error) {
+      console.error('관리자 구성원 자동 생성 실패:', error)
+      // 에러는 로그만 남기고 사용자에게는 알리지 않음 (선택적 기능)
+    }
+  }
 
-    // Search filter
+  const applyFilters = () => {
+    let filtered: OrganizationMember[] = []
+
+    // Status filter by card selection
+    if (selectedStatusFilter === 'ALL') {
+      // Include both regular members and pending members
+      const convertedPendingMembers = pendingMembers.map(pending => ({
+        id: pending.id,
+        userId: '',
+        employeeId: '대기중',
+        displayName: pending.name,
+        email: pending.email,
+        position: pending.position || '',
+        role: pending.role,
+        status: 'INVITED' as const, // Use INVITED status for pending members
+        permissions: [],
+        departmentId: pending.departmentId,
+        departmentName: pending.departmentId ? departments.find(d => d.id === pending.departmentId)?.name : undefined,
+        joinedAt: pending.createdAt,
+        phone: undefined,
+        profilePhotoUrl: undefined,
+        jobTitle: undefined,
+        invitationToken: undefined,
+        invitationExpiry: pending.expiresAt,
+        lastActiveAt: undefined,
+        resignedAt: undefined
+      } as OrganizationMember))
+      
+      filtered = [...members, ...convertedPendingMembers]
+    } else if (selectedStatusFilter === 'PENDING') {
+      // Convert pending members to display format
+      filtered = pendingMembers.map(pending => ({
+        id: pending.id,
+        userId: '',
+        employeeId: '대기중',
+        displayName: pending.name,
+        email: pending.email,
+        position: pending.position || '',
+        role: pending.role,
+        status: 'INVITED' as const, // Use INVITED status for pending members
+        permissions: [],
+        departmentId: pending.departmentId,
+        departmentName: pending.departmentId ? departments.find(d => d.id === pending.departmentId)?.name : undefined,
+        joinedAt: pending.createdAt,
+        phone: undefined,
+        profilePhotoUrl: undefined,
+        jobTitle: undefined,
+        invitationToken: undefined,
+        invitationExpiry: pending.expiresAt,
+        lastActiveAt: undefined,
+        resignedAt: undefined
+      } as OrganizationMember))
+    } else {
+      filtered = members.filter(member => member.status === selectedStatusFilter)
+    }
+
+    // Additional filters
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase()
       filtered = filtered.filter(member => 
@@ -135,17 +224,14 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
       )
     }
 
-    // Status filter
-    if (filters.status) {
+    if (filters.status && selectedStatusFilter === 'ALL') {
       filtered = filtered.filter(member => member.status === filters.status)
     }
 
-    // Role filter
     if (filters.role) {
       filtered = filtered.filter(member => member.role === filters.role)
     }
 
-    // Department filter
     if (filters.departmentId) {
       filtered = filtered.filter(member => member.departmentId === filters.departmentId)
     }
@@ -165,6 +251,7 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
 
   const handleInviteModalSuccess = () => {
     loadMembers()
+    loadPendingMembers()
   }
 
   const handleEditMember = (memberId: string) => {
@@ -192,7 +279,7 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
     }
   }
 
-  const handleUpdateMemberRole = async (memberId: string, role: 'ADMIN' | 'MANAGER' | 'MEMBER') => {
+  const handleUpdateMemberRole = async (memberId: string, role: 'ORGANIZATION_ADMIN' | 'DEPARTMENT_MANAGER' | 'TEAM_LEADER' | 'SUPERVISOR' | 'EMPLOYEE' | 'ORGANIZATION_MEMBER') => {
     try {
       await organizationManagementService.updateMemberRole(organizationId, memberId, role)
       toast({
@@ -231,8 +318,31 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
 
   // Calculate statistics
   const activeMembers = members.filter(m => m.status === 'ACTIVE').length
-  const invitedMembers = members.filter(m => m.status === 'INVITED').length
+  const pendingMembersCount = pendingMembers.length
   const suspendedMembers = members.filter(m => m.status === 'SUSPENDED').length
+
+  // Debug: 역할별 구성원 수 확인
+  console.log('Members by role:', {
+    total: members.length,
+    organizationAdmin: members.filter(m => m.role === 'ORGANIZATION_ADMIN').length,
+    departmentManager: members.filter(m => m.role === 'DEPARTMENT_MANAGER').length,
+    teamLeader: members.filter(m => m.role === 'TEAM_LEADER').length,
+    supervisor: members.filter(m => m.role === 'SUPERVISOR').length,
+    employee: members.filter(m => m.role === 'EMPLOYEE').length,
+    organizationMember: members.filter(m => m.role === 'ORGANIZATION_MEMBER').length,
+    pending: pendingMembersCount,
+    totalWithPending: members.length + pendingMembersCount,
+    allRoles: [...new Set(members.map(m => m.role))]
+  })
+
+  // Handle status filter changes
+  const handleStatusFilterChange = (status: MemberStatusFilter) => {
+    setSelectedStatusFilter(status)
+    // Clear other status filters when using card filter
+    if (filters.status) {
+      setFilters({ ...filters, status: undefined })
+    }
+  }
 
   const isAllSelected = filteredMembers.length > 0 && selectedMembers.size === filteredMembers.length
   const isSomeSelected = selectedMembers.size > 0 && selectedMembers.size < filteredMembers.length
@@ -248,29 +358,49 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+          >
             <Upload className="w-4 h-4" />
             CSV 가져오기
           </Button>
-          <Button onClick={handleInviteMember} className="gap-2">
+          <Button 
+            onClick={handleInviteMember} 
+            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+          >
             <Plus className="w-4 h-4" />
-            구성원 초대
+            구성원 추가
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Filter Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
+        <Card 
+          className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+            selectedStatusFilter === 'ALL' 
+              ? 'ring-2 ring-blue-500 bg-blue-50' 
+              : 'hover:bg-slate-50'
+          }`}
+          onClick={() => handleStatusFilterChange('ALL')}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-600">전체 구성원</p>
-              <p className="text-2xl font-bold text-slate-900">{members.length}</p>
+              <p className="text-2xl font-bold text-slate-900">{members.length + pendingMembersCount}</p>
             </div>
             <Users className="w-8 h-8 text-slate-400" />
           </div>
         </Card>
-        <Card className="p-4">
+        <Card 
+          className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+            selectedStatusFilter === 'ACTIVE' 
+              ? 'ring-2 ring-green-500 bg-green-50' 
+              : 'hover:bg-slate-50'
+          }`}
+          onClick={() => handleStatusFilterChange('ACTIVE')}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-600">활성 구성원</p>
@@ -279,16 +409,30 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
             <Users className="w-8 h-8 text-green-400" />
           </div>
         </Card>
-        <Card className="p-4">
+        <Card 
+          className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+            selectedStatusFilter === 'PENDING' 
+              ? 'ring-2 ring-yellow-500 bg-yellow-50' 
+              : 'hover:bg-slate-50'
+          }`}
+          onClick={() => handleStatusFilterChange('PENDING')}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">초대 대기</p>
-              <p className="text-2xl font-bold text-yellow-600">{invitedMembers}</p>
+              <p className="text-sm text-slate-600">가입 대기</p>
+              <p className="text-2xl font-bold text-yellow-600">{pendingMembersCount}</p>
             </div>
             <Users className="w-8 h-8 text-yellow-400" />
           </div>
         </Card>
-        <Card className="p-4">
+        <Card 
+          className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+            selectedStatusFilter === 'SUSPENDED' 
+              ? 'ring-2 ring-red-500 bg-red-50' 
+              : 'hover:bg-slate-50'
+          }`}
+          onClick={() => handleStatusFilterChange('SUSPENDED')}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-600">정지된 구성원</p>
@@ -314,14 +458,14 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
             </div>
           </div>
           <Select
-            value={filters.status || ''}
-            onValueChange={(value) => setFilters({ ...filters, status: value || undefined })}
+            value={filters.status || 'all'}
+            onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? undefined : value })}
           >
             <SelectTrigger className="w-36">
               <SelectValue placeholder="상태 필터" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">전체</SelectItem>
+              <SelectItem value="all">전체</SelectItem>
               <SelectItem value="ACTIVE">활성</SelectItem>
               <SelectItem value="INVITED">초대됨</SelectItem>
               <SelectItem value="SUSPENDED">정지됨</SelectItem>
@@ -329,17 +473,20 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
             </SelectContent>
           </Select>
           <Select
-            value={filters.role || ''}
-            onValueChange={(value) => setFilters({ ...filters, role: value || undefined })}
+            value={filters.role || 'all'}
+            onValueChange={(value) => setFilters({ ...filters, role: value === 'all' ? undefined : value })}
           >
             <SelectTrigger className="w-36">
               <SelectValue placeholder="역할 필터" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">전체</SelectItem>
-              <SelectItem value="ADMIN">관리자</SelectItem>
-              <SelectItem value="MANAGER">매니저</SelectItem>
-              <SelectItem value="MEMBER">구성원</SelectItem>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="ORGANIZATION_ADMIN">조직 관리자</SelectItem>
+              <SelectItem value="DEPARTMENT_MANAGER">부서 관리자</SelectItem>
+              <SelectItem value="TEAM_LEADER">팀 리더</SelectItem>
+              <SelectItem value="SUPERVISOR">감독자</SelectItem>
+              <SelectItem value="EMPLOYEE">일반 직원</SelectItem>
+              <SelectItem value="ORGANIZATION_MEMBER">조직 구성원</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -353,8 +500,17 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
               <Users className="w-6 h-6 text-purple-600" />
             </div>
             <div className="flex-1">
-              <CardTitle>구성원 목록</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-slate-900">
+                구성원 목록 
+                {selectedStatusFilter !== 'ALL' && (
+                  <span className="text-sm font-normal text-slate-500 ml-2">
+                    ({selectedStatusFilter === 'ACTIVE' && '활성'}
+                    {selectedStatusFilter === 'PENDING' && '가입 대기'}
+                    {selectedStatusFilter === 'SUSPENDED' && '정지됨'} 구성원)
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription className="text-slate-600">
                 {filteredMembers.length}명의 구성원 | {selectedMembers.size}명 선택됨
               </CardDescription>
             </div>
@@ -392,7 +548,7 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
               {!filters.search && !filters.status && !filters.role && (
                 <Button onClick={handleInviteMember} className="gap-2">
                   <Plus className="w-4 h-4" />
-                  구성원 초대
+                  구성원 추가
                 </Button>
               )}
             </div>
@@ -400,7 +556,7 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
+                  <TableHead className="w-12 text-slate-900">
                     <Checkbox
                       checked={isAllSelected}
                       onCheckedChange={handleSelectAll}
@@ -408,13 +564,13 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
                       className={isSomeSelected ? "data-[state=checked]:bg-blue-600" : ""}
                     />
                   </TableHead>
-                  <TableHead>구성원</TableHead>
-                  <TableHead>사번</TableHead>
-                  <TableHead>부서</TableHead>
-                  <TableHead>직위</TableHead>
-                  <TableHead>역할</TableHead>
-                  <TableHead>상태</TableHead>
-                  <TableHead>가입일</TableHead>
+                  <TableHead className="text-slate-900 font-medium">구성원</TableHead>
+                  <TableHead className="text-slate-900 font-medium">사번</TableHead>
+                  <TableHead className="text-slate-900 font-medium">부서</TableHead>
+                  <TableHead className="text-slate-900 font-medium">직위</TableHead>
+                  <TableHead className="text-slate-900 font-medium">역할</TableHead>
+                  <TableHead className="text-slate-900 font-medium">상태</TableHead>
+                  <TableHead className="text-slate-900 font-medium">가입일</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -473,17 +629,17 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
                     <TableCell>
                       <Badge 
                         variant="secondary" 
-                        className={roleConfig[member.role].color}
+                        className={roleConfig[member.role]?.color || 'bg-gray-100 text-gray-700'}
                       >
-                        {roleConfig[member.role].label}
+                        {roleConfig[member.role]?.label || member.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge 
                         variant="secondary" 
-                        className={statusConfig[member.status].color}
+                        className={statusConfig[member.status]?.color || 'bg-gray-100 text-gray-700'}
                       >
-                        {statusConfig[member.status].label}
+                        {statusConfig[member.status]?.label || member.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -538,8 +694,8 @@ export default function MemberManagementTab({ organizationId }: MemberManagement
         </CardContent>
       </Card>
 
-      {/* Member Invite Modal */}
-      <MemberInviteModal
+      {/* Member Create Modal */}
+      <MemberCreateModal
         isOpen={inviteModalOpen}
         onClose={handleInviteModalClose}
         onSuccess={handleInviteModalSuccess}

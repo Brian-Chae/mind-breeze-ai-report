@@ -181,6 +181,44 @@ export interface InviteMemberData {
 }
 
 /**
+ * 대기 중인 구성원 (사전 등록)
+ */
+export interface PendingMember {
+  id: string
+  organizationId: string
+  
+  // 개인 정보
+  email: string
+  name: string
+  temporaryPasswordHash: string
+  
+  // 조직 정보
+  departmentId?: string
+  position?: string
+  role: 'ADMIN' | 'MANAGER' | 'MEMBER'
+  
+  // 상태 정보
+  status: 'PENDING'
+  
+  // 메타데이터
+  createdBy: string
+  createdAt: Timestamp
+  expiresAt: Timestamp
+}
+
+/**
+ * 대기 구성원 생성 데이터
+ */
+export interface CreatePendingMemberData {
+  email: string
+  name: string
+  temporaryPassword: string
+  departmentId?: string
+  position?: string
+  role: 'ADMIN' | 'MANAGER' | 'MEMBER'
+}
+
+/**
  * 조직 통계
  */
 export interface OrganizationStats {

@@ -36,6 +36,8 @@ import type {
   UpdateOrganizationData,
   CreateDepartmentData,
   InviteMemberData,
+  CreatePendingMemberData,
+  PendingMember,
   OrganizationStats,
   DepartmentNode,
   BulkInviteResult,
@@ -45,6 +47,94 @@ import type {
 class OrganizationManagementService extends BaseService {
   constructor() {
     super()
+  }
+
+  /**
+   * 조직 생성 시 관리자 구성원 자동 추가
+   */
+  async createAdminMember(
+    organizationId: string,
+    adminData: {
+      userId: string
+      email: string
+      displayName: string
+      employeeId?: string
+    }
+  ): Promise<void> {
+    return this.measureAndLog('createAdminMember', async () => {
+      try {
+        const currentTime = Timestamp.now()
+        
+        const adminMemberData: Omit<OrganizationMember, 'id'> = {
+          userId: adminData.userId,
+          employeeId: adminData.employeeId || 'ADMIN001',
+          displayName: adminData.displayName,
+          email: adminData.email,
+          role: 'ORGANIZATION_ADMIN',
+          permissions: this.calculatePermissionsByRole('ORGANIZATION_ADMIN'),
+          status: 'ACTIVE',
+          position: '조직 관리자',
+          joinedAt: currentTime
+        }
+
+        // 관리자 구성원 생성
+        const memberRef = await addDoc(
+          collection(db, 'organizations', organizationId, 'members'),
+          adminMemberData
+        )
+
+        // 조직 통계 업데이트
+        await updateDoc(doc(db, 'organizations', organizationId), {
+          totalMembers: increment(1),
+          activeMembers: increment(1),
+          updatedAt: currentTime
+        })
+
+        this.log('관리자 구성원 생성 완료', { 
+          organizationId, 
+          memberId: memberRef.id, 
+          email: adminData.email 
+        })
+      } catch (error) {
+        this.error('관리자 구성원 생성 실패', error as Error, { organizationId, adminData })
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 기존 조직에 관리자 구성원 추가 (데이터 마이그레이션용)
+   */
+  async addAdminMemberToExistingOrganization(organizationId: string): Promise<void> {
+    return this.measureAndLog('addAdminMemberToExistingOrganization', async () => {
+      try {
+        // 조직 정보 조회
+        const organization = await this.getOrganization(organizationId)
+        if (!organization) {
+          throw new Error('조직을 찾을 수 없습니다.')
+        }
+
+        // 이미 구성원이 있는지 확인
+        const existingMembers = await this.getMembers(organizationId)
+        if (existingMembers.length > 0) {
+          this.log('이미 구성원이 존재하는 조직입니다.', { organizationId })
+          return
+        }
+
+        // 관리자 정보로 구성원 생성
+        await this.createAdminMember(organizationId, {
+          userId: organization.adminUserId,
+          email: organization.adminEmail,
+          displayName: organization.adminEmail.split('@')[0], // 이메일에서 이름 추출
+          employeeId: 'ADMIN001'
+        })
+
+        this.log('기존 조직에 관리자 구성원 추가 완료', { organizationId })
+      } catch (error) {
+        this.error('기존 조직 관리자 구성원 추가 실패', error as Error, { organizationId })
+        throw error
+      }
+    })
   }
 
   /**
@@ -168,16 +258,18 @@ class OrganizationManagementService extends BaseService {
         try {
           const q = query(
             collection(db, 'organizations', organizationId, 'departments'),
-            where('isActive', '==', true),
-            orderBy('sortOrder', 'asc')
+            where('isActive', '==', true)
           )
           
           const snapshot = await getDocs(q)
           
-          return snapshot.docs.map(doc => ({
+          // Sort client-side to avoid index requirements
+          const departments = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           } as Department))
+          
+          return departments.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
         } catch (error) {
           this.error('부서 목록 조회 실패', error as Error, { organizationId })
           return []
@@ -212,8 +304,9 @@ class OrganizationManagementService extends BaseService {
         }
         
         const currentUser = this.getCurrentUser()
-        const departmentData = {
-          ...data,
+        const departmentData: any = {
+          name: data.name,
+          code: data.code,
           level,
           memberCount: 0,
           childDepartmentCount: 0,
@@ -223,6 +316,19 @@ class OrganizationManagementService extends BaseService {
           createdBy: currentUser?.id || 'system',
           updatedBy: currentUser?.id || 'system'
         }
+        
+        // Only add optional fields if they have values
+        if (data.description) {
+          departmentData.description = data.description
+        }
+        if (data.parentId) {
+          departmentData.parentId = data.parentId
+        }
+        if (data.managerId) {
+          departmentData.managerId = data.managerId
+        }
+        // Always set sortOrder with default of 0
+        departmentData.sortOrder = data.sortOrder || 0
         
         // 부서 생성
         const docRef = await addDoc(
@@ -242,7 +348,9 @@ class OrganizationManagementService extends BaseService {
         })
         
         // 캐시 무효화
-        this.invalidateDepartmentCache(organizationId)
+        this.clearCache(`departments_${organizationId}`)
+        this.clearCache(`dept_hierarchy_${organizationId}`)
+        this.clearCache(`org_stats_${organizationId}`)
         
         this.log('부서 생성 완료', { organizationId, departmentId: docRef.id })
         
@@ -270,11 +378,20 @@ class OrganizationManagementService extends BaseService {
         await this.checkAdminPermission(organizationId)
         
         const currentUser = this.getCurrentUser()
-        const updateData = {
-          ...data,
+        const updateData: any = {
           updatedAt: Timestamp.now(),
           updatedBy: currentUser?.id || 'system'
         }
+        
+        // Only add fields that are provided
+        if (data.name !== undefined) updateData.name = data.name
+        if (data.code !== undefined) updateData.code = data.code
+        if (data.description !== undefined) updateData.description = data.description
+        if (data.parentId !== undefined) updateData.parentId = data.parentId
+        if (data.managerId !== undefined) updateData.managerId = data.managerId
+        if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder
+        if (data.level !== undefined) updateData.level = data.level
+        if (data.isActive !== undefined) updateData.isActive = data.isActive
         
         await updateDoc(
           doc(db, 'organizations', organizationId, 'departments', departmentId),
@@ -409,6 +526,41 @@ class OrganizationManagementService extends BaseService {
   }
 
   /**
+   * 대기 구성원 목록 조회
+   */
+  async getPendingMembers(organizationId: string): Promise<PendingMember[]> {
+    return this.withCache(
+      `pending_members_${organizationId}`,
+      async () => {
+        try {
+          // 단순한 쿼리로 변경 (인덱스 없이 동작)
+          const q = query(
+            collection(db, 'pendingMembers'),
+            where('organizationId', '==', organizationId)
+          )
+          
+          const snapshot = await getDocs(q)
+          let pendingMembers = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          } as PendingMember))
+          
+          // 클라이언트 사이드에서 필터링 및 정렬
+          pendingMembers = pendingMembers
+            .filter(member => member.status === 'PENDING')
+            .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+          
+          return pendingMembers
+        } catch (error) {
+          this.error('대기 구성원 목록 조회 실패', error as Error, { organizationId })
+          return []
+        }
+      },
+      60 // 1분 캐시
+    )
+  }
+
+  /**
    * 구성원 목록 조회
    */
   async getMembers(
@@ -508,12 +660,94 @@ class OrganizationManagementService extends BaseService {
   }
 
   /**
+   * 대기 구성원 생성 (사전 등록 방식)
+   */
+  async createPendingMember(
+    organizationId: string,
+    data: CreatePendingMemberData
+  ): Promise<void> {
+    return this.measureAndLog('createPendingMember', async () => {
+      try {
+        await this.checkAdminPermission(organizationId)
+        
+        // 이메일 중복 확인 (기존 멤버)
+        const existingMember = await this.getMemberByEmail(organizationId, data.email)
+        if (existingMember) {
+          throw new Error('이미 조직에 속한 이메일입니다.')
+        }
+        
+        // 대기 중인 멤버 중복 확인
+        const pendingMembersQuery = query(
+          collection(db, 'pendingMembers'),
+          where('organizationId', '==', organizationId),
+          where('email', '==', data.email)
+        )
+        const pendingSnapshot = await getDocs(pendingMembersQuery)
+        
+        if (!pendingSnapshot.empty) {
+          throw new Error('이미 등록 대기 중인 이메일입니다.')
+        }
+        
+        // 비밀번호 해시 (클라이언트에서 해시하는 것은 보안상 권장되지 않지만, 임시방편으로 사용)
+        const passwordHash = await this.hashPassword(data.temporaryPassword)
+        
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 30) // 30일 유효
+        
+        const currentUser = this.getCurrentUser()
+        
+        // 대기 멤버 정보 저장
+        const pendingMemberData: Omit<PendingMember, 'id'> = {
+          organizationId,
+          email: data.email,
+          name: data.name,
+          temporaryPasswordHash: passwordHash,
+          role: data.role,
+          ...(data.departmentId && { departmentId: data.departmentId }),
+          ...(data.position && { position: data.position }),
+          status: 'PENDING',
+          createdBy: currentUser?.uid || 'system',
+          createdAt: Timestamp.now(),
+          expiresAt: Timestamp.fromDate(expiresAt)
+        }
+        
+        await addDoc(collection(db, 'pendingMembers'), pendingMemberData)
+        
+        // 캐시 무효화
+        this.clearCache(`pending_members_${organizationId}`)
+        
+        this.log('대기 구성원 생성 완료', { organizationId, email: data.email })
+      } catch (error) {
+        this.error('대기 구성원 생성 실패', error as Error, { organizationId, data })
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 비밀번호 해시 생성 (간단한 해시, 실제로는 서버에서 해야 함)
+   */
+  private async hashPassword(password: string): Promise<string> {
+    // 실제 환경에서는 서버에서 bcrypt 등을 사용해야 함
+    // 여기서는 임시로 btoa를 사용 (보안 목적이 아님)
+    return btoa(password + 'mind-breeze-salt')
+  }
+
+  /**
+   * 비밀번호 검증
+   */
+  private async verifyPassword(password: string, hash: string): Promise<boolean> {
+    const testHash = await this.hashPassword(password)
+    return testHash === hash
+  }
+
+  /**
    * 구성원 역할 변경
    */
   async updateMemberRole(
     organizationId: string, 
     memberId: string, 
-    role: 'ADMIN' | 'MANAGER' | 'MEMBER'
+    role: 'ORGANIZATION_ADMIN' | 'DEPARTMENT_MANAGER' | 'TEAM_LEADER' | 'SUPERVISOR' | 'EMPLOYEE' | 'ORGANIZATION_MEMBER' | 'ADMIN' | 'MANAGER' | 'MEMBER'
   ): Promise<void> {
     return this.measureAndLog('updateMemberRole', async () => {
       try {
@@ -724,6 +958,49 @@ class OrganizationManagementService extends BaseService {
    */
   private calculatePermissionsByRole(role: string): string[] {
     const permissionMap: Record<string, string[]> = {
+      ORGANIZATION_ADMIN: [
+        'organization.manage',
+        'members.manage',
+        'departments.manage',
+        'reports.manage',
+        'devices.manage',
+        'credits.manage',
+        'system.admin'
+      ],
+      DEPARTMENT_MANAGER: [
+        'organization.view',
+        'members.manage',
+        'departments.manage',
+        'reports.manage',
+        'devices.manage'
+      ],
+      TEAM_LEADER: [
+        'organization.view',
+        'members.view',
+        'departments.view',
+        'reports.manage',
+        'devices.view'
+      ],
+      SUPERVISOR: [
+        'organization.view',
+        'members.view',
+        'departments.view',
+        'reports.view',
+        'devices.view'
+      ],
+      EMPLOYEE: [
+        'organization.view',
+        'members.view',
+        'departments.view',
+        'reports.view'
+      ],
+      ORGANIZATION_MEMBER: [
+        'organization.view',
+        'members.view',
+        'departments.view',
+        'reports.view'
+      ],
+      // 기존 호환성을 위한 매핑
       ADMIN: [
         'organization.manage',
         'members.manage',
@@ -747,7 +1024,7 @@ class OrganizationManagementService extends BaseService {
       ]
     }
     
-    return permissionMap[role] || permissionMap.MEMBER
+    return permissionMap[role] || permissionMap.ORGANIZATION_MEMBER
   }
 
   /**
