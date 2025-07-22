@@ -27,7 +27,7 @@ import {
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '@core/services/firebase'
-import enterpriseAuthService from '../../EnterpriseAuthService'
+import enterpriseAuthService from '../EnterpriseAuthService'
 import type { 
   Organization, 
   Department, 
