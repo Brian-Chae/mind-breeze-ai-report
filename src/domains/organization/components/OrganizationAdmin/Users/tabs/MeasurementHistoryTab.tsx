@@ -41,11 +41,14 @@ import {
   TableRow,
 } from "@ui/table"
 import { toast } from 'sonner'
+import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
+import { MeasurementData } from '@domains/ai-report/types'
 
 interface MeasurementHistoryTabProps {
   organizationId: string
 }
 
+// MeasurementData를 MeasurementSession으로 매핑하기 위한 타입 정의
 interface MeasurementSession {
   id: string
   userId: string
@@ -73,52 +76,7 @@ export default function MeasurementHistoryTab({ organizationId }: MeasurementHis
   const [filteredSessions, setFilteredSessions] = useState<MeasurementSession[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<SessionFilters>({ dateRange: '7d' })
-
-  // Mock data - replace with actual API calls
-  const mockSessions: MeasurementSession[] = [
-    {
-      id: '1',
-      userId: '1',
-      userName: '김건강',
-      startTime: '2024-01-15 14:30:00',
-      endTime: '2024-01-15 14:45:00',
-      duration: 15,
-      deviceId: 'LB001',
-      deviceType: 'LinkBand Pro',
-      quality: 'excellent',
-      dataSize: 2.4,
-      notes: '정상적인 측정 완료',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      userId: '2',
-      userName: '이스트레스',
-      startTime: '2024-01-14 10:00:00',
-      endTime: '2024-01-14 10:18:00',
-      duration: 18,
-      deviceId: 'LB002',
-      deviceType: 'LinkBand Pro',
-      quality: 'good',
-      dataSize: 3.1,
-      notes: '일부 신호 불안정',
-      status: 'completed'
-    },
-    {
-      id: '3',
-      userId: '3',
-      userName: '박집중',
-      startTime: '2024-01-12 16:30:00',
-      endTime: '2024-01-12 16:35:00',
-      duration: 5,
-      deviceId: 'LB003',
-      deviceType: 'LinkBand Pro',
-      quality: 'fair',
-      dataSize: 0.8,
-      notes: '측정 중단됨',
-      status: 'failed'
-    }
-  ]
+  const measurementDataService = new MeasurementDataService()
 
   useEffect(() => {
     loadSessions()
@@ -131,10 +89,16 @@ export default function MeasurementHistoryTab({ organizationId }: MeasurementHis
   const loadSessions = async () => {
     try {
       setLoading(true)
-      // TODO: Replace with actual API call
-      // const sessionList = await measurementSessionService.getSessions(organizationId)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Mock delay
-      setSessions(mockSessions)
+      
+      // 조직의 모든 사용자들의 측정 데이터를 가져오는 로직
+      // 현재는 임시로 빈 배열을 반환하지만, 실제로는 조직 사용자들을 먼저 조회한 후 각 사용자의 측정 데이터를 가져와야 함
+      // TODO: 조직의 사용자 목록을 먼저 조회하고, 각 사용자별로 측정 데이터를 가져오는 로직 구현
+      
+      const allSessions: MeasurementSession[] = []
+      
+      // 임시로 빈 배열 설정 (실제 구현 시 제거)
+      setSessions(allSessions)
+      
     } catch (error) {
       console.error('Failed to load sessions:', error)
       toast.error('측정 이력을 불러오는데 실패했습니다.')

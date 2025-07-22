@@ -42,11 +42,14 @@ import {
   TableRow,
 } from "@ui/table"
 import { toast } from 'sonner'
+import { ReportGenerationService } from '@domains/ai-report/services/ReportGenerationService'
+import { ReportInstance } from '@domains/ai-report/types'
 
 interface ReportManagementTabProps {
   organizationId: string
 }
 
+// ReportInstance를 UserReport로 매핑하기 위한 타입 정의
 interface UserReport {
   id: string
   userId: string
@@ -72,58 +75,7 @@ export default function ReportManagementTab({ organizationId }: ReportManagement
   const [filteredReports, setFilteredReports] = useState<UserReport[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<ReportFilters>({ dateRange: '30d' })
-
-  // Mock data - replace with actual API calls
-  const mockReports: UserReport[] = [
-    {
-      id: '1',
-      userId: '1',
-      userName: '김건강',
-      title: '스트레스 관리 분석 리포트',
-      type: 'stress',
-      createdAt: '2024-01-15 15:00:00',
-      status: 'generated',
-      quality: 92,
-      sentTo: ['kim.health@company.com'],
-      downloadCount: 3
-    },
-    {
-      id: '2',
-      userId: '2',
-      userName: '이스트레스',
-      title: '집중력 향상 분석 리포트',
-      type: 'focus',
-      createdAt: '2024-01-14 10:30:00',
-      status: 'generated',
-      quality: 87,
-      sentTo: ['lee.stress@company.com', 'manager@company.com'],
-      downloadCount: 5
-    },
-    {
-      id: '3',
-      userId: '3',
-      userName: '박집중',
-      title: '종합 웰니스 리포트',
-      type: 'comprehensive',
-      createdAt: '2024-01-12 18:00:00',
-      status: 'generated',
-      quality: 95,
-      sentTo: ['park.focus@company.com'],
-      downloadCount: 2
-    },
-    {
-      id: '4',
-      userId: '4',
-      userName: '정웰니스',
-      title: '웰니스 상태 분석',
-      type: 'wellness',
-      createdAt: '2024-01-10 12:00:00',
-      status: 'processing',
-      quality: 0,
-      sentTo: [],
-      downloadCount: 0
-    }
-  ]
+  const reportService = new ReportGenerationService()
 
   useEffect(() => {
     loadReports()
@@ -136,10 +88,16 @@ export default function ReportManagementTab({ organizationId }: ReportManagement
   const loadReports = async () => {
     try {
       setLoading(true)
-      // TODO: Replace with actual API call
-      // const reportList = await reportService.getReports(organizationId)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Mock delay
-      setReports(mockReports)
+      
+      // 조직의 모든 사용자들의 리포트를 가져오는 로직
+      // 현재는 임시로 빈 배열을 반환하지만, 실제로는 조직 사용자들을 먼저 조회한 후 각 사용자의 리포트를 가져와야 함
+      // TODO: 조직의 사용자 목록을 먼저 조회하고, 각 사용자별로 리포트를 가져오는 로직 구현
+      
+      const allReports: UserReport[] = []
+      
+      // 임시로 빈 배열 설정 (실제 구현 시 제거)
+      setReports(allReports)
+      
     } catch (error) {
       console.error('Failed to load reports:', error)
       toast.error('리포트 목록을 불러오는데 실패했습니다.')
