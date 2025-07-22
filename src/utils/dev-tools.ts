@@ -3,8 +3,8 @@
  * 브라우저 콘솔에서 사용할 수 있는 유틸리티 함수들
  */
 
-import organizationManagementService from '@domains/organization/services/management/OrganizationManagementService'
-import { db } from '@/firebase'
+import organizationManagementService from '../domains/organization/services/management/OrganizationManagementService'
+import { db } from '../firebase'
 import { doc, updateDoc, getDoc } from 'firebase/firestore'
 
 // 개발 환경에서만 window 객체에 유틸리티 함수들 추가
