@@ -448,4 +448,6 @@ export const TRIAL_CONFIGS = {
     validityDays: 30,
     cost: 100000  // 10만원
   }
-} as const; 
+} as const;
+
+ 

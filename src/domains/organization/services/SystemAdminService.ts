@@ -1166,4 +1166,455 @@ export class SystemAdminService extends BaseService {
       return []
     }
   }
+
+  /**
+   * 모든 조직 요약 정보 조회
+   */
+  async getAllOrganizationSummaries(): Promise<any[]> {
+    return this.measureAndLog('getAllOrganizationSummaries', async () => {
+      try {
+        const organizationsRef = collection(db, 'organizations');
+        const snapshot = await getDocs(organizationsRef);
+        
+        const summaries = await Promise.all(
+          snapshot.docs.map(async (doc) => {
+            const orgData = doc.data();
+            
+            // 각 조직의 구성원 수 조회
+            const membersQuery = query(
+              collection(db, 'organizations', doc.id, 'members'),
+              where('status', '==', 'ACTIVE')
+            );
+            const membersSnapshot = await getDocs(membersQuery);
+            
+            return {
+              id: doc.id,
+              name: orgData.name || '미지정',
+              status: orgData.status || 'ACTIVE',
+              memberCount: membersSnapshot.size,
+              creditBalance: orgData.creditBalance || 0,
+              plan: orgData.servicePackage || 'BASIC',
+              createdAt: orgData.createdAt?.toDate() || new Date(),
+              lastActivityAt: orgData.lastActivityAt?.toDate() || new Date()
+            };
+          })
+        );
+        
+        // 최근 활동 기준으로 정렬
+        return summaries.sort((a, b) => 
+          b.lastActivityAt.getTime() - a.lastActivityAt.getTime()
+        );
+      } catch (error) {
+        console.error('Failed to get organization summaries:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 시스템 디바이스 현황 조회
+   */
+  async getSystemDeviceOverview(): Promise<any> {
+    return this.measureAndLog('getSystemDeviceOverview', async () => {
+      try {
+        const devicesRef = collection(db, 'devices');
+        const snapshot = await getDocs(devicesRef);
+        
+        let stats = {
+          total: 0,
+          active: 0,
+          available: 0,
+          inUse: 0,
+          maintenance: 0,
+          byModel: {} as Record<string, number>,
+          byOrganization: {} as Record<string, number>
+        };
+        
+        snapshot.docs.forEach((doc) => {
+          const device = doc.data();
+          stats.total++;
+          
+          // 상태별 집계
+          switch (device.status) {
+            case 'ACTIVE':
+              stats.active++;
+              break;
+            case 'AVAILABLE':
+              stats.available++;
+              break;
+            case 'IN_USE':
+            case 'RENTED':
+            case 'SOLD':
+              stats.inUse++;
+              break;
+            case 'MAINTENANCE':
+              stats.maintenance++;
+              break;
+          }
+          
+          // 모델별 집계
+          const model = device.modelName || 'Unknown';
+          stats.byModel[model] = (stats.byModel[model] || 0) + 1;
+          
+          // 조직별 집계
+          if (device.assignedOrganizationId) {
+            stats.byOrganization[device.assignedOrganizationId] = 
+              (stats.byOrganization[device.assignedOrganizationId] || 0) + 1;
+          }
+        });
+        
+        return stats;
+      } catch (error) {
+        console.error('Failed to get device overview:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 디바이스 사용 현황 목록 조회
+   */
+  async getDeviceUsageStatusList(): Promise<any[]> {
+    return this.measureAndLog('getDeviceUsageStatusList', async () => {
+      try {
+        const devicesRef = collection(db, 'devices');
+        const snapshot = await getDocs(devicesRef);
+        
+        const devices = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            serialNumber: data.serialNumber,
+            modelName: data.modelName,
+            status: data.status,
+            organizationName: data.assignedOrganizationName || '-',
+            assignedAt: data.assignedAt?.toDate() || null,
+            lastActiveAt: data.lastActiveAt?.toDate() || null,
+            batteryLevel: data.batteryLevel || 0,
+            firmwareVersion: data.firmwareVersion || 'Unknown'
+          };
+        });
+        
+        // 최근 활동 기준 정렬
+        return devices.sort((a, b) => {
+          const aTime = a.lastActiveAt?.getTime() || 0;
+          const bTime = b.lastActiveAt?.getTime() || 0;
+          return bTime - aTime;
+        });
+      } catch (error) {
+        console.error('Failed to get device usage list:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 조직별 사용 통계 상위 목록
+   */
+  async getTopOrganizationUsageStats(): Promise<any[]> {
+    return this.measureAndLog('getTopOrganizationUsageStats', async () => {
+      try {
+        const organizationsRef = collection(db, 'organizations');
+        const snapshot = await getDocs(organizationsRef);
+        
+        const stats = await Promise.all(
+          snapshot.docs.map(async (doc) => {
+            const orgData = doc.data();
+            
+            // 조직의 디바이스 수 조회
+            const devicesQuery = query(
+              collection(db, 'devices'),
+              where('assignedOrganizationId', '==', doc.id)
+            );
+            const devicesSnapshot = await getDocs(devicesQuery);
+            
+            // 조직의 측정 수 조회 (예시)
+            const measurementCount = orgData.totalMeasurements || 0;
+            
+            return {
+              id: doc.id,
+              name: orgData.name,
+              deviceCount: devicesSnapshot.size,
+              memberCount: orgData.totalMembers || 0,
+              measurementCount: measurementCount,
+              creditBalance: orgData.creditBalance || 0,
+              lastActivityAt: orgData.lastActivityAt?.toDate() || new Date()
+            };
+          })
+        );
+        
+        // 디바이스 수 기준 상위 10개
+        return stats
+          .sort((a, b) => b.deviceCount - a.deviceCount)
+          .slice(0, 10);
+      } catch (error) {
+        console.error('Failed to get top organization stats:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 디바이스 사용 통계 요약
+   */
+  async getDeviceUsageStatsSummary(): Promise<any> {
+    return this.measureAndLog('getDeviceUsageStatsSummary', async () => {
+      try {
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        const devicesRef = collection(db, 'devices');
+        const snapshot = await getDocs(devicesRef);
+        
+        let stats = {
+          activeToday: 0,
+          activeThisWeek: 0,
+          activeThisMonth: 0,
+          totalActive: 0,
+          averageUsageHours: 0,
+          topModels: [] as any[]
+        };
+        
+        const modelUsage: Record<string, number> = {};
+        
+        snapshot.docs.forEach((doc) => {
+          const device = doc.data();
+          const lastActive = device.lastActiveAt?.toDate();
+          
+          if (lastActive) {
+            if (lastActive > oneDayAgo) stats.activeToday++;
+            if (lastActive > oneWeekAgo) stats.activeThisWeek++;
+            if (lastActive > oneMonthAgo) stats.activeThisMonth++;
+            stats.totalActive++;
+          }
+          
+          // 모델별 사용량 집계
+          const model = device.modelName || 'Unknown';
+          modelUsage[model] = (modelUsage[model] || 0) + 1;
+        });
+        
+        // 상위 5개 모델
+        stats.topModels = Object.entries(modelUsage)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5)
+          .map(([model, count]) => ({ model, count }));
+        
+        return stats;
+      } catch (error) {
+        console.error('Failed to get device usage stats:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 렌탈 통계 조회
+   */
+  async getRentalStatistics(): Promise<any> {
+    return this.measureAndLog('getRentalStatistics', async () => {
+      try {
+        const rentalsRef = collection(db, 'deviceRentals');
+        const snapshot = await getDocs(rentalsRef);
+        
+        let stats = {
+          totalRentals: 0,
+          activeRentals: 0,
+          overdueRentals: 0,
+          completedRentals: 0,
+          monthlyRevenue: 0,
+          topOrganizations: [] as any[]
+        };
+        
+        const orgRentals: Record<string, number> = {};
+        const now = new Date();
+        
+        snapshot.docs.forEach((doc) => {
+          const rental = doc.data();
+          stats.totalRentals++;
+          
+          switch (rental.status) {
+            case 'ACTIVE':
+              stats.activeRentals++;
+              break;
+            case 'OVERDUE':
+              stats.overdueRentals++;
+              break;
+            case 'COMPLETED':
+              stats.completedRentals++;
+              break;
+          }
+          
+          // 조직별 렌탈 수 집계
+          if (rental.organizationId) {
+            orgRentals[rental.organizationId] = 
+              (orgRentals[rental.organizationId] || 0) + 1;
+          }
+          
+          // 월 수익 계산 (예시)
+          if (rental.monthlyFee && rental.status === 'ACTIVE') {
+            stats.monthlyRevenue += rental.monthlyFee;
+          }
+        });
+        
+        // 상위 5개 조직
+        const orgIds = Object.keys(orgRentals);
+        if (orgIds.length > 0) {
+          const orgsQuery = query(
+            collection(db, 'organizations'),
+            where('__name__', 'in', orgIds.slice(0, 10))
+          );
+          const orgsSnapshot = await getDocs(orgsQuery);
+          
+          stats.topOrganizations = orgsSnapshot.docs
+            .map((doc) => ({
+              id: doc.id,
+              name: doc.data().name,
+              rentalCount: orgRentals[doc.id]
+            }))
+            .sort((a, b) => b.rentalCount - a.rentalCount)
+            .slice(0, 5);
+        }
+        
+        return stats;
+      } catch (error) {
+        console.error('Failed to get rental statistics:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 최근 시스템 활동 내역 조회
+   */
+  async getRecentSystemActivities(limit: number = 20): Promise<any[]> {
+    return this.measureAndLog('getRecentSystemActivities', async () => {
+      try {
+        // 현재는 모의 데이터 반환
+        const activities = [
+          {
+            id: '1',
+            type: 'user_login',
+            timestamp: new Date(),
+            userId: 'user1',
+            description: '사용자 로그인',
+            details: { organization: 'Organization A' }
+          },
+          {
+            id: '2',
+            type: 'report_generated',
+            timestamp: new Date(Date.now() - 1000 * 60 * 5),
+            userId: 'user2',
+            description: '리포트 생성',
+            details: { reportType: 'EEG Analysis' }
+          },
+          {
+            id: '3',
+            type: 'organization_created',
+            timestamp: new Date(Date.now() - 1000 * 60 * 30),
+            userId: 'admin1',
+            description: '새 조직 생성',
+            details: { organizationName: 'New Hospital' }
+          }
+        ];
+        
+        return activities.slice(0, limit);
+      } catch (error) {
+        console.error('최근 시스템 활동 조회 중 오류:', error);
+        return [];
+      }
+    });
+  }
+
+  /**
+   * 전체 사용자 목록 개요 조회
+   */
+  async getAllUsersOverview(): Promise<any[]> {
+    return this.measureAndLog('getAllUsersOverview', async () => {
+      try {
+        // 현재는 모의 데이터 반환
+        const users = [
+          {
+            id: '1',
+            name: '김철수',
+            email: 'kim@example.com',
+            organization: 'Organization A',
+            role: 'USER',
+            status: 'ACTIVE',
+            lastActive: new Date(),
+            joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30)
+          },
+          {
+            id: '2',
+            name: '이영희',
+            email: 'lee@example.com',
+            organization: 'Organization B',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            lastActive: new Date(Date.now() - 1000 * 60 * 30),
+            joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60)
+          },
+          {
+            id: '3',
+            name: '박민수',
+            email: 'park@example.com',
+            organization: 'Organization A',
+            role: 'USER',
+            status: 'INACTIVE',
+            lastActive: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
+            joinedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90)
+          }
+        ];
+        
+        return users;
+      } catch (error) {
+        console.error('전체 사용자 목록 조회 중 오류:', error);
+        return [];
+      }
+    });
+  }
+
+  /**
+   * 사용자 관리 통계 조회
+   */
+  async getUserManagementStats(): Promise<any> {
+    return this.measureAndLog('getUserManagementStats', async () => {
+      try {
+        // 현재는 모의 데이터 반환
+        return {
+          totalUsers: 1250,
+          activeUsers: 980,
+          inactiveUsers: 270,
+          newUsersThisMonth: 85,
+          usersByRole: {
+            USER: 950,
+            ADMIN: 250,
+            SUPER_ADMIN: 50
+          },
+          usersByOrganization: [
+            { organization: 'Organization A', count: 450 },
+            { organization: 'Organization B', count: 380 },
+            { organization: 'Organization C', count: 420 }
+          ],
+          monthlyGrowth: 7.5,
+          averageSessionDuration: '25분'
+        };
+      } catch (error) {
+        console.error('사용자 관리 통계 조회 중 오류:', error);
+        return {
+          totalUsers: 0,
+          activeUsers: 0,
+          inactiveUsers: 0,
+          newUsersThisMonth: 0,
+          usersByRole: {},
+          usersByOrganization: [],
+          monthlyGrowth: 0,
+          averageSessionDuration: '0분'
+        };
+      }
+    });
+  }
 }
+
+export default new SystemAdminService();

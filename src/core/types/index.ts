@@ -10,14 +10,17 @@ export * from './unified';
 // 기존 타입 시스템에서 타입만 선택적으로 export (호환성 유지)
 export type {
   UserType as LegacyUserType,
+  UserType, // UserType도 직접 export
   VolumeDiscountTier as LegacyVolumeDiscountTier,
   TrialType as LegacyTrialType,
   OrganizationStatus as LegacyOrganizationStatus,
   ServicePackageType as LegacyServicePackageType,
   CreditTransactionType as LegacyCreditTransactionType,
   Organization as LegacyOrganization,
+  Organization, // Organization도 직접 export
   OrganizationMember as LegacyOrganizationMember,
   EnterpriseUser as LegacyEnterpriseUser,
+  EnterpriseUser, // EnterpriseUser도 직접 export
   CreditTransaction as LegacyCreditTransaction,
   VolumeDiscountConfig
 } from './business';

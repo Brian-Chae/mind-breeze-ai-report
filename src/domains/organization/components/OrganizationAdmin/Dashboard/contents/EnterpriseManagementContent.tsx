@@ -107,13 +107,14 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
       if (registrationsResult.status === 'rejected') {
       }
       
+      console.log('Enterprise data loaded:', {
         enterpriseCount: overviews.length,
         enterprises: overviews.map(e => ({
           id: e.organizationId,
           name: e.organizationName,
           companyCode: e.companyCode
         }))
-      
+      });
       // LOOXID LABS INC. 검색
       const looxidLabs = overviews.find(e => 
         e.organizationName.toLowerCase().includes('looxid') || 

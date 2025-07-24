@@ -329,7 +329,7 @@ export default function DeviceManagementContent() {
   }
 
   // 필터링된 조직 목록
-  const filteredOrganizations = systemOverview?.organizationBreakdown.filter(org => {
+  const filteredOrganizations = systemOverview?.organizationBreakdown?.filter(org => {
     const matchesSearch = org.organizationName.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesSearch
   }) || []
@@ -1305,7 +1305,7 @@ export default function DeviceManagementContent() {
                 <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">조직별 디바이스 분포</h3>
                   <div className="space-y-3">
-                    {systemOverview.organizationBreakdown.slice(0, 5).map((org) => (
+                    {systemOverview?.organizationBreakdown?.slice(0, 5).map((org) => (
                       <div key={org.organizationId} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                         <div className="flex items-center gap-3">
                           <Building2 className="w-5 h-5 text-slate-600" />
@@ -1323,7 +1323,7 @@ export default function DeviceManagementContent() {
                 <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">디바이스 타입별 분포</h3>
                   <div className="space-y-3">
-                    {systemOverview.deviceTypeBreakdown.map((type) => (
+                    {systemOverview?.deviceTypeBreakdown?.map((type) => (
                       <div key={type.type} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                         <div className="flex items-center gap-3">
                           <Smartphone className="w-5 h-5 text-slate-600" />

@@ -36,7 +36,9 @@ class StoragePersistence {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
+        console.error('IndexedDB 데이터베이스 열기 오류:', {
           metadata: { operation: 'openDatabase', dbName: DB_NAME, dbVersion: DB_VERSION }
+        });
         reject(request.error);
       };
 

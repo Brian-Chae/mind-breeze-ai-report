@@ -228,7 +228,7 @@ export class SystemStatsService extends BaseService {
       }));
 
     } catch (error) {
-      Logger.error('SystemStatsService', '에러 로그 조회 실패', 
+      console.error('SystemStatsService - 에러 로그 조회 실패:', error);
       throw error;
     }
   }
@@ -270,7 +270,7 @@ export class SystemStatsService extends BaseService {
       };
 
     } catch (error) {
-      Logger.error('SystemStatsService', '성능 메트릭 조회 실패', 
+      console.error('SystemStatsService - 성능 메트릭 조회 실패:', error);
       throw error;
     }
   }

@@ -38,13 +38,17 @@ if (process.env.NODE_ENV === 'development') {
         purchaseType: 'BONUS'
       });
       
+      console.log('개발용 크레디트 추가 성공:', {
         action: 'addDevCredits',
         amount: amount,
         organizationId: currentContext.user.organizationId,
         userId: currentContext.user.id
+      });
     } catch (error) {
+      console.error('개발용 크레디트 추가 실패:', error, {
         action: 'addDevCredits',
         amount: amount 
+      });
     }
   };
 
@@ -69,8 +73,10 @@ if (process.env.NODE_ENV === 'development') {
     }
   };
   
+  console.log('개발 도구 활성화:', {
     availableFunctions: ['initTestData()', 'loginAsSystemAdmin()', 'addDevCredits(amount)'],
     environment: 'development'
+  });
 }
 
 // Cache busting - 브라우저 캐시 강제 새로고침
@@ -81,9 +87,11 @@ const forceCacheRefresh = () => {
   
   if (buildTimestamp && buildTimestamp !== 'BUILD_TIMESTAMP_PLACEHOLDER') {
     if (storedTimestamp && storedTimestamp !== buildTimestamp) {
+      console.log('빌드 버전 변경 감지, 캐시 클리어:', {
         action: 'cacheClear',
         buildTimestamp: buildTimestamp,
         storedTimestamp: storedTimestamp
+      });
       // 캐시 클리어
       if ('caches' in window) {
         caches.keys().then(names => {

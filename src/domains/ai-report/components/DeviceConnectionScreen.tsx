@@ -233,15 +233,19 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
     setScanning(true);
 
     try {
+      console.log('디바이스 스캔 시작:', {
         action: 'startDeviceScan'
+      });
       
       const devices = await systemControl.scanDevices();
       
+      console.log('스캔 완료:', {
         action: 'scanCompleted',
         metadata: {
           deviceCount: devices.length,
           deviceNames: devices.map(d => d.name || d.id)
         }
+      });
       setAvailableDevices(devices);
       
       if (devices.length === 0) {
@@ -250,10 +254,12 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Device scan failed';
       
+      console.error('디바이스 스캔 오류:', {
         action: 'deviceScan',
         metadata: {
           errorMessage: errorMessage
         }
+      });
       
       if (!errorMessage.includes('cancelled') && !errorMessage.includes('취소')) {
         setScanError(errorMessage);

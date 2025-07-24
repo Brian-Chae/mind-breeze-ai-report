@@ -17,6 +17,7 @@ export class SystemAdminSetup {
    */
   static async ensureSystemAdminExists(): Promise<boolean> {
     try {
+      console.log('시스템 관리자 계정 확인 중...');
 
       // 1. Firebase Auth에서 로그인 시도
       try {
@@ -26,16 +27,20 @@ export class SystemAdminSetup {
           this.ADMIN_PASSWORD
         );
         
+        console.log('시스템 관리자 계정 확인 성공:', {
           uid: userCredential.user.uid,
           email: userCredential.user.email
+        });
         
         // 로그아웃 (확인용 로그인이었음)
         await auth.signOut();
         
         return true;
       } catch (authError: any) {
+        console.log('Firebase Auth 로그인 실패:', {
           errorCode: authError.code,
           email: this.ADMIN_EMAIL
+        });
         
         if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           // 2. 계정이 없으면 생성
@@ -46,7 +51,8 @@ export class SystemAdminSetup {
         }
       }
     } catch (error) {
-        error instanceof Error ? error : new Error(String(error)), 
+      console.error('시스템 관리자 계정 확인 중 오류:', 
+        error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -56,7 +62,9 @@ export class SystemAdminSetup {
    */
   private static async createSystemAdminAccount(): Promise<boolean> {
     try {
+      console.log('시스템 관리자 계정 생성 시작:', {
         email: this.ADMIN_EMAIL
+      });
 
       // 1. Firebase Auth에 계정 생성
       const userCredential = await createUserWithEmailAndPassword(
@@ -65,8 +73,10 @@ export class SystemAdminSetup {
         this.ADMIN_PASSWORD
       );
 
+      console.log('Firebase Auth 계정 생성 성공:', {
         uid: userCredential.user.uid,
         email: userCredential.user.email
+      });
 
       // 2. Firestore에 사용자 프로필 생성
       await FirebaseService.updateUserProfile(userCredential.user.uid, {
@@ -102,6 +112,7 @@ export class SystemAdminSetup {
         }
       });
 
+      console.log('시스템 관리자 계정 생성 완료');
 
       // 3. 로그아웃 (생성용 로그인이었음)
       await auth.signOut();
@@ -109,7 +120,8 @@ export class SystemAdminSetup {
       return true;
 
     } catch (error) {
-        error instanceof Error ? error : new Error(String(error)), 
+      console.error('시스템 관리자 계정 생성 중 오류:', 
+        error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -125,15 +137,18 @@ export class SystemAdminSetup {
         this.ADMIN_PASSWORD
       );
 
+      console.log('시스템 관리자 로그인 테스트 성공:', {
         uid: userCredential.user.uid,
         email: userCredential.user.email
+      });
       
       // 테스트 완료 후 로그아웃
       await auth.signOut();
       
       return true;
     } catch (error) {
-        error instanceof Error ? error : new Error(String(error)), 
+      console.error('시스템 관리자 로그인 테스트 실패:', 
+        error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }

@@ -44,11 +44,21 @@ export abstract class BaseService {
   protected auth: Auth;
   protected serviceName: string;
   protected cache: Cache;
+  protected logger: any;
 
   constructor() {
     this.db = db;
     this.auth = auth;
     this.serviceName = this.constructor.name;
+    
+    // 간단한 logger 구현 (console 사용)
+    this.logger = {
+      log: (...args: any[]) => console.log(`[${this.serviceName}]`, ...args),
+      info: (...args: any[]) => console.info(`[${this.serviceName}]`, ...args),
+      warn: (...args: any[]) => console.warn(`[${this.serviceName}]`, ...args),
+      error: (...args: any[]) => console.error(`[${this.serviceName}]`, ...args),
+      debug: (...args: any[]) => console.debug(`[${this.serviceName}]`, ...args)
+    };
     
     // 서비스별 전용 캐시 인스턴스 생성
     this.cache = cacheManager.getCache(`service_${this.serviceName.toLowerCase()}`, {

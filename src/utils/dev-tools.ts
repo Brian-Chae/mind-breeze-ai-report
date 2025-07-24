@@ -126,9 +126,11 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     getCurrentUser() {
       const auth = (window as any).firebase?.auth?.currentUser
       if (auth) {
+        console.log('현재 사용자 정보:', {
           uid: auth.uid,
           email: auth.email,
           displayName: auth.displayName
+        });
         return auth
       } else {
         return null
@@ -136,6 +138,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     }
   }
 
+  console.log('개발 도구 함수 목록:', {
     availableFunctions: [
       'devTools.addAdminToOrganization(organizationId)',
       'devTools.getMembers(organizationId)',
@@ -145,15 +148,16 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
       'devTools.getUserData(userId)',
       'devTools.getCurrentUser()'
     ]
+  });
   
   // Keep console logs for developer visibility in browser console
-  console.log('🛠️ 개발 도구가 로드되었습니다!')
-  console.log('사용 가능한 함수들:')
-  console.log('- devTools.addAdminToOrganization(organizationId)')
-  console.log('- devTools.getMembers(organizationId)')
-  console.log('- devTools.getPendingMembers(organizationId)')
-  console.log('- devTools.getOrganization(organizationId)')
-  console.log('- devTools.fixUserData(userId, organizationId, userType)')
-  console.log('- devTools.getUserData(userId)')
-  console.log('- devTools.getCurrentUser()')
+  console.log('🛠️ 개발 도구가 로드되었습니다!');
+  console.log('사용 가능한 함수들:');
+  console.log('- devTools.addAdminToOrganization(organizationId)');
+  console.log('- devTools.getMembers(organizationId)');
+  console.log('- devTools.getPendingMembers(organizationId)');
+  console.log('- devTools.getOrganization(organizationId)');
+  console.log('- devTools.fixUserData(userId, organizationId, userType)');
+  console.log('- devTools.getUserData(userId)');
+  console.log('- devTools.getCurrentUser()');
 }

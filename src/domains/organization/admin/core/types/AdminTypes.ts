@@ -5,6 +5,9 @@
 import * as React from 'react';
 import { UserType } from '@core/types/unified';
 
+// Re-export UserType for other modules
+export { UserType };
+
 export interface AdminDashboardData {
   summary: {
     totalOrganizations: number;

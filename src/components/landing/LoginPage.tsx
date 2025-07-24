@@ -96,7 +96,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setIsLoading(true);
     setError('');
     
-      
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
       // 시스템 관리자인지 확인하여 Firestore 프로필 업데이트
       
@@ -136,6 +137,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         }
       }
     } catch (error: any) {
+      console.error('로그인 오류:', error);
+      setError(error.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

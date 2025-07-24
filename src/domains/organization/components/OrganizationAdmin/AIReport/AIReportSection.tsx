@@ -787,12 +787,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       const subjectName = report.personalInfo?.name || report.createdByUserName || '익명'
       
       // 생년월일 확인 - 여러 소스에서 시도
-      let subjectBirthDate = null
+      let subjectBirthDate = null;
       
+      console.log('Checking birth date sources:', {
         reportId: report.id,
         measurementDataId: report.measurementDataId,
         hasPersonalInfo: !!report.personalInfo,
         personalInfoKeys: report.personalInfo ? Object.keys(report.personalInfo) : []
+      });
       
       // 1. personalInfo에서 먼저 확인
       if (report.personalInfo?.birthDate) {

@@ -59,7 +59,7 @@ class DeviceInventoryService extends BaseService {
     deviceData: CreateDeviceInventoryRequest,
     customDeviceId?: string
   ): Promise<DeviceInventory> {
-    return await this.measureAndLog('createDevice', async () => {
+    return this.measureAndLog('createDevice', async () => {
 
       // 사용자 지정 ID인 경우 중복 검사
       if (customDeviceId) {
@@ -189,7 +189,7 @@ class DeviceInventoryService extends BaseService {
     filters?: DeviceSearchFilters,
     pagination?: PaginationOptions
   ): Promise<ApiResponse<DeviceInventory[]>> {
-    return await this.measureAndLog('getDevices', async () => {
+    return this.measureAndLog('getDevices', async () => {
       // 쿼리 구성
       const constraints: any[] = [];
 
@@ -290,7 +290,7 @@ class DeviceInventoryService extends BaseService {
     status: DeviceInventory['status'],
     notes?: string
   ): Promise<void> {
-    return await this.measureAndLog('updateDeviceStatus', async () => {
+    return this.measureAndLog('updateDeviceStatus', async () => {
       // 디바이스 존재 확인
       const device = await this.getDeviceById(deviceId);
       if (!device) {
@@ -335,7 +335,7 @@ class DeviceInventoryService extends BaseService {
       salePrice?: number;
     }
   ): Promise<void> {
-    return await this.measureAndLog('updateDeviceAssignment', async () => {
+    return this.measureAndLog('updateDeviceAssignment', async () => {
 
       // 디바이스 존재 확인
       const device = await this.getDeviceById(deviceId);
@@ -402,7 +402,7 @@ class DeviceInventoryService extends BaseService {
    * 디바이스 삭제
    */
   async deleteDevice(deviceId: string): Promise<void> {
-    return await this.measureAndLog('deleteDevice', async () => {
+    return this.measureAndLog('deleteDevice', async () => {
       const device = await this.getDeviceById(deviceId);
       if (!device) {
         const error = new Error('디바이스를 찾을 수 없습니다');
@@ -425,7 +425,7 @@ class DeviceInventoryService extends BaseService {
    * 디바이스 배정 해제
    */
   async unassignDevice(deviceId: string): Promise<void> {
-    return await this.measureAndLog('unassignDevice', async () => {
+    return this.measureAndLog('unassignDevice', async () => {
       const device = await this.getDeviceById(deviceId);
       if (!device) {
         const error = new Error('디바이스를 찾을 수 없습니다');
@@ -482,10 +482,10 @@ class DeviceInventoryService extends BaseService {
             });
             
             await batch.commit();
-          // 렌탈 계약 업데이트가 실패해도 디바이스 상태 변경은 완료되었으므로 에러를 던지지 않음
-          } catch (rentalError) {
-            this.logger.warn('렌탈 계약 업데이트 실패', { deviceId, error: rentalError });
           }
+          // 렌탈 계약 업데이트가 실패해도 디바이스 상태 변경은 완료되었으므로 에러를 던지지 않음
+        } catch (rentalError) {
+          this.logger.warn('렌탈 계약 업데이트 실패', { deviceId, error: rentalError });
         }
       }
 
@@ -578,7 +578,7 @@ class DeviceInventoryService extends BaseService {
    * 대량 디바이스 등록
    */
   async bulkCreateDevices(devicesData: CreateDeviceInventoryRequest[]): Promise<BulkOperationResult<DeviceInventory>> {
-    return await this.measureAndLog('bulkCreateDevices', async () => {
+    return this.measureAndLog('bulkCreateDevices', async () => {
       const batch = writeBatch(this.db);
       const successful: DeviceInventory[] = [];
       const failed: Array<{ data: Partial<DeviceInventory>; error: string }> = [];

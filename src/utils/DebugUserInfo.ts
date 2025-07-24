@@ -16,21 +16,25 @@ export class DebugUserInfo {
       
       if (!currentUser) {
         if (import.meta.env.DEV) {
+          console.log('현재 로그인된 사용자가 없습니다.');
         }
         return null;
       }
 
       if (import.meta.env.DEV) {
+        console.log('Firebase Auth 사용자 정보:', {
           uid: currentUser.uid,
           email: currentUser.email,
           displayName: currentUser.displayName,
           emailVerified: currentUser.emailVerified
+        });
       }
 
       // Firestore에서 사용자 프로필 확인
       try {
         const userProfile = await FirebaseService.getUserProfile(currentUser.uid);
         if (import.meta.env.DEV) {
+          console.log('Firestore 사용자 프로필:', userProfile);
         }
         
         return {
@@ -39,6 +43,7 @@ export class DebugUserInfo {
         };
       } catch (error) {
         if (import.meta.env.DEV) {
+          console.error('Firestore 프로필 조회 실패:', error);
         }
         return {
           auth: currentUser,
@@ -48,6 +53,7 @@ export class DebugUserInfo {
 
     } catch (error) {
       if (import.meta.env.DEV) {
+        console.error('사용자 정보 확인 중 오류:', error);
       }
       return null;
     }
@@ -62,13 +68,16 @@ export class DebugUserInfo {
       
       if (!currentUser) {
         if (import.meta.env.DEV) {
+          console.error('로그인된 사용자가 없어 시스템 관리자로 업데이트할 수 없습니다.');
         }
         return false;
       }
 
       if (import.meta.env.DEV) {
+        console.log('시스템 관리자로 업데이트 시도 중:', {
           uid: currentUser.uid,
           email: currentUser.email
+        });
       }
 
       await FirebaseService.updateUserProfile(currentUser.uid, {
@@ -96,13 +105,16 @@ export class DebugUserInfo {
       });
 
       if (import.meta.env.DEV) {
+        console.log('✅ 시스템 관리자로 업데이트 성공!', {
           message: 'Page refresh required for changes to take effect'
+        });
       }
       
       return true;
 
     } catch (error) {
       if (import.meta.env.DEV) {
+        console.error('시스템 관리자 업데이트 중 오류:', error);
       }
       return false;
     }
@@ -120,10 +132,12 @@ export class DebugUserInfo {
         forceUpdateToSystemAdmin: this.forceUpdateToSystemAdmin
       };
       
+      console.log('🔧 디버깅 함수 등록 완료:', {
         availableFunctions: [
           'await debugUser.getCurrentInfo() // Current user info check',
           'await debugUser.forceUpdateToSystemAdmin() // Force update to system admin'
         ]
+      });
       
       // Keep console logs for developer visibility in browser console
       console.log('🔧 디버깅 함수 등록 완료!');

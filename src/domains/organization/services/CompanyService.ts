@@ -29,7 +29,7 @@ import {
   sendEmailVerification 
 } from 'firebase/auth';
 import { db, auth } from '@core/services/firebase';
-import { Organization, EnterpriseUser, UserType } from '@core/types/business';
+import { Organization, EnterpriseUser, UserType } from '@core/types';
 import OrganizationCodeService from './CompanyCodeService';
 
 export interface OrganizationRegistrationData {

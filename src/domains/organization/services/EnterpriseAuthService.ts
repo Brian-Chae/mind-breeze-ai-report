@@ -54,6 +54,7 @@ class EnterpriseAuthService extends BaseService {
   };
 
   constructor() {
+    super();
     // Firebase Auth 상태 변경 감지
     onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {

@@ -13,24 +13,30 @@ export class MeasurementUserDataService {
    */
   async getAIAnalysisResults(measurementUserId: string) {
     try {
+      console.log('AI 분석 결과 조회 시작:', {
         metadata: {
           measurementUserId
         }
+      });
       
       const results = await FirebaseService.getDocuments('ai_analysis_results', [
         where('measurementUserId', '==', measurementUserId)
       ]);
       
+      console.log('AI 분석 결과 조회 완료:', {
         metadata: {
           measurementUserId,
           resultCount: results.length
         }
+      });
       return results;
       
     } catch (error) {
+      console.error('AI 분석 결과 조회 중 오류:', error, {
         metadata: {
           measurementUserId
         }
+      });
       throw error;
     }
   }
@@ -40,16 +46,20 @@ export class MeasurementUserDataService {
    */
   async getMeasurementSessions(measurementUserId: string) {
     try {
+      console.log('측정 세션 조회 시작:', {
         metadata: {
           measurementUserId
         }
+      });
       
       // measurementUserId 또는 subjectEmail로 검색
       const measurementUser = await measurementUserManagementService.getMeasurementUser(measurementUserId);
       if (!measurementUser) {
+        console.warn('측정 대상자를 찾을 수 없음:', {
           metadata: {
             measurementUserId
           }
+        });
         return [];
       }
       
@@ -58,17 +68,21 @@ export class MeasurementUserDataService {
         where('subjectEmail', '==', measurementUser.email)
       ]);
       
+      console.log('측정 세션 조회 완료:', {
         metadata: {
           measurementUserId,
           sessionCount: sessions.length,
           userEmail: measurementUser?.email
         }
+      });
       return sessions;
       
     } catch (error) {
+      console.error('AI 분석 결과 조회 중 오류:', error, {
         metadata: {
           measurementUserId
         }
+      });
       throw error;
     }
   }
@@ -78,28 +92,36 @@ export class MeasurementUserDataService {
    */
   async getSharedReports(measurementUserId: string) {
     try {
+      console.log('공유 리포트 조회 시작:', {
         metadata: {
           measurementUserId
         }
+      });
       
       const sharedReports = await FirebaseService.getDocuments('shared_reports', [
         where('measurementUserId', '==', measurementUserId)
       ]);
       
+      console.log('공유 리포트 조회 성공:', {
         metadata: {
           measurementUserId,
           reportCount: sharedReports.length
         }
+      });
       return sharedReports;
       
     } catch (error) {
+      console.warn('공유 리포트 조회 실패 - 빈 배열 반환:', {
         metadata: {
           measurementUserId
         }
+      });
       // shared_reports에 measurementUserId 필드가 없을 수 있으므로 빈 배열 반환
+      console.log('공유 리포트 조회 실패 세부 사항:', {
         metadata: {
           measurementUserId
         }
+      });
       return [];
     }
   }
@@ -109,9 +131,11 @@ export class MeasurementUserDataService {
    */
   async getUserHealthHistory(measurementUserId: string) {
     try {
+      console.log('사용자 건강 이력 통합 조회 시작:', {
         metadata: {
           measurementUserId
         }
+      });
       
       const [measurementUser, analysisResults, sessions, sharedReports] = await Promise.all([
         measurementUserManagementService.getMeasurementUser(measurementUserId),
@@ -153,19 +177,23 @@ export class MeasurementUserDataService {
         }
       };
       
+      console.log('사용자 건강 이력 통합 조회 완료:', {
         metadata: {
           userId: measurementUserId,
           totalMeasurements: healthHistory.statistics.totalMeasurements,
           totalReports: healthHistory.statistics.totalReports,
           totalSharedReports: healthHistory.statistics.totalSharedReports
         }
+      });
       
       return healthHistory;
       
     } catch (error) {
+      console.error('AI 분석 결과 조회 중 오류:', error, {
         metadata: {
           measurementUserId
         }
+      });
       throw error;
     }
   }
@@ -245,9 +273,11 @@ export class MeasurementUserDataService {
       };
       
     } catch (error) {
+      console.error('AI 분석 결과 조회 중 오류:', error, {
         metadata: {
           measurementUserId
         }
+      });
       throw error;
     }
   }
@@ -257,9 +287,11 @@ export class MeasurementUserDataService {
    */
   async getOrganizationHealthData(organizationId: string) {
     try {
+      console.log('조직 건강 데이터 조회 시작:', {
         metadata: {
           organizationId
         }
+      });
       
       // 조직의 모든 MeasurementUser 조회
       const measurementUsers = await measurementUserManagementService.getMeasurementUsers({
@@ -277,11 +309,13 @@ export class MeasurementUserDataService {
               hasData: stats.totalMeasurements > 0
             };
           } catch (error) {
+            console.warn('사용자별 통계 조회 실패:', {
               metadata: {
                 userId: user.id,
                 userEmail: user.email,
                 error: error instanceof Error ? error.message : String(error)
               }
+            });
             return {
               user,
               stats: null,
@@ -299,6 +333,7 @@ export class MeasurementUserDataService {
         averageScoresAcrossUsers: this.calculateOrganizationAverages(userHealthData)
       };
       
+      console.log('조직 건강 데이터 조회 완료:', organizationStats);
       
       return {
         organizationStats,
@@ -307,9 +342,11 @@ export class MeasurementUserDataService {
       };
       
     } catch (error) {
+      console.error('조직 건강 데이터 조회 오류:', error, {
         metadata: {
           organizationId
         }
+      });
       throw error;
     }
   }

@@ -270,11 +270,13 @@ class MeasurementUserManagementService {
 
     } catch (error) {
       const context = enterpriseAuthService.getCurrentContext();
+      console.log('Error getting measurement users:', {
         organizationId: context.organization?.id,
         userId: context.user?.id,
         metadata: {
           filter
         }
+      });
       throw error;
     }
   }
@@ -350,15 +352,19 @@ class MeasurementUserManagementService {
 
       await updateDoc(doc(db, this.collectionName, userId), updateData);
       
+      console.log('측정 대상자 업데이트 완료:', {
         metadata: {
           measurementUserId: userId,
           updates: Object.keys(updates)
         }
+      });
 
     } catch (error) {
+      console.error('측정 대상자 업데이트 중 오류:', {
         metadata: {
           measurementUserId: userId
         }
+      });
       throw error;
     }
   }
@@ -384,15 +390,19 @@ class MeasurementUserManagementService {
 
       await deleteDoc(doc(db, this.collectionName, userId));
       
+      console.log('측정 대상자 삭제 완료', {
         metadata: {
           measurementUserId: userId,
           deletedUserEmail: existing.email
         }
+      });
 
     } catch (error) {
+      console.error('측정 대상자 삭제 중 오류:', {
         metadata: {
           measurementUserId: userId
         }
+      });
       throw error;
     }
   }
@@ -461,10 +471,12 @@ class MeasurementUserManagementService {
       } as MeasurementUser;
 
     } catch (error) {
+      console.error('이메일로 측정 대상자 조회 중 오류:', {
         organizationId,
         metadata: {
           email
         }
+      });
       return null;
     }
   }
@@ -498,17 +510,21 @@ class MeasurementUserManagementService {
 
       await updateDoc(doc(db, this.collectionName, userId), updateData);
       
+      console.log('측정 횟수 업데이트 완료', {
         metadata: {
           measurementUserId: userId,
           reportId,
           measurementCount: updateData.measurementCount
         }
+      });
 
     } catch (error) {
+      console.error('측정 횟수 업데이트 중 오류:', {
         metadata: {
           measurementUserId: userId,
           reportId
         }
+      });
       throw error;
     }
   }
@@ -536,17 +552,21 @@ class MeasurementUserManagementService {
 
       await updateDoc(doc(db, this.collectionName, userId), updateData);
       
+      console.log('생성된 AI리포트 연결 완료', {
         metadata: {
           measurementUserId: userId,
           reportId,
           totalReports: updatedReportIds.length
         }
+      });
 
     } catch (error) {
+      console.error('생성된 AI리포트 연결 중 오류:', {
         metadata: {
           measurementUserId: userId,
           reportId
         }
+      });
       throw error;
     }
   }
@@ -799,12 +819,14 @@ class MeasurementUserManagementService {
               user: newUser
             });
 
+            console.log('측정 대상자 생성 성공', {
               userId: newUser.id,
               metadata: {
                 row: userData.row,
                 displayName: userData.displayName,
                 email: userData.email
               }
+            });
 
           } catch (error) {
             const errorMessage = (error as Error).message;
@@ -814,11 +836,13 @@ class MeasurementUserManagementService {
               error: errorMessage
             });
             
+            console.error('측정 대상자 생성 실패', {
               metadata: {
                 row: userData.row,
                 displayName: userData.displayName,
                 email: userData.email
               }
+            });
           }
         });
 
@@ -834,12 +858,14 @@ class MeasurementUserManagementService {
       // 결과 정리
       results.success = results.failedRows.length === 0;
       
+      console.log('대량 측정 대상자 업로드 완료', {
         organizationId: organization.id,
         metadata: {
           totalRows: results.totalRows,
           successCount: results.successfulRows.length,
           failureCount: results.failedRows.length
         }
+      });
       
       return results;
 

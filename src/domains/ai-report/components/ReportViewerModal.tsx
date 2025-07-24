@@ -168,6 +168,7 @@ export function ReportViewerModal({
         let actualAnalysisResult;
         
         // 📊 디버깅: 실제 report 구조 확인
+        console.log('리포트 상세 구조:', {
           reportKeys: Object.keys(report || {}),
           hasInsights: !!report?.insights,
           hasRawData: !!report?.rawData,
@@ -175,6 +176,7 @@ export function ReportViewerModal({
           insightsDetailedAnalysisType: typeof report?.insights?.detailedAnalysis,
           rawDataDetailedAnalysisType: typeof report?.rawData?.detailedAnalysis,
           hasRawDataDetailedAnalysis: !!report?.rawData?.detailedAnalysis
+        });
         
         // 🎯 우선순위: rawData.detailedAnalysis 객체 > insights.detailedAnalysis 문자열 파싱
         if (report?.rawData?.detailedAnalysis && typeof report.rawData.detailedAnalysis === 'object') {
@@ -236,6 +238,7 @@ export function ReportViewerModal({
           }
         } else {
           // 둘 다 없으면 기존 저장된 데이터에서 기본 정보라도 사용
+          console.log('상세 분석 데이터 없음, 기본 정보 사용');
           
           // 기본 필드들이라도 있다면 활용
           if (report.overallScore || report.insights?.summary) {
@@ -337,9 +340,14 @@ export function ReportViewerModal({
         };
         
         // 실제 렌더러로 HTML 생성
+        console.log('렌더러 호출 중:', actualRenderer.id);
         
         const renderedReport = await actualRenderer.render(analysisResult, renderOptions);
         
+        console.log('렌더링 완료:', {
+          rendererId: renderedReport.rendererId,
+          renderTime: renderedReport.renderTime
+        });
         
         const reportContentData = {
           htmlContent: renderedReport.content,
@@ -353,6 +361,7 @@ export function ReportViewerModal({
           }
         };
         
+        console.log('리포트 컨텐츠 설정 완료');
         
         setReportContent(reportContentData);
         
@@ -417,20 +426,24 @@ export function ReportViewerModal({
       );
       
       // 디버깅: 높이 정보 출력
+      console.log('보고서 요소 높이 정보:', {
         offsetHeight: reportElement.offsetHeight,
         scrollHeight: reportElement.scrollHeight,
         rectHeight: elementRect.height,
         finalElementHeight: elementHeight
+      });
 
       // 고정된 캔버스 크기로 중앙 정렬 보장
       const canvasWidth = viewMode === 'mobile' ? 480 : 1050; // 고정 너비 (중앙정렬 최적화)
       const canvasHeight = elementHeight + 20; // 최소한의 여백만 추가
       
       // 디버깅: 캔버스 크기 정보 출력
+      console.log('캔버스 크기 정보:', {
         canvasWidth,
         canvasHeight,
         viewMode,
         heightDifference: canvasHeight - elementHeight
+      });
 
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
@@ -691,6 +704,7 @@ export function ReportViewerModal({
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
           
+          console.log('리포트 이미지 저장 완료:', fileName);
         }
       }, 'image/png', 1.0); // 최고 품질로 PNG 저장
       
@@ -902,6 +916,7 @@ export function ReportViewerModal({
         const parser = new DOMParser();
         const doc = parser.parseFromString(reportContent.htmlContent, 'text/html');
         
+        console.log('모바일 렌더러 HTML 파싱 완료');
         
         // 스타일 추출
         const styles = Array.from(doc.querySelectorAll('style'))

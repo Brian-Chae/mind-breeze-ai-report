@@ -88,6 +88,7 @@ export default function AIReportHero({ onReportGenerated, onExport, onRefresh }:
         measurementSessions.push(...personalSessions)
         
       } catch (queryError) {
+        console.warn('Firestore 조회 오류, 전체 세션 조회:', queryError)
         measurementSessions = await FirebaseService.getMeasurementSessions([])
       }
       
@@ -119,6 +120,7 @@ export default function AIReportHero({ onReportGenerated, onExport, onRefresh }:
               }))
             }
           } catch (error) {
+            console.warn('AI 분석 결과 조회 실패:', session.id, error)
             return {
               id: session.id,
               timestamp: session.sessionDate || session.createdAt,
@@ -129,9 +131,14 @@ export default function AIReportHero({ onReportGenerated, onExport, onRefresh }:
         })
       )
       
+      console.log('AI 리포트 데이터 로드 완료:', {
+        sessionCount: measurementSessions.length,
+        dataCount: measurementDataWithReports.length
+      })
       
       setMeasurementDataList(measurementDataWithReports)
     } catch (error) {
+      console.error('AI 리포트 데이터 로드 오류:', error)
       setMeasurementDataList([])
     } finally {
       setLoading(false)
@@ -269,6 +276,7 @@ export default function AIReportHero({ onReportGenerated, onExport, onRefresh }:
       thisWeekCreditsUsed
     }
     
+    console.log('AI 리포트 통계 계산:', {
       calculatedStats: result,
       measurementDataListLength: measurementDataList.length,
       todayDateRange: { today, tomorrow },
@@ -279,6 +287,7 @@ export default function AIReportHero({ onReportGenerated, onExport, onRefresh }:
         isToday: d.timestamp >= today && d.timestamp < tomorrow,
         isThisWeek: d.timestamp >= thisWeekStart && d.timestamp < tomorrow
       }))
+    });
     
     return result
   }, [measurementDataList])

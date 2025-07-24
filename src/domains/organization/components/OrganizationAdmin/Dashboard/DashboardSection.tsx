@@ -96,9 +96,11 @@ export default function DashboardSection() {
       
       const currentContext = enterpriseAuthService.getCurrentContext()
       
+      console.log('대시보드 데이터 로드 - 현재 컨텍스트:', currentContext)
       
       // 사용자 정보가 없는 경우 기본값으로 설정
       if (!currentContext.user || !currentContext.user.organizationId) {
+        console.warn('사용자 정보가 없습니다. 기본값 사용')
         
         // 기본 대시보드 데이터 설정
         setDashboardData({
@@ -118,9 +120,11 @@ export default function DashboardSection() {
       const organizationId = currentContext.user.organizationId
 
       // 현재 사용자의 권한 정보 확인
+      console.log('권한 정보:', {
         permissions: currentContext.permissions,
         userType: currentContext.user.userType,
         organizationId
+      });
 
       // 병렬로 데이터 로드 (각각 에러 처리)
       const [
@@ -137,8 +141,10 @@ export default function DashboardSection() {
       let userStats = null
       const userPermissions = currentContext.permissions || []
       
+      console.log('사용자 권한 확인:', {
         userPermissions,
         userType: currentContext.user?.userType
+      });
       
       // ORGANIZATION_ADMIN은 모든 권한을 가져야 함
       const hasViewPermission = 
@@ -151,9 +157,11 @@ export default function DashboardSection() {
         try {
           userStats = await measurementUserManagementService.getMeasurementUserStats()
         } catch (err) {
+          console.warn('사용자 통계 데이터 로드 실패:', err)
           // 통계 데이터 없이 계속 진행
         }
       } else {
+        console.log('사용자 통계 조회 권한 없음')
       }
 
       // 결과 처리 (에러가 발생한 경우 기본값 사용)
@@ -163,9 +171,11 @@ export default function DashboardSection() {
 
       // memberList가 배열인지 확인
       const safeMemberList = Array.isArray(memberList) ? memberList : []
+      console.log('멤버 리스트 타입 확인:', {
         memberListType: typeof memberList,
         isArray: Array.isArray(memberList),
         length: safeMemberList.length
+      });
 
       setDashboardData({
         totalUsers: userStats?.totalCount || 0,
@@ -178,6 +188,7 @@ export default function DashboardSection() {
       })
 
     } catch (err) {
+      console.error('대시보드 데이터 로드 오류:', err)
       setError('데이터를 불러오는 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
@@ -245,24 +256,28 @@ export default function DashboardSection() {
       title: '운영자 초대',
       icon: UserPlus,
       color: 'blue',
+      action: () => console.log('운영자 초대 클릭')
     },
     {
       id: 'report',
       title: 'AI 리포트 생성',
       icon: Brain,
       color: 'purple',
+      action: () => console.log('AI 리포트 생성 클릭')
     },
     {
       id: 'device',
       title: '디바이스 추가',
       icon: Smartphone,
       color: 'green',
+      action: () => console.log('디바이스 추가 클릭')
     },
     {
       id: 'credit',
       title: '크레딧 구매',
       icon: CreditCard,
       color: 'orange',
+      action: () => console.log('크레디트 구매 클릭')
     }
   ]
 

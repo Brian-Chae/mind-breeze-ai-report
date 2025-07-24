@@ -508,10 +508,10 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         }); 
         
       } catch (detailError) {
-          metadata: { 
-            errorMessage: detailError instanceof Error ? detailError.message : String(detailError),
-            errorStack: detailError instanceof Error ? detailError.stack : 'No stack'
-          } 
+        console.error('세션 세부 정보 저장 중 오류:', {
+          errorMessage: detailError instanceof Error ? detailError.message : String(detailError),
+          errorStack: detailError instanceof Error ? detailError.stack : 'No stack'
+        });
         // 세션은 저장되었으므로 계속 진행
       }
 
@@ -521,10 +521,12 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         measurementData: measurementData,
       }));
       
+      console.log('다음 단계로 이동:', {
         metadata: { 
           nextStep: 'analysis',
           hasMeasurementData: !!measurementData 
-        } 
+        }
+      });
       navigateToStep('analysis');
       
     } catch (error) {
