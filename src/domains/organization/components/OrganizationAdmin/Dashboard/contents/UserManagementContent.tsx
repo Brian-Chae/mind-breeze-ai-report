@@ -77,7 +77,16 @@ export default function UserManagementContent({}: UserManagementContentProps) {
       }
 
       if (statsData.status === 'fulfilled') {
-        setUserStats(statsData.value)
+        const stats = statsData.value
+        setUserStats({
+          totalUsers: stats.totalUsers || 0,
+          activeUsers: stats.activeUsers || 0,
+          organizationUsers: stats.totalUsers || 0, // 기업 사용자를 전체 사용자로 대체
+          individualUsers: 0, // API에서 제공하지 않음
+          suspendedUsers: stats.inactiveUsers || 0,
+          newUsersThisMonth: stats.newUsersThisMonth || 0,
+          usersByType: stats.usersByRole || {}
+        })
       }
 
     } catch (error) {
@@ -235,7 +244,7 @@ export default function UserManagementContent({}: UserManagementContentProps) {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-600">전체 사용자</p>
-                <p className="text-2xl font-bold text-slate-900">{userStats.totalUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900">{(userStats.totalUsers || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -247,7 +256,7 @@ export default function UserManagementContent({}: UserManagementContentProps) {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-600">활성 사용자</p>
-                <p className="text-2xl font-bold text-slate-900">{userStats.activeUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900">{(userStats.activeUsers || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -259,7 +268,7 @@ export default function UserManagementContent({}: UserManagementContentProps) {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-600">기업 사용자</p>
-                <p className="text-2xl font-bold text-slate-900">{userStats.organizationUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900">{(userStats.organizationUsers || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -271,7 +280,7 @@ export default function UserManagementContent({}: UserManagementContentProps) {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-600">이번 달 신규</p>
-                <p className="text-2xl font-bold text-slate-900">{userStats.newUsersThisMonth.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-slate-900">{(userStats.newUsersThisMonth || 0).toLocaleString()}</p>
               </div>
             </div>
           </div>
