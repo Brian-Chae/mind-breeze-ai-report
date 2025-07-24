@@ -356,7 +356,7 @@ export class FieldValidator<T = string> {
     return this.rule({
       ...rule,
       message: message || rule.message
-    });
+    } as ValidationRule<T>);
   }
 
   /**
@@ -781,18 +781,16 @@ export function validate<T>(fieldName: string, value: T, context?: ValidationCon
 /**
  * 검증 에러를 ServiceError로 변환
  */
-export function throwValidationErrors(result: ValidationResult, context?: ErrorContext): never {
-  if (result.isValid) {
-    return;
+export function throwValidationErrors(result: ValidationResult, context?: ErrorContext): void {
+  if (!result.isValid) {
+    const firstError = result.errors[0];
+    throw createValidationError(
+      firstError.field,
+      firstError.value,
+      firstError.message,
+      context
+    );
   }
-
-  const firstError = result.errors[0];
-  throw createValidationError(
-    firstError.field,
-    firstError.value,
-    firstError.message,
-    context
-  );
 }
 
 /**

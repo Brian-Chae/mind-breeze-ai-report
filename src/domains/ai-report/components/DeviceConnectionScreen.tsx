@@ -29,6 +29,7 @@ import { bluetoothService } from '../../../utils/bluetoothService';
 
 import type { DeviceConnectionStatus } from '../types';
 
+
 interface DeviceConnectionScreenProps {
   onConnectionSuccess: () => void;
   onBack: () => void;
@@ -139,11 +140,19 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       const deviceToConnect = newDevices[0];
       
       try {
-        console.log('Auto-connecting to device:', deviceToConnect.name);
+          action: 'autoConnect',
+          metadata: {
+            deviceId: deviceToConnect.id,
+            deviceName: deviceToConnect.name
+          }
         setAutoConnectAttempted(prev => new Set(prev).add(deviceToConnect.id));
         await handleConnect(deviceToConnect.id);
       } catch (error) {
-        console.error('Auto-connect failed for device:', deviceToConnect.name, error);
+          action: 'autoConnect',
+          metadata: {
+            deviceId: deviceToConnect.id,
+            deviceName: deviceToConnect.name
+          }
       }
     };
 
@@ -176,7 +185,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
             samplingRates: bluetoothService.getCurrentSamplingRates()
           });
         } catch (error) {
-          console.error('Failed to get realtime device info:', error);
+            action: 'getRealtimeDeviceInfo'
         }
       }, 2000); // 2초마다 업데이트
     } else {
@@ -198,7 +207,7 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       }
       setSystemReady(true);
     } catch (error) {
-      console.error('System initialization failed:', error);
+        action: 'initializeSystem'
       onError(`시스템 초기화에 실패했습니다: ${error instanceof Error ? error.message : error}`);
     }
   };
@@ -218,10 +227,15 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
     setScanning(true);
 
     try {
-      console.log('🔍 Starting device scan...');
+        action: 'startDeviceScan'
+      
       const devices = await systemControl.scanDevices();
       
-      console.log('🔍 Scan completed. Found devices:', devices);
+        action: 'scanCompleted',
+        metadata: {
+          deviceCount: devices.length,
+          deviceNames: devices.map(d => d.name || d.id)
+        }
       setAvailableDevices(devices);
       
       if (devices.length === 0) {
@@ -229,7 +243,11 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Device scan failed';
-      console.error('🚨 Scan failed:', error);
+      
+        action: 'deviceScan',
+        metadata: {
+          errorMessage: errorMessage
+        }
       
       if (!errorMessage.includes('cancelled') && !errorMessage.includes('취소')) {
         setScanError(errorMessage);
@@ -249,29 +267,52 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
     setConnectionError(null);
 
     try {
-      console.log('🔗 Connecting to device:', deviceId);
+        action: 'connectDevice',
+        metadata: {
+          deviceId: deviceId
+        }
+      
       await systemControl.connectDevice(deviceId);
-      console.log('✅ Device connected successfully');
+      
+        action: 'deviceConnected',
+        metadata: {
+          deviceId: deviceId
+        }
       
       // 데이터 스트리밍 시작
-      console.log('🚀 Starting data streaming...');
+        action: 'startDataStreaming',
+        metadata: {
+          deviceId: deviceId
+        }
+      
       await systemControl.startStreaming();
-      console.log('✅ Data streaming started successfully');
+      
+        action: 'dataStreamingStarted',
+        metadata: {
+          deviceId: deviceId
+        }
       
       // 5초 후 데이터 확인
       setTimeout(() => {
         const storeState = require('../../../stores/processedDataStore').useProcessedDataStore.getState();
-        console.log('🔍 DeviceConnectionScreen - 5초 후 데이터 상태:', {
-          eegAnalysis: storeState.eegAnalysis,
-          ppgAnalysis: storeState.ppgAnalysis,
-          sqiData: storeState.sqiData
-        });
+          action: 'dataStatusCheck',
+          metadata: {
+            deviceId: deviceId,
+            eegAnalysisAvailable: !!storeState.eegAnalysis,
+            ppgAnalysisAvailable: !!storeState.ppgAnalysis,
+            sqiDataAvailable: !!storeState.sqiData
+          }
       }, 5000);
       
       // 연결 성공은 useEffect에서 isConnected 상태 변화로 처리됨
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Connection failed';
-      console.error('🚨 Connection failed:', error);
+      
+        action: 'connectDevice',
+        metadata: {
+          deviceId: deviceId,
+          errorMessage: errorMessage
+        }
       
       if (!errorMessage.includes('cancelled') && !errorMessage.includes('취소')) {
         setConnectionError(errorMessage);

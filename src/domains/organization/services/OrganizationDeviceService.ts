@@ -1,4 +1,5 @@
 import { BaseService } from '@core/services/BaseService'
+import { FirestoreDeviceData, FirestoreServiceRequestData } from '../types/firebase-types'
 import { 
   collection, 
   doc, 
@@ -35,7 +36,6 @@ class OrganizationDeviceService extends BaseService {
   async getAllDevices(organizationId: string, filters?: DeviceFilterOptions, search?: DeviceSearchOptions): Promise<OrganizationDevice[]> {
     // organizationId 유효성 검사
     if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
-      this.warn('getAllDevices: 유효하지 않은 organizationId', { organizationId })
       return []
     }
 
@@ -51,7 +51,7 @@ class OrganizationDeviceService extends BaseService {
 
           const querySnapshot = await getDocs(q)
           let devices = querySnapshot.docs.map(doc => 
-            this.convertFirestoreDevice(doc.data())
+            this.convertFirestoreDevice(doc.data() as FirestoreDeviceData)
           )
 
           // 필터 적용
@@ -64,10 +64,8 @@ class OrganizationDeviceService extends BaseService {
             devices = this.applySearch(devices, search)
           }
 
-          this.log('전체 기기 목록 조회 완료', { organizationId, count: devices.length })
           return devices
         } catch (error) {
-          this.error('전체 기기 목록 조회 실패', error as Error, { organizationId, filters, search })
           return []
         }
       },
@@ -79,7 +77,6 @@ class OrganizationDeviceService extends BaseService {
   async getRentalDevices(organizationId: string): Promise<RentalDevice[]> {
     // organizationId 유효성 검사
     if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
-      this.warn('getRentalDevices: 유효하지 않은 organizationId', { organizationId })
       return []
     }
 
@@ -96,13 +93,11 @@ class OrganizationDeviceService extends BaseService {
 
           const querySnapshot = await getDocs(q)
           const devices = querySnapshot.docs.map(doc => 
-            this.convertFirestoreDevice(doc.data()) as RentalDevice
+            this.convertFirestoreDevice(doc.data() as FirestoreDeviceData) as RentalDevice
           )
 
-          this.log('렌탈 기기 목록 조회 완료', { organizationId, count: devices.length })
           return devices
         } catch (error) {
-          this.error('렌탈 기기 목록 조회 실패', error as Error, { organizationId })
           return []
         }
       },
@@ -114,7 +109,6 @@ class OrganizationDeviceService extends BaseService {
   async getPurchaseDevices(organizationId: string): Promise<PurchaseDevice[]> {
     // organizationId 유효성 검사
     if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
-      this.warn('getPurchaseDevices: 유효하지 않은 organizationId', { organizationId })
       return []
     }
 
@@ -131,13 +125,11 @@ class OrganizationDeviceService extends BaseService {
 
           const querySnapshot = await getDocs(q)
           const devices = querySnapshot.docs.map(doc => 
-            this.convertFirestoreDevice(doc.data()) as PurchaseDevice
+            this.convertFirestoreDevice(doc.data() as FirestoreDeviceData) as PurchaseDevice
           )
 
-          this.log('구매 기기 목록 조회 완료', { organizationId, count: devices.length })
           return devices
         } catch (error) {
-          this.error('구매 기기 목록 조회 실패', error as Error, { organizationId })
           return []
         }
       },
@@ -160,10 +152,8 @@ class OrganizationDeviceService extends BaseService {
           requestDate: Timestamp.fromDate(actionWithDefaults.requestDate)
         })
 
-        this.log('렌탈 액션 처리 완료', action)
         return true
       } catch (error) {
-        this.error('렌탈 액션 처리 실패', error as Error, action)
         return false
       }
     })
@@ -184,10 +174,8 @@ class OrganizationDeviceService extends BaseService {
           requestDate: Timestamp.fromDate(actionWithDefaults.requestDate)
         })
 
-        this.log('구매 액션 처리 완료', action)
         return true
       } catch (error) {
-        this.error('구매 액션 처리 실패', error as Error, action)
         return false
       }
     })
@@ -197,7 +185,6 @@ class OrganizationDeviceService extends BaseService {
   async getServiceRequests(organizationId: string, type?: 'SERVICE' | 'REFUND'): Promise<OrganizationServiceRequest[]> {
     // organizationId 유효성 검사
     if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
-      this.warn('getServiceRequests: 유효하지 않은 organizationId', { organizationId, type })
       return []
     }
 
@@ -222,13 +209,11 @@ class OrganizationDeviceService extends BaseService {
 
           const querySnapshot = await getDocs(q)
           const requests = querySnapshot.docs.map(doc => 
-            this.convertFirestoreServiceRequest(doc.data())
+            this.convertFirestoreServiceRequest(doc.data() as FirestoreServiceRequestData)
           )
 
-          this.log('서비스 요청 조회 완료', { organizationId, type, count: requests.length })
           return requests
         } catch (error) {
-          this.error('서비스 요청 조회 실패', error as Error, { organizationId, type })
           return []
         }
       },
@@ -240,7 +225,6 @@ class OrganizationDeviceService extends BaseService {
   async getDeviceStats(organizationId: string): Promise<OrganizationDeviceStats> {
     // organizationId 유효성 검사
     if (!organizationId || organizationId === 'undefined' || organizationId === 'null') {
-      this.warn('getDeviceStats: 유효하지 않은 organizationId', { organizationId })
       return this.getDefaultStats()
     }
 
@@ -270,10 +254,8 @@ class OrganizationDeviceService extends BaseService {
             pendingRefundRequests: serviceRequests.filter(r => r.type === 'REFUND' && r.status === 'PENDING').length,
           }
 
-          this.log('디바이스 통계 조회 완료', { organizationId, stats })
           return stats
         } catch (error) {
-          this.error('디바이스 통계 조회 실패', error as Error, { organizationId })
           return this.getDefaultStats()
         }
       },
@@ -282,7 +264,7 @@ class OrganizationDeviceService extends BaseService {
   }
 
   // 유틸리티 메서드들
-  private convertFirestoreDevice(data: any): OrganizationDevice {
+  private convertFirestoreDevice(data: FirestoreDeviceData): OrganizationDevice {
     return {
       id: data.id,
       deviceId: data.deviceId,
@@ -318,7 +300,7 @@ class OrganizationDeviceService extends BaseService {
     }
   }
 
-  private convertFirestoreServiceRequest(data: any): OrganizationServiceRequest {
+  private convertFirestoreServiceRequest(data: FirestoreServiceRequestData): OrganizationServiceRequest {
     return {
       id: data.id,
       type: data.type,

@@ -30,7 +30,9 @@ export enum LogCategory {
   PERFORMANCE = 'performance',
   SECURITY = 'security',
   BUSINESS = 'business',
-  DEBUG = 'debug'
+  DEBUG = 'debug',
+  DEVICE = 'device',
+  SERVICE = 'service'
 }
 
 export interface LogContext {
@@ -204,10 +206,6 @@ export class Logger {
     });
     
     // 기본 샘플링 레이트 설정
-    this.samplingRates.set(LogCategory.DEBUG, 0.1); // 10%
-    this.samplingRates.set(LogCategory.PERFORMANCE, 0.5); // 50%
-    this.samplingRates.set(LogCategory.USER_ACTION, 1.0); // 100%
-    this.samplingRates.set(LogCategory.SECURITY, 1.0); // 100%
     
     // 버퍼 플러시 타이머 설정
     setInterval(() => this.flushLogs(), 5000);
@@ -234,19 +232,6 @@ export class Logger {
     context: LogContext = {},
     category: LogCategory = LogCategory.DEBUG
   ): void {
-    this.log(LogLevel.DEBUG, service, message, context, category);
-  }
-
-  /**
-   * 정보 로그
-   */
-  public info(
-    service: string,
-    message: string,
-    context: LogContext = {},
-    category: LogCategory = LogCategory.SYSTEM
-  ): void {
-    this.log(LogLevel.INFO, service, message, context, category);
   }
 
   /**
@@ -258,33 +243,6 @@ export class Logger {
     context: LogContext = {},
     category: LogCategory = LogCategory.SYSTEM
   ): void {
-    this.log(LogLevel.WARN, service, message, context, category);
-  }
-
-  /**
-   * 에러 로그
-   */
-  public error(
-    service: string,
-    message: string,
-    error?: Error,
-    context: LogContext = {},
-    category: LogCategory = LogCategory.SYSTEM
-  ): void {
-    const logContext = { ...context };
-    
-    if (error) {
-      logContext.metadata = {
-        ...logContext.metadata,
-        error: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        }
-      };
-    }
-    
-    this.log(LogLevel.ERROR, service, message, logContext, category);
   }
 
   /**
@@ -310,10 +268,6 @@ export class Logger {
       };
     }
     
-    this.log(LogLevel.CRITICAL, service, message, logContext, category);
-    
-    // 치명적 에러는 즉시 플러시
-    this.flushLogs();
   }
 
   // === 특수 로깅 메서드 ===
@@ -338,20 +292,6 @@ export class Logger {
     this.performanceMetrics.push(metric);
     
     if (this.config.enablePerformanceLogging) {
-      this.log(
-        LogLevel.INFO,
-        'PerformanceTracker',
-        `Operation ${operation} completed in ${duration}ms`,
-        {
-          metadata: {
-            operation,
-            duration,
-            success,
-            ...details
-          }
-        },
-        LogCategory.PERFORMANCE
-      );
     }
   }
 
@@ -379,22 +319,6 @@ export class Logger {
     this.userActivities.push(activity);
     
     if (this.config.enableUserTracking) {
-      this.log(
-        LogLevel.INFO,
-        'UserTracker',
-        `User ${userId} performed ${action} on ${resource}`,
-        {
-          userId,
-          organizationId,
-          action,
-          resource,
-          metadata: {
-            result,
-            ...details
-          }
-        },
-        LogCategory.USER_ACTION
-      );
     }
   }
 
@@ -411,13 +335,6 @@ export class Logger {
                   severity === 'high' ? LogLevel.ERROR :
                   severity === 'medium' ? LogLevel.WARN : LogLevel.INFO;
     
-    this.log(level, service, message, {
-      ...context,
-      metadata: {
-        ...context.metadata,
-        securitySeverity: severity
-      }
-    }, LogCategory.SECURITY);
     
     // 높은 보안 이벤트는 즉시 플러시
     if (severity === 'critical' || severity === 'high') {
@@ -438,17 +355,6 @@ export class Logger {
     const level = statusCode >= 500 ? LogLevel.ERROR :
                   statusCode >= 400 ? LogLevel.WARN : LogLevel.INFO;
     
-    this.log(level, 'APITracker', `${method} ${url} - ${statusCode}`, {
-      ...context,
-      duration,
-      metadata: {
-        method,
-        url,
-        statusCode,
-        duration,
-        ...context.metadata
-      }
-    }, LogCategory.API);
   }
 
   // === 핵심 로깅 로직 ===
@@ -461,7 +367,8 @@ export class Logger {
     service: string,
     message: string,
     context: LogContext,
-    category: LogCategory
+    category: LogCategory,
+    error?: Error
   ): void {
     // 로그 레벨 필터링
     if (level < this.config.level) {

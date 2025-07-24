@@ -1,5 +1,6 @@
 import { auth } from '@core/services/firebase';
 import { FirebaseService } from '@core/services/FirebaseService';
+import { UserType } from '@core/types/unified';
 
 /**
  * 디버깅용 사용자 정보 확인 및 업데이트 유틸리티
@@ -14,28 +15,31 @@ export class DebugUserInfo {
       const currentUser = auth.currentUser;
       
       if (!currentUser) {
-        console.log('❌ 로그인된 사용자가 없습니다.');
+        if (import.meta.env.DEV) {
+        }
         return null;
       }
 
-      console.log('🔍 Firebase Auth 사용자 정보:', {
-        uid: currentUser.uid,
-        email: currentUser.email,
-        displayName: currentUser.displayName,
-        emailVerified: currentUser.emailVerified
-      });
+      if (import.meta.env.DEV) {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          emailVerified: currentUser.emailVerified
+      }
 
       // Firestore에서 사용자 프로필 확인
       try {
         const userProfile = await FirebaseService.getUserProfile(currentUser.uid);
-        console.log('🔍 Firestore 사용자 프로필:', userProfile);
+        if (import.meta.env.DEV) {
+        }
         
         return {
           auth: currentUser,
           profile: userProfile
         };
       } catch (error) {
-        console.log('❌ Firestore 사용자 프로필 조회 실패:', error);
+        if (import.meta.env.DEV) {
+        }
         return {
           auth: currentUser,
           profile: null
@@ -43,7 +47,8 @@ export class DebugUserInfo {
       }
 
     } catch (error) {
-      console.error('❌ 사용자 정보 확인 실패:', error);
+      if (import.meta.env.DEV) {
+      }
       return null;
     }
   }
@@ -56,16 +61,18 @@ export class DebugUserInfo {
       const currentUser = auth.currentUser;
       
       if (!currentUser) {
-        console.log('❌ 로그인된 사용자가 없습니다.');
+        if (import.meta.env.DEV) {
+        }
         return false;
       }
 
-      console.log('🔧 시스템 관리자로 강제 업데이트 시작...');
-      console.log('🔧 사용자 UID:', currentUser.uid);
-      console.log('🔧 사용자 이메일:', currentUser.email);
+      if (import.meta.env.DEV) {
+          uid: currentUser.uid,
+          email: currentUser.email
+      }
 
       await FirebaseService.updateUserProfile(currentUser.uid, {
-        userType: 'SYSTEM_ADMIN',
+        userType: UserType.SYSTEM_ADMIN,
         displayName: 'System Administrator',
         email: currentUser.email,
         permissions: JSON.stringify([
@@ -88,13 +95,15 @@ export class DebugUserInfo {
         updatedAt: new Date()
       });
 
-      console.log('✅ 시스템 관리자 업데이트 완료!');
-      console.log('🔄 페이지를 새로고침하면 변경사항이 반영됩니다.');
+      if (import.meta.env.DEV) {
+          message: 'Page refresh required for changes to take effect'
+      }
       
       return true;
 
     } catch (error) {
-      console.error('❌ 시스템 관리자 업데이트 실패:', error);
+      if (import.meta.env.DEV) {
+      }
       return false;
     }
   }
@@ -103,15 +112,24 @@ export class DebugUserInfo {
    * 브라우저 콘솔에서 사용할 수 있도록 전역 함수로 등록
    */
   static registerGlobalDebugFunctions() {
-    // @ts-ignore
-    window.debugUser = {
-      getCurrentInfo: this.getCurrentUserInfo,
-      forceUpdateToSystemAdmin: this.forceUpdateToSystemAdmin
-    };
-    
-    console.log('🔧 디버깅 함수 등록 완료!');
-    console.log('📝 브라우저 콘솔에서 다음 명령어를 사용하세요:');
-    console.log('   - await debugUser.getCurrentInfo()    // 현재 사용자 정보 확인');
-    console.log('   - await debugUser.forceUpdateToSystemAdmin()  // 시스템 관리자로 강제 업데이트');
+    // 개발 환경에서만 전역 디버그 함수 등록
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      // @ts-ignore
+      window.debugUser = {
+        getCurrentInfo: this.getCurrentUserInfo,
+        forceUpdateToSystemAdmin: this.forceUpdateToSystemAdmin
+      };
+      
+        availableFunctions: [
+          'await debugUser.getCurrentInfo() // Current user info check',
+          'await debugUser.forceUpdateToSystemAdmin() // Force update to system admin'
+        ]
+      
+      // Keep console logs for developer visibility in browser console
+      console.log('🔧 디버깅 함수 등록 완료!');
+      console.log('📝 브라우저 콘솔에서 다음 명령어를 사용하세요:');
+      console.log('   - await debugUser.getCurrentInfo()    // 현재 사용자 정보 확인');
+      console.log('   - await debugUser.forceUpdateToSystemAdmin()  // 시스템 관리자로 강제 업데이트');
+    }
   }
 } 

@@ -77,6 +77,7 @@ export interface ServiceRequest {
   serviceType: ServiceType;
   issueDescription: string;
   urgency: ServiceUrgency;
+  contactName?: string;          // 요청자 연락처 정보
   
   // 진행 정보
   status: ServiceStatus;

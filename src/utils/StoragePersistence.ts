@@ -4,6 +4,7 @@
  * 페이지 새로고침 후에도 권한을 유지합니다.
  */
 
+
 const DB_NAME = 'LinkBandStorageDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'directoryHandles';
@@ -35,7 +36,7 @@ class StoragePersistence {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('IndexedDB 열기 실패:', request.error);
+          metadata: { operation: 'openDatabase', dbName: DB_NAME, dbVersion: DB_VERSION }
         reject(request.error);
       };
 
@@ -93,13 +94,11 @@ class StoragePersistence {
           resolve();
         };
         request.onerror = () => {
-          console.error('디렉토리 핸들 저장 실패:', request.error);
           reject(request.error);
         };
       });
 
     } catch (error) {
-      console.error('❌ 디렉토리 핸들 저장 실패:', error);
       throw error;
     }
   }
@@ -112,7 +111,6 @@ class StoragePersistence {
       await this.initDB();
       
       if (!this.db) {
-        console.warn('IndexedDB가 초기화되지 않았습니다');
         return null;
       }
 
@@ -125,7 +123,6 @@ class StoragePersistence {
           resolve(request.result);
         };
         request.onerror = () => {
-          console.error('디렉토리 핸들 조회 실패:', request.error);
           reject(request.error);
         };
       });
@@ -150,7 +147,6 @@ class StoragePersistence {
          return handle;
          
        } catch (error) {
-         console.warn(`⚠️ 디렉토리 핸들 권한 확인 실패: ${record.name}`, error);
          
          // 권한이 없거나 핸들이 무효한 경우
          if (error instanceof DOMException) {
@@ -173,7 +169,6 @@ class StoragePersistence {
        }
 
     } catch (error) {
-      console.error('❌ 디렉토리 핸들 복원 실패:', error);
       return null;
     }
   }
@@ -212,7 +207,6 @@ class StoragePersistence {
       };
 
     } catch (error) {
-      console.error('❌ 저장된 디렉토리 정보 조회 실패:', error);
       return null;
     }
   }
@@ -238,13 +232,11 @@ class StoragePersistence {
           resolve();
         };
         request.onerror = () => {
-          console.error('디렉토리 핸들 삭제 실패:', request.error);
           reject(request.error);
         };
       });
 
     } catch (error) {
-      console.error('❌ 디렉토리 핸들 삭제 실패:', error);
       throw error;
     }
   }
@@ -270,13 +262,11 @@ class StoragePersistence {
           resolve();
         };
         request.onerror = () => {
-          console.error('디렉토리 핸들 정리 실패:', request.error);
           reject(request.error);
         };
       });
 
     } catch (error) {
-      console.error('❌ 디렉토리 핸들 정리 실패:', error);
       throw error;
     }
   }

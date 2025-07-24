@@ -10,6 +10,7 @@ import { ArrowLeft, Building, User, Shield, Mail, Phone, MapPin, IdCard, CheckCi
 import { OrganizationService } from '@domains/organization/services/CompanyService';
 import { enterpriseAuthService } from '@domains/organization/services/EnterpriseAuthService';
 import { toast } from 'sonner';
+import { UserType } from '@core/types/unified';
 
 // 간단한 validation 함수들
 const validateEmail = (email: string) => {
@@ -78,11 +79,8 @@ export function CompanyJoinForm() {
   const [isCompanyVerified, setIsCompanyVerified] = useState(false);
   const [agreeToAll, setAgreeToAll] = useState(false);
 
-  // 디버깅용 로그
+  // 상태 변경 로그
   useEffect(() => {
-    console.log('🔍 CompanyJoinForm - currentStep:', currentStep);
-    console.log('🔍 CompanyJoinForm - isCompanyVerified:', isCompanyVerified);
-    console.log('🔍 CompanyJoinForm - companyInfo:', companyInfo);
   }, [currentStep, isCompanyVerified, companyInfo]);
 
   const handleInputChange = (field: keyof CompanyJoinData, value: string | boolean) => {
@@ -118,7 +116,6 @@ export function CompanyJoinForm() {
   };
 
   const verifyCompanyCode = async () => {
-    console.log('🔵 verifyCompanyCode 시작 - 입력된 코드:', formData.companyCode);
     
     if (!formData.companyCode.trim()) {
       setErrors(prev => ({
@@ -135,7 +132,6 @@ export function CompanyJoinForm() {
       
       // 실제 데이터가 없으면 테스트 데이터 사용
       if (!company) {
-        console.log('🔴 실제 데이터 없음, 테스트 데이터 확인 중...');
         
         // 테스트용 회사 코드들
         const testCompanies = {
@@ -155,18 +151,15 @@ export function CompanyJoinForm() {
 
         const testCompany = testCompanies[formData.companyCode as keyof typeof testCompanies];
         if (testCompany) {
-          console.log('✅ 테스트 회사 발견:', testCompany);
           setCompanyInfo(testCompany);
           setIsCompanyVerified(true);
           setCurrentStep(2);
-          console.log('✅ 회사 코드 검증 성공 (테스트 데이터), 2단계로 진행');
           toast.success(`${testCompany.name}의 회사 코드가 확인되었습니다!`);
           return;
         }
       }
       
       if (company) {
-        console.log('✅ 실제 회사 발견:', company);
         setCompanyInfo({
           name: company.organizationName,
           address: company.address,
@@ -175,10 +168,8 @@ export function CompanyJoinForm() {
         });
         setIsCompanyVerified(true);
         setCurrentStep(2);
-        console.log('✅ 회사 코드 검증 성공 (실제 데이터), 2단계로 진행');
         toast.success(`${company.organizationName}의 회사 코드가 확인되었습니다!`);
       } else {
-        console.log('❌ 회사 코드 찾을 수 없음');
         setErrors(prev => ({
           ...prev,
           companyCode: '존재하지 않는 회사 코드입니다. 테스트용 코드: COMPANY123 또는 TESTCO456'
@@ -187,7 +178,6 @@ export function CompanyJoinForm() {
         setIsCompanyVerified(false);
       }
     } catch (error) {
-      console.error('❌ 회사 코드 검증 실패:', error);
       setErrors(prev => ({
         ...prev,
         companyCode: '회사 코드 검증에 실패했습니다.'
@@ -196,7 +186,6 @@ export function CompanyJoinForm() {
       setIsCompanyVerified(false);
     } finally {
       setIsLoading(false);
-      console.log('🔵 verifyCompanyCode 완료');
     }
   };
 
@@ -337,7 +326,6 @@ export function CompanyJoinForm() {
       // 2단계 개인정보 검증
       if (validatePersonalInfo()) {
         setCurrentStep(3);
-        console.log('✅ 2단계 검증 완료, 3단계로 진행');
       }
     }
   };
@@ -345,8 +333,8 @@ export function CompanyJoinForm() {
   // 이전 단계로 돌아가기
   const handlePreviousStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      console.log('⬅️ 이전 단계로 돌아감, 현재 단계:', currentStep - 1);
+      const previousStep = currentStep - 1;
+      setCurrentStep(previousStep);
     }
   };
 
@@ -366,18 +354,10 @@ export function CompanyJoinForm() {
     setIsLoading(true);
     
     try {
-      console.log('📝 회원가입 시도:', {
-        companyCode: formData.companyCode,
-        name: formData.name,
-        email: formData.email,
-        employeeId: formData.employeeId,
-        department: formData.department,
-        position: formData.position
-      });
       
       // 조직 구성원으로 등록
       await enterpriseAuthService.signUp({
-        userType: 'ORGANIZATION_MEMBER',
+        userType: UserType.ORGANIZATION_MEMBER,
         email: formData.email,
         password: formData.password,
         displayName: formData.name,
@@ -389,7 +369,6 @@ export function CompanyJoinForm() {
         organizationId: formData.companyCode // 회사 코드를 organizationId로 사용
       });
       
-      console.log('✅ 회원가입 성공');
       toast.success('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
       
       // 로그인 페이지로 이동
@@ -398,7 +377,6 @@ export function CompanyJoinForm() {
       }, 1000);
       
     } catch (error: any) {
-      console.error('❌ 회원가입 실패:', error);
       toast.error(error.message || '회원가입에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);

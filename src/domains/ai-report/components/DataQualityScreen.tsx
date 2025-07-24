@@ -70,7 +70,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
   // 디버깅: 데이터 상태 로깅
   useEffect(() => {
-    console.log('🔍 DataQualityScreen - 현재 데이터 상태:', {
+    console.log('데이터 품질 화면 상태:', {
       isConnected,
       isSensorContacted,
       eegGraphData: eegGraphData ? Object.keys(eegGraphData) : 'null',
@@ -82,7 +82,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
     // ProcessedDataStore 직접 상태 확인
     const storeState = useProcessedDataStore.getState();
-    console.log('🔍 ProcessedDataStore 직접 상태:', {
+    console.log('ProcessedDataStore 상태:', {
       storeKeys: Object.keys(storeState),
       eegAnalysis: storeState.eegAnalysis,
       ppgAnalysis: storeState.ppgAnalysis,
@@ -93,26 +93,21 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
     });
 
     // 각 hook의 원시 데이터 확인
-    console.log('🔍 Hook 원시 데이터:', {
       eegGraphData,
       ppgGraphData,
       accAnalysis,
       eegSQIData,
       ppgSQIData
-    });
 
     // SQI 데이터 구조 확인
-    console.log('🔍 SQI 데이터 구조 확인:', {
       eegSQI_first: eegSQIData?.ch1SQI?.[0],
       eegSQI_last: eegSQIData?.ch1SQI?.[eegSQIData?.ch1SQI?.length - 1],
       ppgSQI_first: ppgSQIData?.overallSQI?.[0],
       ppgSQI_last: ppgSQIData?.overallSQI?.[ppgSQIData?.overallSQI?.length - 1],
       eegSQI_type: typeof eegSQIData?.ch1SQI?.[0],
       ppgSQI_type: typeof ppgSQIData?.overallSQI?.[0]
-    });
 
     // 그래프 데이터 구조 확인
-    console.log('🔍 그래프 데이터 구조 확인:', {
       eegFP1_first: eegGraphData?.fp1?.[0],
       eegFP1_last: eegGraphData?.fp1?.[eegGraphData?.fp1?.length - 1],
       ppgRed_first: ppgGraphData?.red?.[0],
@@ -121,7 +116,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
       ppgRed_type: typeof ppgGraphData?.red?.[0],
       isSensorContacted,
       rawSensorContacted
-    });
   }, [isConnected, isSensorContacted, eegGraphData, ppgGraphData, accAnalysis, eegSQIData, ppgSQIData]);
 
   // 신호 품질 계산
@@ -169,7 +163,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
       const overallQuality = (finalEegQuality + finalPpgQuality + accQuality) / 3;
 
-      console.log('🔍 신호 품질 계산 결과:', {
         eegQuality: finalEegQuality,
         ppgQuality: finalPpgQuality,
         accQuality,
@@ -178,7 +171,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
         activityState,
         rawEegQuality: eegQuality,
         rawPpgQuality: ppgQuality
-      });
 
       return {
         eeg: finalEegQuality,
@@ -189,7 +181,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
         sensorContacted: isSensorContacted
       };
     } catch (error) {
-      console.error('신호 품질 계산 오류:', error);
       return {
         eeg: 0,
         ppg: 0,
@@ -295,14 +286,12 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
   // 차트 데이터 확인
   useEffect(() => {
-    console.log('🔍 최종 차트 데이터:', {
       finalEEGData_length: finalEEGData?.length,
       finalEEGData_first: finalEEGData?.[0],
       finalEEGData_last: finalEEGData?.[finalEEGData?.length - 1],
       finalPPGData_length: finalPPGData?.length,
       finalPPGData_first: finalPPGData?.[0],
       finalPPGData_last: finalPPGData?.[finalPPGData?.length - 1]
-    });
   }, [finalEEGData, finalPPGData]);
 
   // 품질 기준 체크 (90% 이상)
@@ -339,7 +328,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
   // 🔧 실제 센서 데이터 기반 측정 데이터 수집 함수
   const collectMeasurementData = useCallback((): AggregatedMeasurementData => {
-    console.log('🔧 collectMeasurementData 호출 - 실제 센서 데이터 사용');
     
     // 현재 시간
     const now = new Date();
@@ -359,16 +347,13 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
       qualityScore: signalQuality.eeg
     };
     
-    console.log('🔧 EEG 분석 결과:', {
       hasEEGAnalysis: !!eegAnalysis?.indices,
       eegIndices: eegAnalysis?.indices,
       finalEEGSummary: eegSummary
-    });
 
     // 🔧 실제 PPG 분석 결과 사용 (AnalysisMetricsService 우선)
     const analysisMetricsService = AnalysisMetricsService.getInstance();
     
-    console.log('🔧 AnalysisMetricsService 실시간 값들:', {
       rmssd: analysisMetricsService.getCurrentRMSSD(),
       sdnn: analysisMetricsService.getCurrentSDNN(),
       pnn50: analysisMetricsService.getCurrentPNN50(),
@@ -377,7 +362,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
       lfHfRatio: analysisMetricsService.getCurrentLfHfRatio(),
       stressIndex: analysisMetricsService.getCurrentStressIndex(),
       ppgAnalysisIndices: ppgAnalysis?.indices
-    });
     
     const ppgSummary = ppgAnalysis?.indices ? {
       averageHeartRate: ppgAnalysis.indices.heartRate || 72,
@@ -390,7 +374,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
       qualityScore: signalQuality.ppg
     };
     
-    console.log('🔧 PPG 분석 결과:', {
       hasPPGAnalysis: !!ppgAnalysis?.indices,
       ppgIndices: ppgAnalysis?.indices,
       analysisMetricsServiceData: {
@@ -398,7 +381,6 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
         pnn50: analysisMetricsService.getCurrentPNN50()
       },
       finalPPGSummary: ppgSummary
-    });
 
     // ACC 데이터 분석
     const accSummary = {

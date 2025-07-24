@@ -9,12 +9,13 @@
 // 기본 Enum 타입들 (Firestore 컬렉션 구조 기반)
 // ============================================================================
 
-export type UserType = 
-  | 'SYSTEM_ADMIN'
-  | 'ORGANIZATION_ADMIN'  
-  | 'ORGANIZATION_MEMBER'
-  | 'INDIVIDUAL_USER'
-  | 'MEASUREMENT_SUBJECT';
+export enum UserType {
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
+  ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN',
+  ORGANIZATION_MEMBER = 'ORGANIZATION_MEMBER',
+  INDIVIDUAL_USER = 'INDIVIDUAL_USER',
+  MEASUREMENT_SUBJECT = 'MEASUREMENT_SUBJECT'
+}
 
 export type VolumeDiscountTier = 
   | 'TIER_0'  // 1-99명
@@ -289,26 +290,158 @@ export const VOLUME_DISCOUNT_TIERS_MAP: Record<VolumeDiscountTier, { min: number
   TIER_4: { min: 5000, max: 999999, discount: 0.3 }
 };
 
-export const DEFAULT_PERMISSIONS_BY_USER_TYPE: Record<UserType, string[]> = {
-  SYSTEM_ADMIN: ['*'],
-  ORGANIZATION_ADMIN: [
-    'ORGANIZATION_MANAGE',
-    'MEMBER_MANAGE', 
-    'CREDIT_MANAGE',
-    'REPORT_VIEW',
-    'CONSULTATION_ACCESS',
-    'ANALYTICS_VIEW'
-  ],
-  ORGANIZATION_MEMBER: [
-    'REPORT_VIEW',
-    'CONSULTATION_ACCESS',
-    'MEASUREMENT_CREATE'
-  ],
-  INDIVIDUAL_USER: [
-    'REPORT_VIEW',
-    'CONSULTATION_ACCESS'
-  ],
-  MEASUREMENT_SUBJECT: [
-    'MEASUREMENT_PARTICIPATE'
-  ]
+// ============================================================================
+// 통합 권한 시스템 (Permission System)
+// ============================================================================
+
+/**
+ * 시스템 권한 정의
+ * 계층적 구조: 도메인:액션:리소스 형태
+ */
+export enum Permission {
+  // System Administration (시스템 관리)
+  SYSTEM_ALL = 'system:all',
+  SYSTEM_READ = 'system:read',
+  SYSTEM_CONFIG = 'system:config',
+  SYSTEM_LOGS = 'system:logs',
+  SYSTEM_MAINTENANCE = 'system:maintenance',
+  
+  // Organization Management (조직 관리)
+  ORGANIZATION_ALL = 'organization:all',
+  ORGANIZATION_CREATE = 'organization:create',
+  ORGANIZATION_READ = 'organization:read',
+  ORGANIZATION_UPDATE = 'organization:update',
+  ORGANIZATION_DELETE = 'organization:delete',
+  ORGANIZATION_SETTINGS = 'organization:settings',
+  
+  // Member Management (구성원 관리)
+  MEMBER_ALL = 'member:all',
+  MEMBER_INVITE = 'member:invite',
+  MEMBER_READ = 'member:read',
+  MEMBER_UPDATE = 'member:update',
+  MEMBER_DELETE = 'member:delete',
+  MEMBER_ROLE_ASSIGN = 'member:role:assign',
+  
+  // Credit Management (크레딧 관리)
+  CREDIT_ALL = 'credit:all',
+  CREDIT_PURCHASE = 'credit:purchase',
+  CREDIT_VIEW = 'credit:view',
+  CREDIT_TRANSFER = 'credit:transfer',
+  CREDIT_REFUND = 'credit:refund',
+  
+  // Device Management (디바이스 관리)
+  DEVICE_ALL = 'device:all',
+  DEVICE_REGISTER = 'device:register',
+  DEVICE_ASSIGN = 'device:assign',
+  DEVICE_UNASSIGN = 'device:unassign',
+  DEVICE_DELETE = 'device:delete',
+  DEVICE_VIEW = 'device:view',
+  
+  // Report & Analysis (리포트 및 분석)
+  REPORT_ALL = 'report:all',
+  REPORT_GENERATE = 'report:generate',
+  REPORT_VIEW = 'report:view',
+  REPORT_SHARE = 'report:share',
+  REPORT_DELETE = 'report:delete',
+  
+  // Analytics (분석)
+  ANALYTICS_ALL = 'analytics:all',
+  ANALYTICS_VIEW = 'analytics:view',
+  ANALYTICS_EXPORT = 'analytics:export',
+  ANALYTICS_DASHBOARD = 'analytics:dashboard',
+  
+  // Measurement (측정)
+  MEASUREMENT_CREATE = 'measurement:create',
+  MEASUREMENT_PARTICIPATE = 'measurement:participate',
+  MEASUREMENT_VIEW_OWN = 'measurement:view:own',
+  MEASUREMENT_VIEW_ALL = 'measurement:view:all',
+  
+  // Consultation (상담)
+  CONSULTATION_ACCESS = 'consultation:access',
+  CONSULTATION_BOOK = 'consultation:book',
+  CONSULTATION_MANAGE = 'consultation:manage',
+  
+  // User Management (사용자 관리)
+  USER_ALL = 'user:all',
+  USER_CREATE = 'user:create',
+  USER_READ = 'user:read',
+  USER_UPDATE = 'user:update',
+  USER_DELETE = 'user:delete',
+  USER_IMPERSONATE = 'user:impersonate',
+  
+  // Settings (설정)
+  SETTINGS_ALL = 'settings:all',
+  SETTINGS_SYSTEM = 'settings:system',
+  SETTINGS_ORGANIZATION = 'settings:organization',
+  SETTINGS_PERSONAL = 'settings:personal'
+}
+
+/**
+ * 권한 그룹 정의 (자주 사용되는 권한 조합)
+ */
+export const PERMISSION_GROUPS = {
+  // 시스템 관리자 - 모든 권한
+  SYSTEM_ADMIN_PERMISSIONS: [Permission.SYSTEM_ALL] as Permission[],
+  
+  // 조직 관리자 - 조직 내 모든 관리 권한
+  ORGANIZATION_ADMIN_PERMISSIONS: [
+    Permission.ORGANIZATION_READ,
+    Permission.ORGANIZATION_UPDATE,
+    Permission.ORGANIZATION_SETTINGS,
+    Permission.MEMBER_ALL,
+    Permission.CREDIT_ALL,
+    Permission.DEVICE_ALL,
+    Permission.REPORT_VIEW,
+    Permission.ANALYTICS_ALL,
+    Permission.CONSULTATION_MANAGE,
+    Permission.SETTINGS_ORGANIZATION
+  ] as Permission[],
+  
+  // 조직 구성원 - 기본 업무 권한
+  ORGANIZATION_MEMBER_PERMISSIONS: [
+    Permission.REPORT_GENERATE,
+    Permission.REPORT_VIEW,
+    Permission.MEASUREMENT_CREATE,
+    Permission.MEASUREMENT_VIEW_OWN,
+    Permission.CONSULTATION_ACCESS,
+    Permission.CONSULTATION_BOOK,
+    Permission.SETTINGS_PERSONAL
+  ] as Permission[],
+  
+  // 개인 사용자 - 개인 서비스 이용 권한
+  INDIVIDUAL_USER_PERMISSIONS: [
+    Permission.REPORT_GENERATE,
+    Permission.REPORT_VIEW,
+    Permission.CONSULTATION_ACCESS,
+    Permission.CONSULTATION_BOOK,
+    Permission.SETTINGS_PERSONAL
+  ] as Permission[],
+  
+  // 측정 대상자 - 측정 참여만 가능
+  MEASUREMENT_SUBJECT_PERMISSIONS: [
+    Permission.MEASUREMENT_PARTICIPATE,
+    Permission.MEASUREMENT_VIEW_OWN
+  ] as Permission[]
+};
+
+/**
+ * 사용자 유형별 기본 권한 매핑
+ * 확장된 Permission enum 기반으로 재정의
+ */
+export const DEFAULT_PERMISSIONS_BY_USER_TYPE: Record<UserType, Permission[]> = {
+  [UserType.SYSTEM_ADMIN]: PERMISSION_GROUPS.SYSTEM_ADMIN_PERMISSIONS,
+  [UserType.ORGANIZATION_ADMIN]: PERMISSION_GROUPS.ORGANIZATION_ADMIN_PERMISSIONS,
+  [UserType.ORGANIZATION_MEMBER]: PERMISSION_GROUPS.ORGANIZATION_MEMBER_PERMISSIONS,
+  [UserType.INDIVIDUAL_USER]: PERMISSION_GROUPS.INDIVIDUAL_USER_PERMISSIONS,
+  [UserType.MEASUREMENT_SUBJECT]: PERMISSION_GROUPS.MEASUREMENT_SUBJECT_PERMISSIONS
+};
+
+/**
+ * 권한 검사를 위한 유틸리티 타입
+ */
+export type PermissionCheck = {
+  hasPermission: (permission: Permission) => boolean;
+  hasAnyPermission: (permissions: Permission[]) => boolean;
+  hasAllPermissions: (permissions: Permission[]) => boolean;
+  canAccess: (resource: string, action: string) => boolean;
 }; 

@@ -14,7 +14,6 @@ import {
   createValidationError
 } from '../utils/ErrorHandler';
 import { 
-  logger,
   LogLevel,
   LogCategory,
   LogContext
@@ -61,11 +60,6 @@ export abstract class BaseService {
       autoCleanup: true
     });
     
-    // 서비스 초기화 로그
-    this.log('서비스 초기화됨', { 
-      serviceName: this.serviceName,
-      cacheEnabled: true 
-    });
   }
 
   // === 향상된 에러 핸들링 ===
@@ -151,7 +145,7 @@ export abstract class BaseService {
   protected log(
     message: string, 
     context: Record<string, any> = {},
-    category: LogCategory = LogCategory.SYSTEM
+    category: LogCategory = LogCategory.SERVICE
   ): void {
     const logContext: LogContext = {
       metadata: {
@@ -159,8 +153,6 @@ export abstract class BaseService {
         ...context
       }
     };
-    
-    logger.info(this.serviceName, message, logContext, category);
   }
 
   /**
@@ -178,8 +170,6 @@ export abstract class BaseService {
         ...context
       }
     };
-    
-    logger.debug(this.serviceName, message, logContext);
   }
 
   /**
@@ -191,7 +181,7 @@ export abstract class BaseService {
   protected warn(
     message: string, 
     context: Record<string, any> = {},
-    category: LogCategory = LogCategory.SYSTEM
+    category: LogCategory = LogCategory.SERVICE
   ): void {
     const logContext: LogContext = {
       metadata: {
@@ -199,8 +189,6 @@ export abstract class BaseService {
         ...context
       }
     };
-    
-    logger.warn(this.serviceName, message, logContext, category);
   }
 
   /**
@@ -214,7 +202,7 @@ export abstract class BaseService {
     message: string, 
     error?: Error,
     context: Record<string, any> = {},
-    category: LogCategory = LogCategory.SYSTEM
+    category: LogCategory = LogCategory.SERVICE
   ): void {
     const logContext: LogContext = {
       metadata: {
@@ -222,8 +210,6 @@ export abstract class BaseService {
         ...context
       }
     };
-    
-    logger.error(this.serviceName, message, error, logContext, category);
   }
 
   /**
@@ -243,8 +229,6 @@ export abstract class BaseService {
         ...context
       }
     };
-    
-    logger.critical(this.serviceName, message, error, logContext);
   }
 
   /**
@@ -260,12 +244,6 @@ export abstract class BaseService {
     success: boolean = true,
     details?: Record<string, any>
   ): void {
-    logger.performance(
-      `${this.serviceName}.${operation}`,
-      duration,
-      success,
-      details
-    );
   }
 
   /**
@@ -285,10 +263,6 @@ export abstract class BaseService {
     organizationId?: string,
     details?: Record<string, any>
   ): void {
-    logger.userActivity(userId, action, resource, result, organizationId, {
-      service: this.serviceName,
-      ...details
-    });
   }
 
   /**
@@ -309,7 +283,6 @@ export abstract class BaseService {
       }
     };
     
-    logger.security(this.serviceName, message, logContext, severity);
   }
 
   /**
@@ -341,11 +314,6 @@ export abstract class BaseService {
     const level = success ? LogLevel.INFO : LogLevel.ERROR;
     const message = `Database ${operation} on ${collection}${documentId ? `/${documentId}` : ''} ${success ? 'succeeded' : 'failed'}`;
     
-    if (level === LogLevel.INFO) {
-      logger.info(this.serviceName, message, context, LogCategory.DATABASE);
-    } else {
-      logger.error(this.serviceName, message, undefined, context, LogCategory.DATABASE);
-    }
   }
 
   /**
@@ -363,17 +331,13 @@ export abstract class BaseService {
     let result: T;
     
     try {
-      this.debug(`${operation} 시작`);
       result = await task();
-      this.debug(`${operation} 완료`);
       return result;
     } catch (error) {
       success = false;
-      this.error(`${operation} 실패`, error as Error);
       throw error;
     } finally {
       const duration = Date.now() - startTime;
-      this.logPerformance(operation, duration, success);
     }
   }
 
@@ -553,7 +517,6 @@ export abstract class BaseService {
     
     // TODO: 실제 권한 검사 로직 구현
     // 현재는 기본 검증만 수행
-    this.debug('조직 접근 권한 확인', { organizationId, userId });
   }
 
   /**
@@ -565,7 +528,6 @@ export abstract class BaseService {
     this.validateRequired(userId, '사용자 ID');
     
     // TODO: 실제 관리자 권한 검사 로직 구현
-    this.debug('관리자 권한 확인', { userId, organizationId });
   }
 
   // === 고급 캐싱 시스템 ===
@@ -580,15 +542,9 @@ export abstract class BaseService {
       const cacheKey = this.buildCacheKey(key);
       const result = await this.cache.get(cacheKey);
       
-      if (result !== null) {
-        this.debug('캐시 히트', { key: cacheKey });
-      } else {
-        this.debug('캐시 미스', { key: cacheKey });
-      }
       
       return result as T | null;
     } catch (error) {
-      this.warn('캐시 조회 실패', { key, error: (error as Error).message });
       return null;
     }
   }
@@ -610,14 +566,7 @@ export abstract class BaseService {
       const cacheKey = this.buildCacheKey(key);
       await this.cache.set(cacheKey, value, ttl, tags);
       
-      this.debug('캐시 저장 완료', { 
-        key: cacheKey, 
-        ttl, 
-        tags,
-        size: JSON.stringify(value).length 
-      });
     } catch (error) {
-      this.warn('캐시 저장 실패', { key, error: (error as Error).message });
     }
   }
 
@@ -630,9 +579,7 @@ export abstract class BaseService {
       const cacheKey = this.buildCacheKey(key);
       await this.cache.delete(cacheKey);
       
-      this.debug('캐시 삭제 완료', { key: cacheKey });
     } catch (error) {
-      this.warn('캐시 삭제 실패', { key, error: (error as Error).message });
     }
   }
 
@@ -645,15 +592,7 @@ export abstract class BaseService {
       const regex = new RegExp(`^${this.serviceName}:${pattern}`);
       const deletedCount = await this.cache.deleteByPattern(regex);
       
-      this.debug('패턴 기반 캐시 무효화 완료', { 
-        pattern, 
-        deletedCount 
-      });
     } catch (error) {
-      this.warn('패턴 기반 캐시 무효화 실패', { 
-        pattern, 
-        error: (error as Error).message 
-      });
     }
   }
 
@@ -665,15 +604,7 @@ export abstract class BaseService {
     try {
       const deletedCount = await this.cache.deleteByTag(tag);
       
-      this.debug('태그 기반 캐시 무효화 완료', { 
-        tag, 
-        deletedCount 
-      });
     } catch (error) {
-      this.warn('태그 기반 캐시 무효화 실패', { 
-        tag, 
-        error: (error as Error).message 
-      });
     }
   }
 
@@ -729,11 +660,7 @@ export abstract class BaseService {
   protected async cleanupCache(): Promise<void> {
     try {
       const cleanedCount = await this.cache.cleanup();
-      if (cleanedCount > 0) {
-        this.debug('캐시 정리 완료', { cleanedCount });
-      }
     } catch (error) {
-      this.warn('캐시 정리 실패', { error: (error as Error).message });
     }
   }
 
@@ -776,19 +703,11 @@ export abstract class BaseService {
     
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
-      this.debug(`배치 처리 중: ${i + 1}-${Math.min(i + batchSize, items.length)}/${items.length}`);
       
       try {
         const batchResults = await processor(batch);
         results.push(...batchResults);
         
-        // 배치 처리 간 성능 로깅
-        this.logPerformance(
-          `processBatch_${Math.floor(i / batchSize) + 1}`,
-          Date.now() - Date.now(), // 실제로는 시작 시간을 추적해야 함
-          true,
-          { batchSize: batch.length, totalProcessed: i + batch.length }
-        );
       } catch (error) {
         this.handleError(error, 'processBatch', { 
           chunkIndex: Math.floor(i / batchSize), 
@@ -797,7 +716,6 @@ export abstract class BaseService {
       }
     }
     
-    this.log(`배치 처리 완료: ${results.length}개 결과`);
     return results;
   }
 
@@ -836,19 +754,7 @@ export abstract class BaseService {
       // 캐시 정리
       await this.cleanupCache();
       
-      // 캐시 통계 로깅
-      const stats = this.getCacheStats();
-      this.log('서비스 종료', {
-        serviceName: this.serviceName,
-        cacheStats: {
-          hitRate: `${(stats.hitRate * 100).toFixed(2)}%`,
-          totalEntries: stats.totalEntries,
-          hits: stats.hits,
-          misses: stats.misses
-        }
-      });
     } catch (error) {
-      this.error('서비스 정리 중 오류 발생', error as Error);
     }
   }
 }

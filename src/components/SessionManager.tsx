@@ -121,24 +121,6 @@ export function SessionManager({ className }: SessionManagerProps) {
     
     // 디버깅: 현재 세션 데이터 확인
     if (current) {
-      console.log('SessionManager 새로고침 - 현재 세션 데이터:', {
-        sessionId: current.metadata.id,
-        sessionName: current.metadata.name,
-        dataCount: current.metadata.dataCount,
-        actualDataLength: {
-          eeg: current.eegData.length,
-          ppg: current.ppgData.length,
-          acc: current.accData.length,
-          eegProcessed: 0, // Processed data not stored in SessionData
-          ppgProcessed: 0, // Processed data not stored in SessionData
-          accProcessed: 0  // Processed data not stored in SessionData
-        },
-        sampleData: {
-          latestEEG: current.eegData[current.eegData.length - 1],
-          latestPPG: current.ppgData[current.ppgData.length - 1],
-          latestACC: current.accData[current.accData.length - 1]
-        }
-      });
     }
   };
 
@@ -156,13 +138,10 @@ export function SessionManager({ className }: SessionManagerProps) {
     try {
       const success = sessionManager.downloadCSV(sessionId, dataType);
       if (success) {
-        console.log(`✅ ${dataType.toUpperCase()} CSV 파일 다운로드 완료`);
       } else {
-        console.error('❌ CSV 내보내기 실패');
         alert('CSV 형식의 파일을 찾을 수 없습니다.');
       }
     } catch (error) {
-      console.error('❌ CSV 내보내기 오류:', error);
       alert('세션 내보내기 실패: csv 형식의 파일을 찾을 수 없습니다.');
     } finally {
       setIsLoading(false);
@@ -171,18 +150,13 @@ export function SessionManager({ className }: SessionManagerProps) {
 
   // ZIP 모든 데이터 내보내기
   const handleExportAllAsZip = async (sessionId: string) => {
-    console.log(`🚀 SessionManager.tsx handleExportAllAsZip 호출됨 - sessionId: ${sessionId}`);
     setIsLoading(true);
     try {
-      console.log(`🔧 SessionManager ZIP 내보내기 시작: ${sessionId}`);
       const success = await sessionManager.downloadAllAsZip(sessionId);
       if (success) {
-        console.log('✅ SessionManager ZIP 다운로드 완료');
       } else {
-        console.error('❌ SessionManager ZIP 다운로드 실패');
       }
     } catch (error) {
-      console.error('❌ SessionManager ZIP 다운로드 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -406,7 +380,6 @@ export function SessionManager({ className }: SessionManagerProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log(`🎯 현재 세션 ZIP 버튼 클릭됨 - sessionId: current`);
                 handleExportAllAsZip('current');
               }}
               disabled={isLoading}
@@ -610,7 +583,6 @@ export function SessionManager({ className }: SessionManagerProps) {
                                   onClick={async (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log(`🎯 모바일 Dialog 내부 ZIP 버튼 클릭됨 - sessionId: ${session.id}`);
                                     await handleExportAllAsZip(session.id);
                                   }}
                                   disabled={isLoading}
@@ -741,7 +713,6 @@ export function SessionManager({ className }: SessionManagerProps) {
                                   onClick={async (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log(`🎯 Dialog 내부 ZIP 버튼 클릭됨 - sessionId: ${session.id}`);
                                     await handleExportAllAsZip(session.id);
                                   }}
                                   disabled={isLoading}

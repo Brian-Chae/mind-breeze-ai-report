@@ -44,7 +44,6 @@ export class ReportGenerationService extends BaseService {
    */
   async generateReport(request: ReportGenerationRequest): Promise<ReportGenerationResponse> {
     try {
-      console.log('Starting report generation:', request);
       
       // 1. 요청 검증
       await this.validateRequest(request);
@@ -60,7 +59,6 @@ export class ReportGenerationService extends BaseService {
       
       // 5. 백그라운드에서 실제 처리 시작
       this.processReportAsync(reportInstance.id).catch(error => {
-        console.error('Background report processing failed:', error);
         this.handleProcessingError(reportInstance.id, error);
       });
       
@@ -72,7 +70,6 @@ export class ReportGenerationService extends BaseService {
       };
       
     } catch (error: any) {
-      console.error('Report generation request failed:', error);
       throw new Error(`Report generation failed: ${error.message}`);
     }
   }
@@ -114,7 +111,6 @@ export class ReportGenerationService extends BaseService {
       };
       
     } catch (error: any) {
-      console.error('Failed to get report instance:', error);
       throw new Error(`Failed to get report instance: ${error.message}`);
     }
   }
@@ -143,7 +139,6 @@ export class ReportGenerationService extends BaseService {
       );
       
     } catch (error: any) {
-      console.error('Failed to get user reports:', error);
       throw new Error(`Failed to get user reports: ${error.message}`);
     }
   }
@@ -153,7 +148,6 @@ export class ReportGenerationService extends BaseService {
    */
   private async processReportAsync(reportId: string): Promise<void> {
     try {
-      console.log(`Starting async processing for report ${reportId}`);
       
       // 1. 리포트 인스턴스 조회
       const reportInstance = await this.getReportInstance(reportId);
@@ -188,10 +182,8 @@ export class ReportGenerationService extends BaseService {
       // 7. 완료 처리
       await this.completeProcessing(reportId);
       
-      console.log(`Report processing completed successfully: ${reportId}`);
       
     } catch (error: any) {
-      console.error(`Report processing failed for ${reportId}:`, error);
       await this.handleProcessingError(reportId, error);
     }
   }
@@ -249,7 +241,6 @@ export class ReportGenerationService extends BaseService {
       };
       
     } catch (error: any) {
-      console.error('Failed to calculate cost:', error);
       throw new Error(`Failed to calculate cost: ${error.message}`);
     }
   }
@@ -262,7 +253,6 @@ export class ReportGenerationService extends BaseService {
     cost: CostBreakdown
   ): Promise<void> {
     // TODO: CreditManagementService 구현 후 크레딧 예약 로직 추가
-    console.log('Reserving credits:', cost.totalCost);
   }
   
   /**
@@ -360,7 +350,6 @@ export class ReportGenerationService extends BaseService {
       return result;
       
     } catch (error: any) {
-      console.error('AI engine execution failed:', error);
       throw error;
     }
   }
@@ -388,7 +377,6 @@ export class ReportGenerationService extends BaseService {
       return mockRenderedOutput;
       
     } catch (error: any) {
-      console.error('Renderer execution failed:', error);
       throw error;
     }
   }
@@ -408,7 +396,6 @@ export class ReportGenerationService extends BaseService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Failed to update processing stage:', error);
     }
   }
   
@@ -425,7 +412,6 @@ export class ReportGenerationService extends BaseService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Failed to update processing timestamp:', error);
     }
   }
   
@@ -439,7 +425,6 @@ export class ReportGenerationService extends BaseService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Failed to save AI result:', error);
       throw error;
     }
   }
@@ -457,7 +442,6 @@ export class ReportGenerationService extends BaseService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Failed to save rendered output:', error);
       throw error;
     }
   }
@@ -476,7 +460,6 @@ export class ReportGenerationService extends BaseService {
       // TODO: 완료 알림 발송
       
     } catch (error) {
-      console.error('Failed to complete processing:', error);
       throw error;
     }
   }
@@ -496,7 +479,6 @@ export class ReportGenerationService extends BaseService {
       // TODO: 오류 알림 발송
       
     } catch (updateError) {
-      console.error('Failed to update error status:', updateError);
     }
   }
   
@@ -542,7 +524,6 @@ export class ReportGenerationService extends BaseService {
       }
       return { id: docSnap.id, ...docSnap.data() } as T;
     } catch (error) {
-      console.error('Failed to get document:', error);
       return null;
     }
   }
@@ -555,7 +536,6 @@ export class ReportGenerationService extends BaseService {
       // TODO: Firestore v9 쿼리 구문으로 구현
       return [];
     } catch (error) {
-      console.error('Failed to query documents:', error);
       return [];
     }
   }

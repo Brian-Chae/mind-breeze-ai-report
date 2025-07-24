@@ -13,6 +13,7 @@ import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { Separator } from '@ui/separator';
 import { toast } from 'sonner';
+import { UserType } from '@core/types/unified';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -45,9 +46,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
   // 인증 상태 변화 감지하여 자동 리다이렉션
   useEffect(() => {
-    console.log('인증 상태 변화:', { loading, user: user?.email || null });
-    if (!loading && user) {
-      console.log('사용자 로그인 감지, 대시보드로 이동:', user.email);
+    if (user && !loading) {
       navigate('/app/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
@@ -85,8 +84,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         setCompanyInfo(null);
       }
     } catch (error) {
-      console.error('회사 코드 검증 오류:', error);
-      setError('회사 코드 검증 중 오류가 발생했습니다');
       setCompanyInfo(null);
     } finally {
       setIsVerifyingCode(false);
@@ -99,26 +96,14 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setIsLoading(true);
     setError('');
     
-    console.log('🔵 이메일 로그인 시도:', formData.email);
-    
-    try {
-      // 모든 사용자(시스템 관리자 포함) Firebase Authentication 사용
-      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       
-      console.log('✅ Firebase 인증 성공:', {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email
-      });
       
       // 시스템 관리자인지 확인하여 Firestore 프로필 업데이트
-      console.log('🔍 이메일 체크:', formData.email, '===', 'admin-mindbreeze@looxidlabs.com', ':', formData.email === 'admin-mindbreeze@looxidlabs.com');
       
       if (formData.email === 'admin-mindbreeze@looxidlabs.com') {
-        console.log('🔴 시스템 관리자 로그인 감지 - Firestore 프로필 업데이트');
-        console.log('🔧 사용자 UID:', userCredential.user.uid);
         
         await FirebaseService.updateUserProfile(userCredential.user.uid, {
-          userType: 'SYSTEM_ADMIN',
+          userType: UserType.SYSTEM_ADMIN,
           displayName: 'System Administrator',
           email: formData.email,
           permissions: JSON.stringify([
@@ -140,8 +125,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           status: 'ACTIVE'
         });
         
-        console.log('✅ 시스템 관리자 Firestore 프로필 업데이트 완료');
-        toast.success('시스템 관리자로 로그인되었습니다!');
       } else {
         // 일반 사용자 로그인 시간 업데이트
         try {
@@ -149,15 +132,10 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             lastLoginAt: new Date()
           });
         } catch (updateError) {
-          console.warn('⚠️ 로그인 시간 업데이트 실패:', updateError);
+          // Update error handled
         }
       }
-      
-      console.log('✅ 이메일 로그인 완료');
-      
     } catch (error: any) {
-      console.error('❌ 이메일 로그인 오류:', error);
-      setError(getErrorMessage(error.code));
     } finally {
       setIsLoading(false);
     }
@@ -169,7 +147,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     setIsLoading(true);
     setError('');
     
-    console.log('🔵 회사 코드 로그인 시도:', { companyCode: formData.companyCode, employeeId: formData.employeeId });
     
     try {
       if (!companyInfo) {
@@ -183,11 +160,9 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         password: formData.companyPassword
       });
       
-      console.log('✅ 회사 코드 로그인 성공:', user);
       toast.success(`환영합니다, ${user.displayName}님!`);
       
     } catch (error: any) {
-      console.error('❌ 회사 코드 로그인 오류:', error);
       setError(error.message || '로그인 중 오류가 발생했습니다');
     } finally {
       setIsLoading(false);

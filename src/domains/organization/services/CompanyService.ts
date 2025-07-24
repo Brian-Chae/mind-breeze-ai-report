@@ -74,8 +74,8 @@ export interface OrganizationInfo {
   isActive: boolean;
   paymentStatus: 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'TERMINATED';
   
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface OrganizationRegistrationResult {
@@ -99,7 +99,7 @@ export interface OrganizationMemberInfo {
   position: string;
   
   isActive: boolean;
-  joinedAt: any;
+  joinedAt: Date;
 }
 
 export class OrganizationService {
@@ -111,14 +111,11 @@ export class OrganizationService {
   static async registerOrganization(
     registrationData: OrganizationRegistrationData
   ): Promise<OrganizationRegistrationResult> {
-    console.log('📋 조직 등록 시작:', registrationData);
     
     try {
       // 조직 코드 생성
-      console.log('🔄 조직 코드 생성 중...');
       const codeGeneration = await OrganizationCodeService.generateOrganizationCode();
       if (!codeGeneration.success || !codeGeneration.organizationCode) {
-        console.error('❌ 조직 코드 생성 실패:', codeGeneration.error);
         return {
           success: false,
           error: codeGeneration.error || '조직 코드 생성에 실패했습니다.'
@@ -126,36 +123,29 @@ export class OrganizationService {
       }
 
       const organizationCode = codeGeneration.organizationCode;
-      console.log('✅ 조직 코드 생성 성공:', organizationCode);
 
       // 사업자 등록번호 중복 확인 (입력된 경우에만)
       if (registrationData.businessNumber && registrationData.businessNumber.trim()) {
-        console.log('🔍 사업자 등록번호 중복 확인 중...', registrationData.businessNumber);
         const isDuplicate = await this.checkBusinessNumberExists(
           registrationData.businessNumber
         );
         if (isDuplicate) {
-          console.error('❌ 사업자 등록번호 중복:', registrationData.businessNumber);
           return {
             success: false,
             error: '이미 등록된 사업자 등록번호입니다.'
           };
         }
       } else {
-        console.log('ℹ️ 사업자 등록번호가 입력되지 않아 중복 확인을 건너뜁니다.');
       }
 
       // 관리자 이메일 중복 확인은 건너뛰기 (이미 존재하는 계정으로 등록)
-      console.log('🔍 관리자 이메일 확인:', registrationData.adminEmail);
 
       // Firebase Auth에서 관리자 계정 생성 또는 기존 계정 사용
-      console.log('🔄 Firebase Auth 계정 확인 중...');
       let adminAuthUser;
       
       // 먼저 현재 로그인된 사용자 확인
       const currentUser = auth.currentUser;
       if (currentUser && currentUser.email === registrationData.adminEmail) {
-        console.log('✅ 현재 로그인된 사용자 사용:', currentUser.uid);
         adminAuthUser = { user: currentUser };
       } else {
         // 새 계정 생성 시도
@@ -165,14 +155,10 @@ export class OrganizationService {
             registrationData.adminEmail,
             registrationData.adminPassword
           );
-          console.log('✅ Firebase Auth 계정 생성 성공:', adminAuthUser.user.uid);
-        } catch (authError: any) {
-          console.error('❌ Firebase Auth 계정 생성 실패:', authError);
+        } catch (authError: unknown) {
           // 이미 존재하는 계정인 경우 처리
           if (authError.code === 'auth/email-already-in-use') {
-            console.log('⚠️ 이미 존재하는 이메일 - 현재 로그인된 사용자 확인');
             if (currentUser) {
-              console.log('✅ 현재 로그인된 사용자 사용:', currentUser.uid);
               adminAuthUser = { user: currentUser };
             } else {
               return {
@@ -190,7 +176,6 @@ export class OrganizationService {
       }
 
       // Firestore 배치 작업으로 조직과 관리자 동시 생성
-      console.log('🔄 Firestore 배치 작업 시작...');
       const batch = writeBatch(db);
       
       // 조직 문서 생성
@@ -213,7 +198,6 @@ export class OrganizationService {
         updatedAt: Timestamp.now()
       };
       
-      console.log('📄 조직 문서 데이터:', organizationData);
       batch.set(organizationRef, organizationData);
 
       // 관리자 사용자 문서 생성
@@ -223,7 +207,7 @@ export class OrganizationService {
         displayName: registrationData.adminName,
         organizationId: organizationRef.id,
         organizationCode: organizationCode,
-        userType: 'ORGANIZATION_ADMIN',
+        userType: UserType.ORGANIZATION_ADMIN,
         position: registrationData.adminPosition,
         department: registrationData.adminDepartment,
         personalCreditBalance: 0,
@@ -235,18 +219,11 @@ export class OrganizationService {
         updatedAt: Timestamp.now()
       };
       
-      console.log('👤 관리자 사용자 데이터:', adminUserData);
       batch.set(adminUserRef, adminUserData);
 
       // 배치 실행
-      console.log('🔄 배치 실행 중...');
       await batch.commit();
-      console.log('✅ 배치 실행 완료');
 
-      console.log('🎉 조직 등록 성공:', {
-        organizationId: organizationRef.id,
-        organizationCode: organizationCode
-      });
 
       return {
         success: true,
@@ -256,7 +233,6 @@ export class OrganizationService {
       };
 
     } catch (error) {
-      console.error('❌ 조직 등록 오류:', error);
       return {
         success: false,
         error: '조직 등록 중 오류가 발생했습니다: ' + (error as Error).message
@@ -302,7 +278,6 @@ export class OrganizationService {
       };
 
     } catch (error) {
-      console.error('조직 정보 조회 오류:', error);
       return null;
     }
   }
@@ -342,7 +317,6 @@ export class OrganizationService {
       };
 
     } catch (error) {
-      console.error('조직 정보 조회 오류:', error);
       return null;
     }
   }
@@ -382,7 +356,6 @@ export class OrganizationService {
       return true;
 
     } catch (error) {
-      console.error('조직 멤버 추가 오류:', error);
       return false;
     }
   }
@@ -422,7 +395,6 @@ export class OrganizationService {
       });
 
     } catch (error) {
-      console.error('조직 멤버 목록 조회 오류:', error);
       return [];
     }
   }
@@ -447,7 +419,6 @@ export class OrganizationService {
       return true;
 
     } catch (error) {
-      console.error('조직 상태 업데이트 오류:', error);
       return false;
     }
   }
@@ -481,7 +452,6 @@ export class OrganizationService {
       return true;
 
     } catch (error) {
-      console.error('조직 크레딧 업데이트 오류:', error);
       return false;
     }
   }
@@ -503,7 +473,6 @@ export class OrganizationService {
       return !querySnapshot.empty;
 
     } catch (error) {
-      console.error('사업자 등록번호 중복 확인 오류:', error);
       return false;
     }
   }
@@ -522,7 +491,6 @@ export class OrganizationService {
       return !querySnapshot.empty;
 
     } catch (error) {
-      console.error('이메일 중복 확인 오류:', error);
       return false;
     }
   }
@@ -566,7 +534,6 @@ export class OrganizationService {
       });
 
     } catch (error) {
-      console.error('최근 조직 목록 조회 오류:', error);
       return [];
     }
   }
@@ -623,10 +590,8 @@ export class OrganizationService {
         updatedAt: Timestamp.now()
       });
 
-      console.log('✅ 테스트 조직 데이터 생성 완료:', organizationCode);
       return organizationCode;
     } catch (error) {
-      console.error('❌ 테스트 조직 데이터 생성 실패:', error);
       throw error;
     }
   }
@@ -637,27 +602,16 @@ export class OrganizationService {
    */
   static async debugOrganizationData(): Promise<void> {
     try {
-      console.log('🔍 조직 데이터 확인 중...');
       
       const organizationsRef = collection(db, 'organizations');
       const querySnapshot = await getDocs(organizationsRef);
       
-      console.log('📊 전체 조직 수:', querySnapshot.size);
       
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        console.log('🏢 조직 정보:', {
-          id: doc.id,
-          organizationCode: data.organizationCode,
-          organizationName: data.organizationName,
-          adminUserId: data.adminUserId,
-          adminEmail: data.adminEmail,
-          createdAt: data.createdAt?.toDate?.()
-        });
       });
       
     } catch (error) {
-      console.error('❌ 조직 데이터 확인 오류:', error);
     }
   }
 
@@ -667,28 +621,16 @@ export class OrganizationService {
    */
   static async debugUserData(): Promise<void> {
     try {
-      console.log('🔍 사용자 데이터 확인 중...');
       
       const usersRef = collection(db, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      console.log('📊 전체 사용자 수:', querySnapshot.size);
       
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        console.log('👤 사용자 정보:', {
-          id: doc.id,
-          email: data.email,
-          displayName: data.displayName,
-          organizationId: data.organizationId,
-          organizationCode: data.organizationCode,
-          userType: data.userType,
-          createdAt: data.createdAt?.toDate?.()
-        });
       });
       
     } catch (error) {
-      console.error('❌ 사용자 데이터 확인 오류:', error);
     }
   }
 
@@ -698,18 +640,15 @@ export class OrganizationService {
    */
   static async linkCurrentUserToOrganization(): Promise<void> {
     try {
-      console.log('🔄 현재 사용자에게 조직 정보 연결 중...');
       
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        console.error('❌ 현재 로그인된 사용자가 없습니다.');
         return;
       }
 
       // ORG2595 조직 정보 가져오기
       const organization = await this.getOrganizationByCode('ORG2595');
       if (!organization) {
-        console.error('❌ ORG2595 조직을 찾을 수 없습니다.');
         return;
       }
 
@@ -720,7 +659,7 @@ export class OrganizationService {
         displayName: currentUser.displayName || '채용욱',
         organizationId: organization.id,
         organizationCode: organization.organizationCode,
-        userType: 'ORGANIZATION_ADMIN',
+        userType: UserType.ORGANIZATION_ADMIN,
         position: '관리자',
         department: '관리부',
         personalCreditBalance: 0,
@@ -732,23 +671,15 @@ export class OrganizationService {
         updatedAt: Timestamp.now()
       }, { merge: true });
 
-      console.log('✅ 사용자 정보 업데이트 완료:', {
-        userId: currentUser.uid,
-        email: currentUser.email,
-        organizationId: organization.id,
-        organizationCode: organization.organizationCode
-      });
       
     } catch (error) {
-      console.error('❌ 사용자 조직 연결 오류:', error);
     }
   }
 }
 
 // 디버깅용으로 window에 OrganizationService 노출
 if (typeof window !== 'undefined') {
-  (window as any).OrganizationService = OrganizationService;
-  console.log('🔧 디버깅용 OrganizationService가 window.OrganizationService로 노출됨');
+  (window as Window & { OrganizationService: typeof OrganizationService }).OrganizationService = OrganizationService;
 }
 
 export default OrganizationService; 

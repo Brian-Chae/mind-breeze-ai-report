@@ -1,5 +1,4 @@
 import { BaseService } from '@core/services/BaseService';
-import { LogCategory } from '@core/utils/Logger';
 import { 
   doc, 
   collection, 
@@ -230,17 +229,6 @@ export class DeviceManagementService extends BaseService {
 
   constructor() {
     super();
-    this.log('DeviceManagementService 초기화 완료', {
-      version: '1.0',
-      features: [
-        'device_crud',
-        'status_monitoring',
-        'user_assignment',
-        'firmware_management',
-        'statistics',
-        'maintenance_scheduling'
-      ]
-    });
   }
 
   // ===== 디바이스 조회 및 관리 =====
@@ -314,13 +302,6 @@ export class DeviceManagementService extends BaseService {
           const total = allDevices.length;
           const devices = allDevices.slice(offset, offset + validLimit);
 
-          this.log(`조직 디바이스 ${devices.length}개 조회 성공 (총 ${total}개 중 ${validPage}페이지)`, {
-            organizationId,
-            filters,
-            page: validPage,
-            limit: validLimit,
-            total
-          });
 
           const result: DeviceListResponse = {
             devices,
@@ -331,6 +312,7 @@ export class DeviceManagementService extends BaseService {
             hasPrevious: validPage > 1
           };
 
+          console.log(`디바이스 목록 조회 완료: ${organizationId}, 총 ${total}개`);
           return result;
         },
         DeviceManagementService.CACHE_TTL.DEVICE_LIST
@@ -361,12 +343,9 @@ export class DeviceManagementService extends BaseService {
           }
 
           const device = await this.mapDocumentToDevice(deviceDoc);
-          
-          this.logDatabaseOperation('get', this.DEVICES_COLLECTION, deviceId, true);
           return device;
         },
-        DeviceManagementService.CACHE_TTL.DEVICE_DETAIL,
-        [`device:${deviceId}`]
+        DeviceManagementService.CACHE_TTL.DEVICE_DETAIL
       );
     });
   }
@@ -452,12 +431,7 @@ export class DeviceManagementService extends BaseService {
       // 캐시 무효화
       this.clearCachePattern(`devices:list:${createRequest.organizationId}`);
 
-      this.log('디바이스 생성 완료', {
-        deviceId: docRef.id,
-        serialNumber: createRequest.serialNumber,
-        organizationId: createRequest.organizationId
-      });
-
+      console.log(`새 디바이스 생성 완료: ${docRef.id}`);
       return { ...deviceData, id: docRef.id };
     });
   }
@@ -512,7 +486,7 @@ export class DeviceManagementService extends BaseService {
               await this.createAssignmentRecord(deviceId, updateData.assignedUserId, updatedBy);
             } else {
               // 할당 해제
-              updatePayload.assignedUserName = null;
+              updatePayload.assignedUserName = undefined;
               updatePayload.pairedAt = null;
               updatePayload.isPaired = false;
             }
@@ -534,12 +508,7 @@ export class DeviceManagementService extends BaseService {
         // 캐시 무효화
         this.clearCache(DeviceManagementService.CACHE_KEYS.DEVICE_DETAIL(deviceId));
         this.clearCachePattern(`devices:list:${currentDevice.organizationId}`);
-
-        this.log('디바이스 업데이트 완료', {
-          deviceId,
-          changes: Object.keys(updateData),
-          updatedBy
-        });
+        console.log(`디바이스 업데이트 완료: ${deviceId}`);
       });
     });
   }
@@ -589,12 +558,7 @@ export class DeviceManagementService extends BaseService {
 
       // 캐시 무효화
       this.clearCache(DeviceManagementService.CACHE_KEYS.DEVICE_DETAIL(deviceId));
-
-      this.log('디바이스 상태 업데이트 완료', {
-        deviceId,
-        status: statusUpdate.status,
-        batteryLevel: statusUpdate.batteryLevel
-      });
+      console.log(`디바이스 상태 업데이트 완료: ${deviceId}`);
     });
   }
 
@@ -634,8 +598,7 @@ export class DeviceManagementService extends BaseService {
       // 캐시 무효화
       this.clearCache(DeviceManagementService.CACHE_KEYS.DEVICE_DETAIL(deviceId));
       this.clearCachePattern(`devices:list:${device.organizationId}`);
-
-      this.log('디바이스 삭제 완료', { deviceId, deletedBy });
+      console.log(`디바이스 비활성화 완료: ${deviceId}`);
     });
   }
 
@@ -672,12 +635,7 @@ export class DeviceManagementService extends BaseService {
             monthlyMeasurements: await this.getMonthlyMeasurements(organizationId)
           };
 
-          this.log('디바이스 통계 조회 완료', {
-            organizationId,
-            totalDevices: stats.totalDevices,
-            activeDevices: stats.activeDevices
-          });
-
+          console.log(`디바이스 통계 조회 완료: ${organizationId}`);
           return stats;
         },
         DeviceManagementService.CACHE_TTL.DEVICE_STATS
@@ -719,12 +677,7 @@ export class DeviceManagementService extends BaseService {
         firmwareUpdates
       };
 
-      this.log('디바이스 대시보드 데이터 조회 완료', {
-        organizationId,
-        totalDevices: stats.totalDevices,
-        alertDevicesCount: alertDevices.length
-      });
-
+      console.log(`디바이스 대시보드 데이터 조회 완료: ${organizationId}`);
       return dashboardData;
     });
   }
@@ -867,7 +820,7 @@ export class DeviceManagementService extends BaseService {
       }
       return '알 수 없는 사용자';
     } catch (error) {
-      this.warn('사용자 이름 조회 실패', { userId });
+      console.error('사용자 이름 조회 실패:', error);
       return '알 수 없는 사용자';
     }
   }

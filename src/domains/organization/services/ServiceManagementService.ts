@@ -53,7 +53,6 @@ export class ServiceManagementService extends BaseService {
 
   private constructor() {
     super();
-    this.log('A/S 관리 서비스가 초기화되었습니다.');
   }
 
   public static getInstance(): ServiceManagementService {
@@ -112,17 +111,12 @@ export class ServiceManagementService extends BaseService {
         this.cache.delete(ServiceManagementService.CACHE_KEYS.SERVICE_REQUESTS_BY_STATUS('PENDING'));
         this.cache.delete(ServiceManagementService.CACHE_KEYS.SERVICE_STATISTICS());
 
-        this.log('A/S 요청이 생성되었습니다.', { 
-          requestId, 
-          organizationName: requestData.organizationName,
-          deviceId: requestData.deviceId 
-        });
 
         return serviceRequest;
 
       } catch (error) {
-        this.error('A/S 요청 생성 실패', error as Error, { requestData });
-        throw new Error('A/S 요청을 생성할 수 없습니다.');
+        this.handleError(error, 'createServiceRequest', { requestData });
+        throw error;
       }
     });
   }
@@ -149,8 +143,8 @@ export class ServiceManagementService extends BaseService {
             return this.convertFirestoreServiceRequest(data);
 
           } catch (error) {
-            this.error('A/S 요청 조회 실패', error as Error, { requestId });
-            throw new Error('A/S 요청을 조회할 수 없습니다.');
+            this.handleError(error, 'getServiceRequest', { requestId });
+            throw error;
           }
         },
         ServiceManagementService.CACHE_TTL.SERVICE_REQUEST
@@ -178,13 +172,10 @@ export class ServiceManagementService extends BaseService {
               this.convertFirestoreServiceRequest(doc.data())
             );
 
-            this.log('상태별 A/S 요청 조회 완료', { status, count: requests.length });
-            return requests;
-
-          } catch (error) {
-            this.error('상태별 A/S 요청 조회 실패', error as Error, { status });
             // 컬렉션이 없거나 데이터가 없는 경우 빈 배열 반환
-            this.log('A/S 요청 컬렉션이 없어 빈 배열 반환', { status });
+            return requests || [];
+          } catch (error) {
+            this.logger.warn('상태별 A/S 요청 조회 실패', { status, error });
             return [];
           }
         },
@@ -215,11 +206,9 @@ export class ServiceManagementService extends BaseService {
               this.convertFirestoreServiceRequest(doc.data())
             );
 
-            this.log('조직별 A/S 요청 조회 완료', { organizationId, count: requests.length });
-            return requests;
-
+            return requests || [];
           } catch (error) {
-            this.error('조직별 A/S 요청 조회 실패', error as Error, { organizationId });
+            this.logger.error('조직의 A/S 요청 조회 실패', { organizationId, error });
             throw new Error('조직의 A/S 요청을 조회할 수 없습니다.');
           }
         },
@@ -272,16 +261,13 @@ export class ServiceManagementService extends BaseService {
         this.cache.delete(ServiceManagementService.CACHE_KEYS.SERVICE_REQUESTS_BY_STATUS('IN_PROGRESS'));
         this.cache.delete(ServiceManagementService.CACHE_KEYS.SERVICE_STATISTICS());
 
-        this.log('A/S 대응이 시작되었습니다.', { 
-          requestId, 
-          assignedTechnician: responseData.assignedTechnicianName 
-        });
+        this.logger.info('A/S 대응 시작', { requestId, technicianId: responseData.assignedTechnicianId });
 
         return updatedRequest;
 
       } catch (error) {
-        this.error('A/S 대응 시작 실패', error as Error, { requestId });
-        throw new Error('A/S 대응을 시작할 수 없습니다.');
+        this.handleError(error, 'respondToRequest', { requestId, responseData });
+        throw error;
       }
     });
   }
@@ -326,16 +312,13 @@ export class ServiceManagementService extends BaseService {
         this.cache.delete(ServiceManagementService.CACHE_KEYS.SERVICE_REQUESTS_BY_STATUS('COMPLETED'));
         this.cache.delete(ServiceManagementService.CACHE_KEYS.SERVICE_STATISTICS());
 
-        this.log('A/S가 완료되었습니다.', { 
-          requestId, 
-          resolutionMethod: completionData.resolutionMethod 
-        });
+        this.logger.info('A/S 완료 처리', { requestId, resolutionMethod: completionData.resolutionMethod });
 
         return updatedRequest;
 
       } catch (error) {
-        this.error('A/S 완료 처리 실패', error as Error, { requestId });
-        throw new Error('A/S를 완료할 수 없습니다.');
+        this.handleError(error, 'completeServiceRequest', { requestId, completionData });
+        throw error;
       }
     });
   }
@@ -398,18 +381,11 @@ export class ServiceManagementService extends BaseService {
               topIssueTypes
             };
 
-            this.log('A/S 통계 조회 완료', {
-              totalRequests,
-              pendingRequests,
-              averageResolutionTime
-            });
 
             return statistics;
 
           } catch (error) {
-            this.error('A/S 통계 조회 실패', error as Error);
-            // 컬렉션이 없는 경우 기본 통계 반환
-            this.log('A/S 통계 컬렉션이 없어 기본값 반환');
+            this.logger.error('A/S 통계 조회 실패', error);
             return {
               totalRequests: 0,
               pendingRequests: 0,

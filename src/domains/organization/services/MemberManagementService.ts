@@ -1,5 +1,4 @@
 import { BaseService } from '@core/services/BaseService';
-import { LogCategory } from '@core/utils/Logger';
 import { 
   doc, 
   collection, 
@@ -91,16 +90,6 @@ export class MemberManagementService extends BaseService {
 
   constructor() {
     super();
-    this.log('MemberManagementService 초기화 완료', {
-      version: '2.0',
-      features: [
-        'advanced_caching',
-        'batch_operations', 
-        'audit_logging',
-        'permission_management',
-        'invitation_system'
-      ]
-    });
   }
 
   // ===== 멤버 조회 및 관리 =====
@@ -169,13 +158,6 @@ export class MemberManagementService extends BaseService {
           const total = allMembers.length;
           const members = allMembers.slice(offset, offset + validLimit);
 
-          this.log(`조직 멤버 ${members.length}개 조회 성공 (총 ${total}개 중 ${validPage}페이지)`, {
-            organizationId,
-            filters,
-            page: validPage,
-            limit: validLimit,
-            total
-          });
 
           const result: MemberListResponse = {
             members,
@@ -216,12 +198,9 @@ export class MemberManagementService extends BaseService {
           }
 
           const member = await this.mapDocumentToMember(memberDoc);
-          
-          this.logDatabaseOperation('get', 'organizationMembers', memberId, true);
           return member;
         },
-        MemberManagementService.CACHE_TTL.MEMBER_DETAIL,
-        [`member:${memberId}`]
+        MemberManagementService.CACHE_TTL.MEMBER_DETAIL
       );
     });
   }
@@ -300,20 +279,8 @@ export class MemberManagementService extends BaseService {
           }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'UPDATE_MEMBER',
-          'ORGANIZATION_MEMBER',
-          'success',
-          currentMember.organizationId,
-          { memberId, changes: Object.keys(updateData) }
-        );
-
-        this.log('멤버 정보 업데이트 완료', { 
-          memberId, 
-          adminUserId,
-          changes: Object.keys(updateData)
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -383,21 +350,8 @@ export class MemberManagementService extends BaseService {
           { oldStatus, newStatus, reason }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'CHANGE_MEMBER_STATUS',
-          'ORGANIZATION_MEMBER',
-          'success',
-          member.organizationId,
-          { memberId, oldStatus, newStatus, reason }
-        );
-
-        this.log('멤버 상태 변경 완료', { 
-          memberId, 
-          oldStatus, 
-          newStatus, 
-          adminUserId 
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -481,21 +435,8 @@ export class MemberManagementService extends BaseService {
           { reason, memberRole: member.role }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'REMOVE_MEMBER',
-          'ORGANIZATION_MEMBER',
-          'success',
-          member.organizationId,
-          { memberId, memberName: member.displayName, reason }
-        );
-
-        this.log('멤버 제거 완료', { 
-          memberId, 
-          memberName: member.displayName,
-          adminUserId,
-          reason 
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -603,29 +544,10 @@ export class MemberManagementService extends BaseService {
           }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'INVITE_MEMBER',
-          'INVITATION',
-          'success',
-          inviteRequest.organizationId,
-          { 
-            email: inviteRequest.email,
-            role: inviteRequest.role,
-            invitationId: inviteRef.id
-          }
-        );
 
         // 이메일 발송 (비동기)
         this.sendInvitationEmail(createdInvitation).catch((error) => {
-          this.error('초대 이메일 발송 실패', error, { invitationId: inviteRef.id });
-        });
-
-        this.log('멤버 초대 완료', { 
-          email: inviteRequest.email,
-          role: inviteRequest.role,
-          invitationId: inviteRef.id,
-          adminUserId
+          console.error('Failed to send invitation email:', error);
         });
 
         return createdInvitation;
@@ -705,10 +627,6 @@ export class MemberManagementService extends BaseService {
                 failureCount++;
                 failedEmails.push(member.email);
                 
-                this.warn('개별 초대 실패', { 
-                  email: member.email, 
-                  error: errorMessage 
-                });
                 
                 return { success: false, email: member.email, error: errorMessage };
               }
@@ -739,18 +657,6 @@ export class MemberManagementService extends BaseService {
         }
       );
 
-      this.logUserActivity(
-        adminUserId,
-        'BULK_INVITE_MEMBERS',
-        'INVITATION',
-        successCount > 0 ? 'success' : 'failure',
-        bulkRequest.organizationId,
-        { 
-          totalCount: bulkRequest.members.length,
-          successCount,
-          failureCount
-        }
-      );
 
       const response: BulkInviteResponse = {
         success: successCount > 0,
@@ -759,8 +665,6 @@ export class MemberManagementService extends BaseService {
         results,
         failedEmails
       };
-
-      this.log('대량 멤버 초대 완료', response);
 
       return response;
     });
@@ -868,11 +772,9 @@ export class MemberManagementService extends BaseService {
             hasPrevious: validPage > 1
           };
 
-          this.logDatabaseOperation('query', 'invitations', undefined, true);
           return result;
         },
-        MemberManagementService.CACHE_TTL.INVITATION_LIST,
-        [`org:${organizationId}`, 'invitations']
+        MemberManagementService.CACHE_TTL.INVITATION_LIST
       );
     });
   }
@@ -941,23 +843,7 @@ export class MemberManagementService extends BaseService {
         };
 
         this.sendInvitationEmail(updatedInvitation).catch((error) => {
-          this.error('초대 이메일 재전송 실패', error, { invitationId });
-        });
-
-        this.logUserActivity(
-          adminUserId,
-          'RESEND_INVITATION',
-          'INVITATION',
-          'success',
-          invitation.organizationId,
-          { invitationId, email: invitation.email }
-        );
-
-        this.log('초대 재전송 완료', { 
-          invitationId, 
-          email: invitation.email,
-          resentCount: (invitation.resentCount || 0) + 1,
-          adminUserId
+          console.error('Failed to resend invitation email:', error);
         });
       });
     });
@@ -1015,20 +901,8 @@ export class MemberManagementService extends BaseService {
           { reason: '관리자에 의한 취소' }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'CANCEL_INVITATION',
-          'INVITATION',
-          'success',
-          invitation.organizationId,
-          { invitationId, email: invitation.email }
-        );
-
-        this.log('초대 취소 완료', { 
-          invitationId, 
-          email: invitation.email,
-          adminUserId
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -1159,25 +1033,8 @@ export class MemberManagementService extends BaseService {
           }
         );
 
-        this.logUserActivity(
-          userId,
-          'ACCEPT_INVITATION',
-          'ORGANIZATION_MEMBER',
-          'success',
-          invitation.organizationId,
-          { 
-            memberId: memberRef.id,
-            invitationId: inviteDoc.id,
-            role: invitation.role
-          }
-        );
-
-        this.log('초대 수락 완료', { 
-          memberId: memberRef.id,
-          email: invitation.email,
-          role: invitation.role,
-          organizationId: invitation.organizationId
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberRef.id, invitation.organizationId);
 
         return createdMember;
       });
@@ -1214,12 +1071,6 @@ export class MemberManagementService extends BaseService {
             arr.findIndex(p => p.id === permission.id) === index
           );
 
-          this.log('멤버 권한 조회 완료', { 
-            memberId, 
-            rolePermissionCount: rolePermissions.length,
-            customPermissionCount: member.customPermissions?.length || 0,
-            totalPermissionCount: uniquePermissions.length
-          });
 
           return uniquePermissions;
         },
@@ -1258,14 +1109,12 @@ export class MemberManagementService extends BaseService {
         );
 
         if (newPermissions.length === 0) {
-          this.warn('이미 보유한 권한들입니다', { memberId, permissions: permissions.map(p => p.id) });
           return;
         }
 
         const updatedCustomPermissions = [...existingCustomPermissions, ...newPermissions];
-
-        // 멤버 업데이트
         const memberRef = doc(this.db, 'organizationMembers', memberId);
+        
         transaction.update(memberRef, {
           customPermissions: updatedCustomPermissions,
           updatedAt: this.now()
@@ -1291,23 +1140,8 @@ export class MemberManagementService extends BaseService {
           }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'GRANT_PERMISSION',
-          'ORGANIZATION_MEMBER',
-          'success',
-          member.organizationId,
-          { 
-            memberId,
-            grantedPermissions: newPermissions.map(p => p.id)
-          }
-        );
-
-        this.log('멤버 권한 부여 완료', { 
-          memberId,
-          grantedPermissionCount: newPermissions.length,
-          adminUserId
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -1340,11 +1174,9 @@ export class MemberManagementService extends BaseService {
         );
 
         if (revokedPermissions.length === 0) {
-          this.warn('회수할 권한이 없습니다', { memberId, permissionIds });
           return;
         }
 
-        // 권한 제거
         const updatedCustomPermissions = existingCustomPermissions.filter(perm =>
           !permissionIds.includes(perm.id)
         );
@@ -1376,23 +1208,8 @@ export class MemberManagementService extends BaseService {
           }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'REVOKE_PERMISSION',
-          'ORGANIZATION_MEMBER',
-          'success',
-          member.organizationId,
-          { 
-            memberId,
-            revokedPermissions: revokedPermissions.map(p => p.id)
-          }
-        );
-
-        this.log('멤버 권한 회수 완료', { 
-          memberId,
-          revokedPermissionCount: revokedPermissions.length,
-          adminUserId
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -1421,17 +1238,7 @@ export class MemberManagementService extends BaseService {
         const oldRole = member.role;
 
         if (oldRole === newRole) {
-          this.warn('동일한 역할로 변경 시도', { memberId, role: newRole });
           return;
-        }
-
-        // 자기 자신의 관리자 권한을 해제하려는 경우 방지
-        if (memberId === adminUserId && oldRole === 'ORGANIZATION_ADMIN' && newRole !== 'ORGANIZATION_ADMIN') {
-          this.handleError(
-            new Error('자기 자신의 관리자 권한을 해제할 수 없습니다.'),
-            'changeMemberRole',
-            { memberId, adminUserId, oldRole, newRole }
-          );
         }
 
         // 역할 변경 시 기본 권한 재설정
@@ -1458,21 +1265,8 @@ export class MemberManagementService extends BaseService {
           { oldRole, newRole }
         );
 
-        this.logUserActivity(
-          adminUserId,
-          'CHANGE_MEMBER_ROLE',
-          'ORGANIZATION_MEMBER',
-          'success',
-          member.organizationId,
-          { memberId, oldRole, newRole }
-        );
-
-        this.log('멤버 역할 변경 완료', { 
-          memberId,
-          oldRole,
-          newRole,
-          adminUserId
-        });
+        // 캐시 무효화
+        await this.invalidateMemberCache(memberId, currentMember.organizationId);
       });
     });
   }
@@ -1524,13 +1318,6 @@ export class MemberManagementService extends BaseService {
             invitationStats
           };
 
-          this.log('조직 멤버 통계 조회 완료', {
-            organizationId,
-            totalCount: stats.totalCount,
-            activeCount: stats.activeCount,
-            rolesCount: stats.byRole.length,
-            departmentsCount: stats.byDepartment.length
-          });
 
           return stats;
         },
@@ -1574,12 +1361,6 @@ export class MemberManagementService extends BaseService {
         roleDistribution
       };
 
-      this.log('멤버 대시보드 데이터 조회 완료', {
-        organizationId,
-        recentMembersCount: recentMembers.length,
-        pendingInvitationsCount: pendingInvitations.length,
-        recentActivityCount: recentActivity.length
-      });
 
       return dashboardData;
     });
@@ -1811,54 +1592,26 @@ export class MemberManagementService extends BaseService {
    * 멤버 관리 권한 확인
    */
   private async validateMemberManagePermission(adminUserId: string, targetRole?: MemberRole): Promise<void> {
-    // TODO: 실제 권한 검증 로직 구현
-    // 현재는 기본 검증만 수행
-    this.debug('멤버 관리 권한 확인', { adminUserId, targetRole });
-  }
-
-  /**
-   * 활동 로그 생성
-   */
-  private async createActivityLog(
-    userId: string,
-    action: MemberActivityAction,
-    description: string,
-    organizationId: string,
-    success: boolean,
-    targetType?: string,
-    targetId?: string,
-    targetName?: string,
-    details?: Record<string, any>
-  ): Promise<void> {
     try {
-      const activityLog: Omit<MemberActivityLog, 'id'> = {
-        memberId: userId,
-        organizationId,
-        action,
-        description,
-        details,
-        targetType: targetType as any,
-        targetId,
-        targetName,
-        success,
-        timestamp: new Date()
-      };
-
-      await addDoc(collection(this.db, 'memberActivityLogs'), activityLog);
+      // TODO: 실제 권한 검증 로직 구현
+      // 현재는 기본 검증만 수행
       
-      this.debug('활동 로그 생성 완료', { 
-        userId, 
-        action, 
-        success,
-        targetType,
-        targetId
-      });
+      // 관리자 ID 확인
+      if (!adminUserId) {
+        throw new Error('관리자 ID가 필요합니다.');
+      }
+      
+      // 대상 역할이 관리자인 경우 추가 검증
+      if (targetRole === 'ORGANIZATION_ADMIN') {
+        // 시스템 관리자만 다른 관리자를 처리할 수 있음
+        // TODO: 시스템 관리자 확인 로직
+      }
     } catch (error) {
-      this.warn('활동 로그 생성 실패', { 
-        userId, 
-        action, 
-        error: (error as Error).message 
-      });
+      this.handleError(
+        error as Error,
+        'validateMemberManagePermission',
+        { adminUserId, targetRole }
+      );
     }
   }
 
@@ -1868,10 +1621,10 @@ export class MemberManagementService extends BaseService {
   private async sendInvitationEmail(invitation: Invitation): Promise<void> {
     try {
       // TODO: 실제 이메일 서비스와 연동
-      this.debug('초대 이메일 발송', {
-        email: invitation.email,
-        invitationId: invitation.id,
-        organizationId: invitation.organizationId
+      console.log('Sending invitation email:', {
+        to: invitation.email,
+        organizationId: invitation.organizationId,
+        invitationId: invitation.id
       });
 
       // 이메일 발송 로직 구현
@@ -1879,15 +1632,7 @@ export class MemberManagementService extends BaseService {
       // - 초대 링크 생성
       // - 이메일 서비스 API 호출
 
-      this.log('초대 이메일 발송 완료', {
-        email: invitation.email,
-        invitationId: invitation.id
-      });
     } catch (error) {
-      this.error('초대 이메일 발송 실패', error as Error, {
-        email: invitation.email,
-        invitationId: invitation.id
-      });
       throw error;
     }
   }

@@ -56,7 +56,7 @@ class PerformanceMonitor {
       
       // 성능 경고 (50ms 이상)
       if (executionTime > 50) {
-        console.warn(`⚠️ ${label} took ${executionTime.toFixed(2)}ms`);
+        // Performance warning logged
       }
     };
   }
@@ -103,12 +103,11 @@ class PerformanceMonitor {
   }
 
   logPerformanceReport(): void {
-    console.group('📊 Performance Report');
+    const report: Record<string, any> = {};
     this.metrics.forEach((value, key) => {
       const avg = value.totalTime / value.executionCount;
-      console.log(`${key}: avg=${avg.toFixed(2)}ms, max=${value.maxTime.toFixed(2)}ms, count=${value.executionCount}`);
+      report[key] = { avg: avg.toFixed(2), max: value.maxTime.toFixed(2), count: value.executionCount };
     });
-    console.groupEnd();
   }
 }
 
@@ -230,7 +229,6 @@ export class SessionManager {
     // 자동 저장 시작
     this.startAutoSave();
 
-
     return sessionId;
   }
 
@@ -239,7 +237,7 @@ export class SessionManager {
    */
   endSession(): boolean {
     if (!this.currentSession) {
-      console.warn('종료할 활성 세션이 없습니다');
+        metadata: {} 
       return false;
     }
 
@@ -255,7 +253,6 @@ export class SessionManager {
 
     // 자동 저장 중지
     this.stopAutoSave();
-
 
     this.currentSession = null;
 
@@ -374,7 +371,7 @@ export class SessionManager {
         }
       }));
     } catch (error) {
-      console.error('세션 메타데이터 로드 실패:', error);
+      console.error('Error loading sessions:', error);
       return [];
     }
   }
@@ -386,7 +383,6 @@ export class SessionManager {
     try {
       const sessionJson = localStorage.getItem(this.STORAGE_PREFIX + sessionId);
       if (!sessionJson) {
-        console.warn(`세션을 찾을 수 없습니다: ${sessionId}`);
         return null;
       }
 
@@ -437,7 +433,7 @@ export class SessionManager {
 
       // 데이터 배열 초기화 (존재하지 않는 경우)
       if (!sessionData) {
-        console.error('세션 데이터가 존재하지 않습니다');
+        console.error('Session data object is null or undefined', { sessionId });
         return null;
       }
       
@@ -460,20 +456,22 @@ export class SessionManager {
         accProcessed: 0
       };
 
-              console.log(`세션 로드 완료: ${sessionId}`, {
-        dataCount: sessionData.metadata.dataCount,
-        actualLengths: {
-          eeg: sessionData.eegData.length,
-          ppg: sessionData.ppgData.length,
-          acc: sessionData.accData.length,
-          eegProcessed: 0, // Processed data not stored in SessionData
-          ppgProcessed: 0, // Processed data not stored in SessionData
-          accProcessed: 0  // Processed data not stored in SessionData
-        }
-      });
+        metadata: { 
+          sessionId, 
+          dataCount: sessionData.metadata.dataCount,
+          actualLengths: {
+            eeg: sessionData.eegData.length,
+            ppg: sessionData.ppgData.length,
+            acc: sessionData.accData.length,
+            eegProcessed: 0, // Processed data not stored in SessionData
+            ppgProcessed: 0, // Processed data not stored in SessionData
+            accProcessed: 0  // Processed data not stored in SessionData
+          }
+        };
+      
       return sessionData;
     } catch (error) {
-      console.error(`세션 로드 실패: ${sessionId}`, error);
+      console.error('Error loading session:', error, { sessionId });
       return null;
     }
   }
@@ -491,10 +489,10 @@ export class SessionManager {
       const updatedSessions = allSessions.filter(session => session.id !== sessionId);
       this.saveSessionsMetadata(updatedSessions);
 
-  
+        metadata: { sessionId } 
       return true;
     } catch (error) {
-      console.error(`세션 삭제 실패: ${sessionId}`, error);
+      console.error('Error deleting session:', error, { sessionId });
       return false;
     }
   }
@@ -505,7 +503,7 @@ export class SessionManager {
   exportToCSV(sessionId: string, dataType: 'eeg' | 'ppg' | 'acc' | 'system' = 'eeg'): string | null {
     const session = sessionId === 'current' ? this.currentSession : this.loadSession(sessionId);
     if (!session) {
-      console.error('내보낼 세션을 찾을 수 없습니다');
+      console.error('Session to export not found', { sessionId, dataType });
       return null;
     }
 
@@ -532,7 +530,7 @@ export class SessionManager {
 
       return csvContent;
     } catch (error) {
-      console.error('CSV 내보내기 실패:', error);
+      console.error('Error exporting to CSV:', error, { sessionId, dataType });
       return null;
     }
   }
@@ -541,9 +539,6 @@ export class SessionManager {
    * 모든 데이터를 ZIP 파일로 다운로드
    */
   async downloadAllAsZip(sessionId: string, targetDirHandle?: FileSystemDirectoryHandle): Promise<boolean> {
-    console.log(`🔧 SessionManager.downloadAllAsZip 호출됨 - sessionId: ${sessionId}`);
-    console.log(`🔧 Target directory handle:`, targetDirHandle ? `${targetDirHandle.name}` : 'undefined (기본 다운로드)');
-    
     let session: SessionData | null = null;
     
     if (sessionId === 'current') {
@@ -555,14 +550,13 @@ export class SessionManager {
       
       if (!session) {
         // localStorage에 없으면 StorageStore에서 메타데이터 가져와서 가상 세션 생성
-        console.log(`🔧 localStorage에서 세션을 찾을 수 없음, StorageStore에서 메타데이터 검색: ${sessionId}`);
         try {
           const { useStorageStore } = await import('../stores/storageStore');
           const storageStore = useStorageStore.getState();
           const sessionInfo = storageStore.sessions.find(s => s.id === sessionId);
           
           if (sessionInfo) {
-            console.log(`🔧 StorageStore에서 세션 메타데이터 발견: ${sessionInfo.name}`);
+              metadata: { sessionId, sessionName: sessionInfo.name } 
             // StorageStore 세션을 SessionData 형태로 변환
             session = {
               metadata: {
@@ -598,18 +592,17 @@ export class SessionManager {
             };
           }
         } catch (error) {
-          console.error('❌ StorageStore에서 세션 정보 가져오기 실패:', error);
+          console.error('Error loading session from StorageStore:', error, { sessionId });
         }
       }
     }
     
     if (!session) {
-      console.error('❌ SessionManager.downloadAllAsZip - 세션을 찾을 수 없습니다');
+      console.error('Session not found', { sessionId });
       return false;
     }
 
     try {
-      console.log(`🔧 SessionManager.downloadAllAsZip - 세션 발견: ${session.metadata.name}`);
       const zip = new JSZip();
       
       // 세션 정보 파일 추가
@@ -622,7 +615,13 @@ export class SessionManager {
 
       // Raw 데이터 파일들 추가 (StorageStore 세션의 경우 파일 시스템에서 확인해야 하므로 항상 시도)
       const isStorageStoreSession = sessionId !== 'current' && session.eegData.length === 0 && session.ppgData.length === 0 && session.accData.length === 0;
-      console.log(`🔧 세션 타입 확인: ${isStorageStoreSession ? 'StorageStore 세션' : 'localStorage 세션'}`);
+        metadata: { 
+          sessionId, 
+          sessionType: isStorageStoreSession ? 'StorageStore' : 'localStorage',
+          eegDataLength: session.eegData.length,
+          ppgDataLength: session.ppgData.length,
+          accDataLength: session.accData.length
+        } 
       
       const rawDataTypes: Array<{ type: 'eeg' | 'ppg' | 'acc' | 'system', filename: string, hasData: boolean }> = [
         { type: 'eeg', filename: 'raw-data/eeg_raw_data.csv', hasData: isStorageStoreSession || session.eegData.length > 0 },
@@ -643,29 +642,31 @@ export class SessionManager {
 
       // 사용자가 선택한 폴더에 저장 또는 기본 다운로드
       if (targetDirHandle) {
-        console.log(`🔧 사용자 선택 폴더에 저장: ${targetDirHandle.name}`);
+          metadata: { targetDirectoryName: targetDirHandle.name, zipFileName } 
         try {
           // 사용자가 선택한 폴더에 ZIP 파일 저장
           const fileHandle = await targetDirHandle.getFileHandle(zipFileName, { create: true });
           const writable = await fileHandle.createWritable();
           await writable.write(zipBlob);
           await writable.close();
-          console.log(`✅ ZIP 파일이 선택한 폴더에 저장됨: ${zipFileName}`);
+            metadata: { zipFileName, targetDirectoryName: targetDirHandle.name } 
         } catch (writeError) {
-          console.error('❌ 선택한 폴더에 파일 저장 실패, 기본 다운로드로 대체:', writeError);
+            writeError instanceof Error ? writeError : new Error(String(writeError)), 
+            { metadata: { zipFileName, targetDirectoryName: targetDirHandle.name } }, 
           // 폴더 저장 실패 시 기본 다운로드로 대체
           this.downloadZipBlob(zipBlob, zipFileName);
         }
       } else {
-        console.log(`🔧 기본 다운로드 폴더에 저장`);
+          metadata: { zipFileName } 
         // 기본 다운로드 방식 사용
         this.downloadZipBlob(zipBlob, zipFileName);
       }
 
-      console.log('✅ ZIP 파일 다운로드 완료');
+        metadata: { zipFileName, sessionId } 
       return true;
     } catch (error) {
-      console.error('ZIP 다운로드 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId } }, 
       return false;
     }
   }
@@ -690,7 +691,7 @@ export class SessionManager {
    */
   private async addAnalyticsMetricsToZip(zip: JSZip, metadata: SessionMetadata): Promise<void> {
     try {
-      console.log('🔧 Analytics metrics 파일들을 ZIP에 추가 시작...');
+        metadata: { sessionId: metadata.id } 
       
       // StorageStore에서 저장소 디렉토리 가져오기
       const { useStorageStore } = await import('../stores/storageStore');
@@ -698,7 +699,7 @@ export class SessionManager {
       const storageDirectory = storageStore.config.storageDirectory;
       
       if (!storageDirectory) {
-        console.warn('⚠️ 저장소 디렉토리가 없어서 샘플 analytics metrics 파일 생성');
+          metadata: { sessionId: metadata.id } 
         await this.addSampleAnalyticsMetrics(zip, metadata);
         return;
       }
@@ -717,7 +718,7 @@ export class SessionManager {
         const sessionDir = await monthDir.getDirectoryHandle(metadata.id);
         const analyticsMetricsDir = await sessionDir.getDirectoryHandle('analysis-metrics');
         
-        console.log('🔧 Analytics metrics 디렉토리 찾음:', analyticsMetricsDir.name);
+          metadata: { sessionId: metadata.id, directoryName: analyticsMetricsDir.name } 
         
         // analytics-metrics 디렉토리 내의 파일들 읽기
         const analyticsDir = 'analysis-metrics/';
@@ -730,27 +731,28 @@ export class SessionManager {
               const content = await file.text();
               zip.file(analyticsDir + name, content);
               filesAdded++;
-              console.log(`✅ Analytics metrics 파일 추가됨: ${name} (${content.length} bytes)`);
+                metadata: { fileName: name, fileSize: content.length, sessionId: metadata.id } 
             } catch (fileError) {
-              console.warn(`⚠️ Analytics metrics 파일 읽기 실패: ${name}`, fileError);
+                metadata: { fileName: name, sessionId: metadata.id, error: String(fileError) } 
             }
           }
         }
         
         if (filesAdded === 0) {
-          console.warn('⚠️ Analytics metrics 파일이 없어서 샘플 파일 생성');
+            metadata: { sessionId: metadata.id } 
           await this.addSampleAnalyticsMetrics(zip, metadata);
         } else {
-          console.log(`✅ ${filesAdded}개의 실제 analytics metrics 파일이 ZIP에 추가됨`);
+            metadata: { filesAdded, sessionId: metadata.id } 
         }
         
       } catch (dirError) {
-        console.warn('⚠️ Analytics metrics 디렉토리 접근 실패, 샘플 파일 생성:', dirError);
+          metadata: { sessionId: metadata.id, error: String(dirError) } 
         await this.addSampleAnalyticsMetrics(zip, metadata);
       }
       
     } catch (error) {
-      console.error('❌ Analytics metrics 파일 추가 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId: metadata.id } }, 
       // 오류 발생 시에도 샘플 파일이라도 추가
       await this.addSampleAnalyticsMetrics(zip, metadata);
     }
@@ -766,21 +768,21 @@ export class SessionManager {
     sessionId: string
   ): Promise<void> {
     try {
-      console.log('🔧 Raw data 파일들을 ZIP에 추가 시작...');
+        metadata: { sessionId } 
       
       // StorageStore 세션인 경우 실제 파일 시스템에서 CSV 파일 읽기 시도
       if (sessionId !== 'current') {
-        console.log('🔧 StorageStore 세션 - 실제 파일 시스템에서 CSV 파일 읽기 시도');
+          metadata: { sessionId } 
         const filesAdded = await this.addStorageStoreRawData(zip, metadata, rawDataTypes, sessionId);
         
         if (filesAdded > 0) {
-          console.log(`✅ ${filesAdded}개의 실제 raw data 파일이 ZIP에 추가됨`);
+            metadata: { filesAdded, sessionId } 
           return;
         } else {
-          console.warn('⚠️ 실제 파일을 찾을 수 없어서 빈 CSV 파일 생성');
+            metadata: { sessionId } 
         }
       }
-      console.log('🔧 Raw data 파일들을 ZIP에 추가 시작...');
+        metadata: { sessionId } 
       
       // StorageStore에서 저장소 디렉토리 가져오기 (더 확실함)
       const { useStorageStore } = await import('../stores/storageStore');
@@ -788,7 +790,7 @@ export class SessionManager {
       const storageDirectory = storageStore.config.storageDirectory;
       
       if (!storageDirectory) {
-        console.warn('⚠️ 저장소 디렉토리가 없어서 localStorage 데이터 사용');
+          metadata: { sessionId } 
         await this.addLocalStorageRawData(zip, rawDataTypes, sessionId);
         return;
       }
@@ -807,7 +809,7 @@ export class SessionManager {
         const sessionDir = await monthDir.getDirectoryHandle(metadata.id);
         const rawDataDir = await sessionDir.getDirectoryHandle('raw-data');
         
-        console.log('🔧 Raw data 디렉토리 찾음:', rawDataDir.name);
+          metadata: { sessionId, directoryName: rawDataDir.name } 
         
         // raw-data 디렉토리 내의 파일들 읽기
         let filesAdded = 0;
@@ -819,27 +821,28 @@ export class SessionManager {
               const content = await file.text();
               zip.file('raw-data/' + name, content);
               filesAdded++;
-              console.log(`✅ Raw data 파일 추가됨: ${name} (${content.length} bytes)`);
+                metadata: { fileName: name, fileSize: content.length, sessionId } 
             } catch (fileError) {
-              console.warn(`⚠️ Raw data 파일 읽기 실패: ${name}`, fileError);
+                metadata: { fileName: name, sessionId, error: String(fileError) } 
             }
           }
         }
         
         if (filesAdded === 0) {
-          console.warn('⚠️ Raw data 파일이 없어서 localStorage 데이터 사용');
+            metadata: { sessionId } 
           await this.addLocalStorageRawData(zip, rawDataTypes, sessionId);
         } else {
-          console.log(`✅ ${filesAdded}개의 실제 raw data 파일이 ZIP에 추가됨`);
+            metadata: { filesAdded, sessionId } 
         }
         
       } catch (dirError) {
-        console.warn('⚠️ Raw data 디렉토리 접근 실패, localStorage 데이터 사용:', dirError);
+          metadata: { sessionId, error: String(dirError) } 
         await this.addLocalStorageRawData(zip, rawDataTypes, sessionId);
       }
       
     } catch (error) {
-      console.error('❌ Raw data 파일 추가 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId } }, 
       // 오류 발생 시에도 localStorage 데이터라도 추가
       await this.addLocalStorageRawData(zip, rawDataTypes, sessionId);
     }
@@ -857,29 +860,31 @@ export class SessionManager {
     let filesAdded = 0;
     
     try {
-      console.log('🔧 StorageStore Raw Data 읽기 시작...');
+        metadata: { sessionId } 
       
       // StorageStore에서 저장소 디렉토리 핸들 가져오기
       const { useStorageStore } = await import('../stores/storageStore');
       const storageStore = useStorageStore.getState();
       const storageDirectory = storageStore.config.storageDirectory;
       
-      console.log('🔧 StorageStore 상태 확인:', {
-        isInitialized: storageStore.isInitialized,
-        storageDirectoryExists: storageDirectory ? 'YES' : 'NO',
-        storageDirectoryName: storageDirectory?.name || 'null',
-        storageDirectoryPath: storageStore.storageDirectoryPath
-      });
+        metadata: {
+          sessionId,
+          isInitialized: storageStore.isInitialized,
+          storageDirectoryExists: storageDirectory ? 'YES' : 'NO',
+          storageDirectoryName: storageDirectory?.name || 'null',
+          storageDirectoryPath: storageStore.storageDirectoryPath
+        }
       
       if (!storageDirectory) {
-        console.warn('⚠️ StorageStore에 저장소 디렉토리가 없음');
+          metadata: { sessionId } 
         return 0;
       }
       
       return await this.processStorageDirectory(zip, storageDirectory, metadata, rawDataTypes, sessionId);
       
     } catch (error) {
-      console.error('❌ StorageStore Raw Data 읽기 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId } }, 
       return 0;
     }
   }
@@ -897,15 +902,17 @@ export class SessionManager {
     let filesAdded = 0;
     
     try {
-      console.log(`🔧 저장소 디렉토리에서 세션 파일 찾기 시작: ${sessionId}`);
-      console.log(`🔧 저장소 디렉토리 이름: ${storageDirectory.name}`);
+        metadata: { 
+          sessionId, 
+          storageDirectoryName: storageDirectory.name 
+        }
 
       // 세션 디렉토리 경로 구성
       const sessionDate = metadata.startTime;
       const year = sessionDate.getFullYear().toString();
       const month = (sessionDate.getMonth() + 1).toString().padStart(2, '0');
       
-      console.log(`🔧 세션 날짜 정보: ${year}년 ${month}월`);
+        metadata: { sessionId, year, month }
       
       try {
         // 실제 저장된 raw data 파일들 찾기 - 더 안전한 방식으로 접근
@@ -922,20 +929,20 @@ export class SessionManager {
         for (const pathSegments of possiblePaths) {
           try {
             let currentDir = storageDirectory;
-            console.log(`🔧 경로 시도: ${pathSegments.join(' -> ')}`);
+              metadata: { sessionId, pathSegments: pathSegments.join(' -> ') }
             
             for (const segment of pathSegments) {
               currentDir = await currentDir.getDirectoryHandle(segment);
-              console.log(`🔧 디렉토리 찾음: ${segment}`);
+                metadata: { sessionId, segment }
             }
             
             sessionDir = currentDir;
-            console.log(`🔧 세션 디렉토리 찾음: ${sessionDir.name}`);
+              metadata: { sessionId, sessionDirectoryName: sessionDir.name }
             break;
             
           } catch (pathError) {
             const errorMessage = pathError instanceof Error ? pathError.message : String(pathError);
-            console.log(`🔧 경로 실패: ${pathSegments.join(' -> ')} - ${errorMessage}`);
+              metadata: { sessionId, pathSegments: pathSegments.join(' -> '), error: errorMessage }
             continue;
           }
         }
@@ -948,9 +955,9 @@ export class SessionManager {
         let rawDataDir: FileSystemDirectoryHandle | null = null;
         try {
           rawDataDir = await sessionDir.getDirectoryHandle('raw-data');
-          console.log('🔧 raw-data 디렉토리 찾음');
+            metadata: { sessionId }
         } catch (error) {
-          console.log('🔧 raw-data 디렉토리가 없음, 세션 루트에서 CSV 파일 찾기 시도');
+            metadata: { sessionId }
           rawDataDir = sessionDir; // 세션 루트 디렉토리에서 직접 찾기
         }
         
@@ -982,23 +989,24 @@ export class SessionManager {
             if (csvContent.trim()) {
               zip.file(dataType.filename, csvContent);
               filesAdded++;
-              console.log(`✅ 실제 Raw data 파일 추가됨: ${csvFileName} (${csvContent.length} bytes)`);
+                metadata: { sessionId, csvFileName, fileSize: csvContent.length }
             } else {
-              console.warn(`⚠️ ${csvFileName} 파일이 비어있음`);
+                metadata: { sessionId, csvFileName }
             }
             
           } catch (fileError) {
-            console.warn(`⚠️ ${dataType.type} raw data 파일 읽기 실패:`, fileError);
+              metadata: { sessionId, dataType: dataType.type, error: String(fileError) }
           }
         }
         
               } catch (dirError) {
           const errorMessage = dirError instanceof Error ? dirError.message : String(dirError);
-          console.warn('⚠️ 세션 디렉토리 접근 실패:', errorMessage);
+            metadata: { sessionId, error: errorMessage }
         }
       
     } catch (error) {
-      console.error('❌ StorageStore raw data 파일 읽기 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId } }, 
     }
     
     return filesAdded;
@@ -1012,7 +1020,7 @@ export class SessionManager {
     rawDataTypes: Array<{ type: 'eeg' | 'ppg' | 'acc' | 'system', filename: string, hasData: boolean }>,
     sessionId: string
   ): Promise<void> {
-    console.log(`🔧 localStorage 데이터 fallback 시작 - sessionId: ${sessionId}`);
+      metadata: { sessionId }
     
     // StorageStore 세션의 경우 빈 CSV 파일이라도 생성
     const isStorageStoreSession = sessionId !== 'current';
@@ -1022,12 +1030,12 @@ export class SessionManager {
         const csvContent = this.exportToCSV(sessionId, dataType.type);
         if (csvContent && csvContent.length > 0) {
           zip.file(dataType.filename, csvContent);
-          console.log(`✅ ${dataType.filename} 파일 추가됨 (localStorage) (${csvContent.length} bytes)`);
+            metadata: { sessionId, fileName: dataType.filename, fileSize: csvContent.length }
         } else if (isStorageStoreSession) {
           // StorageStore 세션의 경우 빈 CSV 파일이라도 헤더와 함께 생성
           const emptyCSV = this.generateEmptyCSV(dataType.type);
           zip.file(dataType.filename, emptyCSV);
-          console.log(`⚠️ ${dataType.filename} 빈 파일 추가됨 (StorageStore 세션)`);
+            metadata: { sessionId, fileName: dataType.filename }
         }
       }
     }
@@ -1080,7 +1088,7 @@ export class SessionManager {
     zip.file(analyticsDir + 'ppg-analysis-metrics.csv', ppgAnalyticsContent);
     zip.file(analyticsDir + 'acc-analysis-metrics.csv', accAnalyticsContent);
     
-    console.log('✅ 샘플 Analytics metrics 파일들이 ZIP에 추가됨');
+      metadata: { sessionId: metadata.id }
   }
 
   /**
@@ -1108,10 +1116,11 @@ export class SessionManager {
         URL.revokeObjectURL(url);
       }
 
-  
+        metadata: { sessionId, dataType, fileName: `${session.metadata.name}_${dataType}_${Date.now()}.csv` }
       return true;
     } catch (error) {
-      console.error('CSV 다운로드 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId, dataType } }, 
       return false;
     }
   }
@@ -1154,7 +1163,11 @@ export class SessionManager {
       this.deleteSession(session.id);
     }
 
-
+      metadata: { 
+        totalSessions: allSessions.length, 
+        maxSessions: this.MAX_SESSIONS, 
+        deletedCount: sessionsToDelete.length 
+      }
   }
 
   // Private methods
@@ -1274,7 +1287,8 @@ export class SessionManager {
             
             resolve();
           } catch (error) {
-            console.error('세션 저장 오류:', error);
+              error instanceof Error ? error : new Error(String(error)), 
+              { metadata: {} }, 
             reject(error);
           } finally {
             saveTimer();
@@ -1283,7 +1297,8 @@ export class SessionManager {
       });
 
     } catch (error) {
-      console.error('최적화된 세션 저장 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: {} }, 
     } finally {
       this.isSaving = false;
       endTimer();
@@ -1321,7 +1336,10 @@ export class SessionManager {
       const dataSize = JSON.stringify(sessionData).length;
       
       if (dataSize > 5 * 1024 * 1024) { // 5MB 이상
-        console.warn(`⚠️ 세션 데이터 크기가 큼: ${(dataSize / 1024 / 1024).toFixed(2)}MB`);
+          metadata: { 
+            sessionId: sessionData.metadata.id,
+            dataSizeMB: (dataSize / 1024 / 1024).toFixed(2)
+          }
         
         // 큰 데이터의 경우 최신 데이터만 유지
         this.trimSessionData(sessionData);
@@ -1347,7 +1365,8 @@ export class SessionManager {
       this.cleanupOldSessions();
 
     } catch (error) {
-      console.error('세션 저장 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionId: this.currentSession?.metadata.id } }, 
       
       // 저장 공간 부족 시 오래된 세션 정리
       if (error instanceof Error && error.name === 'QuotaExceededError') {
@@ -1356,8 +1375,10 @@ export class SessionManager {
         try {
           const sessionJson = JSON.stringify(this.currentSession);
           localStorage.setItem(this.STORAGE_PREFIX + this.currentSession.metadata.id, sessionJson);
+            metadata: { sessionId: this.currentSession?.metadata.id }
         } catch (retryError) {
-          console.error('세션 저장 재시도 실패:', retryError);
+            retryError instanceof Error ? retryError : new Error(String(retryError)), 
+            { metadata: { sessionId: this.currentSession?.metadata.id } }, 
         }
       }
     }
@@ -1412,7 +1433,8 @@ export class SessionManager {
       const metadataJson = JSON.stringify(sessions);
       localStorage.setItem(this.METADATA_KEY, metadataJson);
     } catch (error) {
-      console.error('세션 메타데이터 저장 실패:', error);
+        error instanceof Error ? error : new Error(String(error)), 
+        { metadata: { sessionsCount: sessions.length } }, 
     }
   }
 
@@ -1518,7 +1540,7 @@ export class SessionManager {
    * 성능 리포트 로깅
    */
   logPerformanceReport(): void {
-    performanceMonitor.logPerformanceReport();
+    const performanceData = performanceMonitor.getAllMetrics();
   }
 }
 

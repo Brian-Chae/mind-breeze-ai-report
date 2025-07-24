@@ -239,10 +239,17 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
 
   const handleMeasurementComplete = useCallback(async (measurementData: AggregatedMeasurementData) => {
     try {
-      console.log('🚀🚀🚀 handleMeasurementComplete 함수 호출됨!');
-      console.log('🔧 측정 데이터:', measurementData);
-      console.log('🔧 Firebase auth 상태:', auth.currentUser ? '로그인됨' : '로그인되지 않음');
-      console.log('🔧 현재 개인정보:', state.personalInfo);
+      console.log('측정 완료 데이터 처리 시작', {
+        metadata: { 
+          measurementDataSummary: {
+            sessionId: measurementData.sessionId,
+            totalDuration: measurementData.totalDuration,
+            overallQuality: measurementData.overallQuality
+          },
+          authState: auth.currentUser ? '로그인됨' : '로그인되지 않음',
+          hasPersonalInfo: !!state.personalInfo
+        } 
+      });
       
       // 🔧 데이터 변환
       const convertedData = convertToExpectedFormat(measurementData);
@@ -250,25 +257,27 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       // 현재 사용자 정보 가져오기 (Firebase auth 사용)
       let currentUser = auth.currentUser;
       if (!currentUser) {
-        console.log('🔧 익명 인증으로 로그인 시도...');
         try {
           const userCredential = await signInAnonymously(auth);
           currentUser = userCredential.user;
-          console.log('✅ 익명 인증 성공:', currentUser.uid);
         } catch (authError) {
-          console.error('❌ 익명 인증 실패:', authError);
           setState(prev => ({ ...prev, error: '인증 실패: 데이터를 저장할 수 없습니다' }));
           return;
         }
       }
 
-      console.log('✅ 현재 사용자:', currentUser.uid, currentUser.isAnonymous ? '(익명)' : currentUser.email);
+      console.log('사용자 인증 확인', {
+        metadata: { 
+          userId: currentUser.uid, 
+          isAnonymous: currentUser.isAnonymous,
+          email: currentUser.email || null
+        }
+      }); 
 
       // 🔧 Storage에 센서 데이터 저장
       let storageUrl = '';
       let storagePath = '';
       try {
-        console.log('🔧 Storage에 센서 데이터 저장 시작...');
         const sessionId = `measurement_${Date.now()}_${currentUser.uid.substring(0, 8)}`;
         
         // 센서 데이터 JSON 생성
@@ -317,17 +326,20 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         
         // 다운로드 URL 얻기
         storageUrl = await getDownloadURL(storageRef);
-        console.log('✅ Storage에 센서 데이터 저장 완료:', storageUrl);
+        console.log('Firebase Storage URL 생성 성공', {
+          metadata: { 
+            storagePath,
+            storageUrl: storageUrl.substring(0, 100) + '...'
+          }
+        }); 
         
       } catch (storageError) {
-        console.error('❌ Storage 저장 실패:', storageError);
         // Storage 저장 실패해도 계속 진행
       }
 
       // 🔧 실제 personalInfo 데이터 사용
       const personalInfo = state.personalInfo;
       if (!personalInfo) {
-        console.error('❌ 개인정보가 없습니다');
         setState(prev => ({ ...prev, error: '개인정보가 누락되었습니다' }));
         return;
       }
@@ -371,23 +383,32 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         Object.entries(sessionDataRaw).filter(([key, value]) => value !== undefined)
       );
 
-      console.log('🔧 저장할 세션 데이터:', sessionData);
+      console.log('세션 데이터 준비 완료', {
+        metadata: { 
+          sessionDataKeys: Object.keys(sessionData),
+          hasStorageUrl: !!sessionData.storageUrl,
+          subjectName: sessionData.subjectName
+        }
+      }); 
 
       let sessionId = '';
       try {
         sessionId = await FirebaseService.saveMeasurementSession(sessionData);
-        console.log('✅ MeasurementSession 저장 완료:', sessionId);
+        console.log('측정 세션 저장 성공', {
+          metadata: { sessionId } 
+        });
       } catch (sessionError) {
-        console.error('❌ MeasurementSession 저장 실패:', sessionError);
-        console.error('❌ sessionError 상세:', sessionError instanceof Error ? sessionError.message : sessionError);
+        console.error('측정 세션 저장 실패', {
+          metadata: { 
+            errorMessage: sessionError instanceof Error ? sessionError.message : String(sessionError) 
+          }
+        }); 
         throw sessionError;
       }
 
       // 2. 상세 측정 데이터 저장 (MeasurementDataService 사용)
       try {
-        console.log('🔧 MeasurementDataService 생성 시작...');
         const measurementDataService = new MeasurementDataService();
-        console.log('✅ MeasurementDataService 생성 완료');
         
         const detailedMeasurementData = {
           sessionId: sessionId,
@@ -468,15 +489,29 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
           }
         };
 
-        console.log('🔧 저장할 상세 측정 데이터:', detailedMeasurementData);
+        console.log('상세 측정 데이터 준비 완료', {
+          metadata: { 
+            sessionId: detailedMeasurementData.sessionId,
+            userId: detailedMeasurementData.userId,
+            hasStorageUrl: !!detailedMeasurementData.storageUrl,
+            deviceModel: detailedMeasurementData.deviceInfo.model,
+            dataQualityScore: detailedMeasurementData.dataQuality.overallScore
+          }
+        }); 
 
         const measurementId = await measurementDataService.saveMeasurementData(detailedMeasurementData);
-        console.log('✅ MeasurementData 저장 완료:', measurementId);
+        console.log('측정 데이터 저장 성공', {
+          metadata: { 
+            measurementId,
+            sessionId 
+          }
+        }); 
         
       } catch (detailError) {
-        console.error('❌ MeasurementData 저장 실패:', detailError);
-        console.error('❌ detailError 상세:', detailError instanceof Error ? detailError.message : detailError);
-        console.error('❌ detailError stack:', detailError instanceof Error ? detailError.stack : 'No stack');
+          metadata: { 
+            errorMessage: detailError instanceof Error ? detailError.message : String(detailError),
+            errorStack: detailError instanceof Error ? detailError.stack : 'No stack'
+          } 
         // 세션은 저장되었으므로 계속 진행
       }
 
@@ -486,13 +521,19 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         measurementData: measurementData,
       }));
       
-      console.log('✅ 측정 데이터 저장 프로세스 완료 - 분석 단계로 이동');
+        metadata: { 
+          nextStep: 'analysis',
+          hasMeasurementData: !!measurementData 
+        } 
       navigateToStep('analysis');
       
     } catch (error) {
-      console.error('❌ 전체 측정 데이터 저장 실패:', error);
-      console.error('❌ error 상세:', error instanceof Error ? error.message : error);
-      console.error('❌ error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('측정 완료 처리 중 오류', {
+        metadata: { 
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : 'No stack'
+        }
+      });
       setState(prev => ({ 
         ...prev, 
         error: `데이터 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}` 

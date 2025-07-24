@@ -22,6 +22,7 @@ import {
   TRIAL_CONFIGS,
   VolumeDiscountTier
 } from '@core/types/business';
+import { UserType } from '@core/types/unified';
 import { creditManagementService } from './CreditManagementService';
 
 export interface TrialApplicationData {
@@ -156,7 +157,10 @@ class TrialManagementService {
       // 다음 단계 결정
       const nextSteps = this.getTrialNextSteps(applicationData.trialType);
 
-      console.log(`✅ 체험 신청 완료 (${applicationData.trialType}):`, applicationData.organizationName);
+        trialType: applicationData.trialType,
+        organizationName: applicationData.organizationName,
+        estimatedMemberCount: applicationData.estimatedMemberCount,
+        estimatedValue: estimatedValue
 
       return {
         applicationId: applicationRef.id,
@@ -165,7 +169,8 @@ class TrialManagementService {
       };
 
     } catch (error) {
-      console.error('❌ 체험 신청 실패:', error);
+        organizationName: applicationData.organizationName,
+        trialType: applicationData.trialType
       throw new Error('체험 신청 처리 중 오류가 발생했습니다.');
     }
   }
@@ -289,7 +294,11 @@ class TrialManagementService {
           approvedBy: adminUserId
         });
 
-        console.log(`✅ 체험 서비스 승인 완료:`, applicationData.organizationName);
+          organizationId,
+          organizationName: applicationData.organizationName,
+          trialServiceId: trialService.id,
+          trialType: applicationData.trialType,
+          approvedBy: adminUserId
 
         return {
           organizationId,
@@ -301,7 +310,9 @@ class TrialManagementService {
         };
 
       } catch (error) {
-        console.error('❌ 체험 서비스 승인 실패:', error);
+          applicationId,
+          adminUserId,
+          organizationName: applicationData?.organizationName || 'unknown'
         throw error;
       }
     });
@@ -373,7 +384,7 @@ class TrialManagementService {
       email,
       displayName: applicationData.contactPersonName,
       organizationId,
-      userType: 'ORGANIZATION_ADMIN',
+      userType: UserType.ORGANIZATION_ADMIN,
       department: '관리부서',
       position: applicationData.contactPersonPosition,
       isActive: true,
@@ -492,7 +503,7 @@ class TrialManagementService {
       };
 
     } catch (error) {
-      console.error('❌ 체험 상태 조회 실패:', error);
+        organizationId
       return null;
     }
   }
@@ -550,7 +561,8 @@ class TrialManagementService {
       };
 
     } catch (error) {
-      console.error('❌ 체험 사용량 통계 수집 실패:', error);
+        organizationId,
+        trialServiceId: trialService.id
       return {
         registeredMembers: 0,
         activeMembers: 0,
@@ -650,12 +662,18 @@ class TrialManagementService {
         // 체험 ROI 분석 기록
         await this.recordTrialROIAnalysis(organizationId);
 
-        console.log(`✅ 체험 → 정식 서비스 전환 완료: ${finalDiscount}% 할인`);
+          organizationId,
+          finalDiscount,
+          servicePackage: conversionDetails.servicePackage,
+          contractMonths: conversionDetails.contractMonths,
+          salesUserId
 
         return contractData;
 
       } catch (error) {
-        console.error('❌ 체험 전환 실패:', error);
+          organizationId,
+          servicePackage: conversionDetails.servicePackage,
+          salesUserId
         throw error;
       }
     });
@@ -725,7 +743,8 @@ class TrialManagementService {
   private async recordTrialROIAnalysis(organizationId: string): Promise<void> {
     // ROI 분석 로직 구현
     // 실제 구현에서는 상세한 비용/수익 분석이 들어갈 예정
-    console.log(`📊 체험 ROI 분석 기록: ${organizationId}`);
+      organizationId,
+      action: 'recordTrialROIAnalysis'
   }
 
   // === 체험 만료 관리 ===
@@ -757,18 +776,24 @@ class TrialManagementService {
           if (summary && summary.conversionScore >= 60) {
             // 고전환 가능성 - 연장 제안
             await this.extendTrialPeriod(trialData.organizationId, 7); // 7일 연장
-            console.log(`🔄 체험 기간 연장: ${summary.organizationName}`);
+              organizationId: trialData.organizationId,
+              organizationName: summary.organizationName,
+              conversionScore: summary.conversionScore,
+              extensionDays: 7
           } else {
             // 낮은 전환 가능성 - 종료
             await this.terminateTrial(trialData.organizationId);
             terminatedCount++;
-            console.log(`❌ 체험 서비스 종료: ${summary?.organizationName}`);
+              organizationId: trialData.organizationId,
+              organizationName: summary?.organizationName || 'unknown',
+              conversionScore: summary?.conversionScore || 0
           }
           
           processedCount++;
           
         } catch (error) {
-          console.error(`❌ 체험 만료 처리 실패 (${trialData.organizationId}):`, error);
+            organizationId: trialData.organizationId,
+            trialServiceId: trialDoc.id
         }
       }
 
@@ -779,7 +804,9 @@ class TrialManagementService {
       };
 
     } catch (error) {
-      console.error('❌ 만료된 체험 서비스 처리 실패:', error);
+        processedCount,
+        convertedCount,
+        terminatedCount
       throw error;
     }
   }

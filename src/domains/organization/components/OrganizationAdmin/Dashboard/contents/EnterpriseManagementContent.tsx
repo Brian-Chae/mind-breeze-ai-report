@@ -66,12 +66,9 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
 
   const loadComparisonData = async () => {
     try {
-      console.log('🔄 [EnterpriseManagement] 비교 분석 데이터 로딩 시작...')
       const comparison = await systemAdminService.getEnterpriseComparisonAnalytics()
       setComparisonAnalytics(comparison)
-      console.log('✅ [EnterpriseManagement] 비교 분석 데이터 로딩 완료')
     } catch (error) {
-      console.error('❌ [EnterpriseManagement] 비교 분석 데이터 로드 실패:', error)
       // 실패해도 빈 데이터로 설정
       setComparisonAnalytics({
         topPerformers: [],
@@ -94,7 +91,6 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
   const loadData = async () => {
     setIsLoading(true)
     try {
-      console.log('🔄 [EnterpriseManagement] 기업 데이터 로딩 시작...')
       
       const [overviewsResult, registrationsResult] = await Promise.allSettled([
         systemAdminService.getAllEnterpriseOverview(),
@@ -107,18 +103,16 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
       
       // 개별 실패 로그
       if (overviewsResult.status === 'rejected') {
-        console.error('❌ getAllEnterpriseOverview 실패:', overviewsResult.reason)
       }
       if (registrationsResult.status === 'rejected') {
-        console.error('❌ getRecentEnterpriseRegistrations 실패:', registrationsResult.reason)
       }
       
-      console.log('✅ [EnterpriseManagement] 로딩된 기업 수:', overviews.length)
-      console.log('📋 [EnterpriseManagement] 기업 목록:', overviews.map(e => ({ 
-        id: e.organizationId, 
-        name: e.organizationName,
-        companyCode: e.companyCode
-      })))
+        enterpriseCount: overviews.length,
+        enterprises: overviews.map(e => ({
+          id: e.organizationId,
+          name: e.organizationName,
+          companyCode: e.companyCode
+        }))
       
       // LOOXID LABS INC. 검색
       const looxidLabs = overviews.find(e => 
@@ -127,16 +121,13 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
       )
       
       if (looxidLabs) {
-        console.log('🎯 [EnterpriseManagement] LOOXID LABS 발견!', looxidLabs)
       } else {
-        console.log('❌ [EnterpriseManagement] LOOXID LABS를 찾을 수 없습니다')
-        console.log('🔍 모든 기업명:', overviews.map(e => e.organizationName))
+          allEnterpriseNames: overviews.map(e => e.organizationName)
       }
       
       setEnterpriseOverviews(overviews)
       setRecentRegistrations(registrations)
     } catch (error) {
-      console.error('❌ [EnterpriseManagement] 기업 관리 데이터 로드 실패:', error)
     } finally {
       setIsLoading(false)
     }
@@ -148,7 +139,6 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
       setReportAnalytics(analytics)
       setActiveTab('analytics')
     } catch (error) {
-      console.error('리포트 분석 로드 실패:', error)
     }
   }
 
@@ -164,7 +154,6 @@ export default function EnterpriseManagementContent({}: EnterpriseManagementCont
       setSelectedOrganization(organizationId)
       setActiveTab('analytics')
     } catch (error) {
-      console.error('성과 대시보드 로드 실패:', error)
     } finally {
       setDashboardLoading(false)
     }

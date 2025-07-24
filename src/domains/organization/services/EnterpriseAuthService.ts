@@ -1,4 +1,5 @@
 import { auth, db } from '@core/services/firebase';
+import { BaseService } from '@core/services/BaseService';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -42,7 +43,7 @@ export interface MeasurementSubjectAccess {
   reportIds: string[];  // 접근 가능한 리포트 ID들
 }
 
-class EnterpriseAuthService {
+class EnterpriseAuthService extends BaseService {
   private authStateListeners: ((context: AuthContext) => void)[] = [];
   private currentContext: AuthContext = {
     user: null,
@@ -55,16 +56,9 @@ class EnterpriseAuthService {
   constructor() {
     // Firebase Auth 상태 변경 감지
     onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('🔄 Firebase Auth 상태 변경:', {
-        hasUser: !!firebaseUser,
-        uid: firebaseUser?.uid,
-        email: firebaseUser?.email
-      });
-      
       if (firebaseUser) {
         await this.loadUserContext(firebaseUser);
       } else {
-        console.log('🔄 사용자 로그아웃 - 컨텍스트 초기화');
         this.updateContext({
           user: null,
           organization: null,
@@ -105,7 +99,6 @@ class EnterpriseAuthService {
       
       // 프로필이 없거나 불완전하면 생성/업데이트
       if (!user || user.email === 'unknown@example.com' || !user.userType) {
-        console.log('🔧 사용자 프로필 업데이트 중...');
         user = await this.createOrUpdateUserProfile(userCredential.user, credentials);
       }
 
@@ -116,11 +109,9 @@ class EnterpriseAuthService {
       // 로그인 시간 업데이트
       await this.updateLastLogin(user.id);
 
-      console.log('✅ 로그인 성공:', user.displayName);
       return user;
 
     } catch (error: any) {
-      console.error('❌ 로그인 실패:', error);
       throw new Error(this.getErrorMessage(error.code));
     }
   }
@@ -172,11 +163,9 @@ class EnterpriseAuthService {
         await this.createOrganizationMember(user.id, organizationId, data);
       }
 
-      console.log('✅ 회원가입 성공:', user.displayName);
       return user;
 
     } catch (error: any) {
-      console.error('❌ 회원가입 실패:', error);
       throw new Error(this.getErrorMessage(error.code));
     }
   }
@@ -184,9 +173,7 @@ class EnterpriseAuthService {
   async signOut(): Promise<void> {
     try {
       await signOut(auth);
-      console.log('✅ 로그아웃 완료');
     } catch (error) {
-      console.error('❌ 로그아웃 실패:', error);
       throw error;
     }
   }
@@ -194,9 +181,7 @@ class EnterpriseAuthService {
   async resetPassword(email: string): Promise<void> {
     try {
       await sendPasswordResetEmail(auth, email);
-      console.log('✅ 비밀번호 재설정 이메일 발송 완료');
     } catch (error: any) {
-      console.error('❌ 비밀번호 재설정 실패:', error);
       throw new Error(this.getErrorMessage(error.code));
     }
   }
@@ -205,23 +190,15 @@ class EnterpriseAuthService {
 
   private async loadUserContext(firebaseUser: FirebaseUser): Promise<void> {
     try {
-      console.log('🔄 loadUserContext 시작:', {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName
-      });
-      
       const user = await this.loadUserProfile(firebaseUser.uid);
-      console.log('🔄 loadUserProfile 결과:', user);
       
       if (!user) {
-        console.warn('⚠️ 사용자 프로필을 찾을 수 없습니다. 기본 프로필을 생성합니다.');
         
         // 기본 사용자 프로필 생성
         const defaultUser: EnterpriseUser = {
           id: firebaseUser.uid,
           email: firebaseUser.email || '',
-          userType: 'ORGANIZATION_ADMIN', // 기본값으로 조직 관리자 설정
+          userType: UserType.ORGANIZATION_ADMIN, // 기본값으로 조직 관리자 설정
           displayName: firebaseUser.displayName || '사용자',
           personalCreditBalance: 0,
           permissions: [],
@@ -231,8 +208,6 @@ class EnterpriseAuthService {
           isActive: true
         };
 
-        console.log('🔄 기본 사용자 프로필 생성:', defaultUser);
-
         // Firestore에 기본 프로필 저장
         await setDoc(doc(db, 'users', firebaseUser.uid), {
           ...defaultUser,
@@ -241,8 +216,6 @@ class EnterpriseAuthService {
           updatedAt: Timestamp.now(),
           lastLoginAt: Timestamp.now()
         });
-
-        console.log('✅ 기본 사용자 프로필 Firestore에 저장 완료');
 
         this.updateContext({
           user: defaultUser,
@@ -261,7 +234,7 @@ class EnterpriseAuthService {
       if (user.organizationId) {
         organization = await this.loadOrganization(user.organizationId);
         
-        if (user.userType === 'ORGANIZATION_MEMBER') {
+        if (user.userType === UserType.ORGANIZATION_MEMBER) {
           memberInfo = await this.loadOrganizationMember(user.id, user.organizationId);
         }
       }
@@ -277,7 +250,6 @@ class EnterpriseAuthService {
       });
 
     } catch (error) {
-      console.error('❌ 사용자 컨텍스트 로드 실패:', error);
       this.updateContext({
         user: null,
         organization: null,
@@ -290,18 +262,13 @@ class EnterpriseAuthService {
 
   private async loadUserProfile(userId: string): Promise<EnterpriseUser | null> {
     try {
-      console.log('🔄 loadUserProfile 시작:', userId);
       const userDoc = await getDoc(doc(db, 'users', userId));
-      console.log('🔄 Firestore 문서 조회 결과:', { exists: userDoc.exists(), id: userDoc.id });
       
       if (!userDoc.exists()) {
-        console.log('⚠️ 사용자 문서가 존재하지 않습니다.');
         return null;
       }
 
       const data = userDoc.data();
-      console.log('🔄 Firestore 문서 데이터:', data);
-      console.log('🔍 userType 상세 확인:', data.userType, typeof data.userType);
       
       const userProfile = {
         id: userDoc.id,
@@ -321,10 +288,8 @@ class EnterpriseAuthService {
         isActive: data.isActive ?? true
       };
       
-      console.log('✅ 사용자 프로필 로드 완료:', userProfile);
       return userProfile;
     } catch (error) {
-      console.error('❌ 사용자 프로필 로드 실패:', error);
       return null;
     }
   }
@@ -336,7 +301,7 @@ class EnterpriseAuthService {
     const now = Timestamp.now();
     
     // 개인 사용자로 기본 설정 (이후 조직 정보가 있으면 업데이트)
-    const userType: UserType = credentials.organizationId ? 'ORGANIZATION_MEMBER' : 'INDIVIDUAL_USER';
+    const userType: UserType = credentials.organizationId ? UserType.ORGANIZATION_MEMBER : UserType.INDIVIDUAL_USER;
     
     // undefined 값을 제거하여 Firestore 에러 방지
     const userDoc: any = {
@@ -360,13 +325,11 @@ class EnterpriseAuthService {
     }
     
     // 개인 사용자의 경우에만 크레딧 잔액 추가
-    if (userType === 'INDIVIDUAL_USER') {
+    if (userType === UserType.INDIVIDUAL_USER) {
       userDoc.personalCreditBalance = 0;
     }
 
     await setDoc(doc(db, 'users', firebaseUser.uid), userDoc);
-
-    console.log('✅ 사용자 프로필 생성/업데이트 완료:', userDoc.email);
 
     return {
       id: firebaseUser.uid,
@@ -393,7 +356,7 @@ class EnterpriseAuthService {
       address: data.address,
       department: data.department,
       position: data.position,
-      personalCreditBalance: data.userType === 'INDIVIDUAL_USER' ? 0 : undefined,
+      personalCreditBalance: data.userType === UserType.INDIVIDUAL_USER ? 0 : undefined,
       permissions: JSON.stringify(this.getDefaultPermissions(data.userType)),
       isActive: true,
       createdAt: now,
@@ -458,7 +421,6 @@ class EnterpriseAuthService {
     };
 
     await setDoc(doc(db, 'organizations', organizationId), organizationDoc);
-    console.log('✅ 조직 생성 완료:', orgData.name);
     
     return organizationId;
   }
@@ -499,7 +461,6 @@ class EnterpriseAuthService {
         updatedAt: data.updatedAt?.toDate()
       };
     } catch (error) {
-      console.error('❌ 조직 정보 로드 실패:', error);
       return null;
     }
   }
@@ -552,7 +513,6 @@ class EnterpriseAuthService {
         lastActivityAt: data.lastActivityAt?.toDate()
       };
     } catch (error) {
-      console.error('❌ 조직 멤버 정보 로드 실패:', error);
       return null;
     }
   }
@@ -683,14 +643,6 @@ class EnterpriseAuthService {
   }
 
   private updateContext(context: AuthContext): void {
-    console.log('🔄 EnterpriseAuthService 컨텍스트 업데이트:', {
-      hasUser: !!context.user,
-      user: context.user,
-      hasOrganization: !!context.organization,
-      permissionsCount: context.permissions.length,
-      isLoading: context.isLoading
-    });
-    
     this.currentContext = context;
     this.authStateListeners.forEach(listener => listener(context));
   }
@@ -793,7 +745,6 @@ class EnterpriseAuthService {
 
       return organizationId;
     } catch (error) {
-      console.error('❌ 조직 생성 실패:', error);
       throw new Error('조직 생성에 실패했습니다.');
     }
   }
@@ -801,8 +752,6 @@ class EnterpriseAuthService {
   // MEASUREMENT_SUBJECT용 토큰 기반 접속
   async accessWithToken(token: string): Promise<MeasurementSubjectAccess> {
     try {
-      console.log('[Auth] Accessing with token:', token);
-      
       const usersCollection = collection(db, 'users');
       const q = query(
         usersCollection,
@@ -850,7 +799,6 @@ class EnterpriseAuthService {
       
       return accessInfo;
     } catch (error) {
-      console.error('[Auth] Token access failed:', error);
       throw error;
     }
   }
@@ -881,7 +829,7 @@ class EnterpriseAuthService {
         id: userId,
         email: data.email,
         displayName: data.displayName,
-        userType: 'MEASUREMENT_SUBJECT',
+        userType: UserType.MEASUREMENT_SUBJECT,
         organizationId: data.organizationId,
         permissions: ['report:view', 'consultation:access'],
         accessToken,
@@ -899,7 +847,6 @@ class EnterpriseAuthService {
         updatedAt: Timestamp.fromDate(measurementSubject.updatedAt || new Date())
       });
       
-      console.log('[Auth] Measurement subject created:', userId);
       
       return {
         userId,
@@ -909,7 +856,6 @@ class EnterpriseAuthService {
         reportIds: data.reportIds || []
       };
     } catch (error) {
-      console.error('[Auth] Failed to create measurement subject:', error);
       throw error;
     }
   }
@@ -927,7 +873,6 @@ class EnterpriseAuthService {
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => doc.id);
     } catch (error) {
-      console.error('[Auth] Failed to get accessible reports:', error);
       return [];
     }
   }

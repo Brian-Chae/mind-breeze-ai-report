@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs'
 import { 
   CreditCard, 
   DollarSign, 
@@ -9,6 +8,7 @@ import {
 
 // 기존 크레딧 관리 컴포넌트들 임포트
 import CreditsSection from '../../OrganizationAdmin/Credits/CreditsSection'
+import CreditManagementHero from '../../OrganizationAdmin/Credits/components/CreditManagementHero'
 
 /**
  * 통합 조직 크레딧 관리 콘텐츠
@@ -23,87 +23,91 @@ export default function OrganizationCreditManagementContent() {
     }
   }
 
-  const tabs = [
-    {
-      id: 'credit-dashboard',
-      label: '크레딧 현황',
-      icon: DollarSign,
-      description: '현재 크레딧 잔액 및 사용량'
-    },
-    {
-      id: 'credit-history', 
-      label: '구매 내역',
-      icon: Calendar,
-      description: '크레딧 구매 및 사용 이력'
-    },
-    {
-      id: 'credit-settings',
-      label: '결제 설정', 
-      icon: Settings,
-      description: '자동 결제 및 알림 설정'
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* 헤더 */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full mb-4">
-            <CreditCard className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">크레딧 관리</h1>
-          <p className="text-lg text-slate-600">크레딧 현황 및 결제 관리</p>
-        </div>
+        {/* Hero Section - AI 리포트 페이지와 동일한 스타일 */}
+        <CreditManagementHero 
+          onPurchase={() => console.log('Purchase clicked')}
+          onExport={() => console.log('Export clicked')}
+          onRefresh={() => console.log('Refresh clicked')}
+        />
 
-        {/* 통합 탭 인터페이스 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-50 rounded-t-2xl p-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    className="flex items-center gap-3 px-6 py-4 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-xl transition-all"
-                  >
-                    <Icon className="w-5 h-5" />
-                    <div className="text-left">
-                      <div className="font-medium">{tab.label}</div>
-                      <div className="text-xs text-slate-500 hidden sm:block">
-                        {tab.description}
-                      </div>
-                    </div>
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
+        {/* 탭 인터페이스 - AI 리포트 페이지와 동일한 구조 */}
+        <div className="space-y-6">
+          {/* 탭 버튼들 */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-2">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setActiveTab('credit-dashboard')}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
+                  activeTab === 'credit-dashboard'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                <DollarSign className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">크레딧 현황</div>
+                  <div className="text-xs opacity-80">현재 크레딧 잔액 및 사용량</div>
+                </div>
+              </button>
 
-            {/* 각 탭의 콘텐츠 */}
-            <div className="p-6">
-              <TabsContent value="credit-dashboard">
-                <CreditsSection 
-                  subSection="credit-dashboard"
-                  onNavigate={handleTabNavigation}
-                />
-              </TabsContent>
+              <button
+                onClick={() => setActiveTab('credit-history')}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
+                  activeTab === 'credit-history'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                <Calendar className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">구매 내역</div>
+                  <div className="text-xs opacity-80">크레딧 구매 및 사용 이력</div>
+                </div>
+              </button>
 
-              <TabsContent value="credit-history">
-                <CreditsSection 
-                  subSection="credit-history"
-                  onNavigate={handleTabNavigation}
-                />
-              </TabsContent>
-
-              <TabsContent value="credit-settings">
-                <CreditsSection 
-                  subSection="credit-settings"
-                  onNavigate={handleTabNavigation}
-                />
-              </TabsContent>
+              <button
+                onClick={() => setActiveTab('credit-settings')}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
+                  activeTab === 'credit-settings'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">결제 설정</div>
+                  <div className="text-xs opacity-80">자동 결제 및 알림 설정</div>
+                </div>
+              </button>
             </div>
-          </Tabs>
+          </div>
+
+          {/* 탭 컨텐츠 */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            {activeTab === 'credit-dashboard' && (
+              <CreditsSection 
+                subSection="credit-dashboard"
+                onNavigate={handleTabNavigation}
+              />
+            )}
+
+            {activeTab === 'credit-history' && (
+              <CreditsSection 
+                subSection="credit-history"
+                onNavigate={handleTabNavigation}
+              />
+            )}
+
+            {activeTab === 'credit-settings' && (
+              <CreditsSection 
+                subSection="credit-settings"
+                onNavigate={handleTabNavigation}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

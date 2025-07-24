@@ -195,7 +195,6 @@ export class StreamingStorageService {
     try {
       await this.initializeStorageStructure();
     } catch (error) {
-      console.error('❌ 저장소 구조 초기화 실패:', error);
       throw error;
     }
   }
@@ -216,11 +215,9 @@ export class StreamingStorageService {
         
         return true;
       } else {
-        console.error('❌ File System Access API 지원하지 않음');
         return false;
       }
     } catch (error) {
-      console.error('❌ 저장소 디렉토리 선택 실패:', error);
       return false;
     }
   }
@@ -253,7 +250,6 @@ export class StreamingStorageService {
       await yearDir.getDirectoryHandle(month, { create: true });
 
     } catch (error) {
-      console.error('❌ 저장소 구조 초기화 실패:', error);
       throw error;
     }
   }
@@ -264,7 +260,6 @@ export class StreamingStorageService {
   async startStreamingSession(config: StreamingSessionConfig): Promise<string> {
     if (!this.storageDirectoryHandle) {
       const errorMessage = '저장소 디렉토리가 선택되지 않았습니다. Data Center에서 저장소를 먼저 설정해주세요.';
-      console.error('❌', errorMessage);
       throw new Error(errorMessage);
     }
 
@@ -305,7 +300,6 @@ export class StreamingStorageService {
 
       return sessionId;
     } catch (error) {
-      console.error('❌ 스트리밍 세션 시작 실패:', error);
       this.currentSession = null;
       throw error;
     }
@@ -395,7 +389,6 @@ export class StreamingStorageService {
       await this.writeFileHeader(stream, filename);
       
     } catch (error) {
-      console.error(`❌ 파일 스트림 생성 실패 (${filename}):`, error);
       throw error;
     }
   }
@@ -599,7 +592,6 @@ export class StreamingStorageService {
         }
       }
     } catch (error) {
-      console.error('❌ 쓰기 큐 처리 실패:', error);
     } finally {
       this.isWriting = false;
     }
@@ -738,7 +730,6 @@ export class StreamingStorageService {
           this.currentSession.estimatedSize = actualSize;
           
         } catch (error) {
-          console.warn('실제 디렉토리 크기 계산 실패, 추정값 사용:', error);
         }
       }
 
@@ -751,7 +742,6 @@ export class StreamingStorageService {
       this.currentSession = null;
 
     } catch (error) {
-      console.error('❌ 스트리밍 세션 종료 실패:', error);
       throw error;
     }
   }
@@ -874,7 +864,6 @@ export class StreamingStorageService {
             const file = await handle.getFile();
             totalSize += file.size;
           } catch (error) {
-            console.warn(`파일 크기 계산 실패: ${name}`, error);
           }
         } else if (handle.kind === 'directory') {
           // 재귀적으로 하위 디렉토리 크기 계산
@@ -883,7 +872,6 @@ export class StreamingStorageService {
         }
       }
     } catch (error) {
-      console.error('디렉토리 크기 계산 실패:', error);
     }
     
     return totalSize;

@@ -390,18 +390,7 @@ export const DeviceStatusLabels = {
   [DeviceStatus.IN_USE]: '🟡 사용중',
   [DeviceStatus.MAINTENANCE]: '🔧 점검중',
   [DeviceStatus.RETURNED]: '🔄 반납완료',
-  [DeviceStatus.DISPOSED]: '❌ 폐기',
-  
-  // 🔄 하위 호환성을 위해 유지
-  AVAILABLE: '🟢 재고',
-  // @deprecated - RENTED 사용
-  ASSIGNED: '🔵 배정완료',
-  RENTED: '🔵 렌탈중',
-  SOLD: '🟠 판매완료',
-  IN_USE: '🟡 사용중',
-  MAINTENANCE: '🔧 점검중',
-  RETURNED: '🔄 반납완료',
-  DISPOSED: '❌ 폐기'
+  [DeviceStatus.DISPOSED]: '❌ 폐기'
 } as const;
 
 // 판매 상태 라벨

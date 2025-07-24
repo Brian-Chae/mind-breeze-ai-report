@@ -155,7 +155,13 @@ class MeasurementUserManagementService {
 
       const docRef = await addDoc(collection(db, this.collectionName), measurementUserData);
       
-      console.log('✅ 측정 대상자 등록 완료:', data.displayName);
+        userId: docRef.id,
+        organizationId: organization.id,
+        metadata: {
+          displayName: data.displayName,
+          email: data.email,
+          createdByUserId: currentUser.id
+        }
       
       return {
         id: docRef.id,
@@ -174,7 +180,10 @@ class MeasurementUserManagementService {
       } as MeasurementUser;
 
     } catch (error) {
-      console.error('❌ 측정 대상자 등록 실패:', error);
+        metadata: {
+          email: data.email,
+          displayName: data.displayName
+        }
       throw error;
     }
   }
@@ -256,7 +265,12 @@ class MeasurementUserManagementService {
       return users;
 
     } catch (error) {
-      console.error('❌ 측정 대상자 목록 조회 실패:', error);
+      const context = enterpriseAuthService.getCurrentContext();
+        organizationId: context.organization?.id,
+        userId: context.user?.id,
+        metadata: {
+          filter
+        }
       throw error;
     }
   }
@@ -295,7 +309,9 @@ class MeasurementUserManagementService {
       } as MeasurementUser;
 
     } catch (error) {
-      console.error('❌ 측정 대상자 조회 실패:', error);
+        metadata: {
+          measurementUserId: userId
+        }
       throw error;
     }
   }
@@ -330,10 +346,15 @@ class MeasurementUserManagementService {
 
       await updateDoc(doc(db, this.collectionName, userId), updateData);
       
-      console.log('✅ 측정 대상자 정보 수정 완료:', userId);
+        metadata: {
+          measurementUserId: userId,
+          updates: Object.keys(updates)
+        }
 
     } catch (error) {
-      console.error('❌ 측정 대상자 수정 실패:', error);
+        metadata: {
+          measurementUserId: userId
+        }
       throw error;
     }
   }
@@ -359,10 +380,15 @@ class MeasurementUserManagementService {
 
       await deleteDoc(doc(db, this.collectionName, userId));
       
-      console.log('✅ 측정 대상자 삭제 완료:', userId);
+        metadata: {
+          measurementUserId: userId,
+          deletedUserEmail: existing.email
+        }
 
     } catch (error) {
-      console.error('❌ 측정 대상자 삭제 실패:', error);
+        metadata: {
+          measurementUserId: userId
+        }
       throw error;
     }
   }
@@ -396,7 +422,6 @@ class MeasurementUserManagementService {
       return stats;
 
     } catch (error) {
-      console.error('❌ 측정 대상자 통계 조회 실패:', error);
       throw error;
     }
   }
@@ -432,7 +457,10 @@ class MeasurementUserManagementService {
       } as MeasurementUser;
 
     } catch (error) {
-      console.error('❌ 이메일로 측정 대상자 검색 실패:', error);
+        organizationId,
+        metadata: {
+          email
+        }
       return null;
     }
   }
@@ -466,10 +494,17 @@ class MeasurementUserManagementService {
 
       await updateDoc(doc(db, this.collectionName, userId), updateData);
       
-      console.log('✅ 측정 기록 완료:', userId);
+        metadata: {
+          measurementUserId: userId,
+          reportId,
+          measurementCount: updateData.measurementCount
+        }
 
     } catch (error) {
-      console.error('❌ 측정 기록 실패:', error);
+        metadata: {
+          measurementUserId: userId,
+          reportId
+        }
       throw error;
     }
   }
@@ -497,10 +532,17 @@ class MeasurementUserManagementService {
 
       await updateDoc(doc(db, this.collectionName, userId), updateData);
       
-      console.log('✅ 리포트 ID 추가 완료:', { userId, reportId });
+        metadata: {
+          measurementUserId: userId,
+          reportId,
+          totalReports: updatedReportIds.length
+        }
 
     } catch (error) {
-      console.error('❌ 리포트 ID 추가 실패:', error);
+        metadata: {
+          measurementUserId: userId,
+          reportId
+        }
       throw error;
     }
   }
@@ -663,7 +705,9 @@ class MeasurementUserManagementService {
       };
 
     } catch (error) {
-      console.error('❌ CSV 검증 실패:', error);
+        metadata: {
+          totalLines: csvData.trim().split('\n').length
+        }
       throw error;
     }
   }
@@ -751,7 +795,12 @@ class MeasurementUserManagementService {
               user: newUser
             });
 
-            console.log(`✅ 사용자 등록 완료 (행 ${userData.row}):`, userData.displayName);
+              userId: newUser.id,
+              metadata: {
+                row: userData.row,
+                displayName: userData.displayName,
+                email: userData.email
+              }
 
           } catch (error) {
             const errorMessage = (error as Error).message;
@@ -761,7 +810,11 @@ class MeasurementUserManagementService {
               error: errorMessage
             });
             
-            console.error(`❌ 사용자 등록 실패 (행 ${userData.row}):`, errorMessage);
+              metadata: {
+                row: userData.row,
+                displayName: userData.displayName,
+                email: userData.email
+              }
           }
         });
 
@@ -777,12 +830,18 @@ class MeasurementUserManagementService {
       // 결과 정리
       results.success = results.failedRows.length === 0;
       
-      console.log(`✅ 대량 등록 완료: 성공 ${results.successfulRows.length}개, 실패 ${results.failedRows.length}개`);
+        organizationId: organization.id,
+        metadata: {
+          totalRows: results.totalRows,
+          successCount: results.successfulRows.length,
+          failureCount: results.failedRows.length
+        }
       
       return results;
 
     } catch (error) {
-      console.error('❌ 대량 사용자 등록 실패:', error);
+      const context = enterpriseAuthService.getCurrentContext();
+        organizationId: context.organization?.id
       throw error;
     }
   }

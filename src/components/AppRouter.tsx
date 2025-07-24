@@ -1,6 +1,7 @@
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthProvider';
+import { UserType } from '@core/types/unified';
 import { LandingPage } from './LandingPage';
 import { LoginPage } from './landing/LoginPage';
 import { SignupPage } from './landing/SignupPage';
@@ -45,14 +46,12 @@ const AppRouter = () => {
   useEffect(() => {
     try {
       initializeRenderers();
-      console.log('✅ 렌더러 초기화 완료');
       
       // 디버깅 함수 등록 (개발 환경에서만)
       if (process.env.NODE_ENV === 'development') {
         DebugUserInfo.registerGlobalDebugFunctions();
       }
     } catch (error) {
-      console.error('❌ 렌더러 초기화 실패:', error);
     }
   }, []);
 
@@ -61,28 +60,15 @@ const AppRouter = () => {
 
     const currentPath = location.pathname;
     
-    console.log('🔄 라우팅 체크:', {
-      user: user ? { email: user.email, uid: user.uid } : null,
-      currentPath,
-      loading
-    });
     
     if (user) {
       // 로그인된 사용자의 라우팅
       const userType = getUserType(user);
       const redirectPath = getRedirectPath(userType);
       
-      console.log('🔄 사용자 타입 확인:', {
-        email: user.email,
-        userType,
-        redirectPath,
-        currentPath,
-        shouldRedirect: ['/login', '/signup', '/', '/welcome', '/home'].includes(currentPath)
-      });
       
       // 공유 리포트 페이지는 절대 리다이렉션하지 않음
       if (currentPath.includes('/shared-report/')) {
-        console.log('🔒 공유 리포트 페이지 - 리다이렉션 완전 차단:', currentPath);
         return;
       }
       
@@ -102,28 +88,17 @@ const AppRouter = () => {
       if (currentPath.startsWith('/admin/') || currentPath === '/admin') {
         const newPath = getAdminRedirectPath(userType, currentPath);
         if (newPath !== currentPath) {
-          console.log('🔄 Admin 경로 리디렉션:', currentPath, '→', newPath);
           navigate(newPath, { replace: true });
           return;
         }
       }
       
-      console.log('🔍 리다이렉션 체크:', {
-        currentPath,
-        publicPaths,
-        isPublicPath,
-        shouldRedirect,
-        finalShouldRedirect: shouldRedirect && !isPublicPath
-      });
       
       if (shouldRedirect && !isPublicPath) {
-        console.log('🔄 리디렉션 실행:', currentPath, '→', redirectPath);
         navigate(redirectPath);
       } else {
-        console.log('✅ 리다이렉션 스킵:', { currentPath, isPublicPath, shouldRedirect });
       }
     } else {
-      console.log('🔄 로그인되지 않은 사용자:', currentPath);
       
       // 로그인되지 않은 사용자는 토큰 접속 허용
       if (currentPath.startsWith('/measurement-access')) {
@@ -150,13 +125,13 @@ const AppRouter = () => {
 
   const getRedirectPath = (userType: string) => {
     switch (userType) {
-      case 'SYSTEM_ADMIN':
+      case UserType.SYSTEM_ADMIN:
         return '/system-admin/dashboard';
-      case 'ORGANIZATION_ADMIN':
+      case UserType.ORGANIZATION_ADMIN:
         return '/org-admin/dashboard';
-      case 'ORGANIZATION_MEMBER':
+      case UserType.ORGANIZATION_MEMBER:
         return '/welcome';
-      case 'INDIVIDUAL_USER':
+      case UserType.INDIVIDUAL_USER:
         return '/welcome';
       default:
         return '/';
@@ -167,13 +142,13 @@ const AppRouter = () => {
   const getAdminRedirectPath = (userType: string, currentPath: string) => {
     // /admin 기본 경로인 경우
     if (currentPath === '/admin') {
-      return userType === 'SYSTEM_ADMIN' ? '/system-admin/dashboard' : '/org-admin/dashboard';
+      return userType === UserType.SYSTEM_ADMIN ? '/system-admin/dashboard' : '/org-admin/dashboard';
     }
 
     // /admin/* 경로 변환
     const adminSubPath = currentPath.replace('/admin', '');
     
-    if (userType === 'SYSTEM_ADMIN') {
+    if (userType === UserType.SYSTEM_ADMIN) {
       // 시스템 관리자 전용 경로들
       const systemOnlyPaths = [
         '/system',
@@ -214,38 +189,36 @@ const AppRouter = () => {
 
   // Firestore에서 실제 사용자 타입 확인
   const getUserType = (user: any) => {
-    if (!user) return 'INDIVIDUAL_USER';
+    if (!user) return UserType.INDIVIDUAL_USER;
     
     // EnterpriseAuthService에서 실제 사용자 정보 가져오기
     const enterpriseContext = enterpriseAuthService.getCurrentContext();
     
     // 실제 사용자 타입이 있으면 사용, 없으면 기본값
     if (enterpriseContext.user?.userType) {
-      console.log('✅ Firestore에서 사용자 타입 확인:', enterpriseContext.user.userType);
       return enterpriseContext.user.userType;
     }
     
     // Firestore 데이터가 아직 로드되지 않은 경우 임시로 이메일 패턴 사용
-    console.log('⚠️ Firestore 데이터 로드 중... 임시로 이메일 패턴 사용');
     const email = user.email?.toLowerCase();
     
     if (email === 'admin-mindbreeze@looxidlabs.com') {
-      return 'SYSTEM_ADMIN';
+      return UserType.SYSTEM_ADMIN;
     }
     
     if (email === 'brian.chae@looxidlabs.com') {
-      return 'ORGANIZATION_ADMIN';
+      return UserType.ORGANIZATION_ADMIN;
     }
     
     if (email?.includes('admin') || email?.includes('manager') || email?.includes('org')) {
-      return 'ORGANIZATION_ADMIN';
+      return UserType.ORGANIZATION_ADMIN;
     }
     
     if (email?.includes('@company.com') || email?.includes('@organization.com')) {
-      return 'ORGANIZATION_MEMBER';
+      return UserType.ORGANIZATION_MEMBER;
     }
     
-    return 'INDIVIDUAL_USER';
+    return UserType.INDIVIDUAL_USER;
   };
 
   useEffect(() => {

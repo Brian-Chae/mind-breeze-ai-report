@@ -76,7 +76,6 @@ export class SystemControlService {
       
 
     } catch (error) {
-      console.error('❌ SystemControlService 초기화 실패:', error);
       throw error;
     }
   }
@@ -110,7 +109,6 @@ export class SystemControlService {
       
 
     } catch (error) {
-      console.error('Failed to load store references:', error);
       throw error;
     }
   }
@@ -130,7 +128,6 @@ export class SystemControlService {
         if (this.streamingStorageService) {
           this.streamingStorageService.writeEEGData(data);
         } else {
-          console.error('🔧 StreamingStorageService가 없음');
         }
       },
       onPPGData: (data: any[]) => {
@@ -138,7 +135,6 @@ export class SystemControlService {
         if (this.streamingStorageService) {
           this.streamingStorageService.writePPGData(data);
         } else {
-          console.error('🔧 StreamingStorageService가 없음');
         }
       },
       onACCData: (data: any[]) => {
@@ -146,7 +142,6 @@ export class SystemControlService {
         if (this.streamingStorageService) {
           this.streamingStorageService.writeACCData(data);
         } else {
-          console.error('🔧 StreamingStorageService가 없음');
         }
       }
     };
@@ -168,7 +163,6 @@ export class SystemControlService {
       const devices = await bluetoothService.scan();
       return devices;
     } catch (error) {
-      console.error('Device scan failed:', error);
       throw error;
     }
   }
@@ -227,11 +221,9 @@ export class SystemControlService {
       try {
         await this.startStreaming();
       } catch (streamError) {
-        console.error('🔧 Auto-streaming failed:', streamError);
         // 스트리밍 실패해도 연결은 유지
       }
     } catch (error) {
-      console.error('Device connection failed:', error);
       this.isConnected = false;
       this.currentDeviceId = null;
       throw error;
@@ -246,7 +238,6 @@ export class SystemControlService {
       this.storeRefs.deviceStore?.getState().registerDevice(device, nickname);
 
     } catch (error) {
-      console.error('Device registration failed:', error);
       throw error;
     }
   }
@@ -256,7 +247,6 @@ export class SystemControlService {
       this.storeRefs.deviceStore?.getState().unregisterDevice(deviceId);
 
     } catch (error) {
-      console.error('Device unregistration failed:', error);
       throw error;
     }
   }
@@ -279,7 +269,6 @@ export class SystemControlService {
         samplingRates: bluetoothService.getCurrentSamplingRates()
       };
     } catch (error) {
-      console.error('Failed to get device monitoring info:', error);
       return null;
     }
   }
@@ -291,7 +280,6 @@ export class SystemControlService {
     try {
       return bluetoothService.getCurrentSamplingRates();
     } catch (error) {
-      console.error('Failed to get sampling rates:', error);
       return null;
     }
   }
@@ -365,7 +353,6 @@ export class SystemControlService {
       
 
     } catch (error) {
-      console.error('❌ SystemControlService 연결 해제 실패:', error);
       
       // 에러가 발생해도 상태는 초기화
       this.isConnected = false;
@@ -377,7 +364,6 @@ export class SystemControlService {
       try {
         bluetoothService.clearDeviceCache();
       } catch (cleanupError) {
-        console.error('캐시 정리 실패:', cleanupError);
       }
       
       throw error;
@@ -417,7 +403,6 @@ export class SystemControlService {
       
 
     } catch (error) {
-      console.error('Streaming start failed:', error);
       this.isStreaming = false;
       throw error;
     }
@@ -440,7 +425,6 @@ export class SystemControlService {
       
 
     } catch (error) {
-      console.error('Streaming stop failed:', error);
       throw error;
     }
   }
@@ -473,7 +457,6 @@ export class SystemControlService {
       // 2-1. 저장소 디렉토리 설정 확인
       const storageDirectoryHandle = this.streamingStorageService.getStorageDirectoryHandle();
       if (!storageDirectoryHandle) {
-        console.error('🔧 저장소 디렉토리가 설정되지 않음');
         
         // StorageStore를 통해 저장소 설정 확인
         const storageStore = this.storeRefs.storageStore?.getState();
@@ -486,7 +469,6 @@ export class SystemControlService {
         try {
           await this.streamingStorageService.setStorageDirectoryHandle(storageStore.config.storageDirectory);
         } catch (error) {
-          console.error('❌ StreamingStorageService 저장소 디렉토리 설정 실패:', error);
           throw new Error('저장소 디렉토리 설정에 실패했습니다. Data Center에서 저장소를 다시 설정해주세요.');
         }
       }
@@ -520,11 +502,9 @@ export class SystemControlService {
         chunkSize: 1024
       };
 
-      console.log('🔧 스트리밍 설정:', streamingConfig);
 
       // 🔧 StreamingStorageService 세션 시작
       const actualSessionId = await this.streamingStorageService.startStreamingSession(streamingConfig);
-      console.log('🔧 StreamingStorageService 세션 시작 완료:', actualSessionId);
 
       // 5. StorageStore 상태 업데이트
       if (this.storeRefs.storageStore) {
@@ -541,7 +521,6 @@ export class SystemControlService {
 
       return actualSessionId;
     } catch (error) {
-      console.error('❌ Recording start failed:', error);
       this.isRecording = false;
       
       // 더 자세한 에러 정보 제공
@@ -579,7 +558,6 @@ export class SystemControlService {
       
 
     } catch (error) {
-      console.error('Recording stop failed:', error);
       throw error;
     }
   }
@@ -608,10 +586,6 @@ export class SystemControlService {
    */
   async getConnectedDeviceInfo(): Promise<{ id: string; name: string; batteryLevel: number } | null> {
     if (!this.isConnected || !this.currentDeviceId) {
-      console.warn('🔧 연결된 디바이스가 없음:', {
-        isConnected: this.isConnected,
-        currentDeviceId: this.currentDeviceId
-      });
       return null;
     }
 
@@ -635,7 +609,6 @@ export class SystemControlService {
         batteryLevel: batteryLevel || connectedDevice?.battery?.level || 0
       };
     } catch (error) {
-      console.error('🔧 디바이스 정보 조회 실패:', error);
       
       // 기본값 반환
       return {
@@ -681,7 +654,6 @@ export class SystemControlService {
     this.monitoringInterval = setInterval(() => {
       // 연결 상태 확인
       if (!bluetoothService.isConnected()) {
-        console.warn('Device connection lost detected');
         this.handleConnectionLoss();
         return;
       }
@@ -693,7 +665,6 @@ export class SystemControlService {
           this.storeRefs.deviceStore.getState().updateSamplingRates(samplingRates);
         }
       } catch (error) {
-        console.error('Failed to update sampling rates:', error);
       }
     }, 1000); // 1초마다 업데이트
 
@@ -781,7 +752,6 @@ export class SystemControlService {
       
   
     } catch (error) {
-      console.error('SystemControlService cleanup failed:', error);
       throw error;
     }
   }

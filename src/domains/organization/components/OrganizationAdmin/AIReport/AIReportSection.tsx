@@ -68,9 +68,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   useEffect(() => {
     try {
       initializeRenderers()
-      console.log('✅ 렌더러 시스템이 초기화되었습니다.')
     } catch (error) {
-      console.error('❌ 렌더러 초기화 실패:', error)
     }
   }, [])
 
@@ -80,9 +78,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       try {
         const accessibleCustomRenderers = await customRendererService.getAccessibleRenderers(organizationId)
         setCustomRenderers(accessibleCustomRenderers)
-        console.log('✅ 커스텀 렌더러 로드 완료:', accessibleCustomRenderers.length, '개')
       } catch (error) {
-        console.warn('❌ 커스텀 렌더러 로드 실패:', error)
         setCustomRenderers([])
       }
     }
@@ -167,7 +163,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         setCopiedEmails(prev => ({ ...prev, [dataId]: false }));
       }, 2000);
     } catch (err) {
-      console.error('클립보드 복사 실패:', err);
     }
   }
   
@@ -207,7 +202,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           ]
           const orgSessions = await FirebaseService.getMeasurementSessions(orgFilters)
           measurementSessions.push(...orgSessions);
-          console.log(`✅ 조직 세션: ${orgSessions.length}개`);
         }
         
         // 2. 모든 측정 세션을 조회한 후 organizationId가 없는 것들 필터링
@@ -215,12 +209,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         const allSessions = await FirebaseService.getMeasurementSessions([])
         const personalSessions = allSessions.filter((session: any) => !session.organizationId);
         measurementSessions.push(...personalSessions);
-        console.log(`✅ 개인 세션: ${personalSessions.length}개`);
         
       } catch (queryError) {
-        console.error('측정 세션 조회 중 오류:', queryError);
         // 실패 시 모든 세션 조회로 폴백
-        console.log('📝 폴백: 모든 측정 세션 조회');
         measurementSessions = await FirebaseService.getMeasurementSessions([])
       }
       
@@ -254,7 +245,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                    };
                  }
                } catch (error) {
-                 console.warn(`담당자 정보 조회 실패 (ID: ${session.measuredByUserId || session.measurementByUserId}):`, error);
                }
              }
              
@@ -278,7 +268,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                    calculatedAge--;
                  }
                } catch (error) {
-                 console.warn('생년월일 파싱 실패:', error);
                }
              }
 
@@ -338,7 +327,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                sessionData: session // 원본 세션 데이터 보관
              }
            } catch (error) {
-             console.warn(`세션 ${session.id}의 분석 결과 조회 실패:`, error)
              
              // 나이 계산
              let calculatedAge = session.subjectAge;
@@ -360,7 +348,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                    calculatedAge--;
                  }
                } catch (error) {
-                 console.warn('생년월일 파싱 실패:', error);
                }
              }
              
@@ -389,16 +376,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
          })
        )
       
-      console.log('✅ 측정 데이터 로드 완료:', measurementDataWithReports.length, '개')
       setMeasurementDataList(measurementDataWithReports)
       
       // 상세 로깅: 각 측정 데이터의 리포트 개수 확인
       measurementDataWithReports.forEach(data => {
-        console.log(`📊 ${data.userName} - 리포트 ${data.availableReports.length}개`)
       })
       
     } catch (error) {
-      console.error('측정 데이터 로드 실패:', error)
       
       // 에러 발생 시 빈 배열로 설정하고 사용자에게 안내
       setMeasurementDataList([])
@@ -410,11 +394,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   // 측정 데이터 기반 리포트 생성 핸들러
   const handleGenerateReportFromData = async (dataId: string, engineType: string) => {
-    console.log('🚀 AI 분석 시작:', dataId, engineType)
     
     // 중복 실행 방지
     if (generatingReports[dataId]?.isLoading) {
-      console.log('⚠️ 이미 분석 중인 데이터입니다.')
       return
     }
 
@@ -439,7 +421,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       setAnalysisTimers(prev => ({ ...prev, [dataId]: timer }))
 
       // 1. 측정 데이터 로드 (세션 ID를 통해 실제 측정 데이터 찾기)
-      console.log('📊 측정 데이터 로드 중... 세션 ID:', dataId)
       const measurementDataService = new MeasurementDataService()
       
       let measurementData = null
@@ -448,37 +429,29 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       try {
         // 먼저 세션 ID로 상세 측정 데이터 조회
         const sessionMeasurementData = await measurementDataService.getSessionMeasurementData(dataId)
-        console.log('📊 세션별 측정 데이터 조회 결과:', sessionMeasurementData.length, '개')
         
         if (sessionMeasurementData.length > 0) {
           // 가장 최신 측정 데이터 사용
           measurementData = sessionMeasurementData[0]
-          console.log('✅ 세션별 측정 데이터 사용:', measurementData.id)
         }
       } catch (sessionError) {
-        console.log('⚠️ 세션 측정 데이터 조회 실패:', sessionError)
       }
       
       if (!measurementData) {
         // 폴백 1: 직접 ID로 조회 시도
         try {
-          console.log('📊 폴백: 직접 ID로 측정 데이터 조회 시도...')
           measurementData = await measurementDataService.getMeasurementData(dataId)
           if (measurementData) {
-            console.log('✅ 직접 ID로 측정 데이터 찾음:', measurementData.id)
           }
         } catch (directError) {
-          console.log('⚠️ 직접 ID 조회도 실패:', directError)
         }
       }
       
       if (!measurementData) {
         // 폴백 2: 세션 데이터로 AI 분석용 데이터 구성
-        console.log('📊 폴백: 세션 데이터로 AI 분석 데이터 구성 시도...')
         try {
           const sessionDoc = await FirebaseService.getMeasurementSession(dataId)
           if (sessionDoc) {
-            console.log('✅ 세션 문서 찾음:', sessionDoc)
             
             // 세션 데이터를 AI 분석용 형식으로 변환
             const sessionData = sessionDoc as any // 타입 단언으로 안전하게 접근
@@ -559,10 +532,8 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
               updatedAt: new Date()
             }
             usingSessionData = true
-            console.log('✅ 세션 데이터로 AI 분석용 데이터 구성 완료')
           }
         } catch (sessionError) {
-          console.error('❌ 세션 데이터 조회 실패:', sessionError)
         }
       }
       
@@ -571,28 +542,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }
       
       if (usingSessionData) {
-        console.log('⚠️ 세션 데이터로 AI 분석을 수행합니다. 정확도가 제한될 수 있습니다.')
       }
       
-      console.log('✅ 사용할 측정 데이터:', {
-        id: measurementData.id,
-        sessionId: measurementData.sessionId,
-        measurementDate: measurementData.measurementDate
-      })
 
       // 2. 세션 데이터에서 개인 정보 추출
-      console.log('👤 개인 정보 추출 중...')
       const targetMeasurementData = measurementDataList.find(data => data.id === dataId)
       const sessionData = targetMeasurementData?.sessionData || {}
       
       // 🔍 디버깅: 세션 데이터 상세 확인
-      console.log('🔍 targetMeasurementData:', targetMeasurementData)
-      console.log('🔍 sessionData 전체:', sessionData)
-      console.log('🔍 sessionData.subjectName:', sessionData.subjectName)
-      console.log('🔍 sessionData.subjectAge:', sessionData.subjectAge)
-      console.log('🔍 sessionData.subjectBirthDate:', sessionData.subjectBirthDate)
-      console.log('🔍 sessionData.subjectGender:', sessionData.subjectGender)
-      console.log('🔍 sessionData.subjectOccupation:', sessionData.subjectOccupation)
       
       // 나이 계산 로직 개선
       let calculatedAge = sessionData.subjectAge || 30; // 기본값
@@ -605,13 +562,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           // Firestore Timestamp 객체인 경우 .toDate()로 변환
           if (typeof sessionData.subjectBirthDate.toDate === 'function') {
             birthDate = sessionData.subjectBirthDate.toDate();
-            console.log('🔄 Firestore Timestamp를 Date로 변환:', birthDate);
           } else if (sessionData.subjectBirthDate instanceof Date) {
             birthDate = sessionData.subjectBirthDate;
-            console.log('📅 이미 Date 객체:', birthDate);
           } else {
             birthDate = new Date(sessionData.subjectBirthDate);
-            console.log('🔄 문자열을 Date로 변환:', birthDate);
           }
           
           const today = new Date()
@@ -623,12 +577,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             calculatedAge--
           }
           
-          console.log('📅 생년월일:', birthDate.toLocaleDateString('ko-KR'))
-          console.log('📅 오늘 날짜:', today.toLocaleDateString('ko-KR'))
-          console.log('✅ 생년월일로부터 계산된 나이:', calculatedAge)
         } catch (error) {
-          console.warn('⚠️ 생년월일 파싱 실패:', error)
-          console.warn('⚠️ 원본 값:', sessionData.subjectBirthDate)
         }
       }
       
@@ -663,23 +612,17 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         }
       }
       
-      console.log('👤 구성된 개인 정보:', personalInfo)
-      console.log('📊 구성된 측정 데이터 구조:', Object.keys(aiAnalysisData.measurementData))
-      console.log('🎯 AI 분석에 전달될 전체 데이터:', aiAnalysisData)
 
       // 3. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
-      console.log('🤖 AI 엔진 초기화 중...')
       const aiEngine = new BasicGeminiV1Engine()
 
       // 4. 데이터 검증
-      console.log('✅ 데이터 검증 중...')
       const validation = await aiEngine.validate(aiAnalysisData)
       if (!validation.isValid) {
         throw new Error(`데이터 검증 실패: ${validation.errors.join(', ')}`)
       }
 
       // 5. AI 분석 실행
-      console.log('🧠 AI 분석 실행 중...')
       const analysisOptions = {
         outputLanguage: 'ko' as const,
         analysisDepth: 'basic' as const,
@@ -687,10 +630,8 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }
       
       const analysisResult = await aiEngine.analyze(aiAnalysisData, analysisOptions)
-      console.log('✅ AI 분석 완료:', analysisResult)
 
       // 5. 분석 결과 저장
-      console.log('💾 분석 결과 저장 중...')
       const currentContext = enterpriseAuthService.getCurrentContext()
       
       // 🔥 MeasurementUser 찾기/생성
@@ -711,9 +652,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             convertedPersonalInfo,
             currentContext.organization?.id
           );
-          console.log('✅ MeasurementUser 연결 완료:', measurementUserId);
         } catch (error) {
-          console.error('⚠️ MeasurementUser 연결 실패:', error);
           // MeasurementUser 연결 실패해도 분석 결과는 저장
         }
       }
@@ -752,16 +691,12 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
       // Firestore에 분석 결과 저장
       const analysisId = await FirebaseService.addDocument('ai_analysis_results', analysisRecord)
-      console.log('✅ 분석 결과 저장 완료:', analysisId)
-      console.log('💾 저장된 분석 레코드의 personalInfo:', analysisRecord.personalInfo)
 
       // 🔥 MeasurementUser의 reportIds 업데이트
       if (measurementUserId) {
         try {
           await measurementUserManagementService.addReportId(measurementUserId, analysisId);
-          console.log('✅ MeasurementUser reportIds 업데이트 완료');
         } catch (error) {
-          console.error('⚠️ MeasurementUser reportIds 업데이트 실패:', error);
           // reportIds 업데이트 실패해도 분석 결과는 유지
         }
       }
@@ -780,25 +715,20 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
               reportType: engineType
             }
           })
-          console.log('✅ 크레딧 차감 완료:', analysisResult.costUsed)
         } catch (creditError) {
-          console.warn('⚠️ 크레딧 차감 실패:', creditError)
           // 크레딧 차감 실패해도 분석 결과는 유지
         }
       }
 
       // 7. 측정 데이터 목록 새로고침 (Firestore 반영 시간을 고려하여 지연 후 재로드)
-      console.log('🎉 AI 분석 완료! 데이터 새로고침 중...')
       setTimeout(async () => {
         await loadMeasurementData()
-        console.log('🔄 AI 분석 완료 후 데이터 새로고침 완료')
       }, 1500)
       
       // 성공 메시지
       setError(null)
 
     } catch (error) {
-      console.error('🚨 AI 분석 실패:', error)
       setError(error instanceof Error ? error.message : 'AI 분석 중 오류가 발생했습니다.')
     } finally {
       // 로딩 상태 종료 및 타이머 정리
@@ -823,7 +753,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const handleViewReportWithViewer = (report: any, viewerId: string, viewerName: string) => {
     // report가 유효한지 확인
     if (!report) {
-      console.error('유효하지 않은 리포트 데이터입니다.')
       return
     }
     
@@ -836,7 +765,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   // 공유 링크 생성
   const handleCreateShareLink = async (report: any) => {
     if (!report) {
-      console.error('유효하지 않은 리포트 데이터입니다.')
       return
     }
 
@@ -861,56 +789,41 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       // 생년월일 확인 - 여러 소스에서 시도
       let subjectBirthDate = null
       
-      console.log('🔍 생년월일 검색 시작:', {
         reportId: report.id,
         measurementDataId: report.measurementDataId,
-        personalInfo: report.personalInfo,
         hasPersonalInfo: !!report.personalInfo,
         personalInfoKeys: report.personalInfo ? Object.keys(report.personalInfo) : []
-      })
       
       // 1. personalInfo에서 먼저 확인
       if (report.personalInfo?.birthDate) {
         try {
           subjectBirthDate = new Date(report.personalInfo.birthDate)
-          console.log('✅ personalInfo에서 생년월일 찾음:', subjectBirthDate)
         } catch (error) {
-          console.warn('personalInfo.birthDate 파싱 실패:', error)
         }
       }
       
       // 2. personalInfo에 없으면 sessionData에서 가져오기
       if (!subjectBirthDate && report.measurementDataId) {
         try {
-          console.log('📊 measurement_sessions에서 조회 시작:', report.measurementDataId)
           const measurementDoc = await FirebaseService.getDocument('measurement_sessions', report.measurementDataId) as any
-          console.log('📊 measurementDoc 조회 결과:', measurementDoc)
           
           const sessionData = measurementDoc?.sessionData
-          console.log('📊 sessionData:', sessionData)
-          console.log('📊 sessionData.subjectBirthDate:', sessionData?.subjectBirthDate)
           
           if (sessionData?.subjectBirthDate) {
             // Firestore Timestamp인 경우 변환
             subjectBirthDate = sessionData.subjectBirthDate.toDate ? 
               sessionData.subjectBirthDate.toDate() : 
               new Date(sessionData.subjectBirthDate)
-            console.log('✅ sessionData에서 생년월일 찾음:', subjectBirthDate)
           } else {
-            console.warn('⚠️ sessionData에 subjectBirthDate가 없음')
           }
         } catch (error) {
-          console.warn('❌ 측정 데이터에서 생년월일 조회 실패:', error)
         }
       }
 
              // 3. 여전히 없으면 에러 처리
        if (!subjectBirthDate) {
-         console.warn('❌ 생년월일을 찾을 수 없음 - 이전 버전 리포트일 가능성')
-         console.warn('💡 리포트 전체 구조:', report)
          throw new Error('이 리포트는 생년월일 정보가 없어 공유할 수 없습니다. 새로운 분석을 다시 실행해주세요.')
        } else {
-         console.log('🎉 최종 선택된 생년월일:', subjectBirthDate)
        }
 
       // 공유 링크 생성
@@ -937,7 +850,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         [reportId]: shareUrl 
       }))
 
-      console.log('✅ 공유 링크 생성 완료:', shareUrl)
 
       // 3초 후 성공 메시지 제거
       setTimeout(() => {
@@ -949,7 +861,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }, 3000)
 
     } catch (error) {
-      console.error('공유 링크 생성 실패:', error)
       setShareError(prev => ({ 
         ...prev, 
         [reportId]: error instanceof Error ? error.message : '공유 링크 생성에 실패했습니다.' 
@@ -1026,11 +937,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       // 5. 모든 뷰어 합치기 (커스텀 렌더러 우선)
       const allViewers = [...customViewers, ...baseViewers]
       
-      console.log(`🎯 엔진 ${engineId}용 호환 뷰어:`, allViewers.length, `개 (커스텀: ${customViewers.length}개)`)
       return allViewers
       
     } catch (error) {
-      console.warn('렌더러 조회 중 오류:', error)
       
       // 오류 발생시 기본 뷰어 반환
       return [{
@@ -1054,7 +963,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   // PDF 다운로드 핸들러
   const handleDownloadPDF = async (analysisId: string, analysisResult: any) => {
-    console.log('📄 PDF 다운로드 시작:', analysisId)
     
     try {
       // 분석 결과를 기반으로 PDF 생성
@@ -1090,10 +998,8 @@ AI 건강 분석 리포트
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
       
-      console.log('✅ PDF 다운로드 완료')
       
     } catch (error) {
-      console.error('❌ PDF 다운로드 실패:', error)
       setError('PDF 다운로드에 실패했습니다.')
     }
   }
@@ -1147,7 +1053,6 @@ AI 건강 분석 리포트
 
       // 1. 측정 세션 생성
       const sessionId = await FirebaseService.saveMeasurementSession(testSessionData)
-      console.log('✅ 테스트 측정 세션 생성 완료:', sessionId)
 
       // 2. 실제 측정 데이터 및 분석 결과 생성
       const measurementDataService = new MeasurementDataService()
@@ -1260,13 +1165,11 @@ AI 건강 분석 리포트
       }
 
       const measurementDataId = await measurementDataService.saveMeasurementData(measurementData)
-      console.log('✅ 측정 데이터 저장 완료:', measurementDataId)
       
       // 4. 데이터 새로고침
       await loadMeasurementData()
       
     } catch (error) {
-      console.error('테스트 세션 생성 실패:', error)
       setError('테스트 측정 세션 생성에 실패했습니다.')
     }
   }
@@ -1280,7 +1183,6 @@ AI 건강 분석 리포트
       
       // 인증 정보가 아직 로드되지 않은 경우 잠시 대기
       if (!currentContext.user || !currentContext.organization) {
-        console.log('⏳ 인증 정보 로드 대기 중...')
         setLoading(false)
         return
       }
@@ -1333,11 +1235,9 @@ AI 건강 분석 리포트
       setReportStats(stats)
 
     } catch (error) {
-      console.error('리포트 데이터 로드 실패:', error)
       
       // 인증 정보가 없는 경우 특별 처리
       if (error instanceof Error && error.message.includes('인증 정보가 없습니다')) {
-        console.log('⏳ 인증 정보가 로드되지 않았습니다. 잠시 후 재시도합니다.')
         setError('인증 정보를 로드하는 중입니다. 잠시만 기다려주세요.')
         
         // 3초 후 자동 재시도
@@ -1370,7 +1270,6 @@ AI 건강 분석 리포트
           throw new Error('크레딧이 부족합니다.')
         }
       } else {
-        console.log('🧪 개발 모드: 크래딧 체크 바이패스')
       }
 
       // 리포트 생성
@@ -1395,18 +1294,15 @@ AI 건강 분석 리포트
           reportId
         )
       } else {
-        console.log('🧪 개발 모드: 크래딧 차감 스킵')
       }
 
       // 데이터 새로고침
       await loadReportData()
 
       // AI Report 앱으로 이동
-      console.log('✅ 리포트 생성 완료, AI Report 앱으로 이동합니다.')
       navigate('/ai-report')
 
     } catch (error) {
-      console.error('리포트 생성 실패:', error)
       setError(error instanceof Error ? error.message : '리포트 생성에 실패했습니다.')
     } finally {
       setLoading(false)
@@ -1421,11 +1317,9 @@ AI 건강 분석 리포트
       })
 
       // 실제 다운로드 로직은 여기에 구현
-      console.log('Downloading report:', reportId)
 
       await loadReportData()
     } catch (error) {
-      console.error('리포트 다운로드 실패:', error)
       setError(error instanceof Error ? error.message : '리포트 다운로드에 실패했습니다.')
     }
   }
@@ -1443,7 +1337,8 @@ AI 건강 분석 리포트
             onClick={async () => {
               const validation = await validateConfiguration();
               if (validation.isValid) {
-                console.log('새 리포트 생성 시작:', {
+                // 설정 저장
+                console.log('AI 리포트 설정:', {
                   engine: selectedEngine,
                   viewer: selectedViewer
                 });
@@ -1459,81 +1354,6 @@ AI 건강 분석 리포트
             <Plus className="w-4 h-4 mr-2" />
             새 리포트 생성
           </Button>
-      </div>
-
-      {/* 통계 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* 오늘 측정 데이터 수 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">오늘 측정 데이터 수</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <Activity className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayMeasurements}건`}
-            </div>
-            <div className="text-xs text-gray-500">
-              총 {calculateStats.totalMeasurements}건
-            </div>
-          </div>
-        </div>
-
-        {/* 오늘 발행 리포트 수 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">오늘 발행 리포트 수</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <FileText className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayReports}건`}
-            </div>
-            <div className="text-xs text-gray-500">
-              총 {calculateStats.totalReports}건
-            </div>
-          </div>
-        </div>
-
-        {/* 오늘 사용 크레딧 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">오늘 사용 크레딧</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <DollarSign className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayCreditsUsed} 크레딧`}
-            </div>
-            <div className="text-xs text-gray-500">
-              총 {calculateStats.totalCreditsUsed} 크레딧 사용
-            </div>
-          </div>
-        </div>
-
-        {/* 이번주 사용 현황 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">이번주 사용 현황</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <TrendingUp className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.thisWeekMeasurements}건`}
-            </div>
-            <div className="text-xs text-gray-500">
-              리포트 {calculateStats.thisWeekReports}건, 크레딧 {calculateStats.thisWeekCreditsUsed}개
-            </div>
-          </div>
-        </div>
       </div>
 
       {error && (
@@ -1568,7 +1388,7 @@ AI 건강 분석 리포트
               <select 
                 value={selectedEngine}
                 onChange={(e) => setSelectedEngine(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-gray-900"
                 disabled={configLoading}
               >
                 <option value="">엔진을 선택하세요</option>
@@ -1595,7 +1415,7 @@ AI 건강 분석 리포트
               <select 
                 value={selectedViewer}
                 onChange={(e) => setSelectedViewer(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-gray-900"
                 disabled={configLoading || !selectedEngine}
               >
                 <option value="">뷰어를 선택하세요</option>
@@ -1613,7 +1433,8 @@ AI 건강 분석 리포트
               onClick={async () => {
                 const validation = await validateConfiguration();
                 if (validation.isValid) {
-                  console.log('리포트 생성 시작:', {
+                  // 설정 저장
+                  console.log('AI 리포트 설정:', {
                     engine: selectedEngine,
                     viewer: selectedViewer
                   });
@@ -1681,89 +1502,14 @@ AI 건강 분석 리포트
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">리포트 목록</h2>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={loadMeasurementData}>
+            <Button variant="outline" size="sm" onClick={loadMeasurementData} className="text-gray-900 border-gray-300 hover:bg-gray-50">
               <RefreshCw className="w-4 h-4 mr-2" />
               새로고침
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="text-gray-900 border-gray-300 hover:bg-gray-50">
               <Download className="w-4 h-4 mr-2" />
               일괄 다운로드
             </Button>
-          </div>
-        </div>
-
-        {/* 통계 카드 섹션 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* 오늘 측정 데이터 수 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-medium text-gray-600">오늘 측정 데이터 수</h3>
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-                <Activity className="w-4 h-4 text-gray-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900">
-                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayMeasurements}건`}
-              </div>
-              <div className="text-xs text-gray-500">
-                총 {calculateStats.totalMeasurements}건
-              </div>
-            </div>
-          </div>
-
-          {/* 오늘 발행 리포트 수 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-medium text-gray-600">오늘 발행 리포트 수</h3>
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-                <FileText className="w-4 h-4 text-gray-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900">
-                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayReports}건`}
-              </div>
-              <div className="text-xs text-gray-500">
-                총 {calculateStats.totalReports}건
-              </div>
-            </div>
-          </div>
-
-          {/* 오늘 사용 크레딧 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-medium text-gray-600">오늘 사용 크레딧</h3>
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-                <DollarSign className="w-4 h-4 text-gray-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900">
-                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayCreditsUsed} 크레딧`}
-              </div>
-              <div className="text-xs text-gray-500">
-                총 {calculateStats.totalCreditsUsed} 크레딧 사용
-              </div>
-            </div>
-          </div>
-
-          {/* 이번주 사용 현황 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-lg font-medium text-gray-600">이번주 사용 현황</h3>
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-                <TrendingUp className="w-4 h-4 text-gray-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-bold text-gray-900">
-                {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.thisWeekMeasurements}건`}
-              </div>
-              <div className="text-xs text-gray-500">
-                리포트 {calculateStats.thisWeekReports}건, 크레딧 {calculateStats.thisWeekCreditsUsed}개
-              </div>
-            </div>
           </div>
         </div>
         
@@ -1783,7 +1529,7 @@ AI 건강 분석 리포트
           <select 
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
-            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="newest">최신순</option>
             <option value="oldest">오래된 순</option>
@@ -1793,7 +1539,7 @@ AI 건강 분석 리포트
           <select 
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
-            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">전체 기간</option>
             <option value="today">오늘</option>
@@ -1955,6 +1701,7 @@ AI 건강 분석 리포트
                               <DropdownMenuItem 
                                 key={viewer.id}
                                 onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                                className="text-gray-900 hover:text-gray-900"
                               >
                                 {viewer.name}
                               </DropdownMenuItem>
@@ -2261,91 +2008,16 @@ AI 건강 분석 리포트
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">측정 데이터 및 AI 분석 리포트</h2>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={loadMeasurementData}>
+          <Button variant="outline" size="sm" onClick={loadMeasurementData} className="text-gray-900 border-gray-300 hover:bg-gray-50">
             <RefreshCw className="w-4 h-4 mr-2" />
             새로고침
           </Button>
           {process.env.NODE_ENV === 'development' && (
-            <Button variant="outline" size="sm" onClick={createTestMeasurementSession}>
+            <Button variant="outline" size="sm" onClick={createTestMeasurementSession} className="text-gray-900 border-gray-300 hover:bg-gray-50">
               <Plus className="w-4 h-4 mr-2" />
               테스트 데이터 생성
             </Button>
           )}
-        </div>
-      </div>
-
-      {/* 통계 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* 오늘 측정 데이터 수 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">오늘 측정 데이터 수</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <Activity className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayMeasurements}건`}
-            </div>
-            <div className="text-xs text-gray-500">
-              총 {calculateStats.totalMeasurements}건
-            </div>
-          </div>
-        </div>
-
-        {/* 오늘 발행 리포트 수 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">오늘 발행 리포트 수</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <FileText className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayReports}건`}
-            </div>
-            <div className="text-xs text-gray-500">
-              총 {calculateStats.totalReports}건
-            </div>
-          </div>
-        </div>
-
-        {/* 오늘 사용 크레딧 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">오늘 사용 크레딧</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <DollarSign className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.todayCreditsUsed} 크레딧`}
-            </div>
-            <div className="text-xs text-gray-500">
-              총 {calculateStats.totalCreditsUsed} 크레딧 사용
-            </div>
-          </div>
-        </div>
-
-        {/* 이번주 사용 현황 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-medium text-gray-600">이번주 사용 현황</h3>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
-              <TrendingUp className="w-4 h-4 text-gray-600" />
-            </div>
-          </div>
-          <div>
-            <div className="text-xl font-bold text-gray-900">
-              {loadingMeasurementData ? <Loader2 className="w-5 h-5 animate-spin" /> : `${calculateStats.thisWeekMeasurements}건`}
-            </div>
-            <div className="text-xs text-gray-500">
-              리포트 {calculateStats.thisWeekReports}건, 크레딧 {calculateStats.thisWeekCreditsUsed}개
-            </div>
-          </div>
         </div>
       </div>
 
@@ -2365,7 +2037,7 @@ AI 건강 분석 리포트
         <select 
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="newest">최신순</option>
           <option value="oldest">오래된 순</option>
@@ -2375,7 +2047,7 @@ AI 건강 분석 리포트
         <select 
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="all">전체 기간</option>
           <option value="today">오늘</option>
@@ -2579,6 +2251,7 @@ AI 건강 분석 리포트
                                     <DropdownMenuItem 
                                       key={viewer.id}
                                       onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                                      className="text-gray-900 hover:text-gray-900"
                                     >
                                       {viewer.name}
                                     </DropdownMenuItem>
@@ -2810,51 +2483,6 @@ AI 건강 분석 리포트
     </div>
   )
 
-  // 탭 정의
-  const tabs = [
-    { id: 'report-generation', label: '리포트 생성', icon: Plus },
-    { id: 'report-list', label: '리포트 목록', icon: Eye },
-    { id: 'report-quality', label: '품질 관리', icon: BarChart3 }
-  ]
-
-  // 탭 렌더링
-  const renderTabs = () => (
-    <div className="bg-white shadow-sm border-b border-gray-200 -mx-6 -mt-6 mb-6">
-      <div className="flex space-x-8">
-        <button
-          onClick={() => onNavigate('ai-report', 'report-generation')}
-          className={`py-4 pl-6 pr-1 border-b-2 font-medium text-sm ${
-            subSection === 'report-generation' || (!subSection)
-              ? 'border-purple-500 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          리포트 생성
-        </button>
-        <button
-          onClick={() => onNavigate('ai-report', 'report-list')}
-          className={`py-4 px-1 border-b-2 font-medium text-sm ${
-            subSection === 'report-list'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          리포트 목록
-        </button>
-        <button
-          onClick={() => onNavigate('ai-report', 'measurement-data')}
-          className={`py-4 px-1 border-b-2 font-medium text-sm ${
-            subSection === 'measurement-data'
-              ? 'border-green-500 text-green-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          측정 데이터 목록
-        </button>
-      </div>
-    </div>
-  )
-
   const renderContent = () => {
     switch (subSection) {
       case 'report-generation':
@@ -2878,28 +2506,23 @@ AI 건강 분석 리포트
 
     // 중복 삭제 방지
     if (deletingReports[reportId]) {
-      console.log('⚠️ 이미 삭제 중인 리포트입니다.')
       return
     }
 
     try {
-      console.log('🗑️ AI 분석 결과 삭제 시작:', reportId)
       
       // 삭제 상태 시작
       setDeletingReports(prev => ({ ...prev, [reportId]: true }))
 
       // Firestore에서 분석 결과 삭제
       await FirebaseService.deleteDocument('ai_analysis_results', reportId)
-      console.log('✅ AI 분석 결과 삭제 완료:', reportId)
 
       // 데이터 새로고침
       await loadMeasurementData()
-      console.log('🔄 삭제 후 데이터 새로고침 완료')
       
       setError(null)
 
     } catch (error) {
-      console.error('🚨 AI 분석 결과 삭제 실패:', error)
       setError(error instanceof Error ? error.message : 'AI 분석 결과 삭제 중 오류가 발생했습니다.')
     } finally {
       // 삭제 상태 종료
@@ -2937,12 +2560,10 @@ AI 건강 분석 리포트
 
     // 중복 삭제 방지
     if (deletingMeasurementData[dataId]) {
-      console.log('⚠️ 이미 삭제 중인 측정 데이터입니다.')
       return
     }
 
     try {
-      console.log('🗑️ 측정 데이터 삭제 시작:', dataId, deleteReports ? '(리포트 포함)' : '(리포트 제외)')
       
       // 삭제 상태 시작
       setDeletingMeasurementData(prev => ({ ...prev, [dataId]: true }))
@@ -2958,27 +2579,22 @@ AI 건강 분석 리포트
         ]
         const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
         
-        console.log(`🗑️ 연결된 AI 분석 결과 ${analysisResults.length}개 삭제 중...`)
         
         // 모든 AI 분석 결과 삭제
         for (const analysis of analysisResults) {
           await FirebaseService.deleteDocument('ai_analysis_results', analysis.id)
-          console.log(`✅ AI 분석 결과 삭제 완료: ${analysis.id}`)
         }
       }
 
       // 2. 측정 세션 삭제
       await FirebaseService.deleteMeasurementSession(dataId)
-      console.log('✅ 측정 데이터 삭제 완료:', dataId)
 
       // 3. 데이터 새로고침
       await loadMeasurementData()
-      console.log('🔄 삭제 후 데이터 새로고침 완료')
       
       setError(null)
 
     } catch (error) {
-      console.error('🚨 측정 데이터 삭제 실패:', error)
       setError(error instanceof Error ? error.message : '측정 데이터 삭제 중 오류가 발생했습니다.')
     } finally {
       // 삭제 상태 종료
@@ -2992,7 +2608,6 @@ AI 건강 분석 리포트
 
   return (
     <div className="p-6">
-      {renderTabs()}
       {renderContent()}
       
       {/* 리포트 뷰어 모달 */}

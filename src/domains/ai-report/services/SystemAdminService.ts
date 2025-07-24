@@ -80,7 +80,6 @@ class SystemAdminService {
       })) as AIEngine[];
 
     } catch (error) {
-      console.error('Error fetching all engines:', error);
       throw new Error('모든 AI 엔진 목록을 불러오는데 실패했습니다.');
     }
   }
@@ -102,7 +101,6 @@ class SystemAdminService {
       })) as ReportViewer[];
 
     } catch (error) {
-      console.error('Error fetching all viewers:', error);
       throw new Error('모든 뷰어 목록을 불러오는데 실패했습니다.');
     }
   }
@@ -129,7 +127,6 @@ class SystemAdminService {
       } as OrganizationPermission;
 
     } catch (error) {
-      console.error('Error fetching organization permissions:', error);
       throw new Error('기업 권한 정보를 불러오는데 실패했습니다.');
     }
   }
@@ -219,7 +216,6 @@ class SystemAdminService {
       }
 
     } catch (error) {
-      console.error('Error granting engine access:', error);
       throw new Error('AI 엔진 권한 부여에 실패했습니다.');
     }
   }
@@ -271,7 +267,6 @@ class SystemAdminService {
       });
 
     } catch (error) {
-      console.error('Error revoking engine access:', error);
       throw new Error('AI 엔진 권한 해제에 실패했습니다.');
     }
   }
@@ -342,7 +337,6 @@ class SystemAdminService {
       });
 
     } catch (error) {
-      console.error('Error granting viewer access:', error);
       throw new Error('뷰어 권한 부여에 실패했습니다.');
     }
   }
@@ -373,7 +367,6 @@ class SystemAdminService {
       })) as UsageAnalytics[];
 
     } catch (error) {
-      console.error('Error fetching usage analytics:', error);
       throw new Error('사용량 분석 데이터를 불러오는데 실패했습니다.');
     }
   }
@@ -399,7 +392,6 @@ class SystemAdminService {
       return usageByOrg;
 
     } catch (error) {
-      console.error('Error fetching all organizations usage:', error);
       throw new Error('전체 기업 사용량 데이터를 불러오는데 실패했습니다.');
     }
   }
@@ -433,7 +425,6 @@ class SystemAdminService {
       return engineRef.id;
 
     } catch (error) {
-      console.error('Error upserting engine:', error);
       throw new Error('AI 엔진 생성/업데이트에 실패했습니다.');
     }
   }
@@ -466,7 +457,6 @@ class SystemAdminService {
       return viewerRef.id;
 
     } catch (error) {
-      console.error('Error upserting viewer:', error);
       throw new Error('뷰어 생성/업데이트에 실패했습니다.');
     }
   }
@@ -481,7 +471,6 @@ class SystemAdminService {
         timestamp: new Date()
       });
     } catch (error) {
-      console.error('Error logging admin action:', error);
       // 로그 실패는 전체 작업을 중단시키지 않음
     }
   }
@@ -512,7 +501,6 @@ class SystemAdminService {
       })) as SystemAdminLog[];
 
     } catch (error) {
-      console.error('Error fetching admin logs:', error);
       throw new Error('관리자 로그를 불러오는데 실패했습니다.');
     }
   }
@@ -543,7 +531,6 @@ class SystemAdminService {
       };
 
     } catch (error) {
-      console.error('Error fetching system stats:', error);
       throw new Error('시스템 통계를 불러오는데 실패했습니다.');
     }
   }
@@ -560,7 +547,6 @@ class SystemAdminService {
       })) as OrganizationPermission[];
 
     } catch (error) {
-      console.error('Error fetching all organization permissions:', error);
       return [];
     }
   }

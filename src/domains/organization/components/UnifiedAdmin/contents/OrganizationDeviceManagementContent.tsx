@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs'
 import { 
-  Smartphone, 
   Users as UsersIcon, 
   Activity, 
   Monitor
@@ -9,6 +7,7 @@ import {
 
 // 기존 디바이스 관리 컴포넌트들 임포트
 import DevicesSection from '../../OrganizationAdmin/Devices/DevicesSection'
+import DeviceManagementHero from '../../OrganizationAdmin/Devices/components/DeviceManagementHero'
 
 /**
  * 통합 조직 디바이스 관리 콘텐츠
@@ -23,87 +22,91 @@ export default function OrganizationDeviceManagementContent() {
     }
   }
 
-  const tabs = [
-    {
-      id: 'device-inventory',
-      label: '디바이스 현황',
-      icon: Monitor,
-      description: '디바이스 재고 및 상태'
-    },
-    {
-      id: 'device-assignment', 
-      label: '디바이스 배치',
-      icon: UsersIcon,
-      description: '사용자별 디바이스 할당'
-    },
-    {
-      id: 'device-monitoring',
-      label: '디바이스 모니터링', 
-      icon: Activity,
-      description: '실시간 상태 모니터링'
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* 헤더 */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full mb-4">
-            <Smartphone className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">디바이스 관리</h1>
-          <p className="text-lg text-slate-600">LINK BAND 디바이스 배치 및 모니터링</p>
-        </div>
+        {/* Hero Section - 사용자 관리 페이지와 동일한 스타일 */}
+        <DeviceManagementHero 
+          onDeviceAdded={() => console.log('Device added')}
+          onExport={() => console.log('Export clicked')}
+          onRefresh={() => console.log('Refresh clicked')}
+        />
 
-        {/* 통합 탭 인터페이스 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-50 rounded-t-2xl p-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    className="flex items-center gap-3 px-6 py-4 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-xl transition-all"
-                  >
-                    <Icon className="w-5 h-5" />
-                    <div className="text-left">
-                      <div className="font-medium">{tab.label}</div>
-                      <div className="text-xs text-slate-500 hidden sm:block">
-                        {tab.description}
-                      </div>
-                    </div>
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
+        {/* 탭 인터페이스 - 사용자 관리 페이지와 동일한 구조 */}
+        <div className="space-y-6">
+          {/* 탭 버튼들 */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-2">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setActiveTab('device-inventory')}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
+                  activeTab === 'device-inventory'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                <Monitor className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">디바이스 현황</div>
+                  <div className="text-xs opacity-80">디바이스 재고 및 상태</div>
+                </div>
+              </button>
 
-            {/* 각 탭의 콘텐츠 */}
-            <div className="p-6">
-              <TabsContent value="device-inventory">
-                <DevicesSection 
-                  subSection="device-inventory"
-                  onNavigate={handleTabNavigation}
-                />
-              </TabsContent>
+              <button
+                onClick={() => setActiveTab('device-assignment')}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
+                  activeTab === 'device-assignment'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                <UsersIcon className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">디바이스 배치</div>
+                  <div className="text-xs opacity-80">사용자별 디바이스 할당</div>
+                </div>
+              </button>
 
-              <TabsContent value="device-assignment">
-                <DevicesSection 
-                  subSection="device-assignment"
-                  onNavigate={handleTabNavigation}
-                />
-              </TabsContent>
-
-              <TabsContent value="device-monitoring">
-                <DevicesSection 
-                  subSection="device-monitoring"
-                  onNavigate={handleTabNavigation}
-                />
-              </TabsContent>
+              <button
+                onClick={() => setActiveTab('device-monitoring')}
+                className={`flex items-center gap-3 px-6 py-4 rounded-xl transition-all ${
+                  activeTab === 'device-monitoring'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                <Activity className="w-5 h-5" />
+                <div className="text-left">
+                  <div className="font-medium">디바이스 모니터링</div>
+                  <div className="text-xs opacity-80">실시간 상태 모니터링</div>
+                </div>
+              </button>
             </div>
-          </Tabs>
+          </div>
+
+          {/* 탭 컨텐츠 */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            {activeTab === 'device-inventory' && (
+              <DevicesSection 
+                subSection="device-inventory"
+                onNavigate={handleTabNavigation}
+              />
+            )}
+
+            {activeTab === 'device-assignment' && (
+              <DevicesSection 
+                subSection="device-assignment"
+                onNavigate={handleTabNavigation}
+              />
+            )}
+
+            {activeTab === 'device-monitoring' && (
+              <DevicesSection 
+                subSection="device-monitoring"
+                onNavigate={handleTabNavigation}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -113,7 +113,6 @@ export class OrganizationService extends BaseService {
       // 캐시에 저장 (5분)
       this.setCache(`org:${organizationId}`, organization, 300000);
       
-      this.log('조직 정보 조회 완료', { organizationId, name: organization.name });
       return organization;
 
     } catch (error) {
@@ -186,7 +185,6 @@ export class OrganizationService extends BaseService {
       const docRef = doc(collection(this.db, this.ORGANIZATIONS_COLLECTION));
       await setDoc(docRef, organizationData);
 
-      this.log('조직 생성 완료', { organizationId: docRef.id, name: request.name });
       
       // 생성된 조직 정보 반환
       return await this.getOrganization(docRef.id);
@@ -251,7 +249,6 @@ export class OrganizationService extends BaseService {
       this.clearCache(`org:${organizationId}`);
       this.clearCachePattern(`org:${organizationId}:`);
 
-      this.log('조직 정보 업데이트 완료', { organizationId, updatedBy });
 
     } catch (error) {
       this.handleError(error, 'updateOrganization', { organizationId, request });
@@ -336,7 +333,6 @@ export class OrganizationService extends BaseService {
       // 캐시에 저장 (3분)
       this.setCache(cacheKey, filteredDepartments, 180000);
 
-      this.log('부서 목록 조회 완료', { organizationId, count: filteredDepartments.length });
       return filteredDepartments;
 
     } catch (error) {
@@ -406,7 +402,6 @@ export class OrganizationService extends BaseService {
       // 캐시 무효화
       this.clearCachePattern(`depts:${request.organizationId}:`);
 
-      this.log('부서 생성 완료', { departmentId: docRef.id, name: request.name });
       
       return {
         id: docRef.id,
@@ -518,7 +513,6 @@ export class OrganizationService extends BaseService {
       // 캐시 무효화
       this.clearCachePattern(`depts:${department.organizationId}:`);
 
-      this.log('부서 정보 업데이트 완료', { departmentId, updatedBy });
 
     } catch (error) {
       this.handleError(error, 'updateDepartment', { departmentId, request });
@@ -557,7 +551,6 @@ export class OrganizationService extends BaseService {
       // 캐시 무효화
       this.clearCachePattern(`depts:${department.organizationId}:`);
 
-      this.log('부서 삭제 완료', { departmentId, deletedBy });
 
     } catch (error) {
       this.handleError(error, 'deleteDepartment', { departmentId });
@@ -609,7 +602,6 @@ export class OrganizationService extends BaseService {
       // 캐시에 저장 (5분)
       this.setCache(cacheKey, tree, 300000);
 
-      this.log('조직 구조 조회 완료', { organizationId, departmentCount: departments.length });
       return tree;
 
     } catch (error) {
@@ -672,7 +664,6 @@ export class OrganizationService extends BaseService {
       // 캐시에 저장 (2분)
       this.setCache(cacheKey, stats, 120000);
 
-      this.log('조직 통계 조회 완료', { organizationId });
       return stats;
 
     } catch (error) {
@@ -707,7 +698,6 @@ export class OrganizationService extends BaseService {
         systemNotifications: []
       };
 
-      this.log('대시보드 데이터 조회 완료', { organizationId });
       return dashboardData;
 
     } catch (error) {

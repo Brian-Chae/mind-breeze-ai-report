@@ -162,11 +162,9 @@ class CustomRendererService {
         }
       });
 
-      console.log(`✅ 커스텀 렌더러 등록 완료: ${rendererId}`);
       return rendererId;
 
     } catch (error) {
-      console.error('❌ 커스텀 렌더러 등록 실패:', error);
       throw new Error('커스텀 렌더러 등록에 실패했습니다.');
     }
   }
@@ -193,7 +191,6 @@ class CustomRendererService {
       })) as CustomRenderer[];
 
     } catch (error) {
-      console.error('❌ 조직 렌더러 조회 실패:', error);
       throw new Error('조직의 렌더러 목록을 불러오는데 실패했습니다.');
     }
   }
@@ -236,7 +233,6 @@ class CustomRendererService {
       return accessibleRenderers;
 
     } catch (error) {
-      console.error('❌ 접근 가능한 렌더러 조회 실패:', error);
       throw new Error('접근 가능한 렌더러 목록을 불러오는데 실패했습니다.');
     }
   }
@@ -256,11 +252,9 @@ class CustomRendererService {
 
       await setDoc(doc(db, this.COLLECTIONS.RENDERER_ACCESS, accessId), rendererAccess);
       
-      console.log(`✅ 렌더러 접근 권한 부여: ${accessId}`);
       return accessId;
 
     } catch (error) {
-      console.error('❌ 렌더러 접근 권한 부여 실패:', error);
       throw new Error('렌더러 접근 권한 부여에 실패했습니다.');
     }
   }
@@ -326,10 +320,8 @@ class CustomRendererService {
         await setDoc(statsRef, newStats);
       }
 
-      console.log(`✅ 렌더러 사용 기록 완료: ${rendererId}`);
 
     } catch (error) {
-      console.error('❌ 렌더러 사용 기록 실패:', error);
       throw new Error('렌더러 사용 기록에 실패했습니다.');
     }
   }
@@ -349,10 +341,14 @@ class CustomRendererService {
         updatedAt: new Date()
       });
 
-      console.log(`✅ 렌더러 승인 처리 완료: ${rendererId} (${approved ? '승인' : '거부'})`);
+        metadata: {
+          rendererId,
+          approved,
+          reviewerId,
+          notes
+        }
 
     } catch (error) {
-      console.error('❌ 렌더러 승인 처리 실패:', error);
       throw new Error('렌더러 승인 처리에 실패했습니다.');
     }
   }
@@ -378,7 +374,6 @@ class CustomRendererService {
       })) as RendererUsageStats[];
 
     } catch (error) {
-      console.error('❌ 렌더러 통계 조회 실패:', error);
       throw new Error('렌더러 사용 통계를 불러오는데 실패했습니다.');
     }
   }
@@ -403,7 +398,6 @@ class CustomRendererService {
       })) as CustomRenderer[];
 
     } catch (error) {
-      console.error('❌ 승인 대기 렌더러 조회 실패:', error);
       throw new Error('승인 대기 중인 렌더러 목록을 불러오는데 실패했습니다.');
     }
   }
@@ -426,10 +420,8 @@ class CustomRendererService {
       const deletePromises = accessSnapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
 
-      console.log(`✅ 렌더러 삭제 완료: ${rendererId}`);
 
     } catch (error) {
-      console.error('❌ 렌더러 삭제 실패:', error);
       throw new Error('렌더러 삭제에 실패했습니다.');
     }
   }

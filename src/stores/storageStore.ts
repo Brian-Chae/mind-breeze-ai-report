@@ -250,7 +250,6 @@ const loadStorageConfig = (): Partial<StorageConfig> => {
       };
     }
   } catch (error) {
-    console.error('저장소 설정 로드 실패:', error);
   }
   return {};
 };
@@ -266,7 +265,6 @@ const saveStorageConfig = (config: StorageConfig) => {
     };
     localStorage.setItem(STORAGE_CONFIG_KEY, JSON.stringify(configToSave));
   } catch (error) {
-    console.error('저장소 설정 저장 실패:', error);
   }
 };
 
@@ -322,14 +320,13 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           saveStorageConfig(updatedConfig);
         }
       } catch (error) {
-        console.error('Failed to select directory:', error);
+        console.error('Error requesting storage directory:', error);
       }
     },
 
     // 저장소 디렉토리 선택
     selectStorageDirectory: async (): Promise<boolean> => {
       try {
-        console.log('[REPOSITORY] 📁 저장소 디렉토리 선택 시작');
         
         if (!('showDirectoryPicker' in window)) {
           throw new Error('File System Access API가 지원되지 않습니다.');
@@ -340,16 +337,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           startIn: 'downloads'
         });
 
-        console.log(`[REPOSITORY] ✅ 디렉토리 선택됨: ${directoryHandle.name}`);
         
         // 플랫폼별 스마트 기본 경로 생성
         const os = detectOS();
         const currentUser = getCurrentUsername();
         const smartDefaultPath = generateSmartPath(directoryHandle.name, 'downloads');
         
-        console.log(`[REPOSITORY] 🖥️ 감지된 OS: ${os}`);
-        console.log(`[REPOSITORY] 👤 감지된 사용자: ${currentUser}`);
-        console.log(`[REPOSITORY] 📍 스마트 기본 경로: ${smartDefaultPath}`);
         
         let estimatedAbsolutePath = '';
         try {
@@ -401,18 +394,14 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             const inputPath = userPath.trim();
             if (isValidAbsolutePath(inputPath)) {
               estimatedAbsolutePath = formatPathForSystem(inputPath);
-              console.log(`[REPOSITORY] 📍 사용자 입력 절대 경로: ${estimatedAbsolutePath}`);
             } else {
-              console.warn(`[REPOSITORY] ⚠️ 잘못된 절대 경로 형식: ${inputPath}, 기본값 사용`);
               estimatedAbsolutePath = smartDefaultPath;
             }
           } else {
             // 스마트 기본값 사용
             estimatedAbsolutePath = smartDefaultPath;
-            console.log(`[REPOSITORY] 📍 스마트 기본 절대 경로 사용: ${estimatedAbsolutePath}`);
           }
         } catch (error) {
-          console.warn('[REPOSITORY] ⚠️ 절대 경로 추정 실패, 기본값 사용:', error);
           estimatedAbsolutePath = smartDefaultPath;
         }
         
@@ -420,20 +409,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         try {
           if (isStoragePersistenceSupported()) {
             await saveStorageDirectory(directoryHandle);
-            console.log('[REPOSITORY] 💾 디렉토리 권한 영구 저장 완료');
           } else {
-            console.log('[REPOSITORY] ⚠️ 브라우저가 영구 저장을 지원하지 않음');
           }
         } catch (saveError) {
-          console.warn('[REPOSITORY] ⚠️ 디렉토리 영구 저장 실패 (기능은 정상 동작):', saveError);
         }
 
         // 상태 업데이트 전 현재 상태 로그
-        console.log('[REPOSITORY] 🔄 상태 업데이트 전:', {
-          isInitialized: get().isInitialized,
-          storageDirectoryPath: get().storageDirectoryPath,
-          configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        });
 
         // 저장소 설정 업데이트
         set({
@@ -448,39 +429,34 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           storageDirectoryPath: estimatedAbsolutePath || directoryHandle.name
         });
         
-        console.log('[REPOSITORY] ✅ 저장소 상태 업데이트 완료');
-        console.log('[REPOSITORY] 🔍 업데이트된 상태:', {
           isInitialized: get().isInitialized,
           storageDirectoryPath: get().storageDirectoryPath,
           configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        });
+        } });
         
         // 상태 업데이트 확인을 위한 추가 검증
         const verifyState = get();
-        console.log('[REPOSITORY] 🔍 상태 검증:', {
           isInitialized: verifyState.isInitialized,
           configStorageDirectory: verifyState.config.storageDirectory ? 'VERIFIED_SET' : 'VERIFIED_NULL',
           directoryName: verifyState.config.storageDirectory?.name || 'NO_NAME'
-        });
+        } });
 
         // 로컬 스토리지에도 설정 저장 (백업용)
         const config = get().config;
         saveStorageConfig(config);
 
         // 저장소 초기화 전 상태 확인
-        console.log('[REPOSITORY] 🔄 initializeStorage 호출 전 상태:', {
           isInitialized: get().isInitialized,
           configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        });
+        } });
         
         // 저장소 초기화
         await get().initializeStorage();
         
         // 저장소 초기화 후 상태 확인
-        console.log('[REPOSITORY] 🔄 initializeStorage 호출 후 상태:', {
           isInitialized: get().isInitialized,
           configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        });
+        } });
         
         // 세션 목록 로드
         await get().loadSessions();
@@ -488,17 +464,13 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         // 저장소 통계 업데이트
         await get().updateStorageStats();
         
-        console.log('[REPOSITORY] ✅ 저장소 선택 및 설정 완료');
         return true;
 
       } catch (error) {
-        console.error('[REPOSITORY] ❌ 저장소 디렉토리 선택 실패:', error);
         
         if (error instanceof Error) {
           if (error.name === 'AbortError') {
-            console.log('[REPOSITORY] 🚫 사용자가 디렉토리 선택을 취소함');
           } else {
-            console.error('[REPOSITORY] ❌ 디렉토리 선택 오류:', error.message);
           }
         }
         
@@ -545,14 +517,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         const success = await get().selectStorageDirectory();
         
         if (success) {
-          console.log('✅ 저장소 변경 완료');
           // 새 저장소의 세션 로드
           await get().loadSessions();
         }
 
         return success;
       } catch (error) {
-        console.error('❌ 저장소 변경 실패:', error);
         return false;
       }
     },
@@ -560,7 +530,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 저장소 초기화
     initializeStorage: async (): Promise<void> => {
       try {
-        console.log('[REPOSITORY] 🔧 저장소 초기화 시작');
         
         // 설정 로드 (localStorage에서)
         const savedSettings = localStorage.getItem('linkband_storage_settings');
@@ -572,8 +541,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         // 현재 저장소가 이미 설정되어 있는지 확인
         const currentConfig = get().config;
         if (currentConfig.storageDirectory) {
-          console.log('[REPOSITORY] 🔧 저장소가 이미 설정됨, localStorage 덮어쓰기 건너뛰기');
-          console.log('[REPOSITORY] ✅ 저장소 초기화 완료 (기존 설정 유지)');
           return;
         }
 
@@ -582,8 +549,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         if (savedConfig.storageDirectoryName) {
           // 저장된 저장소 정보가 있지만 FileSystemDirectoryHandle은 복원할 수 없으므로
           // 사용자에게 저장소 재선택을 요청
-          console.log('[REPOSITORY] 💾 저장된 저장소 설정 발견:', savedConfig.storageDirectoryName);
-          console.log('[REPOSITORY] 🔄 브라우저 보안상 저장소를 다시 선택해주세요.');
           
           // storageDirectory는 제외하고 다른 설정만 적용
           const { storageDirectory, ...configWithoutDirectory } = savedConfig;
@@ -591,10 +556,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           // 저장된 절대 경로 검증 및 수정
           let displayPath = savedConfig.storageDirectoryAbsolutePath || savedConfig.storageDirectoryName || '';
           if (displayPath.includes('/Users/user/Documents/') || displayPath.includes('/Users/user/')) {
-            console.log(`[REPOSITORY] 🔧 잘못된 저장된 경로 감지: ${displayPath}`);
             // 올바른 사용자 이름으로 수정
             const correctPath = `/Users/brian_chae/Downloads/${savedConfig.storageDirectoryName}`;
-            console.log(`[REPOSITORY] 🔧 올바른 경로로 수정: ${correctPath}`);
             displayPath = correctPath;
             
             // 수정된 설정 저장
@@ -609,9 +572,7 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           });
         }
 
-        console.log('[REPOSITORY] ✅ 저장소 초기화 완료');
       } catch (error) {
-        console.error('[REPOSITORY] ❌ 저장소 초기화 실패:', error);
         throw error;
       }
     },
@@ -619,36 +580,27 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 저장소 설정 확인 및 복원 시도
     checkAndRestoreStorage: async (): Promise<boolean> => {
       try {
-        console.log('[REPOSITORY] 🔄 저장소 복원 시도...');
         
         // 영구 저장 시스템 지원 여부 확인
         if (!isStoragePersistenceSupported()) {
-          console.log('[REPOSITORY] ⚠️ 브라우저가 영구 저장을 지원하지 않음');
           return false;
         }
-        console.log('[REPOSITORY] ✅ 영구 저장 시스템 지원됨');
         
         // 저장된 디렉토리 정보 확인
         const storedInfo = await getStoredDirectoryInfo();
         if (!storedInfo) {
-          console.log('[REPOSITORY] 📭 저장된 디렉토리 정보 없음');
           return false;
         }
         
-        console.log(`[REPOSITORY] 📂 저장된 디렉토리 발견: ${storedInfo.name} (${new Date(storedInfo.timestamp).toLocaleString()})`);
         
         // 저장된 디렉토리 핸들 복원 시도
-        console.log('[REPOSITORY] 🔄 디렉토리 핸들 복원 시도...');
         const restoredHandle = await restoreStorageDirectory();
         if (!restoredHandle) {
-          console.log('[REPOSITORY] ❌ 디렉토리 핸들 복원 실패');
           return false;
         }
         
-        console.log(`[REPOSITORY] ✅ 디렉토리 핸들 복원 성공: ${restoredHandle.name}`);
         
         // 복원된 핸들로 저장소 설정 업데이트
-        console.log('[REPOSITORY] 🔄 저장소 상태 업데이트 중...');
         
         // 저장된 절대 경로 복원 시도 및 검증
         const savedConfig = loadStorageConfig();
@@ -656,10 +608,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         
         // 저장된 절대 경로가 잘못된 경우 (예: /Users/user/Documents/...) 수정
         if (absolutePath.includes('/Users/user/Documents/') || absolutePath.includes('/Users/user/')) {
-          console.log(`[REPOSITORY] 🔧 잘못된 절대 경로 감지: ${absolutePath}`);
           // 올바른 사용자 이름으로 수정
           const correctPath = `/Users/brian_chae/Downloads/${restoredHandle.name}`;
-          console.log(`[REPOSITORY] 🔧 올바른 절대 경로로 수정: ${correctPath}`);
           absolutePath = correctPath;
           
           // 수정된 경로를 저장
@@ -679,25 +629,14 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           storageDirectoryPath: absolutePath
         });
         
-        console.log('[REPOSITORY] ✅ 저장소 상태 업데이트 완료');
-        console.log('[REPOSITORY] 🔍 업데이트된 상태:', {
-          isInitialized: get().isInitialized,
-          storageDirectoryPath: get().storageDirectoryPath,
-          configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        });
-        
         // 세션 목록 로드
-        console.log('[REPOSITORY] 🔄 세션 목록 로드 시작...');
         await get().loadSessions();
         
         // 저장소 통계 업데이트
-        console.log('[REPOSITORY] 🔄 저장소 통계 업데이트 시작...');
         await get().updateStorageStats();
         
-        console.log('[REPOSITORY] ✅ 저장소 자동 복원 완료');
         return true;
       } catch (error) {
-        console.error('[REPOSITORY] ❌ 저장소 복원 실패:', error);
         return false;
       }
     },
@@ -705,21 +644,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 레코딩 시작
     startRecording: async (config: StreamingSessionConfig): Promise<string> => {
       try {
-        console.log('🔧 StorageStore.startRecording 시작');
-        console.log('🔧 현재 저장소 상태:', {
-          isInitialized: get().isInitialized,
-          configStorageDirectory: get().config.storageDirectory ? 'SET' : 'NULL',
-          storageDirectoryName: get().config.storageDirectory?.name || 'null'
-        });
-        console.log('🔧 전달받은 config:', config);
-
         // 저장소 디렉토리 확인
         if (!get().config.storageDirectory) {
           throw new Error('저장소 디렉토리가 설정되지 않았습니다. Data Center에서 저장소를 먼저 설정해주세요.');
         }
 
         // SystemControlService를 통해 레코딩 시작 (저장소 디렉토리 동기화 포함)
-        console.log('🔧 SystemControlService.startRecording 호출, config 전달');
         const sessionId = await systemControlService.startRecording(config.sessionName, config);
         
         // 현재 세션 정보 업데이트
@@ -737,10 +667,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         // 실시간 상태 업데이트 시작
         get().startStatusMonitoring();
 
-        console.log('✅ 레코딩 시작 완료:', sessionId);
         return sessionId;
       } catch (error) {
-        console.error('❌ 레코딩 시작 실패:', error);
         throw error;
       }
     },
@@ -766,59 +694,39 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         await get().loadSessions();
         await get().updateStorageStats();
 
-        console.log('✅ 레코딩 중지');
       } catch (error) {
-        console.error('❌ 레코딩 중지 실패:', error);
         throw error;
       }
     },
 
     // 레코딩 일시정지 (추후 구현)
     pauseRecording: async (): Promise<void> => {
-      console.log('⏸️ 레코딩 일시정지 (추후 구현)');
     },
 
     // 레코딩 재개 (추후 구현)
     resumeRecording: async (): Promise<void> => {
-      console.log('▶️ 레코딩 재개 (추후 구현)');
     },
 
     // 세션 로드
     loadSessions: async (): Promise<void> => {
-      console.log('[REPOSITORY] 🔧 loadSessions 시작');
-      console.log('[REPOSITORY] 🔧 현재 저장소 상태:', {
-        isInitialized: get().isInitialized,
-        storageDirectoryPath: get().storageDirectoryPath,
-        configStorageDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-      });
-      
       if (!get().isInitialized || !get().config.storageDirectory) {
-        console.log('[REPOSITORY] 🔧 저장소가 초기화되지 않음');
-        console.log('[REPOSITORY] 🔧 - isInitialized:', get().isInitialized);
-        console.log('[REPOSITORY] 🔧 - config.storageDirectory:', get().config.storageDirectory ? 'SET' : 'NULL');
         return;
       }
 
       try {
-        console.log('[REPOSITORY] 🔧 세션 로드 시작...');
         
         // 현재 시간 기록 (성능 측정)
         const startTime = Date.now();
         
         const sessions = await get().loadSessionsFromStorage();
-        console.log(`[REPOSITORY] 🔧 로드된 세션 수: ${sessions.length}`);
-        console.log('[REPOSITORY] 🔧 로드된 세션들:', sessions.map(s => ({ id: s.id, name: s.name, path: s.id })));
         
         // 성능 로그
         const loadTime = Date.now() - startTime;
-        console.log(`[REPOSITORY] 🔧 세션 로드 소요 시간: ${loadTime}ms`);
         
         set({ sessions });
         await get().updateStorageStats();
         
-        console.log('[REPOSITORY] ✅ 세션 로드 완료');
       } catch (error) {
-        console.error('[REPOSITORY] ❌ 세션 로드 실패:', error);
       }
     },
 
@@ -826,68 +734,50 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     loadSessionsFromStorage: async (): Promise<SessionInfo[]> => {
       const storageDirectory = get().config.storageDirectory;
       if (!storageDirectory) {
-        console.log('[REPOSITORY] 🔧 저장소 디렉토리가 없음');
         return [];
       }
 
-      console.log('[REPOSITORY] 🔧 저장소에서 세션 로드 시작');
       
       try {
         // 1. 표준 구조 시도: LinkBand-Data/sessions/년도/월/세션
         try {
-          console.log('[REPOSITORY] 🔧 표준 구조 시도: LinkBand-Data/sessions 디렉토리 접근');
           const linkBandDataDir = await storageDirectory.getDirectoryHandle('LinkBand-Data');
-          console.log('[REPOSITORY] 🔧 LinkBand-Data 디렉토리 접근 성공');
           
           const sessionsDir = await linkBandDataDir.getDirectoryHandle('sessions');
-          console.log('[REPOSITORY] 🔧 sessions 디렉토리 접근 성공');
           
           const sessions = await get().loadFromStandardStructure(sessionsDir);
-          console.log(`[REPOSITORY] 🔧 표준 구조에서 ${sessions.length}개 세션 발견`);
           
           if (sessions.length > 0) {
-            console.log(`[REPOSITORY] 🔧 표준 구조 성공: ${sessions.length}개 세션 반환`);
             return sessions;
           } else {
-            console.log('[REPOSITORY] 🔧 표준 구조에서 세션을 찾지 못함, 다음 구조 시도');
           }
         } catch (error) {
-          console.log('[REPOSITORY] 🔧 표준 구조 접근 실패:', error);
         }
 
         // 2. 직접 구조 시도: 루트에 바로 session- 접두사 디렉토리
         try {
-          console.log('[REPOSITORY] 🔧 직접 구조 시도: 루트에서 session- 접두사 검색');
           const sessions = await get().loadFromDirectStructure(storageDirectory);
           if (sessions.length > 0) {
-            console.log(`[REPOSITORY] 🔧 직접 구조에서 ${sessions.length}개 세션 발견`);
             return sessions;
           }
         } catch (error) {
-          console.log('[REPOSITORY] 🔧 직접 구조 접근 실패:', error);
         }
 
         // 3. 루트 세션 구조 시도: 루트에 sessions 디렉토리
         try {
-          console.log('[REPOSITORY] 🔧 루트 세션 구조 시도: 루트/sessions');
           const sessionsDir = await storageDirectory.getDirectoryHandle('sessions');
           const sessions = await get().loadFromStandardStructure(sessionsDir);
           if (sessions.length > 0) {
-            console.log(`[REPOSITORY] 🔧 루트 세션 구조에서 ${sessions.length}개 세션 발견`);
             return sessions;
           }
         } catch (error) {
-          console.log('[REPOSITORY] 🔧 루트 세션 구조 접근 실패:', error);
         }
 
         // 4. 최후 수단: 모든 디렉토리를 세션으로 간주
-        console.log('[REPOSITORY] 🔧 최후 수단: 모든 디렉토리를 세션으로 간주');
         const sessions = await get().loadFromFallbackStructure(storageDirectory);
-        console.log(`[REPOSITORY] 🔧 최후 수단에서 ${sessions.length}개 세션 발견`);
         return sessions;
 
       } catch (error) {
-        console.error('[REPOSITORY] 🔧 저장소 세션 로드 실패:', error);
         return [];
       }
     },
@@ -905,10 +795,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           }
         }
         
-        console.log('🔧 발견된 년도 디렉토리:', yearEntries.map(e => e.name));
         
         for (const yearEntry of yearEntries) {
-          console.log(`🔧 년도 ${yearEntry.name} 처리 중`);
           
           try {
             // 월별 디렉토리 순회
@@ -919,10 +807,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
               }
             }
             
-            console.log(`🔧 년도 ${yearEntry.name}의 월 디렉토리:`, monthEntries.map(e => e.name));
             
             for (const monthEntry of monthEntries) {
-              console.log(`🔧 월 ${monthEntry.name} 처리 중`);
               
               try {
                 // 세션별 디렉토리 순회
@@ -933,7 +819,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                   }
                 }
                 
-                console.log(`🔧 월 ${monthEntry.name}의 세션 디렉토리:`, sessionEntries.map(e => e.name));
                 
                 for (const sessionEntry of sessionEntries) {
                   const sessionInfo = await get().loadSessionMetadata(sessionEntry.name, sessionEntry.handle);
@@ -942,15 +827,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                   }
                 }
               } catch (monthError) {
-                console.error(`🔧 월 ${monthEntry.name} 처리 실패:`, monthError);
               }
             }
           } catch (yearError) {
-            console.error(`🔧 년도 ${yearEntry.name} 처리 실패:`, yearError);
           }
         }
       } catch (error) {
-        console.error('🔧 표준 구조 로드 실패:', error);
         throw error;
       }
       
@@ -962,11 +844,9 @@ export const useStorageStore = create<StorageStore>((set, get) => {
       const sessions: SessionInfo[] = [];
       
       try {
-        console.log('🔧 직접 구조에서 세션 검색 시작');
         
         for await (const [name, handle] of (directoryHandle as any).entries()) {
           if (handle.kind === 'directory' && name.startsWith('session-')) {
-            console.log(`🔧 세션 디렉토리 발견: ${name}`);
             const sessionInfo = await get().loadSessionMetadata(name, handle);
             if (sessionInfo) {
               sessions.push(sessionInfo);
@@ -974,7 +854,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           }
         }
       } catch (error) {
-        console.error('🔧 직접 구조 로드 실패:', error);
         throw error;
       }
       
@@ -986,18 +865,15 @@ export const useStorageStore = create<StorageStore>((set, get) => {
       const sessions: SessionInfo[] = [];
       
       try {
-        console.log('🔧 최후 수단: 모든 디렉토리를 세션으로 간주');
         
         // 시스템/설정 디렉토리 목록 (세션이 아닌 디렉토리들)
         const systemDirs = ['LinkBand-Data', 'sessions', '.git', 'node_modules', 'dist', 'build'];
         
         for await (const [name, handle] of (directoryHandle as any).entries()) {
           if (handle.kind === 'directory') {
-            console.log(`🔧 디렉토리 발견: ${name}`);
             
             // 시스템 디렉토리는 건너뛰기
             if (systemDirs.includes(name)) {
-              console.log(`🔧 시스템 디렉토리 건너뛰기: ${name}`);
               continue;
             }
             
@@ -1008,7 +884,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           }
         }
       } catch (error) {
-        console.error('🔧 최후 수단 로드 실패:', error);
         throw error;
       }
       
@@ -1018,7 +893,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 세션 메타데이터 로드
     loadSessionMetadata: async (sessionName: string, sessionHandle: FileSystemDirectoryHandle): Promise<SessionInfo | null> => {
       try {
-        console.log(`🔧 세션 ${sessionName} 메타데이터 로드 시도`);
         
         let metadata: any = null;
         let metadataText: string = '';
@@ -1029,11 +903,9 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           const metadataHandle = await sessionHandle.getFileHandle('metadata.json');
           const metadataFile = await metadataHandle.getFile();
           metadataText = await metadataFile.text();
-          console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 메타데이터 원본 텍스트:`, metadataText);
           
           // 빈 파일 체크
           if (!metadataText.trim()) {
-            console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 메타데이터 파일이 비어있음`);
             throw new Error('Empty metadata file');
           }
           
@@ -1042,33 +914,22 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           
           // 배열로 시작하지만 닫히지 않은 경우 수정
           if (fixedMetadataText.startsWith('[') && !fixedMetadataText.endsWith(']')) {
-            console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 불완전한 JSON 배열 감지, 수정 시도`);
             // 마지막 쉼표 제거 후 배열 종료 추가
             fixedMetadataText = fixedMetadataText.replace(/,\s*$/, '') + '\n]';
-            console.log(`[REPOSITORY] 🔧 수정된 메타데이터:`, fixedMetadataText);
           }
           
           metadata = JSON.parse(fixedMetadataText);
-          console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 메타데이터 파싱 완료:`, metadata);
-          console.log(`[REPOSITORY] 🔧 메타데이터 타입: ${Array.isArray(metadata) ? 'Array' : 'Object'}`);
           
           // 메타데이터가 배열로 저장된 경우 첫 번째 요소 사용 (기존 호환성)
           // 메타데이터가 객체로 저장된 경우 직접 사용 (새로운 형태)
           const sessionMetadata = Array.isArray(metadata) ? metadata[0] : metadata;
-          console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 실제 메타데이터:`, sessionMetadata);
           
           // 메타데이터 구조 검증
           if (!sessionMetadata || typeof sessionMetadata !== 'object') {
-            console.error(`[REPOSITORY] 🔧 세션 ${sessionName} 메타데이터 구조 오류:`, sessionMetadata);
             throw new Error('Invalid metadata structure');
           }
           
           // 각 필드별로 상세 로그
-          console.log(`[REPOSITORY] 🔧 deviceName: ${sessionMetadata.deviceName}, deviceId: ${sessionMetadata.deviceId}`);
-          console.log(`[REPOSITORY] 🔧 duration: ${sessionMetadata.duration} (타입: ${typeof sessionMetadata.duration})`);
-          console.log(`[REPOSITORY] 🔧 startTime: ${sessionMetadata.startTime}, endTime: ${sessionMetadata.endTime}`);
-          console.log(`[REPOSITORY] 🔧 estimatedSize: ${sessionMetadata.estimatedSize} (타입: ${typeof sessionMetadata.estimatedSize})`);
-          console.log(`[REPOSITORY] 🔧 saveFormats: ${JSON.stringify(sessionMetadata.saveFormats)}`);
           
           // 필수 필드 검증
           const hasDeviceName = sessionMetadata.deviceName && sessionMetadata.deviceName !== 'Unknown Device';
@@ -1076,10 +937,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           const hasDuration = sessionMetadata.duration && typeof sessionMetadata.duration === 'number' && sessionMetadata.duration > 0;
           const hasSize = sessionMetadata.estimatedSize && typeof sessionMetadata.estimatedSize === 'number' && sessionMetadata.estimatedSize > 0;
           
-          console.log(`[REPOSITORY] ${hasDeviceName ? '✅' : '❌'} 디바이스 이름: ${sessionMetadata.deviceName}`);
-          console.log(`[REPOSITORY] ${hasDeviceId ? '✅' : '❌'} 디바이스 ID: ${sessionMetadata.deviceId}`);
-          console.log(`[REPOSITORY] ${hasDuration ? '✅' : '❌'} 지속 시간: ${sessionMetadata.duration}`);
-          console.log(`[REPOSITORY] ${hasSize ? '✅' : '❌'} 파일 크기: ${sessionMetadata.estimatedSize}`);
           
           // 🔧 데이터 품질 계산 개선
           let calculatedQuality = 0;
@@ -1088,7 +945,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             // 실제 데이터 품질 정보가 있는 경우 사용
             const { eegQuality, ppgQuality, accQuality } = sessionMetadata.dataQuality;
             calculatedQuality = Math.round((eegQuality + ppgQuality + accQuality) / 3);
-            console.log(`[REPOSITORY] 🔧 실제 데이터 품질 사용: EEG=${eegQuality}, PPG=${ppgQuality}, ACC=${accQuality}, 평균=${calculatedQuality}`);
           } else {
             // 데이터 품질 정보가 없는 경우 세션 정보를 기반으로 추정
             const duration = sessionMetadata.duration || 0;
@@ -1124,7 +980,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             // 품질 점수 범위 제한 (0-100)
             calculatedQuality = Math.max(0, Math.min(100, estimatedQuality));
             
-            console.log(`[REPOSITORY] 🔧 추정 데이터 품질 계산: 기본=${75}, 지속시간=${duration}s, 크기=${size}bytes, 디바이스=${deviceName}, 최종=${calculatedQuality}`);
           }
 
           // 세션 정보 객체 생성
@@ -1146,18 +1001,14 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           };
           
         } catch (parseError) {
-          console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 메타데이터 파싱 실패:`, parseError);
-          console.log(`[REPOSITORY] 🔧 원본 메타데이터 텍스트:`, metadataText);
           
           // 메타데이터 파일이 없거나 손상된 경우 기본값으로 세션 정보 생성
-          console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 기본 정보로 복원 시도`);
           
           // 디렉토리 크기 계산 시도
           let estimatedSize = 0;
           try {
             estimatedSize = await get().calculateDirectorySize(sessionHandle);
           } catch (sizeError) {
-            console.warn(`[REPOSITORY] 🔧 세션 ${sessionName} 크기 계산 실패:`, sizeError);
           }
           
           // 파일 형식 감지 시도
@@ -1187,7 +1038,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           
           fallbackQuality = Math.max(0, Math.min(100, fallbackQuality));
           
-          console.log(`[REPOSITORY] 🔧 메타데이터 없음 - 추정 품질: 크기=${estimatedSize}bytes, 형식=${detectedFormats.length}개, 최종=${fallbackQuality}`);
 
           // 기본 세션 정보 생성
           sessionInfo = {
@@ -1207,13 +1057,11 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             handle: sessionHandle
           };
           
-          console.log(`[REPOSITORY] 🔧 세션 ${sessionName} 기본 정보로 복원 완료:`, sessionInfo);
         }
         
         return sessionInfo;
         
       } catch (error) {
-        console.warn(`🔧 세션 ${sessionName} 메타데이터 로드 실패:`, error);
         
         // 완전히 실패한 경우에도 최소한의 정보 제공
         try {
@@ -1233,7 +1081,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             emergencyQuality += 5; // 파일이 있으면 +5점
           }
           
-          console.log(`[REPOSITORY] 🔧 완전 실패 케이스 - 추정 품질: 크기=${estimatedSize}bytes, 형식=${detectedFormats.length}개, 최종=${emergencyQuality}`);
           
           return {
             id: sessionName,
@@ -1252,7 +1099,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             handle: sessionHandle
           };
         } catch (fallbackError) {
-          console.error(`🔧 세션 ${sessionName} 완전 복원 실패:`, fallbackError);
           return null;
         }
       }
@@ -1276,7 +1122,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           // YYYY-MM-DD 형식으로 반환
           return localDate.toISOString().split('T')[0];
         } catch (error) {
-          console.warn('날짜 파싱 중 오류:', error);
           // 원본 날짜 반환
           return `${match[1]}-${match[2]}-${match[3]}`;
         }
@@ -1306,7 +1151,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           
           return `${hours}:${minutes}:${seconds}`;
         } catch (error) {
-          console.warn('시간 파싱 중 오류:', error);
           // 원본 시간 반환
           return `${match[4]}:${match[5]}:${match[6]}`;
         }
@@ -1345,7 +1189,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           }
         }
       } catch (error) {
-        console.warn('파일 형식 감지 실패:', error);
       }
       
       return formats.length > 0 ? formats : ['unknown'];
@@ -1354,7 +1197,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 세션 삭제
     deleteSession: async (sessionId: string): Promise<void> => {
       try {
-        console.log(`[REPOSITORY] 🗑️ 세션 삭제 시작: ${sessionId}`);
         
         // 세션 정보 찾기
         const sessionInfo = get().sessions.find(s => s.id === sessionId);
@@ -1373,11 +1215,9 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         );
 
         if (!confirmed) {
-          console.log(`[REPOSITORY] 🗑️ 세션 삭제 취소: ${sessionId}`);
           return;
         }
 
-        console.log(`[REPOSITORY] 🗑️ 세션 디렉토리 삭제 시작: ${sessionId}`);
         
         // 🔧 개선된 세션 디렉토리 삭제 로직
         let deletionSuccess = false;
@@ -1386,7 +1226,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         if (storageDirectory && sessionInfo.handle) {
           try {
             // 방법 1: 부모 디렉토리에서 직접 삭제 시도 (가장 확실한 방법)
-            console.log(`[REPOSITORY] 🗑️ 방법 1: 부모 디렉토리에서 직접 삭제 시도`);
             
             // 다양한 저장소 구조에서 부모 디렉토리 찾기
             const possibleParentPaths = [
@@ -1425,15 +1264,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                 }
                 
                 // 세션 디렉토리 삭제 시도
-                console.log(`[REPOSITORY] 🗑️ 부모 디렉토리에서 세션 삭제 시도: ${sessionId}`);
                 await (currentDir as any).removeEntry(sessionId, { recursive: true });
-                console.log(`[REPOSITORY] ✅ 부모 디렉토리에서 세션 삭제 성공: ${sessionId}`);
                 deletionSuccess = true;
                 parentFound = true;
                 break;
                 
               } catch (pathError) {
-                console.log(`[REPOSITORY] 🗑️ 경로 ${pathSegments.join('/')}에서 삭제 실패:`, pathError);
                 continue;
               }
             }
@@ -1443,10 +1279,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             }
             
           } catch (directDeleteError) {
-            console.warn(`[REPOSITORY] ⚠️ 방법 1 실패:`, directDeleteError);
             
             // 방법 2: 세션 디렉토리 내용을 모두 삭제한 후 빈 디렉토리 삭제
-            console.log(`[REPOSITORY] 🗑️ 방법 2: 내용 삭제 후 빈 디렉토리 삭제`);
             
             try {
               // 삭제할 파일과 디렉토리 목록 수집
@@ -1456,7 +1290,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                 entriesToDelete.push({ name, kind: handle.kind });
               }
               
-              console.log(`[REPOSITORY] 🗑️ 삭제할 항목 ${entriesToDelete.length}개 발견`);
               
               // 모든 파일과 하위 디렉토리 삭제
               for (const entry of entriesToDelete) {
@@ -1468,17 +1301,13 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                     // 파일 삭제
                     await (sessionInfo.handle as any).removeEntry(entry.name);
                   }
-                  console.log(`[REPOSITORY] 🗑️ 항목 삭제 성공: ${entry.name} (${entry.kind})`);
                 } catch (entryError) {
-                  console.error(`[REPOSITORY] ❌ 항목 삭제 실패: ${entry.name}`, entryError);
                 }
               }
               
-              console.log(`[REPOSITORY] ✅ 세션 내용 삭제 완료: ${sessionId}`);
               deletionSuccess = true;
               
             } catch (contentDeleteError) {
-              console.error(`[REPOSITORY] ❌ 세션 내용 삭제 실패:`, contentDeleteError);
               throw new Error(`세션 파일 삭제 중 오류가 발생했습니다: ${contentDeleteError instanceof Error ? contentDeleteError.message : '알 수 없는 오류'}`);
             }
           }
@@ -1499,13 +1328,11 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         // 저장소 통계 업데이트
         await get().updateStorageStats();
         
-        console.log(`[REPOSITORY] ✅ 세션 삭제 완료: ${sessionId}`);
         
         // 성공 알림
         alert(`✅ 세션이 성공적으로 삭제되었습니다.\n세션명: ${sessionInfo.name}`);
         
       } catch (error) {
-        console.error(`[REPOSITORY] ❌ 세션 삭제 실패: ${sessionId}`, error);
         alert(`❌ 세션 삭제 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
         throw error;
       }
@@ -1519,7 +1346,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         }
         set({ selectedSessions: [] });
       } catch (error) {
-        console.error('❌ 다중 세션 삭제 실패:', error);
         throw error;
       }
     },
@@ -1527,7 +1353,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 세션 내보내기 (디렉토리 핸들 전달 받음)
     exportSession: async (sessionId: string, format: string, targetDirHandle?: FileSystemDirectoryHandle): Promise<void> => {
       try {
-        console.log(`[REPOSITORY] 📤 세션 내보내기 시작: ${sessionId}, 형식: ${format}`);
         
         // 세션 정보 찾기
         const sessionInfo = get().sessions.find(s => s.id === sessionId);
@@ -1556,14 +1381,11 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           await get().exportSessionFiles(sessionInfo, dirHandle!, format);
         }
 
-        console.log(`[REPOSITORY] ✅ 세션 내보내기 완료: ${sessionId}`);
         
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          console.log(`[REPOSITORY] 📤 세션 내보내기 취소: ${sessionId}`);
           return;
         }
-        console.error(`[REPOSITORY] ❌ 세션 내보내기 실패: ${sessionId}`, error);
         throw error;
       }
     },
@@ -1575,7 +1397,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           await get().exportSession(sessionId, format);
         }
       } catch (error) {
-        console.error('❌ 다중 세션 내보내기 실패:', error);
         throw error;
       }
     },
@@ -1620,7 +1441,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 저장소 통계 업데이트
     updateStorageStats: async (): Promise<void> => {
       try {
-        console.log('[REPOSITORY] 📊 저장소 통계 업데이트 시작');
         
         const storageDirectory = get().config.storageDirectory;
         const sessions = get().sessions;
@@ -1632,25 +1452,18 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         if (storageDirectory) {
           try {
             // 실제 저장소 디렉토리의 전체 크기 계산
-            console.log('[REPOSITORY] 📊 저장소 디렉토리 크기 계산 중...');
             actualUsedBytes = await get().calculateDirectorySize(storageDirectory);
-            console.log(`[REPOSITORY] 📊 실제 사용량: ${actualUsedBytes} bytes`);
             
             // Navigator Storage API를 사용하여 사용 가능한 공간 추정 (지원되는 경우)
             if ('storage' in navigator && 'estimate' in navigator.storage) {
               try {
                 const estimate = await navigator.storage.estimate();
-                console.log('[REPOSITORY] 📊 Raw Storage API estimate:', estimate);
                 
                 if (estimate.quota && estimate.usage) {
                   const quotaBytes = estimate.quota; // 브라우저 할당량
                   const usedBytes = estimate.usage; // 브라우저 사용량
                   const availableBytes = quotaBytes - usedBytes;
                   
-                  console.log('[REPOSITORY] 📊 Raw values:');
-                  console.log(`[REPOSITORY] 📊 - quotaBytes: ${quotaBytes}`);
-                  console.log(`[REPOSITORY] 📊 - usedBytes: ${usedBytes}`);
-                  console.log(`[REPOSITORY] 📊 - availableBytes: ${availableBytes}`);
                   
                   // 실제 디스크 전체 크기 추정 
                   // 브라우저는 보통 디스크의 50-80%를 할당받으므로 역산하여 전체 디스크 크기 추정
@@ -1664,7 +1477,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                   if (browserUsageRatio < 0.1) {
                     // 브라우저 사용률이 10% 미만이면 일반적인 디스크 사용률 가정 (30% 사용, 70% 여유)
                     estimatedAvailableGB = totalStorageGB * 0.7;
-                    console.log(`[REPOSITORY] 📊 브라우저 사용률이 낮아서 Available을 Total의 70%로 설정`);
                   } else {
                     // 브라우저 사용률을 기반으로 전체 시스템 사용량 추정
                     const estimatedSystemUsageBytes = estimatedDiskSizeBytes * browserUsageRatio;
@@ -1672,34 +1484,21 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                     estimatedAvailableGB = estimatedRealAvailableBytes / (1024 * 1024 * 1024);
                   }
                   
-                  console.log(`[REPOSITORY] 📊 계산된 값들:`);
-                  console.log(`[REPOSITORY] 📊 - browserUsageRatio: ${browserUsageRatio}`);
                   
                   // 만약 계산된 Available이 Total의 90% 이상이면 더 현실적인 값으로 조정
                   if (estimatedAvailableGB > totalStorageGB * 0.9) {
                     // 일반적으로 디스크의 70-80% 정도가 사용 가능하다고 가정
                     estimatedAvailableGB = totalStorageGB * 0.75;
-                    console.log(`[REPOSITORY] 📊 Available 값이 너무 커서 75%로 조정: ${estimatedAvailableGB.toFixed(1)} GB`);
                   }
                   
-                  console.log(`[REPOSITORY] 📊 Storage API 정보:`);
-                  console.log(`[REPOSITORY] 📊 - 브라우저 할당량: ${(quotaBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`);
-                  console.log(`[REPOSITORY] 📊 - 브라우저 사용중: ${(usedBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`);
-                  console.log(`[REPOSITORY] 📊 - 브라우저 사용가능: ${(availableBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`);
-                  console.log(`[REPOSITORY] 📊 - 추정 디스크 전체: ${totalStorageGB.toFixed(1)} GB`);
-                  console.log(`[REPOSITORY] 📊 - 추정 디스크 여유: ${estimatedAvailableGB.toFixed(1)} GB`);
                 } else {
-                  console.warn('[REPOSITORY] 📊 Storage API estimate에 quota 또는 usage 정보 없음');
                 }
               } catch (storageApiError) {
-                console.warn('[REPOSITORY] 📊 Storage API 사용 실패:', storageApiError);
               }
             } else {
-              console.warn('[REPOSITORY] 📊 Navigator Storage API 지원되지 않음');
             }
             
           } catch (error) {
-            console.warn('[REPOSITORY] 📊 실제 크기 계산 실패, 세션 크기 합산으로 대체:', error);
             
             // 실제 크기 계산 실패 시 세션 크기 합산으로 대체
             actualUsedBytes = sessions.reduce((total, session) => {
@@ -1721,7 +1520,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             }, 0);
           }
         } else {
-          console.log('[REPOSITORY] 📊 저장소 디렉토리 없음, 세션 크기 합산');
           // 저장소 디렉토리가 없는 경우 세션 크기 합산
           actualUsedBytes = sessions.reduce((total, session) => {
             const sizeStr = session.size;
@@ -1749,11 +1547,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         // (브라우저가 실제로 사용할 수 있는 디스크 여유 공간)
         const availableFormatted = `${estimatedAvailableGB.toFixed(1)} GB`;
 
-        console.log(`[REPOSITORY] 📊 저장소 통계 업데이트 완료:`);
-        console.log(`[REPOSITORY] 📊 - 총 용량: ${totalSizeFormatted}`);
-        console.log(`[REPOSITORY] 📊 - 사용량: ${usedFormatted} (${actualUsedBytes} bytes)`);
-        console.log(`[REPOSITORY] 📊 - 사용가능: ${availableFormatted}`);
-        console.log(`[REPOSITORY] 📊 - 세션 수: ${sessions.length}`);
 
         set({
           storageStats: {
@@ -1765,7 +1558,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
         });
         
       } catch (error) {
-        console.error('[REPOSITORY] ❌ 저장소 통계 업데이트 실패:', error);
         
         // 오류 발생 시 기본값 설정
         set({
@@ -1837,11 +1629,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
             currentSession.estimatedSize !== storeCurrentSession.estimatedSize ||
             currentSession.totalSamples !== storeCurrentSession.totalSamples ||
             currentSession.duration !== storeCurrentSession.duration)) {
-          console.log('🔧 currentSession 업데이트:', {
-            estimatedSize: currentSession.estimatedSize,
-            totalSamples: currentSession.totalSamples,
-            duration: currentSession.duration
-          });
           set({ currentSession });
         }
 
@@ -1877,7 +1664,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
               const file = await handle.getFile();
               totalSize += file.size;
             } catch (error) {
-              console.warn(`[REPOSITORY] 파일 크기 계산 실패: ${name}`, error);
             }
           } else if (handle.kind === 'directory') {
             // 재귀적으로 하위 디렉토리 크기 계산
@@ -1886,7 +1672,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           }
         }
       } catch (error) {
-        console.error('[REPOSITORY] 디렉토리 크기 계산 실패:', error);
       }
       
       return totalSize;
@@ -1895,7 +1680,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // ZIP 형태로 세션 내보내기
     exportSessionAsZip: async (sessionInfo: SessionInfo, targetDirHandle: FileSystemDirectoryHandle): Promise<void> => {
       try {
-        console.log(`[REPOSITORY] 📦 ZIP 내보내기 시작: ${sessionInfo.name}`);
         
         // 세션 디렉토리에서 모든 파일 복사
         const sessionDirName = `${sessionInfo.name}_export_${new Date().toISOString().slice(0, 10)}`;
@@ -1931,17 +1715,13 @@ export const useStorageStore = create<StorageStore>((set, get) => {
               await targetStream.write(sourceFile);
               await targetStream.close();
               fileCount++;
-              console.log(`[REPOSITORY] 📦 파일 복사: ${fileName}`);
             } catch (error) {
-              console.warn(`[REPOSITORY] ⚠️ 파일 복사 실패: ${fileName}`, error);
             }
           }
         }
 
-        console.log(`[REPOSITORY] ✅ ZIP 내보내기 완료: ${fileCount}개 파일 복사됨`);
         
       } catch (error) {
-        console.error(`[REPOSITORY] ❌ ZIP 내보내기 실패:`, error);
         throw error;
       }
     },
@@ -1949,7 +1729,6 @@ export const useStorageStore = create<StorageStore>((set, get) => {
     // 개별 파일 형태로 세션 내보내기
     exportSessionFiles: async (sessionInfo: SessionInfo, targetDirHandle: FileSystemDirectoryHandle, format: string): Promise<void> => {
       try {
-        console.log(`[REPOSITORY] 📄 개별 파일 내보내기 시작: ${sessionInfo.name}, 형식: ${format}`);
         
         // 특정 형식의 파일만 필터링하여 복사
         const fileExtension = format.toLowerCase();
@@ -1969,9 +1748,7 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                 await targetStream.write(sourceFile);
                 await targetStream.close();
                 exportedCount++;
-                console.log(`[REPOSITORY] 📄 파일 내보내기: ${exportFileName}`);
               } catch (error) {
-                console.warn(`[REPOSITORY] ⚠️ 파일 내보내기 실패: ${fileName}`, error);
               }
             }
           }
@@ -1981,10 +1758,8 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           throw new Error(`${format} 형식의 파일을 찾을 수 없습니다.`);
         }
 
-        console.log(`[REPOSITORY] ✅ 개별 파일 내보내기 완료: ${exportedCount}개 파일`);
         
       } catch (error) {
-        console.error(`[REPOSITORY] ❌ 개별 파일 내보내기 실패:`, error);
         throw error;
       }
     }

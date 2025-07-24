@@ -17,4 +17,12 @@ export { default as TrialManagementService } from './TrialManagementService';
 // Device management services
 export { deviceInventoryService } from './DeviceInventoryService';
 export { default as ServiceManagementService } from './ServiceManagementService';
-export { default as organizationDeviceService } from './OrganizationDeviceService'; 
+export { default as organizationDeviceService } from './OrganizationDeviceService';
+
+// Integrated device management services
+export { DeviceMasterService } from './DeviceMasterService';
+export { DeviceAllocationService } from './DeviceAllocationService';
+export { ServiceRequestService } from './ServiceRequestService';
+export { DeviceSynchronizationService } from './DeviceSynchronizationService';
+export { UnifiedDeviceManagementService } from './UnifiedDeviceManagementService';
+export { OrganizationDeviceViewService } from './OrganizationDeviceViewService'; 

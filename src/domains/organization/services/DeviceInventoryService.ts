@@ -60,10 +60,6 @@ class DeviceInventoryService extends BaseService {
     customDeviceId?: string
   ): Promise<DeviceInventory> {
     return await this.measureAndLog('createDevice', async () => {
-      this.log('디바이스 등록 시작', { deviceData });
-
-      // 사용자 지정 ID가 있으면 사용, 없으면 자동 생성
-      const deviceId = customDeviceId || await this.generateDeviceId();
 
       // 사용자 지정 ID인 경우 중복 검사
       if (customDeviceId) {
@@ -96,6 +92,9 @@ class DeviceInventoryService extends BaseService {
 
       const cleanedData = removeUndefinedFields(deviceInventoryData);
 
+      // ID 생성
+      const deviceId = customDeviceId || await this.generateDeviceId();
+      
       // Firestore에 저장
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
       await setDoc(docRef, {
@@ -113,8 +112,8 @@ class DeviceInventoryService extends BaseService {
       // 캐시 무효화
       await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
-
-      this.log('디바이스 등록 성공', { deviceId });
+      
+      this.logger.info('디바이스 등록 완료', { deviceId });
       return result;
     });
   }
@@ -178,21 +177,19 @@ class DeviceInventoryService extends BaseService {
       return device;
 
     } catch (error) {
-      this.error('디바이스 조회 실패', error as Error, { deviceId });
+      this.handleError(error, 'getDeviceById', { deviceId });
       throw error;
     }
   }
-
+  
   /**
-   * 전체 재고 목록 조회
+   * 디바이스 목록 조회 (필터링 및 페이지네이션)
    */
-  async getAllInventory(
+  async getDevices(
     filters?: DeviceSearchFilters,
     pagination?: PaginationOptions
   ): Promise<ApiResponse<DeviceInventory[]>> {
-    return await this.measureAndLog('getAllInventory', async () => {
-      this.log('재고 목록 조회 시작', { filters, pagination });
-
+    return await this.measureAndLog('getDevices', async () => {
       // 쿼리 구성
       const constraints: any[] = [];
 
@@ -233,13 +230,12 @@ class DeviceInventoryService extends BaseService {
         data: devices,
         pagination: pagination ? {
           total: snapshot.size,
-          page: pagination.page,
-          limit: pagination.limit,
-          totalPages: Math.ceil(snapshot.size / pagination.limit)
+          page: pagination.page || 1,
+          limit: pagination.limit || 20,
+          totalPages: Math.ceil(snapshot.size / (pagination.limit || 20))
         } : undefined
       };
 
-      this.log('재고 목록 조회 성공', { count: devices.length });
       return result;
     });
   }
@@ -281,30 +277,27 @@ class DeviceInventoryService extends BaseService {
       return devices;
 
     } catch (error) {
-      this.error('사용 가능한 디바이스 조회 실패', error as Error);
+      this.handleError(error, 'getAvailableDevices');
       throw error;
     }
   }
-
+  
   /**
-   * 디바이스 상태 업데이트
+   * 디바이스 상태 변경
    */
   async updateDeviceStatus(
-    deviceId: string, 
+    deviceId: string,
     status: DeviceInventory['status'],
     notes?: string
   ): Promise<void> {
     return await this.measureAndLog('updateDeviceStatus', async () => {
-      this.log('디바이스 상태 업데이트 시작', { deviceId, status, notes });
-
       // 디바이스 존재 확인
       const device = await this.getDeviceById(deviceId);
       if (!device) {
         const error = new Error('디바이스를 찾을 수 없습니다');
-        this.error('디바이스를 찾을 수 없음', error, { deviceId });
         throw error;
       }
-
+      
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
       const updateData: any = {
         status,
@@ -321,8 +314,8 @@ class DeviceInventoryService extends BaseService {
       await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
       await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
-
-      this.log('디바이스 상태 업데이트 성공', { deviceId, status });
+      
+      this.logger.info('디바이스 상태 변경', { deviceId, status });
     });
   }
 
@@ -343,18 +336,14 @@ class DeviceInventoryService extends BaseService {
     }
   ): Promise<void> {
     return await this.measureAndLog('updateDeviceAssignment', async () => {
-      this.log('디바이스 렌탈/판매 처리 시작', { 
-        deviceId, organizationId, organizationName, organizationCode, businessType 
-      });
 
       // 디바이스 존재 확인
       const device = await this.getDeviceById(deviceId);
       if (!device) {
         const error = new Error('디바이스를 찾을 수 없습니다');
-        this.error('디바이스를 찾을 수 없음', error, { deviceId });
         throw error;
       }
-
+      
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
       
       // 비즈니스 유형에 따라 다른 상태와 필드 설정
@@ -404,8 +393,8 @@ class DeviceInventoryService extends BaseService {
       await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
       await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
-
-      this.log('디바이스 렌탈/판매 처리 완료', { deviceId, organizationId, businessType });
+      
+      this.logger.info('디바이스 할당 업데이트', { deviceId, organizationId, businessType });
     });
   }
 
@@ -414,24 +403,12 @@ class DeviceInventoryService extends BaseService {
    */
   async deleteDevice(deviceId: string): Promise<void> {
     return await this.measureAndLog('deleteDevice', async () => {
-      this.log('디바이스 삭제 시작', { deviceId });
-
-      // 디바이스 존재 확인
       const device = await this.getDeviceById(deviceId);
       if (!device) {
         const error = new Error('디바이스를 찾을 수 없습니다');
-        this.error('디바이스를 찾을 수 없음', error, { deviceId });
         throw error;
       }
-
-      // 렌탈/판매 또는 사용 중인 디바이스는 삭제 전 확인
-      if (device.status === 'ASSIGNED' || device.status === 'RENTED' || device.status === 'SOLD' || device.status === 'IN_USE') {
-        const error = new Error('렌탈/판매 처리되었거나 사용 중인 디바이스는 삭제할 수 없습니다');
-        this.error('렌탈/판매 처리된 디바이스 삭제 시도', error, { deviceId, status: device.status });
-        throw error;
-      }
-
-      // Firestore에서 삭제
+      
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
       await deleteDoc(docRef);
 
@@ -439,8 +416,8 @@ class DeviceInventoryService extends BaseService {
       await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
       await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
-
-      this.log('디바이스 삭제 완료', { deviceId });
+      
+      this.logger.info('디바이스 삭제 완료', { deviceId });
     });
   }
 
@@ -449,24 +426,12 @@ class DeviceInventoryService extends BaseService {
    */
   async unassignDevice(deviceId: string): Promise<void> {
     return await this.measureAndLog('unassignDevice', async () => {
-      this.log('디바이스 배정 해제 시작', { deviceId });
-
-      // 디바이스 존재 확인
       const device = await this.getDeviceById(deviceId);
       if (!device) {
         const error = new Error('디바이스를 찾을 수 없습니다');
-        this.error('디바이스를 찾을 수 없음', error, { deviceId });
         throw error;
       }
-
-      // 렌탈/판매되지 않은 디바이스는 해제할 수 없음
-      if (device.status !== 'ASSIGNED' && device.status !== 'RENTED' && device.status !== 'SOLD' && device.status !== 'IN_USE') {
-        const error = new Error('렌탈/판매 처리되지 않은 디바이스는 해제할 수 없습니다');
-        this.error('렌탈/판매되지 않은 디바이스 해제 시도', error, { deviceId, status: device.status });
-        throw error;
-      }
-
-      // Firestore에서 렌탈/판매 정보 제거 및 상태 변경
+      
       const docRef = doc(this.db, this.COLLECTION_NAME, deviceId);
       const updateData: any = {
         status: 'AVAILABLE',
@@ -517,11 +482,10 @@ class DeviceInventoryService extends BaseService {
             });
             
             await batch.commit();
-            this.log('렌탈 계약 반납 처리 완료', { deviceId, rentalCount: rentalsSnapshot.size });
-          }
-        } catch (rentalError) {
-          this.error('렌탈 계약 업데이트 실패', rentalError as Error, { deviceId });
           // 렌탈 계약 업데이트가 실패해도 디바이스 상태 변경은 완료되었으므로 에러를 던지지 않음
+          } catch (rentalError) {
+            this.logger.warn('렌탈 계약 업데이트 실패', { deviceId, error: rentalError });
+          }
         }
       }
 
@@ -529,8 +493,8 @@ class DeviceInventoryService extends BaseService {
       await this.cache.delete(`${this.COLLECTION_NAME}:device:${deviceId}`);
       await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
       await this.cache.delete(`${this.COLLECTION_NAME}:available`);
-
-      this.log('디바이스 배정 해제 완료', { deviceId });
+      
+      this.logger.info('디바이스 배정 해제', { deviceId });
     });
   }
 
@@ -605,24 +569,16 @@ class DeviceInventoryService extends BaseService {
       return stats;
 
     } catch (error) {
-      this.error('재고 통계 조회 실패', error as Error);
+      this.handleError(error, 'getInventoryStats');
       throw error;
     }
   }
-
-  // ============================================================================
-  // 벌크 작업
-  // ============================================================================
-
+  
   /**
-   * 여러 디바이스 일괄 등록
+   * 대량 디바이스 등록
    */
-  async bulkCreateDevices(
-    devicesData: CreateDeviceInventoryRequest[]
-  ): Promise<BulkOperationResult<DeviceInventory>> {
+  async bulkCreateDevices(devicesData: CreateDeviceInventoryRequest[]): Promise<BulkOperationResult<DeviceInventory>> {
     return await this.measureAndLog('bulkCreateDevices', async () => {
-      this.log('디바이스 일괄 등록 시작', { count: devicesData.length });
-
       const batch = writeBatch(this.db);
       const successful: DeviceInventory[] = [];
       const failed: Array<{ data: Partial<DeviceInventory>; error: string }> = [];
@@ -683,8 +639,8 @@ class DeviceInventoryService extends BaseService {
           failed: failed.length
         }
       };
-
-      this.log('디바이스 일괄 등록 완료', result.summary);
+      
+      this.logger.info('대량 디바이스 등록 완료', result.summary);
       return result;
     });
   }
@@ -719,24 +675,11 @@ class DeviceInventoryService extends BaseService {
       return snapshot.size;
 
     } catch (error) {
-      this.error('상태별 디바이스 수 조회 실패', error as Error, { status });
+      this.logger.error('디바이스 상태별 수 조회 실패', { status, error });
       return 0;
-    }
-  }
-
-  /**
-   * 캐시 초기화
-   */
-  async clearCache(): Promise<void> {
-    try {
-      await this.cache.delete(`${this.COLLECTION_NAME}:stats`);
-      await this.cache.delete(`${this.COLLECTION_NAME}:available`);
-      this.log('디바이스 재고 캐시 초기화 완료');
-    } catch (error) {
-      this.error('캐시 초기화 실패', error as Error);
     }
   }
 }
 
 // 싱글톤 인스턴스 생성 및 export
-export const deviceInventoryService = new DeviceInventoryService(); 
+export const deviceInventoryService = new DeviceInventoryService();

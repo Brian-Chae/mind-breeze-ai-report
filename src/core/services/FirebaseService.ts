@@ -57,7 +57,6 @@ export class FirebaseService {
     try {
       await signOut(auth);
     } catch (error) {
-      console.error('Sign out error:', error);
       throw error;
     }
   }
@@ -83,10 +82,9 @@ export class FirebaseService {
       };
       
       await setDoc(doc(db, 'users', user.uid), userDoc);
-      console.log('✅ 사용자 프로필 생성 완료:', user.email);
       return userDoc;
     } catch (error) {
-      console.error('❌ 사용자 프로필 생성 실패:', error);
+      console.error('Error creating user profile:', error);
       throw error;
     }
   }
@@ -99,7 +97,7 @@ export class FirebaseService {
       }
       return null;
     } catch (error) {
-      console.error('Get user profile error:', error);
+      console.error('Error getting user profile:', error);
       throw error;
     }
   }
@@ -112,7 +110,6 @@ export class FirebaseService {
       
       if (!userSnapshot.exists()) {
         // 문서가 없으면 기본 프로필 생성
-        console.log('🔧 사용자 프로필이 없어서 자동 생성 중...');
         const currentUser = auth.currentUser;
         if (currentUser) {
           await this.createUserProfile(currentUser);
@@ -138,9 +135,8 @@ export class FirebaseService {
         ...data,
         updatedAt: Timestamp.now()
       });
-      console.log('✅ 사용자 프로필 업데이트 완료');
     } catch (error) {
-      console.error('❌ 사용자 프로필 업데이트 실패:', error);
+      console.error('Error updating user profile:', error);
       throw error;
     }
   }
@@ -156,10 +152,9 @@ export class FirebaseService {
       };
       
       const docRef = await addDoc(collection(db, 'healthReports'), reportDoc);
-      console.log('✅ 건강 리포트 저장 완료:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('❌ 건강 리포트 저장 실패:', error);
+      console.error('Error saving health report:', error);
       throw error;
     }
   }
@@ -179,7 +174,7 @@ export class FirebaseService {
         ...doc.data()
       }));
     } catch (error) {
-      console.error('❌ 건강 리포트 조회 실패:', error);
+      console.error('Error getting user health reports:', error);
       throw error;
     }
   }
@@ -196,7 +191,7 @@ export class FirebaseService {
       const docRef = await addDoc(collection(db, 'chatHistory'), chatDoc);
       return docRef.id;
     } catch (error) {
-      console.error('❌ 채팅 메시지 저장 실패:', error);
+      console.error('Error saving chat message:', error);
       throw error;
     }
   }
@@ -216,7 +211,7 @@ export class FirebaseService {
         ...doc.data()
       }));
     } catch (error) {
-      console.error('❌ 채팅 히스토리 조회 실패:', error);
+      console.error('Error getting chat history:', error);
       throw error;
     }
   }
@@ -232,9 +227,8 @@ export class FirebaseService {
       };
       
       await setDoc(doc(db, 'devices', deviceData.serialNumber), deviceDoc);
-      console.log('✅ 디바이스 정보 저장 완료:', deviceData.serialNumber);
     } catch (error) {
-      console.error('❌ 디바이스 정보 저장 실패:', error);
+      console.error('Error saving device info:', error);
       throw error;
     }
   }
@@ -252,7 +246,6 @@ export class FirebaseService {
         ...doc.data()
       }));
     } catch (error) {
-      console.error('❌ 사용자 디바이스 조회 실패:', error);
       throw error;
     }
   }
@@ -267,7 +260,6 @@ export class FirebaseService {
       });
       return docRef.id;
     } catch (error) {
-      console.error('Add document error:', error);
       throw error;
     }
   }
@@ -286,7 +278,6 @@ export class FirebaseService {
         return null;
       }
     } catch (error) {
-      console.error('Get document error:', error);
       throw error;
     }
   }
@@ -299,7 +290,6 @@ export class FirebaseService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Update document error:', error);
       throw error;
     }
   }
@@ -308,7 +298,6 @@ export class FirebaseService {
     try {
       await deleteDoc(doc(db, collectionName, docId));
     } catch (error) {
-      console.error('Delete document error:', error);
       throw error;
     }
   }
@@ -332,7 +321,7 @@ export class FirebaseService {
         }));
       }
     } catch (error) {
-      console.error('Get documents error:', error);
+      console.error('Error getting documents:', error);
       throw error;
     }
   }
@@ -351,7 +340,7 @@ export class FirebaseService {
         callback(data);
       });
     } catch (error) {
-      console.error('Subscribe to collection error:', error);
+      console.error('Error subscribing to collection:', error);
       throw error;
     }
   }
@@ -364,7 +353,7 @@ export class FirebaseService {
       const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
     } catch (error) {
-      console.error('Upload file error:', error);
+      console.error('Error uploading file:', error);
       throw error;
     }
   }
@@ -374,7 +363,7 @@ export class FirebaseService {
       const storageRef = ref(storage, path);
       await deleteObject(storageRef);
     } catch (error) {
-      console.error('Delete file error:', error);
+      console.error('Error deleting file:', error);
       throw error;
     }
   }
@@ -389,7 +378,7 @@ export class FirebaseService {
       });
       return docRef.id;
     } catch (error) {
-      console.error('Save measurement session error:', error);
+      console.error('Error saving measurement session:', error);
       throw error;
     }
   }
@@ -415,7 +404,6 @@ export class FirebaseService {
         sessionDate: doc.data().sessionDate?.toDate()
       }));
     } catch (error) {
-      console.error('Get measurement sessions error:', error);
       throw error;
     }
   }
@@ -438,7 +426,6 @@ export class FirebaseService {
         throw new Error('Measurement session not found');
       }
     } catch (error) {
-      console.error('Get measurement session error:', error);
       throw error;
     }
   }
@@ -451,7 +438,6 @@ export class FirebaseService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Update measurement session error:', error);
       throw error;
     }
   }
@@ -461,7 +447,6 @@ export class FirebaseService {
       const docRef = doc(db, 'measurementSessions', sessionId);
       await deleteDoc(docRef);
     } catch (error) {
-      console.error('Delete measurement session error:', error);
       throw error;
     }
   }

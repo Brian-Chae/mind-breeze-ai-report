@@ -13,7 +13,6 @@ import { initializeAIReportSystem } from '@domains/ai-report'
 try {
   initializeAIReportSystem();
 } catch (error) {
-  console.error('Failed to initialize AI Report System:', error);
 }
 
 // 개발 환경 전역 함수 추가
@@ -28,7 +27,6 @@ if (process.env.NODE_ENV === 'development') {
       
       const currentContext = enterpriseAuthService.getCurrentContext();
       if (!currentContext.user) {
-        console.error('로그인된 사용자가 없습니다.');
         return;
       }
 
@@ -40,9 +38,13 @@ if (process.env.NODE_ENV === 'development') {
         purchaseType: 'BONUS'
       });
       
-      console.log(`🚀 개발용 크레딧 ${amount.toLocaleString()}개가 추가되었습니다!`);
+        action: 'addDevCredits',
+        amount: amount,
+        organizationId: currentContext.user.organizationId,
+        userId: currentContext.user.id
     } catch (error) {
-      console.error('❌ 개발용 크레딧 추가 실패:', error);
+        action: 'addDevCredits',
+        amount: amount 
     }
   };
 
@@ -51,9 +53,7 @@ if (process.env.NODE_ENV === 'development') {
     try {
       const { TestDataInitializer } = await import('./utils/TestDataInitializer');
       await TestDataInitializer.initializeAllTestData();
-      console.log('🎉 테스트 데이터 초기화 완료! 페이지를 새로고침하세요.');
     } catch (error) {
-      console.error('❌ 테스트 데이터 초기화 실패:', error);
     }
   };
 
@@ -64,17 +64,13 @@ if (process.env.NODE_ENV === 'development') {
       const { auth } = await import('@core/services/firebase');
       
       await signInWithEmailAndPassword(auth, 'admin@mindbreeze.ai', 'admin123456!');
-      console.log('✅ 시스템 관리자로 로그인 완료!');
       window.location.reload();
     } catch (error) {
-      console.error('❌ 시스템 관리자 로그인 실패:', error);
     }
   };
   
-  console.log('🚀 개발 환경 감지: 개발용 함수들이 사용 가능합니다');
-  console.log('   📊 initTestData() - 테스트 데이터 생성');
-  console.log('   👤 loginAsSystemAdmin() - 시스템 관리자 로그인');
-  console.log('   💳 addDevCredits(amount) - 크레딧 추가');
+    availableFunctions: ['initTestData()', 'loginAsSystemAdmin()', 'addDevCredits(amount)'],
+    environment: 'development'
 }
 
 // Cache busting - 브라우저 캐시 강제 새로고침
@@ -85,7 +81,9 @@ const forceCacheRefresh = () => {
   
   if (buildTimestamp && buildTimestamp !== 'BUILD_TIMESTAMP_PLACEHOLDER') {
     if (storedTimestamp && storedTimestamp !== buildTimestamp) {
-      console.log('🔄 New build detected, clearing cache...');
+        action: 'cacheClear',
+        buildTimestamp: buildTimestamp,
+        storedTimestamp: storedTimestamp
       // 캐시 클리어
       if ('caches' in window) {
         caches.keys().then(names => {

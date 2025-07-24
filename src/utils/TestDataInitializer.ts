@@ -10,6 +10,7 @@ import {
 import { db } from '@core/services/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@core/services/firebase';
+import { UserType } from '@core/types/unified';
 
 /**
  * 테스트 데이터 초기화 클래스
@@ -21,13 +22,11 @@ export class TestDataInitializer {
    * 모든 테스트 데이터 생성
    */
   static async initializeAllTestData(): Promise<void> {
-    console.log('🚀 테스트 데이터 초기화 시작...');
     
     try {
       // 기존 데이터 확인
       const existingOrgs = await getDocs(collection(db, 'organizations'));
       if (existingOrgs.docs.length > 0) {
-        console.log('⚠️ 기존 데이터가 존재합니다. 초기화를 건너뜁니다.');
         return;
       }
 
@@ -41,10 +40,8 @@ export class TestDataInitializer {
       await this.createDeviceData();
       await this.createSystemActivities();
       
-      console.log('✅ 모든 테스트 데이터 생성 완료!');
       
     } catch (error) {
-      console.error('❌ 테스트 데이터 생성 실패:', error);
       throw error;
     }
   }
@@ -53,7 +50,6 @@ export class TestDataInitializer {
    * 시스템 관리자 계정 생성
    */
   private static async createSystemAdmin(): Promise<void> {
-    console.log('👤 시스템 관리자 계정 생성 중...');
     
     try {
       // 시스템 관리자 인증 계정 생성
@@ -67,7 +63,7 @@ export class TestDataInitializer {
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email: 'admin@mindbreeze.ai',
         displayName: '시스템 관리자',
-        userType: 'SYSTEM_ADMIN',
+        userType: UserType.SYSTEM_ADMIN,
         isActive: true,
         permissions: ['*'], // 모든 권한
         createdAt: Timestamp.now(),
@@ -75,11 +71,9 @@ export class TestDataInitializer {
         lastLoginAt: Timestamp.now()
       });
       
-      console.log('✅ 시스템 관리자 계정 생성 완료');
       
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        console.log('⚠️ 시스템 관리자 계정이 이미 존재합니다.');
       } else {
         throw error;
       }
@@ -90,7 +84,6 @@ export class TestDataInitializer {
    * 조직 데이터 생성
    */
   private static async createOrganizations(): Promise<string[]> {
-    console.log('🏢 조직 데이터 생성 중...');
     
     const organizations = [
       {
@@ -182,7 +175,6 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${organizations.length}개 조직 생성 완료`);
     return orgIds;
   }
 
@@ -190,7 +182,6 @@ export class TestDataInitializer {
    * 사용자 데이터 생성
    */
   private static async createUsers(): Promise<void> {
-    console.log('👥 사용자 데이터 생성 중...');
     
     // 조직 목록 가져오기
     const orgsSnapshot = await getDocs(collection(db, 'organizations'));
@@ -208,7 +199,7 @@ export class TestDataInitializer {
       batch.set(adminRef, {
         email: `admin@${orgData.name.toLowerCase().replace(/\s+/g, '')}.com`,
         displayName: `${orgData.name} 관리자`,
-        userType: 'ORGANIZATION_ADMIN',
+        userType: UserType.ORGANIZATION_ADMIN,
         organizationId: orgId,
         isActive: true,
         position: '관리자',
@@ -227,7 +218,7 @@ export class TestDataInitializer {
         batch.set(memberRef, {
           email: `user${i + 1}@${orgData.name.toLowerCase().replace(/\s+/g, '')}.com`,
           displayName: `사용자 ${i + 1}`,
-          userType: 'ORGANIZATION_MEMBER',
+          userType: UserType.ORGANIZATION_MEMBER,
           organizationId: orgId,
           isActive: Math.random() > 0.1, // 90% 활성
           position: ['팀장', '선임', '주임', '사원'][Math.floor(Math.random() * 4)],
@@ -242,14 +233,12 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${userCount}명 사용자 생성 완료`);
   }
 
   /**
    * 측정 사용자 데이터 생성
    */
   private static async createMeasurementData(): Promise<void> {
-    console.log('🧠 측정 데이터 생성 중...');
     
     const orgsSnapshot = await getDocs(collection(db, 'organizations'));
     const usersSnapshot = await getDocs(collection(db, 'users'));
@@ -302,14 +291,12 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${sessionCount}개 측정 세션 생성 완료`);
   }
 
   /**
    * AI 리포트 데이터 생성
    */
   private static async createAIReportData(): Promise<void> {
-    console.log('📊 AI 리포트 데이터 생성 중...');
     
     const sessionsSnapshot = await getDocs(collection(db, 'measurementSessions'));
     const sessions = sessionsSnapshot.docs.filter(doc => doc.data().status === 'completed');
@@ -351,14 +338,12 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${reportCount}개 AI 리포트 생성 완료`);
   }
 
   /**
    * 크레딧 거래 데이터 생성
    */
   private static async createCreditTransactions(): Promise<void> {
-    console.log('💳 크레딧 거래 데이터 생성 중...');
     
     const orgsSnapshot = await getDocs(collection(db, 'organizations'));
     const reportsSnapshot = await getDocs(collection(db, 'aiReports'));
@@ -425,14 +410,12 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${transactionCount}개 크레딧 거래 생성 완료`);
   }
 
   /**
    * 디바이스 데이터 생성
    */
   private static async createDeviceData(): Promise<void> {
-    console.log('📱 디바이스 데이터 생성 중...');
     
     const orgsSnapshot = await getDocs(collection(db, 'organizations'));
     
@@ -475,14 +458,12 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${deviceCount}개 디바이스 생성 완료`);
   }
 
   /**
    * 시스템 활동 로그 생성
    */
   private static async createSystemActivities(): Promise<void> {
-    console.log('📝 시스템 활동 로그 생성 중...');
     
     const orgsSnapshot = await getDocs(collection(db, 'organizations'));
     const reportsSnapshot = await getDocs(collection(db, 'aiReports'));
@@ -535,14 +516,12 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${activityCount}개 시스템 활동 생성 완료`);
   }
 
   /**
    * 멤버십 데이터 생성 (organizationMembers 컬렉션)
    */
   private static async createMembershipData(): Promise<void> {
-    console.log('👥 멤버십 데이터 생성 중...');
     
     const usersSnapshot = await getDocs(collection(db, 'users'));
     const orgUsers = usersSnapshot.docs.filter(doc => 
@@ -576,6 +555,5 @@ export class TestDataInitializer {
     }
 
     await batch.commit();
-    console.log(`✅ ${memberCount}개 멤버십 데이터 생성 완료`);
   }
 } 

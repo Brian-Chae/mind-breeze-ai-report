@@ -75,62 +75,47 @@ export function ReportViewerModal({
   
   // 실제 렌더러 찾기 (viewMode에 따라 모바일/웹 렌더러 선택)
   useEffect(() => {
-    console.log('🔍 렌더러 찾기 시작 - report:', !!report, 'isOpen:', isOpen, 'viewMode:', viewMode);
     
     if (report && isOpen) {
       try {
         // report에서 engineId를 가져와서 적절한 렌더러 찾기
         const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
-        console.log('🔍 engineId:', engineId, 'viewMode:', viewMode);
         
         // 모든 등록된 렌더러 확인
         const allRenderers = rendererRegistry.getAll();
-        console.log('🔍 등록된 모든 렌더러:', allRenderers.map(r => ({ id: r.id, name: r.name, outputFormat: r.outputFormat })));
         
         // 🎯 viewMode에 따라 적절한 렌더러 선택
         let targetRenderer = null;
         
-        console.log('🔍 렌더러 선택 시작 - engineId:', engineId, 'viewMode:', viewMode);
-        console.log('🔍 사용 가능한 렌더러 ID들:', allRenderers.map(r => r.id));
         
         // 1. engineId가 basic-gemini-v1이면 viewMode에 따라 렌더러 선택
         if (engineId === 'basic-gemini-v1') {
           if (viewMode === 'mobile') {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-mobile');
-            console.log('🔍 모바일 렌더러 선택 시도:', targetRenderer);
-            console.log('🔍 모바일 렌더러 존재 여부:', !!targetRenderer);
             if (targetRenderer) {
-              console.log('✅ 모바일 렌더러 선택 성공:', targetRenderer.id, targetRenderer.name);
             } else {
-              console.error('❌ 모바일 렌더러 찾을 수 없음');
             }
           } else {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
-            console.log('🔍 웹 렌더러 선택:', targetRenderer?.id, targetRenderer?.name);
           }
         }
         
         // 2. 전용 렌더러가 없으면 selectBestRenderer 시도
         if (!targetRenderer) {
           targetRenderer = selectBestRenderer(engineId, 'web');
-          console.log('🔍 selectBestRenderer 결과:', targetRenderer);
         }
         
         // 3. 여전히 없으면 첫 번째 웹 렌더러 사용
         if (!targetRenderer) {
           targetRenderer = allRenderers.find(r => r.outputFormat === 'web');
-          console.log('🔍 첫 번째 웹 렌더러 선택:', targetRenderer);
         }
         
         if (targetRenderer) {
           setActualRenderer(targetRenderer);
           setRendererName(targetRenderer.name);
-          console.log('✅ 최종 선택된 렌더러:', targetRenderer.name, '(ID:', targetRenderer.id, ')');
         } else {
-          console.error('❌ 어떤 웹 렌더러도 찾을 수 없음');
         }
       } catch (error) {
-        console.error('❌ 렌더러 선택 중 오류:', error);
         setRendererName('기본 웹 뷰어');
       }
     }
@@ -146,30 +131,24 @@ export function ReportViewerModal({
   // report 유효성 재검증
   useEffect(() => {
     if (isOpen && !report) {
-      console.warn('ReportViewerModal: report가 null입니다. 모달을 닫습니다.');
       onClose();
     }
   }, [isOpen, report, onClose]);
 
   const loadReportContent = async () => {
-    console.log('🚀 ReportViewerModal loadReportContent 시작');
-    console.log('🚀 actualRenderer:', actualRenderer);
-    console.log('🚀 actualRenderer.id:', actualRenderer?.id);
-    console.log('🚀 report 존재 여부:', !!report);
     
     // 🔍 실제 받은 report 데이터 구조 확인
-    console.log('🔍 전체 report 데이터:', report);
-    console.log('🔍 report.personalInfo:', report?.personalInfo);
-    console.log('🔍 report.insights:', report?.insights);
-    console.log('🔍 report.rawData:', report?.rawData);
-    console.log('🔍 report.analysisResults:', report?.analysisResults);
+      reportKeys: Object.keys(report || {}),
+      hasPersonalInfo: !!report?.personalInfo,
+      hasInsights: !!report?.insights,
+      hasRawData: !!report?.rawData,
+      hasAnalysisResults: !!report?.analysisResults
     
     setIsLoading(true);
     setError(null);
     
     try {
       if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
-        console.log(`🎯 ${actualRenderer.name} 사용하여 리포트 렌더링`);
         
         // 실제 렌더러를 사용해서 HTML 생성
         const renderOptions = {
@@ -184,14 +163,13 @@ export function ReportViewerModal({
         let actualAnalysisResult;
         
         // 📊 디버깅: 실제 report 구조 확인
-        console.log('🔍 실제 report 전체 구조:', report);
-        console.log('🔍 report의 모든 키:', Object.keys(report || {}));
-        console.log('🔍 report.insights:', report?.insights);
-        console.log('🔍 report.rawData:', report?.rawData);
-        console.log('🔍 report.analysisResults:', report?.analysisResults);
-        console.log('🔍 insights.detailedAnalysis 타입:', typeof report?.insights?.detailedAnalysis);
-        console.log('🔍 rawData.detailedAnalysis 타입:', typeof report?.rawData?.detailedAnalysis);
-        console.log('🔍 rawData.detailedAnalysis 내용:', report?.rawData?.detailedAnalysis);
+          reportKeys: Object.keys(report || {}),
+          hasInsights: !!report?.insights,
+          hasRawData: !!report?.rawData,
+          hasAnalysisResults: !!report?.analysisResults,
+          insightsDetailedAnalysisType: typeof report?.insights?.detailedAnalysis,
+          rawDataDetailedAnalysisType: typeof report?.rawData?.detailedAnalysis,
+          hasRawDataDetailedAnalysis: !!report?.rawData?.detailedAnalysis
         
         // 🎯 우선순위: rawData.detailedAnalysis 객체 > insights.detailedAnalysis 문자열 파싱
         if (report?.rawData?.detailedAnalysis && typeof report.rawData.detailedAnalysis === 'object') {
@@ -217,7 +195,6 @@ export function ReportViewerModal({
               personalInfo: report.personalInfo // 🔥 rawData에도 personalInfo 추가!
             }
           };
-          console.log('✅ rawData.detailedAnalysis 객체 직접 사용:', report.rawData.detailedAnalysis);
           
         } else if (report?.insights?.detailedAnalysis && typeof report.insights.detailedAnalysis === 'string') {
           // 문자열로 저장된 상세 분석 결과를 파싱하여 사용 (fallback)
@@ -249,14 +226,11 @@ export function ReportViewerModal({
                 personalInfo: report.personalInfo // 🔥 rawData에도 personalInfo 추가!
               }
             };
-            console.log('✅ insights.detailedAnalysis 문자열 사용:', report.insights.detailedAnalysis);
           } catch (parseError) {
-            console.warn('⚠️ 분석 결과 처리 실패, null 설정:', parseError);
             actualAnalysisResult = null;
           }
         } else {
           // 둘 다 없으면 기존 저장된 데이터에서 기본 정보라도 사용
-          console.warn('⚠️ detailedAnalysis 데이터를 찾을 수 없음, 기본 데이터 사용');
           
           // 기본 필드들이라도 있다면 활용
           if (report.overallScore || report.insights?.summary) {
@@ -284,7 +258,6 @@ export function ReportViewerModal({
                 }
               }
             };
-            console.log('✅ 기본 데이터로 구성:', actualAnalysisResult);
           } else {
             actualAnalysisResult = null;
           }
@@ -359,15 +332,9 @@ export function ReportViewerModal({
         };
         
         // 실제 렌더러로 HTML 생성
-        console.log('🎯 렌더러 호출 시작:', actualRenderer.id, actualRenderer.name);
-        console.log('🎯 analysisResult:', analysisResult);
-        console.log('🎯 renderOptions:', renderOptions);
         
         const renderedReport = await actualRenderer.render(analysisResult, renderOptions);
         
-        console.log('🎯 렌더링 완료:', renderedReport);
-        console.log('🎯 renderedReport.content 길이:', renderedReport.content?.length);
-        console.log('🎯 renderedReport.content 일부:', renderedReport.content?.substring(0, 200) + '...');
         
         const reportContentData = {
           htmlContent: renderedReport.content,
@@ -381,9 +348,6 @@ export function ReportViewerModal({
           }
         };
         
-        console.log('🎯 setReportContent 호출:', reportContentData);
-        console.log('🎯 isRawHTML:', reportContentData.isRawHTML);
-        console.log('🎯 htmlContent 존재 여부:', !!reportContentData.htmlContent);
         
         setReportContent(reportContentData);
         
@@ -410,7 +374,6 @@ export function ReportViewerModal({
       }
       
     } catch (error) {
-      console.error('리포트 로드 실패:', error);
       setError('리포트를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -448,24 +411,20 @@ export function ReportViewerModal({
       );
       
       // 디버깅: 높이 정보 출력
-      console.log('📏 높이 정보:', {
         offsetHeight: reportElement.offsetHeight,
         scrollHeight: reportElement.scrollHeight,
         rectHeight: elementRect.height,
         finalElementHeight: elementHeight
-      });
 
       // 고정된 캔버스 크기로 중앙 정렬 보장
       const canvasWidth = viewMode === 'mobile' ? 480 : 1050; // 고정 너비 (중앙정렬 최적화)
       const canvasHeight = elementHeight + 20; // 최소한의 여백만 추가
       
       // 디버깅: 캔버스 크기 정보 출력
-      console.log('📐 캔버스 크기:', {
         canvasWidth,
         canvasHeight,
         viewMode,
         heightDifference: canvasHeight - elementHeight
-      });
 
       // HTML을 캔버스로 변환 (고화질)
       const canvas = await html2canvas(reportElement, {
@@ -726,12 +685,10 @@ export function ReportViewerModal({
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
           
-          console.log('✅ 이미지 다운로드 완료:', fileName);
         }
       }, 'image/png', 1.0); // 최고 품질로 PNG 저장
       
     } catch (error) {
-      console.error('❌ 이미지 생성 실패:', error);
       alert('이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsDownloading(false);
@@ -924,26 +881,19 @@ export function ReportViewerModal({
   };
 
   const renderBasicGeminiViewer = () => {
-    console.log('🔍 renderBasicGeminiViewer 호출');
-    console.log('🔍 reportContent:', reportContent);
-    console.log('🔍 reportContent?.isRawHTML:', reportContent?.isRawHTML);
-    console.log('🔍 reportContent?.htmlContent 존재:', !!reportContent?.htmlContent);
-    console.log('🔍 actualRenderer?.id:', actualRenderer?.id);
+      hasReportContent: !!reportContent,
+      isRawHTML: reportContent?.isRawHTML,
+      hasHtmlContent: !!reportContent?.htmlContent,
+      actualRendererId: actualRenderer?.id
     
     // BasicGemini 전용 뷰어 (복잡한 리포트 렌더러 사용)
     if (reportContent?.isRawHTML && reportContent?.htmlContent) {
-      console.log('✅ isRawHTML && htmlContent 조건 통과');
       // 모바일 렌더러가 생성한 완전한 HTML 문서에서 body 내용과 스타일 추출
       if (actualRenderer?.id === 'basic-gemini-v1-mobile') {
-        console.log('✅ 모바일 렌더러 조건 진입');
-        console.log('🔍 HTML 내용 길이:', reportContent.htmlContent.length);
         
         const parser = new DOMParser();
         const doc = parser.parseFromString(reportContent.htmlContent, 'text/html');
         
-        console.log('🔍 파싱된 document:', doc);
-        console.log('🔍 body 존재:', !!doc.body);
-        console.log('🔍 style 태그 개수:', doc.querySelectorAll('style').length);
         
         // 스타일 추출
         const styles = Array.from(doc.querySelectorAll('style'))
@@ -962,7 +912,6 @@ export function ReportViewerModal({
           </div>
         );
       } else {
-        console.log('✅ 일반 웹 렌더러 조건 진입');
         // 일반 웹 렌더러의 경우 그대로 표시
         return (
           <div 
@@ -973,14 +922,10 @@ export function ReportViewerModal({
         );
       }
     } else {
-      console.log('❌ isRawHTML || htmlContent 조건 실패');
-      console.log('🔍 reportContent?.isRawHTML:', reportContent?.isRawHTML);
-      console.log('🔍 reportContent?.htmlContent:', !!reportContent?.htmlContent);
     }
     
     // 데이터가 없는 경우 안내 메시지
     if (actualRenderer?.id === 'basic-gemini-v1-mobile') {
-      console.log('🔍 모바일 렌더러 - 데이터 없음 안내');
       return (
         <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-blue-200 shadow-sm">
           <div className="text-center">
@@ -993,15 +938,10 @@ export function ReportViewerModal({
     }
     
     // 일반 뷰어로 fallback
-    console.log('🔍 renderUniversalWebViewer로 fallback');
     return renderUniversalWebViewer();
   };
 
   const renderReportContent = () => {
-    console.log('🔍 renderReportContent 호출');
-    console.log('🔍 isLoading:', isLoading);
-    console.log('🔍 error:', error);
-    console.log('🔍 actualRenderer?.id:', actualRenderer?.id);
     
     if (isLoading) {
       return (
@@ -1035,15 +975,12 @@ export function ReportViewerModal({
     }
 
     // 실제 선택된 렌더러 기준으로 렌더링
-    console.log('🔍 actualRenderer.id로 렌더링 결정:', actualRenderer?.id);
     
     if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
-      console.log('✅ BasicGemini 렌더러 사용:', actualRenderer.id);
       return renderBasicGeminiViewer();
     }
 
     // 기본 Universal Web Viewer 사용
-    console.log('🔍 기본 Universal Web Viewer 사용');
     return renderUniversalWebViewer();
   };
 
