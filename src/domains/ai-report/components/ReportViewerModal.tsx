@@ -75,7 +75,7 @@ export function ReportViewerModal({
   
   // 실제 렌더러 찾기 (viewMode에 따라 모바일/웹 렌더러 선택)
   useEffect(() => {
-    
+    console.log('렌더러 찾는 중...');
     if (report && isOpen) {
       try {
         // report에서 engineId를 가져와서 적절한 렌더러 찾기
@@ -93,7 +93,9 @@ export function ReportViewerModal({
           if (viewMode === 'mobile') {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-mobile');
             if (targetRenderer) {
+              console.log('모바일 렌더러 찾음');
             } else {
+              console.log('모바일 렌더러 못 찾음');
             }
           } else {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
@@ -114,8 +116,10 @@ export function ReportViewerModal({
           setActualRenderer(targetRenderer);
           setRendererName(targetRenderer.name);
         } else {
+          console.error('렌더러를 찾을 수 없습니다.');
         }
       } catch (error) {
+        console.error('렌더러 초기화 중 오류:', error);
         setRendererName('기본 웹 뷰어');
       }
     }
@@ -136,14 +140,15 @@ export function ReportViewerModal({
   }, [isOpen, report, onClose]);
 
   const loadReportContent = async () => {
-    
+    console.log('리포트 컨텐츠 로딩 시작');
     // 🔍 실제 받은 report 데이터 구조 확인
+    console.log('리포트 데이터 구조:', {
       reportKeys: Object.keys(report || {}),
       hasPersonalInfo: !!report?.personalInfo,
       hasInsights: !!report?.insights,
       hasRawData: !!report?.rawData,
       hasAnalysisResults: !!report?.analysisResults
-    
+    });
     setIsLoading(true);
     setError(null);
     
@@ -374,6 +379,7 @@ export function ReportViewerModal({
       }
       
     } catch (error) {
+      console.error('리포트 컨텐츠 로딩 중 오류:', error);
       setError('리포트를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -689,6 +695,7 @@ export function ReportViewerModal({
       }, 'image/png', 1.0); // 최고 품질로 PNG 저장
       
     } catch (error) {
+      console.error('이미지 생성 오류:', error);
       alert('이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsDownloading(false);
@@ -881,11 +888,12 @@ export function ReportViewerModal({
   };
 
   const renderBasicGeminiViewer = () => {
+    console.log('BasicGemini 뷰어 렌더링:', {
       hasReportContent: !!reportContent,
       isRawHTML: reportContent?.isRawHTML,
       hasHtmlContent: !!reportContent?.htmlContent,
       actualRendererId: actualRenderer?.id
-    
+    });
     // BasicGemini 전용 뷰어 (복잡한 리포트 렌더러 사용)
     if (reportContent?.isRawHTML && reportContent?.htmlContent) {
       // 모바일 렌더러가 생성한 완전한 HTML 문서에서 body 내용과 스타일 추출
@@ -922,6 +930,7 @@ export function ReportViewerModal({
         );
       }
     } else {
+      console.log('데이터가 없어 fallback 사용');
     }
     
     // 데이터가 없는 경우 안내 메시지
@@ -942,7 +951,7 @@ export function ReportViewerModal({
   };
 
   const renderReportContent = () => {
-    
+    console.log('리포트 컨텐츠 렌더링 시작');
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-gray-200 shadow-sm">
@@ -975,7 +984,7 @@ export function ReportViewerModal({
     }
 
     // 실제 선택된 렌더러 기준으로 렌더링
-    
+    console.log('렌더러 선택:', actualRenderer?.id);
     if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
       return renderBasicGeminiViewer();
     }

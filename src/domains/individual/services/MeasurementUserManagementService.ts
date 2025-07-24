@@ -155,6 +155,7 @@ class MeasurementUserManagementService {
 
       const docRef = await addDoc(collection(db, this.collectionName), measurementUserData);
       
+      console.log('새로운 측정 대상자 등록:', {
         userId: docRef.id,
         organizationId: organization.id,
         metadata: {
@@ -162,6 +163,7 @@ class MeasurementUserManagementService {
           email: data.email,
           createdByUserId: currentUser.id
         }
+      });
       
       return {
         id: docRef.id,
@@ -180,10 +182,12 @@ class MeasurementUserManagementService {
       } as MeasurementUser;
 
     } catch (error) {
+      console.error('측정 대상자 등록 중 오류가 발생했습니다:', error, {
         metadata: {
           email: data.email,
           displayName: data.displayName
         }
+      });
       throw error;
     }
   }

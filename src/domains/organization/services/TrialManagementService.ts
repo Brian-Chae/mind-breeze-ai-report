@@ -157,11 +157,6 @@ class TrialManagementService {
       // 다음 단계 결정
       const nextSteps = this.getTrialNextSteps(applicationData.trialType);
 
-        trialType: applicationData.trialType,
-        organizationName: applicationData.organizationName,
-        estimatedMemberCount: applicationData.estimatedMemberCount,
-        estimatedValue: estimatedValue
-
       return {
         applicationId: applicationRef.id,
         estimatedValue,
@@ -169,8 +164,7 @@ class TrialManagementService {
       };
 
     } catch (error) {
-        organizationName: applicationData.organizationName,
-        trialType: applicationData.trialType
+      console.error('체험 신청 처리 중 오류가 발생했습니다:', error);
       throw new Error('체험 신청 처리 중 오류가 발생했습니다.');
     }
   }
@@ -294,12 +288,6 @@ class TrialManagementService {
           approvedBy: adminUserId
         });
 
-          organizationId,
-          organizationName: applicationData.organizationName,
-          trialServiceId: trialService.id,
-          trialType: applicationData.trialType,
-          approvedBy: adminUserId
-
         return {
           organizationId,
           trialServiceId: trialService.id,
@@ -310,9 +298,11 @@ class TrialManagementService {
         };
 
       } catch (error) {
+        console.error('체험 승인 처리 중 오류가 발생했습니다:', error, {
           applicationId,
           adminUserId,
-          organizationName: applicationData?.organizationName || 'unknown'
+          organizationName: (applicationData as any)?.organizationName || 'unknown'
+        });
         throw error;
       }
     });
@@ -503,7 +493,7 @@ class TrialManagementService {
       };
 
     } catch (error) {
-        organizationId
+      console.error('체험 상태 조회 중 오류가 발생했습니다:', error, { organizationId });
       return null;
     }
   }
@@ -561,8 +551,10 @@ class TrialManagementService {
       };
 
     } catch (error) {
+      console.error('체험 사용량 통계 수집 중 오류가 발생했습니다:', error, {
         organizationId,
         trialServiceId: trialService.id
+      });
       return {
         registeredMembers: 0,
         activeMembers: 0,
@@ -662,18 +654,14 @@ class TrialManagementService {
         // 체험 ROI 분석 기록
         await this.recordTrialROIAnalysis(organizationId);
 
-          organizationId,
-          finalDiscount,
-          servicePackage: conversionDetails.servicePackage,
-          contractMonths: conversionDetails.contractMonths,
-          salesUserId
-
         return contractData;
 
       } catch (error) {
+        console.error('체험 전환 처리 중 오류가 발생했습니다:', error, {
           organizationId,
           servicePackage: conversionDetails.servicePackage,
           salesUserId
+        });
         throw error;
       }
     });
@@ -743,8 +731,7 @@ class TrialManagementService {
   private async recordTrialROIAnalysis(organizationId: string): Promise<void> {
     // ROI 분석 로직 구현
     // 실제 구현에서는 상세한 비용/수익 분석이 들어갈 예정
-      organizationId,
-      action: 'recordTrialROIAnalysis'
+    console.log('체험 ROI 분석 기록:', { organizationId, action: 'recordTrialROIAnalysis' });
   }
 
   // === 체험 만료 관리 ===
@@ -776,24 +763,30 @@ class TrialManagementService {
           if (summary && summary.conversionScore >= 60) {
             // 고전환 가능성 - 연장 제안
             await this.extendTrialPeriod(trialData.organizationId, 7); // 7일 연장
+            console.log('체험 기간 연장:', {
               organizationId: trialData.organizationId,
               organizationName: summary.organizationName,
               conversionScore: summary.conversionScore,
               extensionDays: 7
+            });
           } else {
             // 낮은 전환 가능성 - 종료
             await this.terminateTrial(trialData.organizationId);
             terminatedCount++;
+            console.log('체험 종료:', {
               organizationId: trialData.organizationId,
               organizationName: summary?.organizationName || 'unknown',
               conversionScore: summary?.conversionScore || 0
+            });
           }
           
           processedCount++;
           
         } catch (error) {
+          console.error('체험 만료 처리 중 오류가 발생했습니다:', error, {
             organizationId: trialData.organizationId,
             trialServiceId: trialDoc.id
+          });
         }
       }
 
@@ -804,9 +797,11 @@ class TrialManagementService {
       };
 
     } catch (error) {
+      console.error('만료된 체험 처리 중 오류가 발생했습니다:', error, {
         processedCount,
         convertedCount,
         terminatedCount
+      });
       throw error;
     }
   }

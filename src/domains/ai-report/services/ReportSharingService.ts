@@ -81,6 +81,7 @@ class ReportSharingService {
       createdAt: Timestamp.fromDate(shareableReport.createdAt),
     });
 
+    console.log('공유 링크 생성 완료:', {
       metadata: {
         shareToken,
         reportId,
@@ -88,6 +89,7 @@ class ReportSharingService {
         expiryDays: options.expiryDays || this.DEFAULT_EXPIRY_DAYS,
         maxAccessCount: options.maxAccessCount || this.DEFAULT_MAX_ACCESS
       }
+    });
     return shareableReport;
   }
 
@@ -100,9 +102,11 @@ class ReportSharingService {
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
+        console.log('공유 리포트를 찾을 수 없음:', {
           metadata: {
             shareToken
           }
+        });
         return null;
       }
 
@@ -117,9 +121,11 @@ class ReportSharingService {
         lastAccessedAt: data.lastAccessedAt?.toDate(),
       } as ShareableReport;
     } catch (error) {
+      console.error('공유 리포트 조회 오류:', error, {
         metadata: {
           shareToken
         }
+      });
       return null;
     }
   }
@@ -159,15 +165,18 @@ class ReportSharingService {
       const [year, month, day] = auth.birthDate.split('-').map(Number);
       providedDate = new Date(year, month - 1, day); // month는 0-based
     } catch (error) {
+      console.error('날짜 파싱 오류:', error, {
         metadata: {
           birthDate: auth.birthDate
         }
+      });
       return { success: false, errorMessage: '올바른 날짜 형식을 입력해주세요.' };
     }
     
     const expectedDate = shareableReport.subjectBirthDate;
     
     // 🔍 디버깅 로그 추가
+    console.log('생년월일 인증 비교:', {
       metadata: {
         inputBirthDate: auth.birthDate,
         providedDate: {
@@ -183,6 +192,7 @@ class ReportSharingService {
           date: expectedDate.getDate()
         }
       }
+    });
     
     // 더 안전한 날짜 비교 (시간 정보 제거하고 비교)
     const providedYear = providedDate.getFullYear();
@@ -193,29 +203,35 @@ class ReportSharingService {
     const expectedMonth = expectedDate.getMonth();
     const expectedDay = expectedDate.getDate();
     
+    console.log('날짜 일치 여부:', {
       metadata: {
         yearMatch: providedYear === expectedYear,
         monthMatch: providedMonth === expectedMonth,
         dayMatch: providedDay === expectedDay
       }
+    });
     
     if (
       providedYear !== expectedYear ||
       providedMonth !== expectedMonth ||
       providedDay !== expectedDay
     ) {
+      console.log('생년월일 불일치:', {
         metadata: {
           provided: `${providedYear}-${(providedMonth + 1).toString().padStart(2, '0')}-${providedDay.toString().padStart(2, '0')}`,
           expected: `${expectedYear}-${(expectedMonth + 1).toString().padStart(2, '0')}-${expectedDay.toString().padStart(2, '0')}`,
           shareToken
         }
+      });
       return { success: false, errorMessage: '생년월일이 일치하지 않습니다.' };
     }
     
+    console.log('생년월일 인증 성공:', {
       metadata: {
         shareToken,
         reportId: shareableReport.reportId
       }
+    });
 
     // 접근 횟수 증가
     await this.incrementAccessCount(shareToken);
@@ -240,9 +256,11 @@ class ReportSharingService {
         });
       }
     } catch (error) {
+      console.error('접근 횟수 증가 오류:', error, {
         metadata: {
           shareToken
         }
+      });
     }
   }
 
@@ -272,9 +290,11 @@ class ReportSharingService {
       
       return reports.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
+      console.error('조직 공유 리포트 조회 오류:', error, {
         metadata: {
           organizationId
         }
+      });
       return [];
     }
   }
@@ -296,9 +316,11 @@ class ReportSharingService {
       }
       return false;
     } catch (error) {
+      console.error('공유 링크 비활성화 오류:', error, {
         metadata: {
           shareToken
         }
+      });
       return false;
     }
   }
@@ -312,9 +334,11 @@ class ReportSharingService {
       await deleteDoc(docRef);
       return true;
     } catch (error) {
+      console.error('공유 링크 삭제 오류:', error, {
         metadata: {
           shareToken
         }
+      });
       return false;
     }
   }

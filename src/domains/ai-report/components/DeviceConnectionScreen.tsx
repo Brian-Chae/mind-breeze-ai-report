@@ -140,19 +140,23 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
       const deviceToConnect = newDevices[0];
       
       try {
+        console.log('자동 연결 시도:', {
           action: 'autoConnect',
           metadata: {
             deviceId: deviceToConnect.id,
             deviceName: deviceToConnect.name
           }
+        });
         setAutoConnectAttempted(prev => new Set(prev).add(deviceToConnect.id));
         await handleConnect(deviceToConnect.id);
       } catch (error) {
+        console.error('자동 연결 실패:', error, {
           action: 'autoConnect',
           metadata: {
             deviceId: deviceToConnect.id,
             deviceName: deviceToConnect.name
           }
+        });
       }
     };
 
@@ -185,7 +189,9 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
             samplingRates: bluetoothService.getCurrentSamplingRates()
           });
         } catch (error) {
+          console.error('실시간 디바이스 정보 조회 오류:', error, {
             action: 'getRealtimeDeviceInfo'
+          });
         }
       }, 2000); // 2초마다 업데이트
     } else {
@@ -267,34 +273,43 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
     setConnectionError(null);
 
     try {
+      console.log('디바이스 연결 시작:', {
         action: 'connectDevice',
         metadata: {
           deviceId: deviceId
         }
+      });
       
       await systemControl.connectDevice(deviceId);
       
+      console.log('디바이스 연결 성공:', {
         action: 'deviceConnected',
         metadata: {
           deviceId: deviceId
         }
+      });
       
       // 데이터 스트리밍 시작
+      console.log('데이터 스트리밍 시작:', {
         action: 'startDataStreaming',
         metadata: {
           deviceId: deviceId
         }
+      });
       
       await systemControl.startStreaming();
       
+      console.log('데이터 스트리밍 완료:', {
         action: 'dataStreamingStarted',
         metadata: {
           deviceId: deviceId
         }
+      });
       
       // 5초 후 데이터 확인
       setTimeout(() => {
         const storeState = require('../../../stores/processedDataStore').useProcessedDataStore.getState();
+        console.log('데이터 상태 확인:', {
           action: 'dataStatusCheck',
           metadata: {
             deviceId: deviceId,
@@ -302,17 +317,20 @@ export function DeviceConnectionScreen({ onConnectionSuccess, onBack, onError }:
             ppgAnalysisAvailable: !!storeState.ppgAnalysis,
             sqiDataAvailable: !!storeState.sqiData
           }
+        });
       }, 5000);
       
       // 연결 성공은 useEffect에서 isConnected 상태 변화로 처리됨
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Connection failed';
       
+      console.error('디바이스 연결 실패:', error, {
         action: 'connectDevice',
         metadata: {
           deviceId: deviceId,
           errorMessage: errorMessage
         }
+      });
       
       if (!errorMessage.includes('cancelled') && !errorMessage.includes('취소')) {
         setConnectionError(errorMessage);

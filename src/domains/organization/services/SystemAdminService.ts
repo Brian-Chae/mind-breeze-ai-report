@@ -722,91 +722,28 @@ export class SystemAdminService extends BaseService {
           averageSessionDuration
         }
 
-              }
-            })
-            await Promise.allSettled(orgQueries)
-          }
+        return stats
+      } catch (error) {
+        console.error('Failed to get system stats:', error)
+        throw error
+      }
+    })
+  }
 
-          const transformedReports = reports.map(report => {
-            // 상태 결정
-            let status: 'completed' | 'processing' | 'failed' = 'completed'
-            if (!report.processingTime || report.processingTime <= 0) {
-              status = 'failed'
-            } else if (report.processingStatus?.stage && report.processingStatus.stage !== 'COMPLETED') {
-              status = 'processing'
-            }
+  /**
+   * 기업 개요 목록 조회
+   */
+  async getEnterpriseOverviewList(): Promise<EnterpriseOverview[]> {
+    return this.measureAndLog('getEnterpriseOverviewList', async () => {
+      this.validateSystemAdminAccess()
 
-            return {
-              id: report.id,
-              userName: report.createdByUserName || '알 수 없음',
-              organizationName: organizationsMap.get(report.organizationId) || '개인',
-              engineUsed: report.engineName || report.engineId || 'Unknown',
-              qualityScore: report.qualityScore || 0,
-              processingTime: report.processingTime ? Math.round(report.processingTime / 100) / 10 : 0,
-              createdAt: report.createdAt,
-              status
-            }
-          })
-
-              }
-            })
-            await Promise.allSettled(orgQueries)
-          }
-
-
-
-          const transformedSessions = sessions.map((session: any) => {
-            // 상태 결정
-            let status: 'completed' | 'processing' | 'failed' = 'completed'
-            if (session.status === 'recording' || session.status === 'processing') {
-              status = 'processing'
-            } else if (session.status === 'failed' || session.status === 'error') {
-              status = 'failed'
-            }
-
-            // 데이터 타입 결정
-            let dataType = 'EEG+PPG+ACC'
-            if (session.dataTypes) {
-              dataType = session.dataTypes.join('+')
-            }
-
-            // 데이터 크기 추정 (분당 약 2MB)
-            const estimatedSize = (session.duration || 60) / 60 * 2
-
-            return {
-              id: session.id,
-              userName: session.measuredByUserName || session.subjectName || '알 수 없음',
-              organizationName: organizationsMap.get(session.organizationId) || '개인',
-              dataType,
-              duration: Math.round((session.duration || 0) / 60 * 10) / 10, // 분 단위
-              dataSize: Math.round(estimatedSize * 10) / 10, // MB
-              quality: session.qualityScore || session.overallScore || (status === 'completed' ? Math.floor(Math.random() * 20) + 80 : 0),
-              timestamp: session.createdAt,
-              status
-            }
-          })
-
-        
+      try {
         const enterpriseOverviews: EnterpriseOverview[] = []
+        const organizations = await getDocs(collection(db, 'organizations'))
 
         for (const orgDoc of organizations.docs) {
           const orgData = orgDoc.data()
           const organizationId = orgDoc.id
-          
-            organizationId,
-            name: orgData.name,
-            companyCode: orgData.companyCode,
-            hasData: !!orgData
-          });
-          
-          // 가능한 name 필드들 확인
-            hasName: !!orgData.name,
-            hasOrganizationName: !!orgData.organizationName,
-            hasCompanyName: !!orgData.companyName,
-            hasDisplayName: !!orgData.displayName,
-            hasTitle: !!orgData.title,
-            totalKeys: Object.keys(orgData).length
-          });
 
           // 병렬로 관련 데이터 수집
           const [members, measurementUsers, reports, sessions, creditTransactions] = await Promise.allSettled([
@@ -933,6 +870,40 @@ export class SystemAdminService extends BaseService {
         )
 
       } catch (error) {
+        console.error('Failed to get enterprise overview:', error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 디바이스 사용 목록 조회
+   */
+  async getDeviceUsageList(): Promise<any[]> {
+    return this.measureAndLog('getDeviceUsageList', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const deviceUsageList: any[] = []
+        
+        // 디바이스 인벤토리에서 조회
+        const inventorySnapshot = await getDocs(collection(db, 'deviceInventory'))
+        
+        for (const deviceDoc of inventorySnapshot.docs) {
+          const device = deviceDoc.data()
+          const deviceId = deviceDoc.id
+
+          // 조직명 조회
+          let organizationName = '미할당'
+          if (device.organizationId) {
+            try {
+              const orgDoc = await getDoc(doc(db, 'organizations', device.organizationId))
+              if (orgDoc.exists()) {
+                const orgData = orgDoc.data()
+                organizationName = orgData.name || orgData.organizationName || '알 수 없음'
+              }
+            } catch (error) {
+              console.error('Failed to get organization name:', error)
               organizationName = '조회 실패'
             }
           }
@@ -947,9 +918,7 @@ export class SystemAdminService extends BaseService {
             const sessionsSnapshot = await getDocs(sessionsQuery)
             totalMeasurements = sessionsSnapshot.size
           } catch (error) {
-                deviceId,
-                error: error instanceof Error ? error : new Error(String(error))
-            });
+            console.error('Failed to get device measurements:', error)
           }
 
           // 마지막 사용일 계산
@@ -989,30 +958,35 @@ export class SystemAdminService extends BaseService {
 
         // 최근 사용일 기준으로 정렬
         deviceUsageList.sort((a, b) => b.lastUsedDate.getTime() - a.lastUsedDate.getTime())
+        
+        return deviceUsageList
+      } catch (error) {
+        console.error('Failed to get device usage list:', error)
+        throw error
+      }
+    })
+  }
 
+  /**
+   * 예정된 반납 목록 조회
+   */
+  async getScheduledReturns(): Promise<any[]> {
+    return this.measureAndLog('getScheduledReturns', async () => {
+      this.validateSystemAdminAccess()
+
+      try {
+        const scheduledReturns: any[] = []
+        const now = new Date()
+        
+        // 렌탈 정보에서 조회
+        const rentalsSnapshot = await getDocs(collection(db, 'deviceRentals'))
         
         rentalsSnapshot.forEach((doc) => {
           const rental = doc.data()
-            serviceName: 'SystemAdminService',
-            metadata: {
-              rentalDocId: doc.id,
-              deviceId: rental.deviceId,
-              organizationName: rental.organizationName,
-              status: rental.status,
-              returnScheduledDate: rental.returnScheduledDate,
-              contactName: rental.contactName
-            }
-          })
           
           // 활성 렌탈만 처리
           const activeStatuses = ['ACTIVE', 'SCHEDULED_RETURN', 'OVERDUE']
           if (!activeStatuses.includes(rental.status)) {
-              serviceName: 'SystemAdminService',
-              metadata: {
-                rentalStatus: rental.status,
-                deviceId: rental.deviceId
-              }
-            })
             return
           }
           
@@ -1033,16 +1007,163 @@ export class SystemAdminService extends BaseService {
               isOverdue: daysUntil < 0
             }
             
-              serviceName: 'SystemAdminService',
-              metadata: returnItem
-            })
             scheduledReturns.push(returnItem)
-          } else {
-              serviceName: 'SystemAdminService',
-              metadata: {
-                deviceId: rental.deviceId
-              }
-            })
           }
         })
         
+        // 예정일 기준으로 정렬 (가까운 순)
+        scheduledReturns.sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
+        
+        return scheduledReturns
+      } catch (error) {
+        console.error('Failed to get scheduled returns:', error)
+        throw error
+      }
+    })
+  }
+
+  /**
+   * 모든 조직 조회
+   */
+  private async getAllOrganizations(): Promise<any[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'organizations'))
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      console.error('Failed to get organizations:', error)
+      return []
+    }
+  }
+
+  /**
+   * 모든 멤버 조회
+   */
+  private async getAllMembers(): Promise<any[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'organizationMembers'))
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      console.error('Failed to get members:', error)
+      return []
+    }
+  }
+
+  /**
+   * 모든 측정 사용자 조회
+   */
+  private async getAllMeasurementUsers(): Promise<any[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'measurementUsers'))
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      console.error('Failed to get measurement users:', error)
+      return []
+    }
+  }
+
+  /**
+   * 모든 AI 리포트 조회
+   */
+  private async getAllAIReports(): Promise<any[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'aiReports'))
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      console.error('Failed to get AI reports:', error)
+      return []
+    }
+  }
+
+  /**
+   * 모든 측정 세션 조회
+   */
+  private async getAllMeasurementSessions(): Promise<any[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'measurementSessions'))
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      console.error('Failed to get measurement sessions:', error)
+      return []
+    }
+  }
+
+  /**
+   * 모든 크레딧 거래 조회
+   */
+  private async getAllCreditTransactions(): Promise<any[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'creditTransactions'))
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    } catch (error) {
+      console.error('Failed to get credit transactions:', error)
+      return []
+    }
+  }
+
+  /**
+   * 오류율 계산
+   */
+  private calculateErrorRate(sessions: any[]): number {
+    if (sessions.length === 0) return 0
+    const errorSessions = sessions.filter(s => s.status === 'failed' || s.status === 'error')
+    return errorSessions.length / sessions.length
+  }
+
+  /**
+   * 플랜 결정
+   */
+  private determinePlan(creditBalance: number, creditsUsedThisMonth: number): string {
+    if (creditsUsedThisMonth > 1000) return 'enterprise'
+    if (creditsUsedThisMonth > 500) return 'premium'
+    if (creditsUsedThisMonth > 100) return 'basic'
+    return 'trial'
+  }
+
+  /**
+   * 건강도 점수 계산
+   */
+  private calculateHealthScore(memberCount: number, reportCount: number, activeMembers: number): number {
+    if (memberCount === 0) return 0
+    const activityRate = activeMembers / memberCount
+    const usageRate = memberCount > 0 ? Math.min(reportCount / memberCount / 10, 1) : 0
+    return Math.round((activityRate * 0.6 + usageRate * 0.4) * 100)
+  }
+
+  /**
+   * 위험도 계산
+   */
+  private calculateRiskLevel(activeMembers: number, totalMembers: number, creditBalance: number): 'low' | 'medium' | 'high' {
+    const activityRate = totalMembers > 0 ? activeMembers / totalMembers : 0
+    if (activityRate < 0.2 || creditBalance < 10) return 'high'
+    if (activityRate < 0.5 || creditBalance < 50) return 'medium'
+    return 'low'
+  }
+
+  /**
+   * 이탈 위험 계산
+   */
+  private calculateChurnRisk(activeMembers: number, totalMembers: number, lastActivityTime: number): number {
+    const activityRate = totalMembers > 0 ? activeMembers / totalMembers : 0
+    const daysSinceLastActivity = (Date.now() - lastActivityTime) / (1000 * 60 * 60 * 24)
+    
+    let risk = 0
+    if (activityRate < 0.2) risk += 40
+    if (daysSinceLastActivity > 30) risk += 30
+    if (daysSinceLastActivity > 7) risk += 20
+    
+    return Math.min(risk, 100)
+  }
+
+  /**
+   * 최근 조직 활동 조회
+   */
+  private async getRecentOrganizationActivity(organizationId: string): Promise<any[]> {
+    try {
+      // 실제 구현에서는 활동 로그를 조회해야 함
+      return []
+    } catch (error) {
+      console.error('Failed to get recent organization activity:', error)
+      return []
+    }
+  }
+}

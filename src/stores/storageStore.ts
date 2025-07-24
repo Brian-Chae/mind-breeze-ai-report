@@ -429,34 +429,38 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           storageDirectoryPath: estimatedAbsolutePath || directoryHandle.name
         });
         
+        console.log('Storage state after update:', {
           isInitialized: get().isInitialized,
           storageDirectoryPath: get().storageDirectoryPath,
           configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        } });
+        });
         
         // 상태 업데이트 확인을 위한 추가 검증
         const verifyState = get();
+        console.log('Verification state:', {
           isInitialized: verifyState.isInitialized,
           configStorageDirectory: verifyState.config.storageDirectory ? 'VERIFIED_SET' : 'VERIFIED_NULL',
           directoryName: verifyState.config.storageDirectory?.name || 'NO_NAME'
-        } });
+        });
 
         // 로컬 스토리지에도 설정 저장 (백업용)
         const config = get().config;
         saveStorageConfig(config);
 
         // 저장소 초기화 전 상태 확인
+        console.log('State before initialization:', {
           isInitialized: get().isInitialized,
           configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        } });
+        });
         
         // 저장소 초기화
         await get().initializeStorage();
         
         // 저장소 초기화 후 상태 확인
+        console.log('State after initialization:', {
           isInitialized: get().isInitialized,
           configDirectory: get().config.storageDirectory ? 'SET' : 'NULL'
-        } });
+        });
         
         // 세션 목록 로드
         await get().loadSessions();
@@ -1664,6 +1668,7 @@ export const useStorageStore = create<StorageStore>((set, get) => {
               const file = await handle.getFile();
               totalSize += file.size;
             } catch (error) {
+              console.error('Error getting file size:', error);
             }
           } else if (handle.kind === 'directory') {
             // 재귀적으로 하위 디렉토리 크기 계산
@@ -1672,6 +1677,7 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           }
         }
       } catch (error) {
+        console.error('Error calculating directory size:', error);
       }
       
       return totalSize;
@@ -1716,11 +1722,12 @@ export const useStorageStore = create<StorageStore>((set, get) => {
               await targetStream.close();
               fileCount++;
             } catch (error) {
+              console.error(`Error copying file ${fileName}:`, error);
             }
           }
         }
 
-        
+        console.log(`ZIP export completed: ${fileCount} files exported`);
       } catch (error) {
         throw error;
       }
@@ -1749,6 +1756,7 @@ export const useStorageStore = create<StorageStore>((set, get) => {
                 await targetStream.close();
                 exportedCount++;
               } catch (error) {
+                console.error(`Error copying file ${fileName}:`, error);
               }
             }
           }
@@ -1758,7 +1766,7 @@ export const useStorageStore = create<StorageStore>((set, get) => {
           throw new Error(`${format} 형식의 파일을 찾을 수 없습니다.`);
         }
 
-        
+        console.log(`File export completed: ${exportedCount} files exported`);
       } catch (error) {
         throw error;
       }

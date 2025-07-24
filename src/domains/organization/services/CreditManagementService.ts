@@ -199,11 +199,14 @@ class CreditManagementService {
       }
       return 0;
     } catch (error) {
+      console.error('Failed to get credit balance:', {
         organizationId,
         userId,
+        error,
         metadata: {
           operation: 'get_credit_balance'
         }
+      });
       toast.error('크레딧 잔액을 조회할 수 없습니다.');
       throw new Error('크레딧 잔액을 조회할 수 없습니다.');
     }
@@ -242,6 +245,7 @@ class CreditManagementService {
 
         // 개발 환경에서 크레딧이 부족하면 자동으로 충전
         if (this.isDevelopmentMode() && currentBalance < options.amount) {
+          console.log('Auto charging credits in development mode:', {
             organizationId: options.organizationId,
             userId: options.userId,
             metadata: {
@@ -249,6 +253,7 @@ class CreditManagementService {
               requiredAmount: options.amount,
               operation: 'auto_charge'
             }
+          });
           const autoChargeAmount = Math.max(99999999, options.amount * 100);
           
           // 자동 충전
@@ -265,12 +270,14 @@ class CreditManagementService {
           }
           
           currentBalance = autoChargeAmount;
+          console.log('Auto charge completed:', {
             organizationId: options.organizationId,
             userId: options.userId,
             metadata: {
               autoChargeAmount,
               operation: 'auto_charge_complete'
             }
+          });
           toast.success(`🚀 개발 환경: 크레딧 자동 충전! ${autoChargeAmount.toLocaleString()} 크레딧 추가`);
         }
 
@@ -308,6 +315,7 @@ class CreditManagementService {
           createdAt: Timestamp.now()
         });
 
+        console.log('Credit usage completed:', {
           organizationId: options.organizationId,
           userId: options.userId,
           action: 'credit_usage',
@@ -317,6 +325,7 @@ class CreditManagementService {
             transactionType: options.type,
             operation: 'use_credits'
           }
+        });
         
         return {
           id: transactionRef.id,
@@ -324,14 +333,17 @@ class CreditManagementService {
         };
 
       } catch (error) {
+        console.error('Credit usage failed:', {
           organizationId: options.organizationId,
           userId: options.userId,
           action: 'credit_usage_failed',
+          error,
           metadata: {
             amount: options.amount,
             type: options.type,
             operation: 'use_credits'
           }
+        });
         if (error instanceof Error && !error.message.includes('크레딧이 부족합니다')) {
           toast.error(`크레딧 사용 실패: ${error.message}`);
         }
@@ -413,6 +425,7 @@ class CreditManagementService {
           createdAt: Timestamp.now()
         });
 
+        console.log('Credit addition completed:', {
           organizationId: options.organizationId,
           userId: options.userId,
           action: 'credit_addition',
@@ -422,6 +435,7 @@ class CreditManagementService {
             purchaseType: options.purchaseType,
             operation: 'add_credits'
           }
+        });
         toast.success(`✅ 크레딧 충전 완료! ${options.amount.toLocaleString()} 크레딧 추가`);
         
         return {
@@ -430,14 +444,17 @@ class CreditManagementService {
         };
 
       } catch (error) {
+        console.error('Credit addition failed:', {
           organizationId: options.organizationId,
           userId: options.userId,
           action: 'credit_addition_failed',
+          error,
           metadata: {
             amount: options.amount,
             purchaseType: options.purchaseType,
             operation: 'add_credits'
           }
+        });
         toast.error(`크레딧 충전 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
         throw error;
       }
@@ -487,12 +504,15 @@ class CreditManagementService {
         .slice(0, limitCount);
 
     } catch (error) {
+      console.error('Failed to get credit history:', {
         organizationId,
         userId,
+        error,
         metadata: {
           limitCount,
           operation: 'get_credit_history'
         }
+      });
       throw new Error('크레딧 히스토리를 조회할 수 없습니다.');
     }
   }
@@ -553,6 +573,7 @@ class CreditManagementService {
         updatedAt: Timestamp.now()
       });
 
+      console.log('Trial service started:', {
         organizationId,
         userId: adminUserId,
         action: 'trial_start',
@@ -562,6 +583,7 @@ class CreditManagementService {
           validityDays: trialConfig.validityDays,
           operation: 'start_trial'
         }
+      });
       
       return {
         id: trialRef.id,
@@ -569,13 +591,16 @@ class CreditManagementService {
       };
 
     } catch (error) {
+      console.error('Failed to start trial service:', {
         organizationId,
         userId: adminUserId,
         action: 'trial_start_failed',
+        error,
         metadata: {
           trialType,
           operation: 'start_trial'
         }
+      });
       throw new Error('체험 서비스를 시작할 수 없습니다.');
     }
   }
@@ -616,10 +641,13 @@ class CreditManagementService {
       };
 
     } catch (error) {
+      console.error('Failed to get active trial service:', {
         organizationId,
+        error,
         metadata: {
           operation: 'get_active_trial'
         }
+      });
       return null;
     }
   }
@@ -654,6 +682,7 @@ class CreditManagementService {
           updatedAt: Timestamp.now()
         });
 
+        console.log('Trial conversion completed:', {
           organizationId,
           action: 'trial_conversion',
           metadata: {
@@ -661,14 +690,18 @@ class CreditManagementService {
             trialId: trial.id,
             operation: 'convert_trial'
           }
+        });
 
       } catch (error) {
+        console.error('Trial conversion failed:', {
           organizationId,
           action: 'trial_conversion_failed',
+          error,
           metadata: {
             conversionDiscount,
             operation: 'convert_trial'
           }
+        });
         throw error;
       }
     });
@@ -805,12 +838,15 @@ class CreditManagementService {
       };
 
     } catch (error) {
+      console.error('Failed to get credit usage stats:', {
         organizationId,
+        error,
         metadata: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           operation: 'get_usage_stats'
         }
+      });
       throw new Error('크레딧 사용 통계를 조회할 수 없습니다.');
     }
   }
@@ -853,14 +889,17 @@ class CreditManagementService {
       });
 
     } catch (error) {
+      console.error('Credit refund failed:', {
         userId: adminUserId,
         action: 'refund_failed',
+        error,
         metadata: {
           transactionId,
           refundAmount,
           reason,
           operation: 'refund_credits'
         }
+      });
       throw new Error('크레딧 환불을 처리할 수 없습니다.');
     }
   }
