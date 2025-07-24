@@ -171,7 +171,11 @@ export default function UserManagementContent({}: UserManagementContentProps) {
   }
 
   const getActivityLevel = (user: UserOverview) => {
-    const { loginFrequency, totalMeasurements, totalReports } = user.activityStats
+    if (!user.activityStats) {
+      return { level: '없음', color: 'text-slate-600' }
+    }
+    
+    const { loginFrequency = 0, totalMeasurements = 0, totalReports = 0 } = user.activityStats
     const score = loginFrequency + (totalMeasurements * 0.1) + (totalReports * 0.2)
     
     if (score >= 10) return { level: '높음', color: 'text-green-600' }

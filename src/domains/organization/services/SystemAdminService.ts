@@ -432,6 +432,22 @@ export interface ReportAnalytics {
   }>
 }
 
+export interface UserOverview {
+  id: string
+  name: string
+  email: string
+  organization: string
+  role: string
+  status: string
+  lastActive: Date
+  joinedAt: Date
+  activityStats?: {
+    loginFrequency: number
+    totalMeasurements: number
+    totalReports: number
+  }
+}
+
 export interface EnterpriseManagementAction {
   organizationId: string
   action: 'suspend_organization' | 'activate_organization' | 'extend_trial' | 
@@ -1530,7 +1546,7 @@ export class SystemAdminService extends BaseService {
   /**
    * 전체 사용자 목록 개요 조회
    */
-  async getAllUsersOverview(): Promise<any[]> {
+  async getAllUsersOverview(): Promise<UserOverview[]> {
     return this.measureAndLog('getAllUsersOverview', async () => {
       try {
         // 현재는 모의 데이터 반환
