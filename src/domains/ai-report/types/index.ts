@@ -28,6 +28,26 @@ export interface MeasurementData {
   dataQuality: DataQuality;
   environmentInfo?: EnvironmentInfo;
   
+  // 시계열 데이터 (1분간의 전체 데이터)
+  processedTimeSeries?: {
+    eeg: any; // ProcessedEEGTimeSeries
+    ppg: any; // ProcessedPPGTimeSeries
+    acc: any; // ProcessedACCTimeSeries
+    fusedMetrics?: any; // 융합 메트릭
+    metadata: {
+      samplingRate: {
+        eeg: number;
+        ppg: number;
+        acc: number;
+      };
+      processingVersion: string;
+      qualityScore: number;
+    };
+    startTime: Date;
+    endTime: Date;
+    duration: number;
+  };
+  
   processingVersion: string;
   createdAt: Date;
   updatedAt: Date;

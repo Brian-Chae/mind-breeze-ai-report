@@ -430,6 +430,20 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
           if (prev >= 60) {
             clearInterval(timer);
             setIsMeasuring(false);
+            
+            // 🆕 측정 완료 시 데이터 수집기 정지
+            if (dataCollector) {
+              console.log('[DATACHECK] 📊 측정 완료 - 데이터 수집기 정지');
+              if (dataCollector.isCollectingData()) {
+                dataCollector.stop();
+              }
+              const finalData = dataCollector.getCollectedData();
+              console.log('[DATACHECK] 📊 최종 수집된 데이터:', {
+                hasData: !!finalData,
+                dataPoints: finalData?.eeg?.timestamps?.length || 0
+              });
+            }
+            
             // 측정 완료 시 데이터 수집하고 분석 단계로 이동
             if (onMeasurementComplete) {
               const measurementData = collectMeasurementData();
@@ -446,7 +460,7 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
       return () => clearInterval(timer);
     }
-  }, [isMeasuring]); // 의존성 배열 최소화
+  }, [isMeasuring, dataCollector]); // dataCollector도 의존성에 추가
 
   // 품질 상태 확인 함수
   const getQualityStatus = (quality: number) => {
@@ -504,10 +518,26 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
     setMeasurementTimer(0);
     setIsMeasuring(true);
     
-    // 🆕 데이터 수집기 시작
-    if (dataCollector && !dataCollector.isCollectingData()) {
-      console.log('📊 시계열 데이터 수집 시작...');
+    // 🆕 데이터 수집기 시작 (강제로 시작)
+    if (dataCollector) {
+      console.log('[DATACHECK] 📊 시계열 데이터 수집 강제 시작...', {
+        isCollectingBefore: dataCollector.isCollectingData(),
+        collectorExists: !!dataCollector
+      });
+      
+      // 혹시 이미 수집 중이면 먼저 정지
+      if (dataCollector.isCollectingData()) {
+        console.log('[DATACHECK] ⚠️ 이미 수집 중인 상태 - 먼저 정지 후 재시작');
+        dataCollector.stop();
+      }
+      
+      // 새로 시작
       dataCollector.start();
+      console.log('[DATACHECK] ✅ 데이터 수집기 시작 완료', {
+        isCollectingAfter: dataCollector.isCollectingData()
+      });
+    } else {
+      console.error('[DATACHECK] ❌ 데이터 수집기가 없습니다!');
     }
   }, [isConnected, isGoodQuality, onError, dataCollector]);
 

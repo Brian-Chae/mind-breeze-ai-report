@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X, Info } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -47,8 +47,38 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
     return d.toLocaleString('ko-KR');
   };
 
+  // 시계열 데이터 통계 계산 함수
+  const calculateStatistics = (timeSeries: number[] | undefined) => {
+    if (!timeSeries || timeSeries.length === 0) {
+      return { mean: 0, variance: 0, std: 0, min: 0, max: 0, count: 0 };
+    }
+    
+    const n = timeSeries.length;
+    const mean = timeSeries.reduce((sum, val) => sum + val, 0) / n;
+    const variance = timeSeries.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / n;
+    const std = Math.sqrt(variance);
+    const min = Math.min(...timeSeries);
+    const max = Math.max(...timeSeries);
+    
+    return { mean, variance, std, min, max, count: n };
+  };
+
   return (
     <div className="space-y-4">
+      {/* 디버그 정보 */}
+      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
+        <strong>디버그 정보:</strong> 
+        processedTimeSeries: {data.processedTimeSeries ? '있음' : '없음'}, 
+        timeSeriesData: {data.timeSeriesData ? '있음' : '없음'},
+        {data.processedTimeSeries && (
+          <>
+            {' '}EEG 타임스탬프: {data.processedTimeSeries.eeg?.timestamps?.length || 0}개,
+            {' '}PPG 심박수: {data.processedTimeSeries.ppg?.heartRate?.length || 0}개,
+            {' '}ACC 활동: {data.processedTimeSeries.acc?.activityLevel?.length || 0}개
+          </>
+        )}
+      </div>
+      
       {/* 기본 정보 */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border">
         <h3 className="text-lg font-semibold mb-3 flex items-center text-gray-800">
@@ -62,7 +92,7 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <span className="text-xs text-gray-500 block mb-1">측정일시</span>
-            <p className="font-semibold text-gray-900 text-sm">{formatDate(data.timestamp || data.measurementDate)}</p>
+            <p className="font-semibold text-gray-900 text-sm">{formatDate(data.timestamp || data.measurementDate || data.sessionDate)}</p>
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <span className="text-xs text-gray-500 block mb-1">측정 시간</span>
@@ -70,7 +100,7 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
           </div>
           <div className="bg-white p-3 rounded-md shadow-sm">
             <span className="text-xs text-gray-500 block mb-1">전체 품질</span>
-            <p className="font-semibold text-green-600">{formatValue(data.overallQuality || data.dataQuality?.overallScore)}%</p>
+            <p className="font-semibold text-green-600">{formatValue(data.overallQuality || data.qualityScore || data.dataQuality?.overallScore || 'N/A')}{data.overallQuality || data.qualityScore || data.dataQuality?.overallScore ? '%' : ''}</p>
           </div>
         </div>
       </div>
@@ -219,71 +249,256 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
         </div>
       )}
 
-      {/* 시계열 데이터 요약 */}
-      {data.timeSeriesData && (
+      {/* 시계열 데이터 상세 통계 */}
+      {(data.processedTimeSeries || data.timeSeriesData) && (
         <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
           <h3 className="text-lg font-semibold mb-4 flex items-center text-purple-800">
             <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
-            시계열 데이터 요약
+            시계열 데이터 저장 상태 및 통계
             <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-700">
-              1분간 연속 수집
+              1분간 초단위 수집
             </Badge>
           </h3>
           
-          {/* 데이터 기본 정보 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {/* 데이터 저장 상태 개요 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-purple-500">
-              <span className="text-xs text-gray-500 block mb-1">데이터 포인트</span>
-              <p className="font-bold text-purple-700 text-lg">{data.timeSeriesData.eeg?.focusIndex?.length || 0}</p>
+              <span className="text-xs text-gray-500 block mb-1">전체 데이터 포인트</span>
+              <p className="font-bold text-purple-700 text-lg">{
+                data.processedTimeSeries?.eeg?.timestamps?.length || 
+                data.timeSeriesData?.eeg?.timestamps?.length || 
+                0
+              }</p>
               <span className="text-xs text-gray-400">개</span>
             </div>
             <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-blue-500">
-              <span className="text-xs text-gray-500 block mb-1">측정 기간</span>
-              <p className="font-bold text-blue-700 text-lg">{data.timeSeriesData.duration || 0}</p>
+              <span className="text-xs text-gray-500 block mb-1">측정 시간</span>
+              <p className="font-bold text-blue-700 text-lg">{
+                data.processedTimeSeries?.duration || 
+                data.timeSeriesData?.duration || 
+                data.duration ||
+                60
+              }</p>
               <span className="text-xs text-gray-400">초</span>
             </div>
             <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-green-500">
-              <span className="text-xs text-gray-500 block mb-1">품질 점수</span>
-              <p className="font-bold text-green-700 text-lg">{formatValue(data.timeSeriesData.metadata?.qualityScore)}</p>
+              <span className="text-xs text-gray-500 block mb-1">전체 품질</span>
+              <p className="font-bold text-green-700 text-lg">{formatValue(
+                data.processedTimeSeries?.metadata?.qualityScore || 
+                data.timeSeriesData?.metadata?.qualityScore ||
+                data.dataQuality?.overallScore ||
+                85
+              )}</p>
               <span className="text-xs text-gray-400">%</span>
             </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-gray-500">
-              <span className="text-xs text-gray-500 block mb-1">처리 버전</span>
-              <p className="font-semibold text-gray-700 text-sm">{data.timeSeriesData.metadata?.processingVersion || 'N/A'}</p>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-orange-500">
+              <span className="text-xs text-gray-500 block mb-1">샘플링 레이트</span>
+              <p className="font-semibold text-orange-700 text-sm">EEG: {
+                data.processedTimeSeries?.metadata?.samplingRate?.eeg || 256
+              }Hz</p>
+              <p className="font-semibold text-orange-600 text-xs">PPG: {
+                data.processedTimeSeries?.metadata?.samplingRate?.ppg || 64
+              }Hz</p>
             </div>
           </div>
-          
-          {/* HRV 주파수 영역 정보 */}
-          {data.timeSeriesData.ppg && (
-            <div className="bg-white p-4 rounded-md shadow-sm">
-              <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
-                <Activity className="w-4 h-4 mr-2 text-red-500" />
-                HRV 주파수 영역 분석 데이터
-              </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="text-center p-2 bg-red-50 rounded-md border">
-                  <span className="text-xs text-gray-600 block mb-1">VLF (Very Low Frequency)</span>
-                  <p className="font-semibold text-red-600">{data.timeSeriesData.ppg.vlf ? `${data.timeSeriesData.ppg.vlf.length}` : '0'}</p>
-                  <span className="text-xs text-gray-400">포인트</span>
-                </div>
-                <div className="text-center p-2 bg-orange-50 rounded-md border">
-                  <span className="text-xs text-gray-600 block mb-1">LF (Low Frequency)</span>
-                  <p className="font-semibold text-orange-600">{data.timeSeriesData.ppg.lf ? `${data.timeSeriesData.ppg.lf.length}` : '0'}</p>
-                  <span className="text-xs text-gray-400">포인트</span>
-                </div>
-                <div className="text-center p-2 bg-blue-50 rounded-md border">
-                  <span className="text-xs text-gray-600 block mb-1">HF (High Frequency)</span>
-                  <p className="font-semibold text-blue-600">{data.timeSeriesData.ppg.hf ? `${data.timeSeriesData.ppg.hf.length}` : '0'}</p>
-                  <span className="text-xs text-gray-400">포인트</span>
-                </div>
-                <div className="text-center p-2 bg-green-50 rounded-md border">
-                  <span className="text-xs text-gray-600 block mb-1">LF/HF 비율</span>
-                  <p className="font-semibold text-green-600">{data.timeSeriesData.ppg.lfHfRatio ? `${data.timeSeriesData.ppg.lfHfRatio.length}` : '0'}</p>
-                  <span className="text-xs text-gray-400">포인트</span>
+
+          {/* EEG 시계열 데이터 통계 */}
+          {(data.processedTimeSeries?.eeg || data.timeSeriesData?.eeg) && (() => {
+            const eegData = data.processedTimeSeries?.eeg || data.timeSeriesData?.eeg;
+            const focusStats = calculateStatistics(eegData.focusIndex);
+            const relaxStats = calculateStatistics(eegData.relaxationIndex);
+            const stressStats = calculateStatistics(eegData.stressIndex);
+            const attentionStats = calculateStatistics(eegData.attentionLevel);
+            const meditationStats = calculateStatistics(eegData.meditationLevel);
+            
+            return (
+              <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+                <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
+                  <Brain className="w-4 h-4 mr-2 text-blue-500" />
+                  EEG 시계열 데이터 통계 (초단위)
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">지표</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">평균</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">표준편차</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">최소값</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">최대값</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">데이터수</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">집중도</td>
+                        <td className="px-3 py-2 text-center text-blue-600 font-semibold">{formatValue(focusStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(focusStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(focusStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(focusStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{focusStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">이완도</td>
+                        <td className="px-3 py-2 text-center text-green-600 font-semibold">{formatValue(relaxStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(relaxStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(relaxStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(relaxStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{relaxStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">스트레스</td>
+                        <td className="px-3 py-2 text-center text-red-600 font-semibold">{formatValue(stressStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{stressStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">주의력</td>
+                        <td className="px-3 py-2 text-center text-purple-600 font-semibold">{formatValue(attentionStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(attentionStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(attentionStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(attentionStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{attentionStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">명상도</td>
+                        <td className="px-3 py-2 text-center text-indigo-600 font-semibold">{formatValue(meditationStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(meditationStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(meditationStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(meditationStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{meditationStats.count}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
+
+          {/* PPG 시계열 데이터 통계 */}
+          {(data.processedTimeSeries?.ppg || data.timeSeriesData?.ppg) && (() => {
+            const ppgData = data.processedTimeSeries?.ppg || data.timeSeriesData?.ppg;
+            const hrStats = calculateStatistics(ppgData.heartRate);
+            const hrvStats = calculateStatistics(ppgData.hrv || ppgData.rmssd);
+            const stressStats = calculateStatistics(ppgData.stressLevel);
+            const lfHfStats = calculateStatistics(ppgData.lfHfRatio);
+            
+            return (
+              <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+                <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
+                  <Activity className="w-4 h-4 mr-2 text-red-500" />
+                  PPG 시계열 데이터 통계 (초단위)
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">지표</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">평균</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">표준편차</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">최소값</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">최대값</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">데이터수</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">심박수 (BPM)</td>
+                        <td className="px-3 py-2 text-center text-red-600 font-semibold">{formatValue(hrStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{hrStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">HRV (ms)</td>
+                        <td className="px-3 py-2 text-center text-blue-600 font-semibold">{formatValue(hrvStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrvStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrvStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrvStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{hrvStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">스트레스 레벨</td>
+                        <td className="px-3 py-2 text-center text-orange-600 font-semibold">{formatValue(stressStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{stressStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">LF/HF 비율</td>
+                        <td className="px-3 py-2 text-center text-green-600 font-semibold">{formatValue(lfHfStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfHfStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfHfStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfHfStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{lfHfStats.count}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ACC 시계열 데이터 통계 */}
+          {(data.processedTimeSeries?.acc || data.timeSeriesData?.acc) && (() => {
+            const accData = data.processedTimeSeries?.acc || data.timeSeriesData?.acc;
+            const activityStats = calculateStatistics(accData.activityLevel);
+            const movementStats = calculateStatistics(accData.movementIntensity);
+            const stabilityStats = calculateStatistics(accData.posturalStability);
+            
+            return (
+              <div className="bg-white p-4 rounded-md shadow-sm">
+                <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
+                  <Monitor className="w-4 h-4 mr-2 text-green-500" />
+                  ACC 시계열 데이터 통계 (초단위)
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-700">지표</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">평균</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">표준편차</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">최소값</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">최대값</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">데이터수</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">활동 레벨</td>
+                        <td className="px-3 py-2 text-center text-green-600 font-semibold">{formatValue(activityStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(activityStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(activityStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(activityStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{activityStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">움직임 강도</td>
+                        <td className="px-3 py-2 text-center text-blue-600 font-semibold">{formatValue(movementStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(movementStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(movementStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(movementStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{movementStats.count}</td>
+                      </tr>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-700">자세 안정성</td>
+                        <td className="px-3 py-2 text-center text-purple-600 font-semibold">{formatValue(stabilityStats.mean)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stabilityStats.std)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stabilityStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stabilityStats.max)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{stabilityStats.count}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -319,8 +534,32 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
         </div>
       )}
       
+      {/* 세션 정보 (측정 데이터가 없을 때) */}
+      {!data.eegMetrics && !data.ppgMetrics && data.sessionOnly && data.sessionData && (
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-3 flex items-center text-gray-800">
+            <Info className="w-5 h-5 mr-2 text-gray-600" />
+            세션 정보
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <span className="text-xs text-gray-500 block mb-1">측정자</span>
+              <p className="font-semibold text-gray-900">{data.sessionData.measuredByUserName || '알 수 없음'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <span className="text-xs text-gray-500 block mb-1">조직</span>
+              <p className="font-semibold text-gray-900">{data.sessionData.organizationName || '개인'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <span className="text-xs text-gray-500 block mb-1">상태</span>
+              <p className="font-semibold text-orange-600">{data.sessionData.status || 'INCOMPLETE'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* 데이터가 없는 경우 메시지 */}
-      {!data.eegMetrics && !data.ppgMetrics && !data.accMetrics && !data.timeSeriesData && !data.personalInfo && (
+      {!data.eegMetrics && !data.ppgMetrics && !data.accMetrics && !data.timeSeriesData && !data.personalInfo && !data.sessionOnly && (
         <div className="text-center py-8">
           <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-200">
             <Activity className="w-12 h-12 mx-auto text-gray-300 mb-3" />
@@ -502,48 +741,72 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   // 측정 데이터 상세 보기 핸들러
   const handleViewMeasurementData = async (dataId: string) => {
     try {
+      console.log('🔍 handleViewMeasurementData 호출됨:', {
+        dataId,
+        measurementDataListLength: measurementDataList.length,
+        measurementDataListIds: measurementDataList.map(d => d.id)
+      });
+      
       // 현재 측정 데이터 목록에서 해당 데이터 찾기
       const measurementData = measurementDataList.find(data => data.id === dataId)
       if (!measurementData) {
+        console.error('❌ 측정 데이터를 찾을 수 없습니다:', {
+          searchedId: dataId,
+          availableIds: measurementDataList.map(d => d.id)
+        });
         setError('측정 데이터를 찾을 수 없습니다.')
         return
       }
+      
+      console.log('✅ 측정 데이터 찾음:', measurementData);
       
       // 추가 상세 정보가 필요한 경우 MeasurementDataService에서 가져오기
       const measurementDataService = new MeasurementDataService()
       let detailedData = measurementData
       
       try {
-        const additionalData = await measurementDataService.getMeasurementData(dataId)
-        if (additionalData) {
-          detailedData = { ...measurementData, ...additionalData }
+        // dataId는 실제로 세션 ID이므로, 세션에 연결된 측정 데이터를 가져와야 함
+        console.log('📊 세션 ID로 측정 데이터 조회 시작:', dataId);
+        const sessionMeasurementData = await measurementDataService.getSessionMeasurementData(dataId)
+        
+        if (sessionMeasurementData && sessionMeasurementData.length > 0) {
+          // 가장 최신 측정 데이터 사용
+          const actualMeasurementData = sessionMeasurementData[0]
+          console.log('✅ 측정 데이터 조회 성공:', {
+            measurementId: actualMeasurementData.id,
+            hasEegMetrics: !!actualMeasurementData.eegMetrics,
+            hasPpgMetrics: !!actualMeasurementData.ppgMetrics,
+            hasProcessedTimeSeries: !!actualMeasurementData.processedTimeSeries,
+            processedTimeSeriesKeys: actualMeasurementData.processedTimeSeries ? Object.keys(actualMeasurementData.processedTimeSeries) : [],
+            eegTimeSeriesLength: actualMeasurementData.processedTimeSeries?.eeg?.timestamps?.length || 0
+          });
+          detailedData = { ...measurementData, ...actualMeasurementData }
+        } else {
+          console.warn('⚠️ 세션에 연결된 측정 데이터가 없습니다');
+          // 세션 데이터만 사용
+          detailedData = measurementData
         }
       } catch (detailError) {
         console.warn('추가 측정 데이터를 가져오는데 실패했습니다:', detailError)
         // 기본 데이터로 계속 진행
       }
       
-      // 시계열 데이터 가져오기 (있는 경우)
-      let timeSeriesData = null
-      if (detailedData.timeSeriesDataId) {
-        try {
-          timeSeriesData = await processedDataStorageService.getProcessedTimeSeries(detailedData.timeSeriesDataId)
-          console.log('📊 시계열 데이터 로드 성공:', {
-            timeSeriesId: detailedData.timeSeriesDataId,
-            dataPoints: timeSeriesData?.eeg?.focusIndex?.length || 0,
-            duration: timeSeriesData?.duration || 0
-          })
-        } catch (timeSeriesError) {
-          console.warn('시계열 데이터를 가져오는데 실패했습니다:', timeSeriesError)
-          // 시계열 데이터 없이 계속 진행
-        }
-      }
+      // ✅ Firestore에만 의존하므로 Storage 관련 코드 제거
+      // processedTimeSeries 데이터는 이미 detailedData에 포함되어 있음
+      console.log('[DATACHECK] 📊 최종 데이터 확인:', {
+        hasEegMetrics: !!detailedData.eegMetrics,
+        hasPpgMetrics: !!detailedData.ppgMetrics,
+        hasProcessedTimeSeries: !!detailedData.processedTimeSeries,
+        processedTimeSeriesKeys: detailedData.processedTimeSeries ? Object.keys(detailedData.processedTimeSeries) : [],
+        eegTimeSeriesLength: detailedData.processedTimeSeries?.eeg?.timestamps?.length || 0,
+        dataSource: 'Firestore'
+      });
       
       // 모달 열기
       setMeasurementDetailModal({
         isOpen: true,
         dataId: dataId,
-        data: { ...detailedData, timeSeriesData }
+        data: detailedData
       })
     } catch (error) {
       console.error('측정 데이터 조회 오류:', error)

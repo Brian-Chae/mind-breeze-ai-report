@@ -18,9 +18,8 @@ import type { AggregatedMeasurementData, MeasurementProgress } from '../types';
 // 🔧 Firebase 저장을 위한 import 추가
 import { FirebaseService } from '../../../core/services/FirebaseService';
 import { MeasurementDataService } from '../services/MeasurementDataService';
-import { auth, storage } from '../../../core/services/firebase';
+import { auth } from '../../../core/services/firebase';
 import { signInAnonymously } from 'firebase/auth';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 // 🆕 시계열 데이터 수집을 위한 import
 import { ProcessedDataCollector } from '../services/ProcessedDataCollector';
@@ -286,6 +285,9 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       // 🔧 데이터 변환
       const convertedData = convertToExpectedFormat(measurementData);
       
+      // 시계열 데이터를 위한 변수 선언
+      let collectedTimeSeriesData = null;
+      
       // 현재 사용자 정보 가져오기 (Firebase auth 사용)
       let currentUser = auth.currentUser;
       if (!currentUser) {
@@ -306,67 +308,30 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         }
       }); 
 
-      // 🔧 Storage에 센서 데이터 저장
-      let storageUrl = '';
-      let storagePath = '';
-      try {
-        const sessionId = `measurement_${Date.now()}_${currentUser.uid.substring(0, 8)}`;
-        
-        // 센서 데이터 JSON 생성
-        const sensorData = {
-          sessionId,
-          measurementInfo: convertedData.measurementInfo,
-          rawData: {
-            eeg: {
-              summary: convertedData.eegSummary,
-              dataPoints: 60 * 256,
-              qualityScore: convertedData.eegSummary?.averageSQI || 80
-            },
-            ppg: {
-              summary: convertedData.ppgSummary,
-              dataPoints: 60 * 125,
-              qualityScore: 90
-            },
-            acc: {
-              summary: convertedData.accSummary,
-              dataPoints: 60 * 50,
-              qualityScore: 95
-            }
-          },
-          qualitySummary: convertedData.qualitySummary,
-          collectedAt: new Date().toISOString(),
-          userId: currentUser.uid,
-          subjectInfo: {
-            name: state.personalInfo?.name || '알 수 없음',
-            email: state.personalInfo?.email,
-            gender: state.personalInfo?.gender,
-            birthDate: state.personalInfo?.birthDate,
-            occupation: state.personalInfo?.occupation,
-            department: state.personalInfo?.department
-          }
-        };
-
-        // Storage 경로: measurements/{userId}/{sessionId}/sensor_data.json
-        storagePath = `measurements/${currentUser.uid}/${sessionId}/sensor_data.json`;
-        const storageRef = ref(storage, storagePath);
-        
-        // JSON 문자열로 변환하여 업로드
-        const jsonString = JSON.stringify(sensorData, null, 2);
-        await uploadString(storageRef, jsonString, 'raw', {
-          contentType: 'application/json'
+      // 🆕 시계열 데이터 수집 (데이터 수집기가 있는 경우)
+      console.log('[DATACHECK] 🔍 시계열 데이터 수집 상태 확인:', {
+        hasDataCollector: !!dataCollector,
+        isCollecting: dataCollector ? dataCollector.isCollectingData() : false
+      });
+      
+      if (dataCollector && dataCollector.isCollectingData()) {
+        console.log('[DATACHECK] 📊 시계열 데이터 수집 중...');
+        dataCollector.stop();
+        collectedTimeSeriesData = dataCollector.getCollectedData();
+        console.log('[DATACHECK] ✅ 시계열 데이터 수집 완료:', {
+          dataPoints: collectedTimeSeriesData?.eeg?.timestamps?.length || 0,
+          duration: collectedTimeSeriesData?.duration || 0
         });
-        
-        // 다운로드 URL 얻기
-        storageUrl = await getDownloadURL(storageRef);
-        console.log('Firebase Storage URL 생성 성공', {
-          metadata: { 
-            storagePath,
-            storageUrl: storageUrl.substring(0, 100) + '...'
-          }
-        }); 
-        
-      } catch (storageError) {
-        // Storage 저장 실패해도 계속 진행
+      } else {
+        console.warn('[DATACHECK] ⚠️ 시계열 데이터 수집기가 없거나 수집 중이 아닙니다');
+        // 데이터 수집기가 있지만 수집 중이 아닌 경우에도 데이터가 있을 수 있음
+        if (dataCollector) {
+          collectedTimeSeriesData = dataCollector.getCollectedData();
+          console.log('[DATACHECK] 🔄 데이터 수집기에서 기존 데이터 가져오기:', {
+            hasData: !!collectedTimeSeriesData,
+            dataPoints: collectedTimeSeriesData?.eeg?.timestamps?.length || 0
+          });
+        }
       }
 
       // 🔧 실제 personalInfo 데이터 사용
@@ -418,9 +383,6 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         sessionDate: new Date(convertedData.measurementInfo?.startTime || Date.now()),
         duration: convertedData.measurementInfo?.duration || 60,
         
-        // 🔧 Storage URL 추가
-        storageUrl: storageUrl || null,
-        storagePath: storageUrl ? storagePath : null,
         
         // 분석 결과 요약
         overallScore: Math.round(convertedData.qualitySummary?.qualityPercentage || 0),
@@ -472,8 +434,6 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
           measurementDate: new Date(convertedData.measurementInfo?.startTime || Date.now()),
           duration: convertedData.measurementInfo?.duration || 60,
           
-          // 🔧 Storage 정보 추가
-          storageUrl: storageUrl || null,
           
           deviceInfo: {
             serialNumber: 'LINKBAND_SIMULATOR',
@@ -514,7 +474,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             activityLevel: convertedData.accSummary?.intensity || 20,
             movementVariability: convertedData.accSummary?.avgMovement || 15,
             postureStability: convertedData.accSummary?.stability || 85,
-            movementIntensity: convertedData.accSummary?.intensity || 20,
+            movementIntensity: (convertedData.accSummary?.intensity || 20) / 100, // 0-100 범위를 0-1로 변환
             posture: 'UNKNOWN' as const,
             movementEvents: []
           },
@@ -542,14 +502,37 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             gender: state.personalInfo?.gender === 'MALE' ? 'male' : state.personalInfo?.gender === 'FEMALE' ? 'female' : 'male',
             occupation: state.personalInfo?.occupation || 'office_worker',
             birthDate: state.personalInfo?.birthDate ? state.personalInfo.birthDate.toISOString().split('T')[0] : null
-          }
+          },
+          
+          // 🆕 시계열 데이터 추가 (Firestore에 직접 저장) - undefined 방지
+          ...(collectedTimeSeriesData ? {
+            processedTimeSeries: {
+              eeg: collectedTimeSeriesData.eeg,
+              ppg: collectedTimeSeriesData.ppg,
+              acc: collectedTimeSeriesData.acc,
+              fusedMetrics: collectedTimeSeriesData.fusedMetrics,
+              metadata: {
+                samplingRate: {
+                  eeg: 256,
+                  ppg: 64,
+                  acc: 32
+                },
+                processingVersion: '1.0.0',
+                qualityScore: convertedData.qualitySummary?.qualityPercentage || 85
+              },
+              startTime: new Date(convertedData.measurementInfo?.startTime || Date.now()),
+              endTime: new Date(convertedData.measurementInfo?.endTime || Date.now()),
+              duration: convertedData.measurementInfo?.duration || 60
+            }
+          } : {})
         };
 
-        console.log('상세 측정 데이터 준비 완료', {
+        console.log('[DATACHECK] 상세 측정 데이터 준비 완료', {
           metadata: { 
             sessionId: detailedMeasurementData.sessionId,
             userId: detailedMeasurementData.userId,
-            hasStorageUrl: !!detailedMeasurementData.storageUrl,
+            hasProcessedTimeSeries: !!detailedMeasurementData.processedTimeSeries,
+            timeSeriesDataPoints: detailedMeasurementData.processedTimeSeries?.eeg?.timestamps?.length || 0,
             deviceModel: detailedMeasurementData.deviceInfo.model,
             dataQualityScore: detailedMeasurementData.dataQuality.overallScore
           }
@@ -567,44 +550,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         setSavedMeasurementId(measurementId);
         setSavedSessionId(sessionId);
         
-        // 🆕 시계열 데이터 저장 (데이터 수집기가 있는 경우)
-        if (dataCollector && dataCollector.isCollectingData()) {
-          console.log('📊 시계열 데이터 저장 시작...');
-          
-          // 데이터 수집 중지
-          dataCollector.stop();
-          
-          // 수집된 시계열 데이터 가져오기
-          const timeSeriesData = dataCollector.getCollectedData();
-          
-          if (timeSeriesData) {
-            try {
-              // measurementId와 sessionId 업데이트
-              timeSeriesData.measurementId = measurementId;
-              timeSeriesData.sessionId = sessionId;
-              
-              // 시계열 데이터 저장
-              const timeSeriesId = await processedDataStorageService.saveProcessedTimeSeries(timeSeriesData);
-              
-              console.log('✅ 시계열 데이터 저장 성공', {
-                timeSeriesId,
-                dataPoints: dataCollector.getDataPointCount(),
-                duration: timeSeriesData.duration,
-                qualityScore: timeSeriesData.metadata.qualityScore
-              });
-              
-              // 측정 데이터에 시계열 데이터 ID 추가
-              await measurementDataService.updateMeasurementData(measurementId, {
-                timeSeriesDataId: timeSeriesId,
-                hasTimeSeriesData: true
-              });
-              
-            } catch (timeSeriesError) {
-              console.error('❌ 시계열 데이터 저장 실패:', timeSeriesError);
-              // 시계열 데이터 저장 실패해도 측정은 계속 진행
-            }
-          }
-        } 
+ 
         
       } catch (detailError) {
         console.error('세션 세부 정보 저장 중 오류:', {

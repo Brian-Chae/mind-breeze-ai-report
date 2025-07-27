@@ -217,11 +217,16 @@ export class ProcessedDataCollector {
    */
   start(): void {
     if (this.isCollecting) {
-      console.warn('Data collection is already in progress');
+      console.warn('⚠️ ProcessedDataCollector - Data collection is already in progress');
       return;
     }
     
-    console.log('📊 Starting processed data collection for 1 minute...');
+    console.log('[DATACHECK] 📊 ProcessedDataCollector - Starting processed data collection for 1 minute...', {
+      sessionId: this.config.sessionId,
+      measurementId: this.config.measurementId,
+      samplingInterval: this.config.samplingInterval
+    });
+    
     this.isCollecting = true;
     this.startTime = new Date();
     
@@ -230,6 +235,8 @@ export class ProcessedDataCollector {
     // 매 초마다 데이터 수집
     this.collectionInterval = setInterval(() => {
       try {
+        console.log(`[DATACHECK] 📊 ProcessedDataCollector - Collecting data point ${dataPointIndex + 1}/60`);
+        
         // 현재 처리된 메트릭 가져오기 (실제로는 신호 처리기에서 가져옴)
         const currentMetrics = this.getCurrentProcessedMetrics();
         
@@ -243,18 +250,28 @@ export class ProcessedDataCollector {
         
         dataPointIndex++;
         
+        console.log(`[DATACHECK] ✅ ProcessedDataCollector - Data point ${dataPointIndex}/60 collected successfully`);
+        
         // 1분(60초) 완료 확인
         if (dataPointIndex >= 60) {
+          console.log('[DATACHECK] 🎯 ProcessedDataCollector - 60초 완료, 수집 종료');
           this.complete();
         }
         
       } catch (error) {
-        console.error('Error collecting data point:', error);
+        console.error('❌ ProcessedDataCollector - Error collecting data point:', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : 'No stack',
+          dataPointIndex,
+          isCollecting: this.isCollecting
+        });
         if (this.onError) {
           this.onError(error as Error);
         }
       }
     }, this.config.samplingInterval!);
+    
+    console.log('[DATACHECK] ✅ ProcessedDataCollector - Collection interval started');
   }
   
   /**
@@ -317,9 +334,24 @@ export class ProcessedDataCollector {
    * ProcessedDataStore와 AnalysisMetricsService에서 실제 데이터 가져옴
    */
   private getCurrentProcessedMetrics(): ProcessedMetrics {
-    // Store에서 현재 상태 가져오기
-    const storeState = useProcessedDataStore.getState();
-    const analysisMetrics = AnalysisMetricsService.getInstance();
+    try {
+      // Store에서 현재 상태 가져오기 (getState()는 Hook이 아니므로 안전)
+      const storeState = useProcessedDataStore.getState();
+      const analysisMetrics = AnalysisMetricsService.getInstance();
+      
+      // 🔍 Store 상태 디버깅
+      console.log('📊 ProcessedDataCollector - Store 상태 확인:', {
+        hasEEGAnalysis: !!storeState.eegAnalysis,
+        hasPPGAnalysis: !!storeState.ppgAnalysis,
+        hasACCAnalysis: !!storeState.accAnalysis,
+        eegAnalysisContent: storeState.eegAnalysis,
+        ppgAnalysisContent: storeState.ppgAnalysis,
+        accAnalysisContent: storeState.accAnalysis,
+        eegLastUpdated: storeState.eegAnalysis?.lastUpdated || 0,
+        ppgLastUpdated: storeState.ppgAnalysis?.lastUpdated || 0,
+        accLastUpdated: storeState.accAnalysis?.lastUpdated || 0,
+        currentTime: Date.now()
+      });
     
     // EEG 데이터
     const eegAnalysis = storeState.eegAnalysis;
@@ -337,65 +369,95 @@ export class ProcessedDataCollector {
     // 신호 품질
     const signalQuality = storeState.signalQuality;
     
-    return {
-      eeg: {
-        deltaPower: eegBandPowers.delta || 0.30,
-        thetaPower: eegBandPowers.theta || 0.31,
-        alphaPower: eegBandPowers.alpha || 0.43,
-        betaPower: eegBandPowers.beta || 0.49,
-        gammaPower: eegBandPowers.gamma || 0.16,
-        focusIndex: eegIndices.focusIndex || 75,
-        relaxationIndex: eegIndices.relaxationIndex || 70,
-        stressIndex: eegIndices.stressIndex || 30,
-        attentionLevel: eegIndices.attentionIndex || 72,
-        meditationLevel: eegIndices.meditationIndex || 68,
-        hemisphericBalance: eegIndices.hemisphericBalance || 0.95,
-        cognitiveLoad: eegIndices.cognitiveLoad || 55,
-        emotionalStability: eegIndices.emotionalStability || 90,
-        signalQuality: (signalQuality.eegQuality || 99) / 100,
-        artifactRatio: signalQuality.artifactDetection?.eyeBlink ? 0.1 : 0.01
-      },
-      ppg: {
-        heartRate: ppgIndices.heartRate || 72,
-        hrv: analysisMetrics.getCurrentRMSSD() || ppgIndices.rmssd || 45,
-        rmssd: analysisMetrics.getCurrentRMSSD() || ppgIndices.rmssd || 36,
-        pnn50: analysisMetrics.getCurrentPNN50() || ppgIndices.pnn50 || 19,
-        sdnn: analysisMetrics.getCurrentSDNN() || ppgIndices.sdnn || 42,
-        vlf: analysisMetrics.getCurrentVlfPower() || 120,
-        lf: analysisMetrics.getCurrentLfPower() || ppgIndices.lfPower || 890,
-        hf: analysisMetrics.getCurrentHfPower() || ppgIndices.hfPower || 560,
-        lfNorm: analysisMetrics.getCurrentLfNorm() || 61,
-        hfNorm: analysisMetrics.getCurrentHfNorm() || 39,
-        lfHfRatio: analysisMetrics.getCurrentLfHfRatio() || ppgIndices.lfHfRatio || 1.56,
-        totalPower: analysisMetrics.getCurrentTotalPower() || 1570,
-        stressLevel: analysisMetrics.getCurrentStressIndex() || ppgIndices.stressIndex || 35,
-        recoveryIndex: analysisMetrics.getCurrentRecoveryIndex() || 78,
-        autonomicBalance: analysisMetrics.getCurrentAutonomicBalance() || 0.77,
-        cardiacCoherence: analysisMetrics.getCurrentCardiacCoherence() || 75,
-        respiratoryRate: analysisMetrics.getCurrentRespiratoryRate() || 14,
-        oxygenSaturation: ppgIndices.spo2 || 97,
-        perfusionIndex: analysisMetrics.getCurrentPerfusionIndex() || 2.5,
-        vascularTone: analysisMetrics.getCurrentVascularTone() || 83,
-        systolicBP: analysisMetrics.getCurrentSystolicBP() || 120,
-        diastolicBP: analysisMetrics.getCurrentDiastolicBP() || 80,
-        cardiacEfficiency: analysisMetrics.getCurrentCardiacEfficiency() || 85,
-        metabolicRate: analysisMetrics.getCurrentMetabolicRate() || 1870,
-        signalQuality: (signalQuality.ppgQuality || 100) / 100,
-        motionArtifact: signalQuality.artifactDetection?.movement ? 0.1 : 0
-      },
-      acc: {
-        activityLevel: accIndices.activity || 1.2,
-        movementIntensity: accIndices.intensity || 0.1,
-        posture: (accIndices.activityState || 'SITTING').toUpperCase() as any,
-        posturalStability: (accIndices.stability || 84) / 100,
-        posturalTransitions: 0,
-        stepCount: 0,
-        stepRate: 0,
-        movementQuality: (accIndices.balance || 78) / 100,
-        energyExpenditure: 1.9,
-        signalQuality: 1.0
-      }
-    };
+      const processedMetrics = {
+        eeg: {
+          deltaPower: eegBandPowers.delta || 0.30,
+          thetaPower: eegBandPowers.theta || 0.31,
+          alphaPower: eegBandPowers.alpha || 0.43,
+          betaPower: eegBandPowers.beta || 0.49,
+          gammaPower: eegBandPowers.gamma || 0.16,
+          focusIndex: eegIndices.focusIndex || 75,
+          relaxationIndex: eegIndices.relaxationIndex || 70,
+          stressIndex: eegIndices.stressIndex || 30,
+          attentionLevel: eegIndices.attentionIndex || 72,
+          meditationLevel: eegIndices.meditationIndex || 68,
+          hemisphericBalance: eegIndices.hemisphericBalance || 0.95,
+          cognitiveLoad: eegIndices.cognitiveLoad || 55,
+          emotionalStability: eegIndices.emotionalStability || 90,
+          signalQuality: (signalQuality.eegQuality || 99) / 100,
+          artifactRatio: signalQuality.artifactDetection?.eyeBlink ? 0.1 : 0.01
+        },
+        ppg: {
+          heartRate: ppgIndices.heartRate || 72,
+          hrv: analysisMetrics.getCurrentRMSSD() || ppgIndices.rmssd || 45,
+          rmssd: analysisMetrics.getCurrentRMSSD() || ppgIndices.rmssd || 36,
+          pnn50: analysisMetrics.getCurrentPNN50() || ppgIndices.pnn50 || 19,
+          sdnn: analysisMetrics.getCurrentSDNN() || ppgIndices.sdnn || 42,
+          vlf: analysisMetrics.getCurrentVlfPower() || 120,
+          lf: analysisMetrics.getCurrentLfPower() || ppgIndices.lfPower || 890,
+          hf: analysisMetrics.getCurrentHfPower() || ppgIndices.hfPower || 560,
+          lfNorm: analysisMetrics.getCurrentLfNorm() || 61,
+          hfNorm: analysisMetrics.getCurrentHfNorm() || 39,
+          lfHfRatio: analysisMetrics.getCurrentLfHfRatio() || ppgIndices.lfHfRatio || 1.56,
+          totalPower: analysisMetrics.getCurrentTotalPower() || 1570,
+          stressLevel: analysisMetrics.getCurrentStressIndex() || ppgIndices.stressIndex || 35,
+          recoveryIndex: analysisMetrics.getCurrentRecoveryIndex() || 78,
+          autonomicBalance: analysisMetrics.getCurrentAutonomicBalance() || 0.77,
+          cardiacCoherence: analysisMetrics.getCurrentCardiacCoherence() || 75,
+          respiratoryRate: analysisMetrics.getCurrentRespiratoryRate() || 14,
+          oxygenSaturation: ppgIndices.spo2 || 97,
+          perfusionIndex: analysisMetrics.getCurrentPerfusionIndex() || 2.5,
+          vascularTone: analysisMetrics.getCurrentVascularTone() || 83,
+          systolicBP: analysisMetrics.getCurrentSystolicBP() || 120,
+          diastolicBP: analysisMetrics.getCurrentDiastolicBP() || 80,
+          cardiacEfficiency: analysisMetrics.getCurrentCardiacEfficiency() || 85,
+          metabolicRate: analysisMetrics.getCurrentMetabolicRate() || 1870,
+          signalQuality: (signalQuality.ppgQuality || 100) / 100,
+          motionArtifact: signalQuality.artifactDetection?.movement ? 0.1 : 0
+        },
+        acc: {
+          activityLevel: accIndices.activity || 1.2,
+          movementIntensity: accIndices.intensity || 0.1,
+          posture: (accIndices.activityState || 'SITTING').toUpperCase() as any,
+          posturalStability: (accIndices.stability || 84) / 100,
+          posturalTransitions: 0,
+          stepCount: 0,
+          stepRate: 0,
+          movementQuality: (accIndices.balance || 78) / 100,
+          energyExpenditure: 1.9,
+          signalQuality: 1.0
+        }
+      };
+      
+      console.log('📊 ProcessedDataCollector - 생성된 메트릭:', {
+        eegFocusIndex: processedMetrics.eeg.focusIndex,
+        ppgHeartRate: processedMetrics.ppg.heartRate,
+        accActivityLevel: processedMetrics.acc.activityLevel,
+        hasRealData: !!(eegAnalysis?.indices && ppgAnalysis?.indices && accAnalysis?.indices)
+      });
+      
+      return processedMetrics;
+    } catch (error) {
+      console.error('❌ ProcessedDataCollector - getCurrentProcessedMetrics 오류:', error);
+      // 에러 발생 시 기본값 반환
+      return {
+        eeg: {
+          deltaPower: 0.30, thetaPower: 0.31, alphaPower: 0.43, betaPower: 0.49, gammaPower: 0.16,
+          focusIndex: 75, relaxationIndex: 70, stressIndex: 30, attentionLevel: 72, meditationLevel: 68,
+          hemisphericBalance: 0.95, cognitiveLoad: 55, emotionalStability: 90, signalQuality: 0.99, artifactRatio: 0.01
+        },
+        ppg: {
+          heartRate: 72, hrv: 45, rmssd: 36, pnn50: 19, sdnn: 42, vlf: 120, lf: 890, hf: 560, lfNorm: 61, hfNorm: 39,
+          lfHfRatio: 1.56, totalPower: 1570, stressLevel: 35, recoveryIndex: 78, autonomicBalance: 0.77,
+          cardiacCoherence: 75, respiratoryRate: 14, oxygenSaturation: 97, perfusionIndex: 2.5, vascularTone: 83,
+          systolicBP: 120, diastolicBP: 80, cardiacEfficiency: 85, metabolicRate: 1870, signalQuality: 1.0, motionArtifact: 0
+        },
+        acc: {
+          activityLevel: 1.2, movementIntensity: 0.1, posture: 'SITTING', posturalStability: 0.84, posturalTransitions: 0,
+          stepCount: 0, stepRate: 0, movementQuality: 0.78, energyExpenditure: 1.9, signalQuality: 1.0
+        }
+      };
+    }
   }
   
   /**
