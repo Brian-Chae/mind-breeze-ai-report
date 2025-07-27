@@ -586,25 +586,79 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       let measurementSessions = [];
       
       try {
+        // 🔧 디버깅: 전체 측정 세션 조회
+        console.log('🔍 전체 측정 세션 조회 시작...');
+        const allSessions = await FirebaseService.getMeasurementSessions([]);
+        console.log(`📊 전체 측정 세션 수: ${allSessions.length}개`);
+        
+        if (allSessions.length > 0) {
+          console.log('첫 번째 세션 예시:', {
+            id: allSessions[0].id,
+            organizationId: allSessions[0].organizationId,
+            measuredByUserId: allSessions[0].measuredByUserId,
+            subjectName: allSessions[0].subjectName,
+            sessionDate: allSessions[0].sessionDate
+          });
+        }
+        
+        // 1. 조직 측정 세션 조회 (조직 ID가 있는 경우)
         if (currentContext.organization) {
-          // 1. 조직 측정 세션 조회
           const orgFilters = [
             FirebaseService.createWhereFilter('organizationId', '==', currentContext.organization.id)
           ]
           const orgSessions = await FirebaseService.getMeasurementSessions(orgFilters)
+          console.log(`📊 조직 측정 세션 조회 완료: ${orgSessions.length}개`);
           measurementSessions.push(...orgSessions);
         }
         
-        // 2. 모든 측정 세션을 조회한 후 organizationId가 없는 것들 필터링
-        // (AI Health Report 등에서 생성된 개인 측정 데이터)
-        const allSessions = await FirebaseService.getMeasurementSessions([])
-        const personalSessions = allSessions.filter((session: any) => !session.organizationId);
-        measurementSessions.push(...personalSessions);
+        // 2. 현재 사용자의 개인 측정 세션 조회
+        const currentUser = FirebaseService.auth.currentUser;
+        if (currentUser) {
+          try {
+            // 현재 사용자가 측정한 데이터 조회
+            const userFilters = [
+              FirebaseService.createWhereFilter('measuredByUserId', '==', currentUser.uid)
+            ]
+            const userSessions = await FirebaseService.getMeasurementSessions(userFilters);
+            console.log('현재 사용자 UID:', currentUser.uid);
+            console.log('사용자의 전체 측정 세션:', userSessions.length);
+            
+            // organizationId가 없는 개인 세션만 필터링
+            const personalSessions = userSessions.filter((session: any) => !session.organizationId);
+            console.log(`👤 개인 측정 세션 조회 완료: ${personalSessions.length}개`);
+            
+            // 디버깅을 위해 첫 번째 세션 정보 출력
+            if (userSessions.length > 0) {
+              console.log('첫 번째 세션 정보:', {
+                id: userSessions[0].id,
+                organizationId: userSessions[0].organizationId,
+                measuredByUserId: userSessions[0].measuredByUserId,
+                subjectName: userSessions[0].subjectName
+              });
+            }
+            
+            measurementSessions.push(...personalSessions);
+          } catch (userQueryError) {
+            console.error('개인 측정 세션 조회 실패:', userQueryError);
+          }
+        } else {
+          console.log('⚠️ 현재 로그인한 사용자가 없습니다.');
+        }
         
       } catch (queryError) {
-        // 실패 시 모든 세션 조회로 폴백
-        measurementSessions = await FirebaseService.getMeasurementSessions([])
+        console.error('측정 세션 조회 중 오류:', queryError);
+        // 실패 시 빈 배열로 진행
+        measurementSessions = [];
       }
+      
+      // 중복 제거 (같은 ID를 가진 세션이 여러 개 있을 수 있음)
+      const uniqueSessions = new Map();
+      measurementSessions.forEach(session => {
+        uniqueSessions.set(session.id, session);
+      });
+      measurementSessions = Array.from(uniqueSessions.values());
+      
+      console.log(`🔍 중복 제거 후 총 측정 세션: ${measurementSessions.length}개`);
       
       // 클라이언트에서 sessionDate로 정렬 (최신순)
       measurementSessions.sort((a, b) => {
@@ -769,9 +823,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       
       setMeasurementDataList(measurementDataWithReports)
       
-      // 상세 로깅: 각 측정 데이터의 리포트 개수 확인
-      measurementDataWithReports.forEach(data => {
-      })
+      // 상세 로깅: 전체 측정 데이터 개수 확인
+      console.log(`✅ 측정 데이터 로드 완료: 총 ${measurementDataWithReports.length}개`);
+      console.log('측정 데이터 목록:', measurementDataWithReports.map(data => ({
+        id: data.id,
+        userName: data.userName,
+        organizationId: data.organizationId,
+        timestamp: data.timestamp
+      })))
       
     } catch (error) {
       
