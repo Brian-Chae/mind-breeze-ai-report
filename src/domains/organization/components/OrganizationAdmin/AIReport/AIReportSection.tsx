@@ -770,7 +770,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         return
       }
       
-      console.log('✅ 측정 데이터 찾음:', measurementData);
+      console.log('[DATACHECK] ✅ 측정 데이터 찾음:', {
+        dataId: measurementData.id,
+        dataKeys: Object.keys(measurementData),
+        hasProcessedTimeSeries: !!measurementData.processedTimeSeries,
+        sessionDate: measurementData.sessionDate,
+        userName: measurementData.userName
+      });
       
       // 추가 상세 정보가 필요한 경우 MeasurementDataService에서 가져오기
       const measurementDataService = new MeasurementDataService()
@@ -778,8 +784,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       
       try {
         // dataId는 실제로 세션 ID이므로, 세션에 연결된 측정 데이터를 가져와야 함
-        console.log('📊 세션 ID로 측정 데이터 조회 시작:', dataId);
+        console.log('[DATACHECK] 📊 세션 ID로 측정 데이터 조회 시작:', dataId);
         const sessionMeasurementData = await measurementDataService.getSessionMeasurementData(dataId)
+        console.log('[DATACHECK] 📊 세션 측정 데이터 조회 결과:', {
+          sessionId: dataId,
+          foundCount: sessionMeasurementData?.length || 0,
+          hasData: !!sessionMeasurementData && sessionMeasurementData.length > 0
+        });
         
         if (sessionMeasurementData && sessionMeasurementData.length > 0) {
           // 가장 최신 측정 데이터 사용
@@ -790,7 +801,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             hasPpgMetrics: !!actualMeasurementData.ppgMetrics,
             hasProcessedTimeSeries: !!actualMeasurementData.processedTimeSeries,
             processedTimeSeriesKeys: actualMeasurementData.processedTimeSeries ? Object.keys(actualMeasurementData.processedTimeSeries) : [],
-            eegTimeSeriesLength: actualMeasurementData.processedTimeSeries?.eeg?.timestamps?.length || 0
+            eegTimeSeriesLength: actualMeasurementData.processedTimeSeries?.eeg?.timestamps?.length || 0,
+            rawDataKeys: Object.keys(actualMeasurementData),
+            rawDataSample: JSON.stringify(actualMeasurementData).substring(0, 500) + '...'
           });
           
           // processedTimeSeries를 우선적으로 보존하면서 데이터 병합
@@ -803,7 +816,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             } : {})
           }
         } else {
-          console.warn('⚠️ 세션에 연결된 측정 데이터가 없습니다');
+          console.warn('[DATACHECK] ⚠️ 세션에 연결된 측정 데이터가 없습니다:', {
+            sessionId: dataId,
+            searchResult: sessionMeasurementData,
+            usingBaseMeasurementData: true
+          });
           // 세션 데이터만 사용
           detailedData = measurementData
         }
