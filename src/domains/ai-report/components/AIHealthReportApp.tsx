@@ -547,23 +547,40 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         }); 
 
         const measurementId = await measurementDataService.saveMeasurementData(detailedMeasurementData);
-        console.log('측정 데이터 저장 성공', {
-          metadata: { 
-            measurementId,
-            sessionId 
-          }
+        console.log('[DATACHECK] 📊 측정 데이터 저장 성공:', {
+          measurementId,
+          sessionId,
+          savedSessionId: detailedMeasurementData.sessionId,
+          hasProcessedTimeSeries: !!detailedMeasurementData.processedTimeSeries,
+          processedTimeSeriesKeys: detailedMeasurementData.processedTimeSeries ? Object.keys(detailedMeasurementData.processedTimeSeries) : []
         });
         
         // 🆕 저장된 ID들 상태에 저장
         setSavedMeasurementId(measurementId);
         setSavedSessionId(sessionId);
         
+        // 🔍 저장 검증: 방금 저장한 데이터를 바로 조회해보기
+        try {
+          console.log('[DATACHECK] 🔍 저장 검증 시작 - 방금 저장한 데이터 조회');
+          const verificationData = await measurementDataService.getSessionMeasurementData(sessionId);
+          console.log('[DATACHECK] 🔍 저장 검증 결과:', {
+            sessionId: sessionId,
+            foundCount: verificationData?.length || 0,
+            hasProcessedTimeSeries: verificationData?.[0]?.processedTimeSeries ? true : false,
+            verificationSuccessful: verificationData && verificationData.length > 0
+          });
+        } catch (verificationError) {
+          console.error('[DATACHECK] ❌ 저장 검증 실패:', verificationError);
+        }
+        
  
         
       } catch (detailError) {
-        console.error('세션 세부 정보 저장 중 오류:', {
+        console.error('[DATACHECK] ❌ 측정 데이터 저장 중 오류:', {
           errorMessage: detailError instanceof Error ? detailError.message : String(detailError),
-          errorStack: detailError instanceof Error ? detailError.stack : 'No stack'
+          errorStack: detailError instanceof Error ? detailError.stack : 'No stack',
+          sessionId: sessionId,
+          hasProcessedTimeSeries: !!detailedMeasurementData.processedTimeSeries
         });
         // 세션은 저장되었으므로 계속 진행
       }
