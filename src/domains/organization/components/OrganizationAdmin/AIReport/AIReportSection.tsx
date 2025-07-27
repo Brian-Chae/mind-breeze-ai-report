@@ -601,6 +601,20 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           });
         }
         
+        // 🔧 임시로 모든 세션을 추가 (개발/디버깅용)
+        // 조직 ID가 없거나 현재 조직과 일치하는 세션만 필터링
+        const currentOrgId = currentContext.organization?.id;
+        const filteredSessions = allSessions.filter((session: any) => {
+          // 조직 ID가 없는 개인 세션이거나
+          // 현재 조직 ID와 일치하는 세션만 포함
+          return !session.organizationId || session.organizationId === currentOrgId;
+        });
+        
+        console.log(`🔍 필터링된 세션 수: ${filteredSessions.length}개`);
+        measurementSessions.push(...filteredSessions);
+        
+        // 🔧 아래 코드는 이미 위에서 필터링된 세션을 추가했으므로 주석 처리
+        /*
         // 1. 조직 측정 세션 조회 (조직 ID가 있는 경우)
         if (currentContext.organization) {
           const orgFilters = [
@@ -612,9 +626,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         }
         
         // 2. 현재 사용자의 개인 측정 세션 조회
-        const currentUser = FirebaseService.auth.currentUser;
-        if (currentUser) {
-          try {
+        try {
+          // Firebase auth 직접 import 사용
+          const { auth } = await import('@core/services/firebase');
+          const currentUser = auth.currentUser;
+          if (currentUser) {
             // 현재 사용자가 측정한 데이터 조회
             const userFilters = [
               FirebaseService.createWhereFilter('measuredByUserId', '==', currentUser.uid)
@@ -638,12 +654,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             }
             
             measurementSessions.push(...personalSessions);
-          } catch (userQueryError) {
-            console.error('개인 측정 세션 조회 실패:', userQueryError);
+          } else {
+            console.log('⚠️ 현재 로그인한 사용자가 없습니다.');
           }
-        } else {
-          console.log('⚠️ 현재 로그인한 사용자가 없습니다.');
+        } catch (authError) {
+          console.error('사용자 인증 확인 중 오류:', authError);
         }
+        */
         
       } catch (queryError) {
         console.error('측정 세션 조회 중 오류:', queryError);
