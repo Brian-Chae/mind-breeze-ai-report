@@ -432,21 +432,27 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
             setIsMeasuring(false);
             
             // 🆕 측정 완료 시 데이터 수집기 정지
+            let collectedTimeSeriesData = null;
             if (dataCollector) {
               console.log('[DATACHECK] 📊 측정 완료 - 데이터 수집기 정지');
               if (dataCollector.isCollectingData()) {
                 dataCollector.stop();
               }
-              const finalData = dataCollector.getCollectedData();
+              collectedTimeSeriesData = dataCollector.getCollectedData();
               console.log('[DATACHECK] 📊 최종 수집된 데이터:', {
-                hasData: !!finalData,
-                dataPoints: finalData?.eeg?.timestamps?.length || 0
+                hasData: !!collectedTimeSeriesData,
+                dataPoints: collectedTimeSeriesData?.eeg?.timestamps?.length || 0
               });
             }
             
             // 측정 완료 시 데이터 수집하고 분석 단계로 이동
             if (onMeasurementComplete) {
               const measurementData = collectMeasurementData();
+              // 수집된 시계열 데이터를 measurementData에 추가
+              if (collectedTimeSeriesData) {
+                (measurementData as any).collectedTimeSeriesData = collectedTimeSeriesData;
+                console.log('[DATACHECK] 📊 시계열 데이터를 measurementData에 추가완료');
+              }
               onMeasurementComplete(measurementData);
             } else {
               // 폴백: onMeasurementComplete가 없으면 기존 방식

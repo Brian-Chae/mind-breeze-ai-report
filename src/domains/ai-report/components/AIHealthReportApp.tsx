@@ -308,13 +308,21 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         }
       }); 
 
-      // 🆕 시계열 데이터 수집 (데이터 수집기가 있는 경우)
+      // 🆕 시계열 데이터 수집 (DataQualityScreen에서 전달된 데이터 우선 확인)
       console.log('[DATACHECK] 🔍 시계열 데이터 수집 상태 확인:', {
         hasDataCollector: !!dataCollector,
-        isCollecting: dataCollector ? dataCollector.isCollectingData() : false
+        isCollecting: dataCollector ? dataCollector.isCollectingData() : false,
+        hasCollectedDataInMeasurement: !!(measurementData as any).collectedTimeSeriesData
       });
       
-      if (dataCollector && dataCollector.isCollectingData()) {
+      // DataQualityScreen에서 전달된 데이터 우선 사용
+      if ((measurementData as any).collectedTimeSeriesData) {
+        collectedTimeSeriesData = (measurementData as any).collectedTimeSeriesData;
+        console.log('[DATACHECK] ✅ DataQualityScreen에서 전달된 시계열 데이터 사용:', {
+          dataPoints: collectedTimeSeriesData?.eeg?.timestamps?.length || 0,
+          duration: collectedTimeSeriesData?.duration || 0
+        });
+      } else if (dataCollector && dataCollector.isCollectingData()) {
         console.log('[DATACHECK] 📊 시계열 데이터 수집 중...');
         dataCollector.stop();
         collectedTimeSeriesData = dataCollector.getCollectedData();

@@ -66,16 +66,28 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
   return (
     <div className="space-y-4">
       {/* 디버그 정보 */}
-      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs">
-        <strong>디버그 정보:</strong> 
-        processedTimeSeries: {data.processedTimeSeries ? '있음' : '없음'}, 
-        timeSeriesData: {data.timeSeriesData ? '있음' : '없음'},
+      <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-xs">
+        <strong className="text-gray-700">디버그 정보:</strong> 
+        <span className={data.processedTimeSeries ? 'text-green-600' : 'text-red-600'}>
+          processedTimeSeries: {data.processedTimeSeries ? '있음' : '없음'}
+        </span>
         {data.processedTimeSeries && (
-          <>
-            {' '}EEG 타임스탬프: {data.processedTimeSeries.eeg?.timestamps?.length || 0}개,
-            {' '}PPG 심박수: {data.processedTimeSeries.ppg?.heartRate?.length || 0}개,
-            {' '}ACC 활동: {data.processedTimeSeries.acc?.activityLevel?.length || 0}개
-          </>
+          <span className="text-green-600">
+            {' '}(EEG: {data.processedTimeSeries.eeg?.timestamps?.length || 0}개,
+            {' '}PPG: {data.processedTimeSeries.ppg?.heartRate?.length || 0}개,
+            {' '}ACC: {data.processedTimeSeries.acc?.activityLevel?.length || 0}개)
+          </span>
+        )}
+        <span className="text-gray-500 ml-2">
+          | 데이터 타입: {typeof data}, 키 개수: {Object.keys(data).length}
+        </span>
+        <div className="mt-2 text-xs text-gray-600">
+          <strong>전체 키 목록:</strong> {Object.keys(data).join(', ')}
+        </div>
+        {Object.keys(data).includes('processedTimeSeries') && (
+          <div className="mt-1 text-xs text-orange-600">
+            <strong>processedTimeSeries 내용:</strong> {JSON.stringify(data.processedTimeSeries, null, 2).substring(0, 200)}...
+          </div>
         )}
       </div>
       
@@ -772,7 +784,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         if (sessionMeasurementData && sessionMeasurementData.length > 0) {
           // 가장 최신 측정 데이터 사용
           const actualMeasurementData = sessionMeasurementData[0]
-          console.log('✅ 측정 데이터 조회 성공:', {
+          console.log('[DATACHECK] ✅ 측정 데이터 조회 성공:', {
             measurementId: actualMeasurementData.id,
             hasEegMetrics: !!actualMeasurementData.eegMetrics,
             hasPpgMetrics: !!actualMeasurementData.ppgMetrics,
@@ -780,7 +792,16 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             processedTimeSeriesKeys: actualMeasurementData.processedTimeSeries ? Object.keys(actualMeasurementData.processedTimeSeries) : [],
             eegTimeSeriesLength: actualMeasurementData.processedTimeSeries?.eeg?.timestamps?.length || 0
           });
-          detailedData = { ...measurementData, ...actualMeasurementData }
+          
+          // processedTimeSeries를 우선적으로 보존하면서 데이터 병합
+          detailedData = { 
+            ...measurementData, 
+            ...actualMeasurementData,
+            // processedTimeSeries가 있으면 반드시 보존
+            ...(actualMeasurementData.processedTimeSeries ? { 
+              processedTimeSeries: actualMeasurementData.processedTimeSeries 
+            } : {})
+          }
         } else {
           console.warn('⚠️ 세션에 연결된 측정 데이터가 없습니다');
           // 세션 데이터만 사용
@@ -793,13 +814,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       
       // ✅ Firestore에만 의존하므로 Storage 관련 코드 제거
       // processedTimeSeries 데이터는 이미 detailedData에 포함되어 있음
-      console.log('[DATACHECK] 📊 최종 데이터 확인:', {
+      console.log('[DATACHECK] 📊 최종 데이터 확인 (모달 전송 직전):', {
         hasEegMetrics: !!detailedData.eegMetrics,
         hasPpgMetrics: !!detailedData.ppgMetrics,
         hasProcessedTimeSeries: !!detailedData.processedTimeSeries,
         processedTimeSeriesKeys: detailedData.processedTimeSeries ? Object.keys(detailedData.processedTimeSeries) : [],
         eegTimeSeriesLength: detailedData.processedTimeSeries?.eeg?.timestamps?.length || 0,
-        dataSource: 'Firestore'
+        dataSource: 'Firestore',
+        allDataKeys: Object.keys(detailedData)
       });
       
       // 모달 열기
