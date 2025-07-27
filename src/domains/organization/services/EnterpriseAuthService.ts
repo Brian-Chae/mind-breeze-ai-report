@@ -238,6 +238,26 @@ class EnterpriseAuthService extends BaseService {
         if (user.userType === UserType.ORGANIZATION_MEMBER) {
           memberInfo = await this.loadOrganizationMember(user.id, user.organizationId);
         }
+      } else if (user.userType === UserType.ORGANIZATION_ADMIN) {
+        // 조직 관리자인데 organizationId가 없는 경우, adminUserId로 조직 찾기
+        console.log('🔍 조직 관리자의 조직 찾는 중:', user.id);
+        const orgsQuery = query(collection(db, 'organizations'), where('adminUserId', '==', user.id));
+        const orgsSnapshot = await getDocs(orgsQuery);
+        
+        if (!orgsSnapshot.empty) {
+          const orgDoc = orgsSnapshot.docs[0];
+          organization = {
+            id: orgDoc.id,
+            ...orgDoc.data()
+          } as Organization;
+          console.log('✅ 조직 찾음:', organization.id, organization.name);
+          
+          // 사용자 프로필에 organizationId 업데이트
+          await updateDoc(doc(db, 'users', user.id), {
+            organizationId: organization.id,
+            updatedAt: Timestamp.now()
+          });
+        }
       }
 
       const permissions = this.calculatePermissions(user, organization);

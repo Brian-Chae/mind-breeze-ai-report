@@ -714,7 +714,7 @@ export default function DeviceManagementContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-700">정상 반납</p>
-                  <p className="text-2xl font-bold text-green-900">{rentalStats.totalContracts - rentalStats.overdueRentals}</p>
+                  <p className="text-2xl font-bold text-green-900">{(rentalStats.totalContracts || 0) - (rentalStats.overdueRentals || 0)}</p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>

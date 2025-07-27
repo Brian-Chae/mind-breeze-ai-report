@@ -108,9 +108,9 @@ export default function SystemAnalyticsPanel({ systemStats }: SystemAnalyticsPan
     return `${minutes}분 ${remainingSeconds}초`
   }
 
-  const filteredOrganizations = organizationComparison.filter(org =>
+  const filteredOrganizations = organizationComparison ? organizationComparison.filter(org =>
     org.organizationName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  ) : []
 
   if (loading) {
     return (

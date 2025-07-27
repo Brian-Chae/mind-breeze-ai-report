@@ -320,7 +320,7 @@ export default function AIReportHero({ onReportGenerated, onExport, onRefresh }:
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white mb-1">
-                  AI 리포트
+                  AI 정신건강 리포트
                 </h1>
                 <p className="text-blue-100 text-lg mb-2">
                   {organizationName}의 AI 건강 분석 리포트를 생성하고 관리하세요

@@ -13,6 +13,7 @@ import {
   orderBy, 
   limit, 
   getDocs,
+  updateDoc,
   Timestamp
 } from 'firebase/firestore';
 import { BaseService } from '../../../core/services/BaseService';
@@ -377,5 +378,40 @@ export class MeasurementDataService extends BaseService {
     }
     
     return issues;
+  }
+  
+  /**
+   * 측정 데이터 업데이트
+   */
+  async updateMeasurementData(
+    measurementId: string, 
+    updates: { 
+      timeSeriesDataId?: string;
+      hasTimeSeriesData?: boolean;
+      [key: string]: any;
+    }
+  ): Promise<void> {
+    try {
+      const updateData = {
+        ...updates,
+        updatedAt: Timestamp.now()
+      };
+      
+      await updateDoc(
+        doc(this.db, MeasurementDataService.COLLECTION_NAME, measurementId),
+        updateData
+      );
+      
+      console.log(`Measurement data updated: ${measurementId}`);
+    } catch (error: any) {
+      console.error('Failed to update measurement data:', error);
+      throw new AIReportErrorClass({
+        code: 'MEASUREMENT_DATA_UPDATE_FAILED',
+        message: `Failed to update measurement data: ${error.message}`,
+        stage: 'STORAGE',
+        details: { measurementId, updates },
+        retryable: true
+      });
+    }
   }
 } 

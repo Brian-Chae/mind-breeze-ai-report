@@ -24,7 +24,7 @@ export const organizationAdminMenuItems: UnifiedMenuItem[] = [
   },
   {
     id: 'ai-reports',
-    title: 'AI 리포트',
+    title: 'AI 정신건강 리포트',
     icon: Brain,
     path: '/org-admin/ai-reports',
     component: 'AIReportManagementContent',
@@ -93,7 +93,7 @@ export const organizationMemberMenuItems: UnifiedMenuItem[] = [
   },
   {
     id: 'ai-reports',
-    title: 'AI 리포트',
+    title: 'AI 정신건강 리포트',
     icon: Brain,
     path: '/org-admin/ai-reports',
     component: 'MemberAIReportContent',

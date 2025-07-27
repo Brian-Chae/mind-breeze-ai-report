@@ -202,7 +202,7 @@ const DeviceInventorySection: React.FC = () => {
     try {
       setLoading(true);
       const [inventoryResponse, inventoryStats] = await Promise.all([
-        deviceInventoryService.getAllInventory(),
+        deviceInventoryService.getDevices(),
         deviceInventoryService.getInventoryStats()
       ]);
 

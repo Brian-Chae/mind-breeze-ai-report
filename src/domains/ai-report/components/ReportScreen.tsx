@@ -36,8 +36,8 @@ export function ReportScreen({ analysisResult, onRestart, onClose }: ReportScree
   };
 
   const handleClose = () => {
-    // /admin/ai-report로 이동
-    navigate('/admin/ai-report');
+    // /org-admin/ai-reports로 이동
+    navigate('/org-admin/ai-reports');
   };
 
   return (

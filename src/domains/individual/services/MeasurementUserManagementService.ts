@@ -128,8 +128,8 @@ class MeasurementUserManagementService {
         displayName: data.displayName,
         age: data.age,
         gender: data.gender,
-        phone: data.phone,
-        address: data.address,
+        phone: data.phone || '',
+        address: data.address || '',
         
         organizationId: organization.id,
         createdByUserId: currentUser.id,

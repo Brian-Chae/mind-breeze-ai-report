@@ -124,6 +124,8 @@ export class BasicGeminiV1Engine implements IAIEngine {
     this.apiKey = apiKey || envApiKey || '';
     if (!this.apiKey) {
       console.warn('Gemini API key not provided. Engine will not function properly.');
+    } else {
+      console.log('✅ Gemini API key loaded:', this.apiKey.substring(0, 10) + '...');
     }
   }
 
@@ -566,6 +568,7 @@ ${measurementData.ppgMetrics ? `
    * Gemini API 호출
    */
   private async callGeminiAPI(prompt: string, options: AnalysisOptions): Promise<any> {
+    console.log('🌐 Gemini API 호출 시작');
     if (!this.apiKey) {
       throw new Error('Gemini API key가 설정되지 않았습니다.');
     }
@@ -596,10 +599,12 @@ ${measurementData.ppgMetrics ? `
     );
 
     if (!response.ok) {
+      console.error('❌ Gemini API 호출 실패:', response.status, response.statusText);
       throw new Error(`Gemini API 호출 실패: ${response.status} ${response.statusText}`);
     }
 
     const result = await response.json();
+    console.log('✅ Gemini API 응답 수신');
     return result;
   }
 

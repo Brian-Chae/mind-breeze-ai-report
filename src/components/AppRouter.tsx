@@ -167,12 +167,17 @@ const AppRouter = () => {
       return `/system-admin${adminSubPath}`;
     } else {
       // 조직 관리자/멤버용 경로로 변환
+      
+      // 특별한 케이스: /admin/ai-report -> /org-admin/ai-reports로 리다이렉트
+      if (adminSubPath === '/ai-report') {
+        return '/org-admin/ai-reports';
+      }
+      
       const orgPaths = [
         '/dashboard',
         '/organization',
         '/members', 
         '/users',
-        '/ai-report',
         '/ai-reports',
         '/devices',
         '/credits'

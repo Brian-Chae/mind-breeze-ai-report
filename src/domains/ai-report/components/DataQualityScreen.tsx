@@ -26,15 +26,20 @@ import { AnalysisMetricsService } from '../services/AnalysisMetricsService';
 // 🔧 올바른 타입 사용
 import type { AggregatedMeasurementData } from '../types';
 
+// 🆕 시계열 데이터 수집기 import
+import { ProcessedDataCollector } from '../services/ProcessedDataCollector';
+
 interface DataQualityScreenProps {
   onQualityConfirmed: () => void;
   onBack: () => void;
   onError: (error: string) => void;
   onModeChange?: (mode: 'quality' | 'measurement') => void;
   onMeasurementComplete?: (data: AggregatedMeasurementData) => void;
+  dataCollector?: ProcessedDataCollector | null;
+  onDataCollectorCreated?: (collector: ProcessedDataCollector) => void;
 }
 
-export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeChange, onMeasurementComplete }: DataQualityScreenProps) {
+export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeChange, onMeasurementComplete, dataCollector, onDataCollectorCreated }: DataQualityScreenProps) {
   const [qualityTimer, setQualityTimer] = useState(0);
   const [isMonitoring] = useState(true);
   
@@ -498,7 +503,13 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
 
     setMeasurementTimer(0);
     setIsMeasuring(true);
-  }, [isConnected, isGoodQuality, onError]);
+    
+    // 🆕 데이터 수집기 시작
+    if (dataCollector && !dataCollector.isCollectingData()) {
+      console.log('📊 시계열 데이터 수집 시작...');
+      dataCollector.start();
+    }
+  }, [isConnected, isGoodQuality, onError, dataCollector]);
 
   return (
     <div className="data-quality-screen p-4 flex flex-col">

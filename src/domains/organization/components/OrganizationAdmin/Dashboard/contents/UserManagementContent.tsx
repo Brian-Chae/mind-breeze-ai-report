@@ -102,28 +102,28 @@ export default function UserManagementContent({}: UserManagementContentProps) {
     // 검색 필터
     if (searchTerm) {
       filtered = filtered.filter(user => 
-        user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.organizationInfo?.organizationName.toLowerCase().includes(searchTerm.toLowerCase())
+        user.organization?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
     // 사용자 타입 필터
     if (filterUserType !== 'all') {
-      filtered = filtered.filter(user => user.userType === filterUserType)
+      filtered = filtered.filter(user => user.role === filterUserType)
     }
 
     // 상태 필터
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(user => user.systemInfo.status === filterStatus)
+      filtered = filtered.filter(user => user.status === filterStatus)
     }
 
     // 조직 필터
     if (filterOrganization !== 'all') {
       if (filterOrganization === 'individual') {
-        filtered = filtered.filter(user => !user.organizationInfo)
+        filtered = filtered.filter(user => !user.organization)
       } else {
-        filtered = filtered.filter(user => user.organizationInfo?.organizationId === filterOrganization)
+        filtered = filtered.filter(user => user.organization === filterOrganization)
       }
     }
 
@@ -198,8 +198,8 @@ export default function UserManagementContent({}: UserManagementContentProps) {
   const organizations = Array.from(
     new Set(
       users
-        .filter(user => user.organizationInfo)
-        .map(user => user.organizationInfo!.organizationId)
+        .filter(user => user.organization)
+        .map(user => user.organization)
     )
   ).map(orgId => {
     const user = users.find(u => u.organizationInfo?.organizationId === orgId)
@@ -393,34 +393,31 @@ export default function UserManagementContent({}: UserManagementContentProps) {
                   const activityLevel = getActivityLevel(user)
                   
                   return (
-                    <tr key={user.userId} className="hover:bg-slate-50 transition-colors">
+                    <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-10 h-10 bg-slate-100 rounded-full">
                             <User className="w-5 h-5 text-slate-600" />
                           </div>
                           <div>
-                            <div className="font-medium text-slate-900">{user.displayName}</div>
+                            <div className="font-medium text-slate-900">{user.name}</div>
                             <div className="text-sm text-slate-600">{user.email}</div>
-                            {user.profile.phoneNumber && (
-                              <div className="text-xs text-slate-500">{user.profile.phoneNumber}</div>
-                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUserTypeColor(user.userType)}`}>
-                          {getUserTypeText(user.userType)}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUserTypeColor(user.role)}`}>
+                          {getUserTypeText(user.role)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        {user.organizationInfo ? (
+                        {user.organization ? (
                           <div>
                             <div className="text-sm font-medium text-slate-900">
-                              {user.organizationInfo.organizationName}
+                              {user.organization}
                             </div>
                             <div className="text-xs text-slate-600">
-                              {user.organizationInfo.role}
+                              {user.role}
                             </div>
                           </div>
                         ) : (
@@ -429,12 +426,9 @@ export default function UserManagementContent({}: UserManagementContentProps) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.systemInfo.status)}`}>
-                            {getStatusText(user.systemInfo.status)}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status)}`}>
+                            {getStatusText(user.status)}
                           </span>
-                          {!user.profile.emailVerified && (
-                            <span className="text-xs text-amber-600">이메일 미인증</span>
-                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -442,9 +436,9 @@ export default function UserManagementContent({}: UserManagementContentProps) {
                           <span className={`text-sm font-medium ${activityLevel.color}`}>
                             {activityLevel.level}
                           </span>
-                          {user.profile.lastActiveAt && (
+                          {user.lastActive && (
                             <div className="text-xs text-slate-500">
-                              {formatDate(user.profile.lastActiveAt)}
+                              {formatDate(user.lastActive)}
                             </div>
                           )}
                         </div>
@@ -453,17 +447,17 @@ export default function UserManagementContent({}: UserManagementContentProps) {
                         <div className="text-sm">
                           <div className="flex items-center gap-2 text-slate-900">
                             <Activity className="w-3 h-3" />
-                            {user.activityStats.totalMeasurements}
+                            {user.activityStats?.totalMeasurements || 0}
                           </div>
                           <div className="flex items-center gap-2 text-slate-600">
                             <Award className="w-3 h-3" />
-                            {user.activityStats.totalReports}
+                            {user.activityStats?.totalReports || 0}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-slate-600">
-                          {formatDate(user.profile.registeredAt)}
+                          {formatDate(user.joinedAt)}
                         </div>
                       </td>
                       <td className="px-6 py-4">

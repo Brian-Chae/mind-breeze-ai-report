@@ -295,7 +295,8 @@ export const SystemDashboardContent: React.FC = () => {
     }
   }
 
-  const formatTimeAgo = (date: Date): string => {
+  const formatTimeAgo = (date: Date | undefined | null): string => {
+    if (!date) return '-'
     const minutes = Math.floor((Date.now() - date.getTime()) / (1000 * 60))
     if (minutes < 1) return '방금 전'
     if (minutes < 60) return `${minutes}분 전`

@@ -1631,6 +1631,433 @@ export class SystemAdminService extends BaseService {
       }
     });
   }
+
+  /**
+   * 판매 통계 조회
+   */
+  async getSalesStatistics(): Promise<SalesStatistics> {
+    return this.measureAndLog('getSalesStatistics', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          totalSales: 150,
+          monthlyRevenue: 45000000,
+          totalRevenue: 540000000,
+          averagePrice: 3600000,
+          topSellingProducts: [],
+          monthlySales: [],
+          organizationSales: []
+        };
+      } catch (error) {
+        console.error('판매 통계 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 판매 목록 조회
+   */
+  async getSalesListItems(
+    filters?: SalesSearchFilters,
+    pagination?: SalesPaginationOptions
+  ): Promise<SalesListItem[]> {
+    return this.measureAndLog('getSalesListItems', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return [];
+      } catch (error) {
+        console.error('판매 목록 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 리포트 관리 개요 조회
+   */
+  async getReportManagementOverview(): Promise<any> {
+    return this.measureAndLog('getReportManagementOverview', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          totalReports: 0,
+          todayReports: 0,
+          thisWeekReports: 0,
+          thisMonthReports: 0,
+          reportsByType: {},
+          reportsByOrganization: [],
+          averageProcessingTime: 0,
+          successRate: 0
+        };
+      } catch (error) {
+        console.error('리포트 관리 개요 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * AI 엔진 사용 통계 조회
+   */
+  async getEngineUsageStatistics(): Promise<any[]> {
+    return this.measureAndLog('getEngineUsageStatistics', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환 - 배열 형태로
+        return [
+          {
+            engineName: 'Gemini',
+            totalRequests: 0,
+            successRate: 100,
+            averageResponseTime: 0,
+            errorCount: 0,
+            usage: 0,
+            cost: 0
+          },
+          {
+            engineName: 'Claude',
+            totalRequests: 0,
+            successRate: 100,
+            averageResponseTime: 0,
+            errorCount: 0,
+            usage: 0,
+            cost: 0
+          },
+          {
+            engineName: 'GPT',
+            totalRequests: 0,
+            successRate: 100,
+            averageResponseTime: 0,
+            errorCount: 0,
+            usage: 0,
+            cost: 0
+          }
+        ];
+      } catch (error) {
+        console.error('엔진 사용 통계 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 최근 리포트 목록 조회
+   */
+  async getRecentReports(limit: number = 50): Promise<any[]> {
+    return this.measureAndLog('getRecentReports', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return [];
+      } catch (error) {
+        console.error('최근 리포트 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 측정 데이터 개요 조회
+   */
+  async getMeasurementDataOverview(): Promise<any> {
+    return this.measureAndLog('getMeasurementDataOverview', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          totalMeasurements: 0,
+          todayMeasurements: 0,
+          thisWeekMeasurements: 0,
+          thisMonthMeasurements: 0,
+          measurementsByType: {
+            eeg: 0,
+            ppg: 0,
+            combined: 0
+          },
+          measurementsByOrganization: [],
+          averageDuration: 0,
+          dataQuality: {
+            excellent: 0,
+            good: 0,
+            fair: 0,
+            poor: 0
+          }
+        };
+      } catch (error) {
+        console.error('측정 데이터 개요 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 모든 조직의 크레딧 정보 조회
+   */
+  async getAllOrganizationCredits(): Promise<OrganizationCreditInfo[]> {
+    return this.measureAndLog('getAllOrganizationCredits', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return [];
+      } catch (error) {
+        console.error('조직 크레딧 정보 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 사용량 분석 데이터 조회
+   */
+  async getUsageAnalytics(period: 'today' | 'week' | 'month' | 'year' = 'month'): Promise<UsageAnalytics> {
+    return this.measureAndLog('getUsageAnalytics', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          period,
+          measurements: {
+            total: 0,
+            successful: 0,
+            failed: 0,
+            averageDuration: 0,
+            byType: { eeg: 0, ppg: 0, combined: 0 },
+            byOrganization: [],
+            trend: []
+          },
+          reports: {
+            total: 0,
+            generated: 0,
+            downloaded: 0,
+            byType: {},
+            byOrganization: [],
+            trend: []
+          },
+          credits: {
+            total: 0,
+            totalUsed: 0,
+            totalRevenue: 0,
+            used: 0,
+            remaining: 0,
+            trend: []
+          },
+          organizations: {
+            active: 0,
+            total: 0,
+            byPlan: {},
+            bySize: {}
+          },
+          users: {
+            active: 0,
+            total: 0,
+            newRegistrations: 0,
+            churnRate: 0,
+            byRole: {},
+            byActivity: {}
+          },
+          performance: {
+            averageResponseTime: 250,
+            errorRate: 0.5,
+            systemLoad: 45,
+            peakUsageHour: 14
+          },
+          trends: {
+            userGrowth: 0,
+            usageGrowth: 0,
+            engagementTrend: 'stable'
+          }
+        };
+      } catch (error) {
+        console.error('사용량 분석 데이터 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 시스템 상태 조회
+   */
+  async getSystemHealth(): Promise<SystemHealth> {
+    return this.measureAndLog('getSystemHealth', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          status: 'healthy',
+          uptime: 86400, // 24 hours in seconds
+          services: {
+            database: 'up',
+            storage: 'up',
+            authentication: 'up',
+            aiEngine: 'up'
+          },
+          performance: {
+            cpuUsage: 45,
+            memoryUsage: 60,
+            diskUsage: 35,
+            networkLatency: 20
+          },
+          alerts: [],
+          lastCheck: new Date()
+        };
+      } catch (error) {
+        console.error('시스템 상태 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 최근 측정 세션 상세 정보 조회
+   */
+  async getRecentMeasurementSessionsDetails(): Promise<any[]> {
+    return this.measureAndLog('getRecentMeasurementSessionsDetails', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return [];
+      } catch (error) {
+        console.error('최근 측정 세션 상세 정보 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 시스템 설정 조회
+   */
+  async getSystemSettings(): Promise<any> {
+    return this.measureAndLog('getSystemSettings', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          creditSettings: {
+            defaultCredits: 100,
+            creditPrice: 1000,
+            minimumPurchase: 10,
+            maximumPurchase: 10000
+          },
+          planSettings: {
+            trial: { credits: 50, duration: 14 },
+            basic: { credits: 100, price: 50000 },
+            premium: { credits: 500, price: 200000 },
+            enterprise: { credits: 2000, price: 500000 }
+          },
+          systemLimits: {
+            maxOrganizations: 1000,
+            maxUsersPerOrganization: 100,
+            maxDevicesPerOrganization: 50
+          }
+        };
+      } catch (error) {
+        console.error('시스템 설정 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 조직 비교 분석 데이터 조회
+   */
+  async getOrganizationComparison(): Promise<any[]> {
+    return this.measureAndLog('getOrganizationComparison', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환 - 배열 형태로
+        return [];
+      } catch (error) {
+        console.error('조직 비교 분석 데이터 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 시스템 성능 메트릭 조회
+   */
+  async getPerformanceMetrics(): Promise<PerformanceMetrics> {
+    return this.measureAndLog('getPerformanceMetrics', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          timestamp: new Date(),
+          responseTime: {
+            average: 250,
+            p95: 450,
+            p99: 800
+          },
+          throughput: {
+            requestsPerSecond: 50,
+            reportsPerHour: 120,
+            measurementsPerHour: 300
+          },
+          errorRate: 0.5,
+          resourceUsage: {
+            cpu: 45,
+            memory: 60,
+            storage: 150
+          },
+          userMetrics: {
+            activeUsers: 85,
+            concurrentSessions: 25,
+            averageSessionDuration: 15
+          }
+        };
+      } catch (error) {
+        console.error('시스템 성능 메트릭 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 크레딧 트렌드 분석 조회
+   */
+  async getCreditTrendsAnalysis(): Promise<any> {
+    return this.measureAndLog('getCreditTrendsAnalysis', async () => {
+      this.validateSystemAdminAccess()
+      
+      try {
+        // 임시 데이터 반환
+        return {
+          monthlyTrends: [],
+          organizationTrends: [],
+          usagePatterns: {
+            peakHours: [],
+            peakDays: [],
+            seasonalTrends: []
+          },
+          predictions: {
+            nextMonthUsage: 0,
+            growthRate: 0,
+            recommendedPurchase: 0
+          }
+        };
+      } catch (error) {
+        console.error('크레딧 트렌드 분석 조회 중 오류:', error);
+        throw error;
+      }
+    });
+  }
 }
 
 export default new SystemAdminService();

@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
 import { Input } from '@ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ui/dropdown-menu'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ui/dialog'
 import { FirebaseService } from '@core/services/FirebaseService'
 import creditManagementService from '@domains/organization/services/CreditManagementService'
 import measurementUserManagementService from '@domains/individual/services/MeasurementUserManagementService'
 import measurementUserIntegrationService from '@domains/individual/services/MeasurementUserIntegrationService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
+import { processedDataStorageService } from '@domains/ai-report/services/ProcessedDataStorageService'
 import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
 import { useAIReportConfiguration } from '@domains/ai-report/hooks/useAvailableEnginesAndViewers'
 import { ReportViewerModal } from '@domains/ai-report/components'
@@ -25,6 +27,311 @@ interface AIReportSectionProps {
   subSection: string;
   onNavigate: (section: string, subSection?: string) => void;
 }
+
+// 측정 데이터 상세 보기 컴포넌트
+interface MeasurementDataDetailViewProps {
+  data: any;
+}
+
+const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ data }) => {
+  const formatValue = (value: any, decimals: number = 2) => {
+    if (typeof value === 'number') {
+      return value.toFixed(decimals);
+    }
+    return value?.toString() || 'N/A';
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    return d.toLocaleString('ko-KR');
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 기본 정보 */}
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border">
+        <h3 className="text-lg font-semibold mb-3 flex items-center text-gray-800">
+          <User className="w-5 h-5 mr-2 text-blue-600" />
+          기본 정보
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <span className="text-xs text-gray-500 block mb-1">사용자명</span>
+            <p className="font-semibold text-gray-900">{data.userName || data.subjectName || 'N/A'}</p>
+          </div>
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <span className="text-xs text-gray-500 block mb-1">측정일시</span>
+            <p className="font-semibold text-gray-900 text-sm">{formatDate(data.timestamp || data.measurementDate)}</p>
+          </div>
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <span className="text-xs text-gray-500 block mb-1">측정 시간</span>
+            <p className="font-semibold text-gray-900">{data.duration || 60}초</p>
+          </div>
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <span className="text-xs text-gray-500 block mb-1">전체 품질</span>
+            <p className="font-semibold text-green-600">{formatValue(data.overallQuality || data.dataQuality?.overallScore)}%</p>
+          </div>
+        </div>
+      </div>
+
+      {/* EEG 데이터 */}
+      {data.eegMetrics && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-blue-800">
+            <Brain className="w-5 h-5 mr-2 text-blue-600" />
+            EEG 뇌파 분석 결과
+          </h3>
+          
+          {/* 주요 지표 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="bg-white p-3 rounded-md shadow-sm border-l-4 border-blue-500">
+              <span className="text-xs text-gray-500 block mb-1">집중도</span>
+              <p className="font-bold text-blue-700 text-lg">{formatValue(data.eegMetrics.attentionIndex)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm border-l-4 border-green-500">
+              <span className="text-xs text-gray-500 block mb-1">명상도</span>
+              <p className="font-bold text-green-700 text-lg">{formatValue(data.eegMetrics.meditationIndex)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm border-l-4 border-red-500">
+              <span className="text-xs text-gray-500 block mb-1">스트레스 지수</span>
+              <p className="font-bold text-red-700 text-lg">{formatValue(data.eegMetrics.stressIndex)}</p>
+            </div>
+          </div>
+          
+          {/* 뇌파 파워 */}
+          <div className="bg-white p-3 rounded-md shadow-sm">
+            <h4 className="font-medium mb-3 text-gray-700">뇌파 파워 분석</h4>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="text-center">
+                <span className="text-xs text-gray-500 block mb-1">Delta</span>
+                <p className="font-semibold text-purple-600">{formatValue(data.eegMetrics.delta)}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-xs text-gray-500 block mb-1">Theta</span>
+                <p className="font-semibold text-blue-600">{formatValue(data.eegMetrics.theta)}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-xs text-gray-500 block mb-1">Alpha</span>
+                <p className="font-semibold text-green-600">{formatValue(data.eegMetrics.alpha)}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-xs text-gray-500 block mb-1">Beta</span>
+                <p className="font-semibold text-orange-600">{formatValue(data.eegMetrics.beta)}</p>
+              </div>
+              <div className="text-center">
+                <span className="text-xs text-gray-500 block mb-1">Gamma</span>
+                <p className="font-semibold text-red-600">{formatValue(data.eegMetrics.gamma)}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* 신호 품질 */}
+          <div className="mt-3 bg-white p-3 rounded-md shadow-sm">
+            <span className="text-xs text-gray-500 block mb-1">신호 품질</span>
+            <div className="flex items-center space-x-2">
+              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full" 
+                  style={{ width: `${Math.min(100, (data.eegMetrics.signalQuality || 0) * 100)}%` }}
+                ></div>
+              </div>
+              <p className="font-semibold text-green-600 text-sm">{formatValue((data.eegMetrics.signalQuality || 0) * 100)}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PPG 데이터 */}
+      {data.ppgMetrics && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg border border-red-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-red-800">
+            <Activity className="w-5 h-5 mr-2 text-red-600" />
+            PPG 심박 분석 결과
+          </h3>
+          
+          {/* 주요 심박 지표 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div className="bg-white p-4 rounded-md shadow-sm border-l-4 border-red-500">
+              <span className="text-xs text-gray-500 block mb-1">심박수</span>
+              <div className="flex items-end space-x-1">
+                <p className="font-bold text-red-700 text-2xl">{formatValue(data.ppgMetrics.heartRate)}</p>
+                <span className="text-sm text-gray-600 mb-1">BPM</span>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-md shadow-sm border-l-4 border-blue-500">
+              <span className="text-xs text-gray-500 block mb-1">심박 변이도 (HRV)</span>
+              <div className="flex items-end space-x-1">
+                <p className="font-bold text-blue-700 text-2xl">{formatValue(data.ppgMetrics.heartRateVariability)}</p>
+                <span className="text-sm text-gray-600 mb-1">ms</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* 추가 지표들 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">스트레스 점수</span>
+              <p className="font-semibold text-orange-600">{formatValue(data.ppgMetrics.stressScore)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">자율신경 균형</span>
+              <p className="font-semibold text-green-600">{formatValue(data.ppgMetrics.autonomicBalance)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">신호 품질</span>
+              <p className="font-semibold text-green-600">{formatValue((data.ppgMetrics.signalQuality || 0) * 100)}%</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">움직임 노이즈</span>
+              <p className="font-semibold text-red-600">{formatValue((data.ppgMetrics.motionArtifact || 0) * 100)}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ACC 데이터 */}
+      {data.accMetrics && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-green-800">
+            <Monitor className="w-5 h-5 mr-2 text-green-600" />
+            가속도계 분석 결과
+          </h3>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">활동 수준</span>
+              <p className="font-semibold text-green-600 text-lg">{formatValue(data.accMetrics.activityLevel)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">움직임 강도</span>
+              <p className="font-semibold text-blue-600 text-lg">{formatValue(data.accMetrics.movementIntensity)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">자세 안정성</span>
+              <p className="font-semibold text-purple-600 text-lg">{formatValue(data.accMetrics.postureStability)}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">자세</span>
+              <p className="font-semibold text-gray-700">{data.accMetrics.posture || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 시계열 데이터 요약 */}
+      {data.timeSeriesData && (
+        <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-purple-800">
+            <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
+            시계열 데이터 요약
+            <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-700">
+              1분간 연속 수집
+            </Badge>
+          </h3>
+          
+          {/* 데이터 기본 정보 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-purple-500">
+              <span className="text-xs text-gray-500 block mb-1">데이터 포인트</span>
+              <p className="font-bold text-purple-700 text-lg">{data.timeSeriesData.eeg?.focusIndex?.length || 0}</p>
+              <span className="text-xs text-gray-400">개</span>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-blue-500">
+              <span className="text-xs text-gray-500 block mb-1">측정 기간</span>
+              <p className="font-bold text-blue-700 text-lg">{data.timeSeriesData.duration || 0}</p>
+              <span className="text-xs text-gray-400">초</span>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-green-500">
+              <span className="text-xs text-gray-500 block mb-1">품질 점수</span>
+              <p className="font-bold text-green-700 text-lg">{formatValue(data.timeSeriesData.metadata?.qualityScore)}</p>
+              <span className="text-xs text-gray-400">%</span>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center border-l-4 border-gray-500">
+              <span className="text-xs text-gray-500 block mb-1">처리 버전</span>
+              <p className="font-semibold text-gray-700 text-sm">{data.timeSeriesData.metadata?.processingVersion || 'N/A'}</p>
+            </div>
+          </div>
+          
+          {/* HRV 주파수 영역 정보 */}
+          {data.timeSeriesData.ppg && (
+            <div className="bg-white p-4 rounded-md shadow-sm">
+              <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
+                <Activity className="w-4 h-4 mr-2 text-red-500" />
+                HRV 주파수 영역 분석 데이터
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center p-2 bg-red-50 rounded-md border">
+                  <span className="text-xs text-gray-600 block mb-1">VLF (Very Low Frequency)</span>
+                  <p className="font-semibold text-red-600">{data.timeSeriesData.ppg.vlf ? `${data.timeSeriesData.ppg.vlf.length}` : '0'}</p>
+                  <span className="text-xs text-gray-400">포인트</span>
+                </div>
+                <div className="text-center p-2 bg-orange-50 rounded-md border">
+                  <span className="text-xs text-gray-600 block mb-1">LF (Low Frequency)</span>
+                  <p className="font-semibold text-orange-600">{data.timeSeriesData.ppg.lf ? `${data.timeSeriesData.ppg.lf.length}` : '0'}</p>
+                  <span className="text-xs text-gray-400">포인트</span>
+                </div>
+                <div className="text-center p-2 bg-blue-50 rounded-md border">
+                  <span className="text-xs text-gray-600 block mb-1">HF (High Frequency)</span>
+                  <p className="font-semibold text-blue-600">{data.timeSeriesData.ppg.hf ? `${data.timeSeriesData.ppg.hf.length}` : '0'}</p>
+                  <span className="text-xs text-gray-400">포인트</span>
+                </div>
+                <div className="text-center p-2 bg-green-50 rounded-md border">
+                  <span className="text-xs text-gray-600 block mb-1">LF/HF 비율</span>
+                  <p className="font-semibold text-green-600">{data.timeSeriesData.ppg.lfHfRatio ? `${data.timeSeriesData.ppg.lfHfRatio.length}` : '0'}</p>
+                  <span className="text-xs text-gray-400">포인트</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 개인정보 */}
+      {data.personalInfo && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-lg border border-amber-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-amber-800">
+            <User className="w-5 h-5 mr-2 text-amber-600" />
+            개인 정보
+            <Badge variant="outline" className="ml-2 text-xs">
+              AI 분석 참고용
+            </Badge>
+          </h3>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">이름</span>
+              <p className="font-semibold text-gray-800">{data.personalInfo.name || 'N/A'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">나이</span>
+              <p className="font-semibold text-blue-600">{data.personalInfo.age || 'N/A'}<span className="text-xs text-gray-400 ml-1">세</span></p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">성별</span>
+              <p className="font-semibold text-purple-600">{data.personalInfo.gender || 'N/A'}</p>
+            </div>
+            <div className="bg-white p-3 rounded-md shadow-sm text-center">
+              <span className="text-xs text-gray-500 block mb-1">직업</span>
+              <p className="font-semibold text-green-600">{data.personalInfo.occupation || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 데이터가 없는 경우 메시지 */}
+      {!data.eegMetrics && !data.ppgMetrics && !data.accMetrics && !data.timeSeriesData && !data.personalInfo && (
+        <div className="text-center py-8">
+          <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-200">
+            <Activity className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <h3 className="text-lg font-medium text-gray-500 mb-2">측정 데이터가 없습니다</h3>
+            <p className="text-sm text-gray-400">해당 측정 세션의 상세 데이터를 찾을 수 없습니다.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface HealthReport {
   id: string;
@@ -61,8 +368,23 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all') // 기간 필터
   
   // AI Report 설정을 위한 organization ID
-  const currentContext = enterpriseAuthService.getCurrentContext()
+  const [currentContext, setCurrentContext] = useState(enterpriseAuthService.getCurrentContext())
   const organizationId = currentContext.organization?.id || ''
+  
+  // enterpriseAuthService의 상태 변경 감지
+  useEffect(() => {
+    const updateContext = () => {
+      const newContext = enterpriseAuthService.getCurrentContext()
+      console.log('🔄 Context 업데이트:', newContext)
+      setCurrentContext(newContext)
+    }
+    
+    // 초기 로드 및 주기적 체크
+    updateContext()
+    const interval = setInterval(updateContext, 500) // 0.5초마다 체크
+    
+    return () => clearInterval(interval)
+  }, [])
   
   // 렌더러 시스템 초기화
   useEffect(() => {
@@ -154,6 +476,17 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   // 이메일 복사 상태
   const [copiedEmails, setCopiedEmails] = useState<{[dataId: string]: boolean}>({})
   
+  // 측정 데이터 상세 보기 상태
+  const [measurementDetailModal, setMeasurementDetailModal] = useState<{
+    isOpen: boolean;
+    dataId: string;
+    data: any;
+  }>({
+    isOpen: false,
+    dataId: '',
+    data: null
+  })
+  
   // 이메일 복사 핸들러
   const handleEmailCopy = async (dataId: string, email: string) => {
     try {
@@ -166,14 +499,72 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     }
   }
   
+  // 측정 데이터 상세 보기 핸들러
+  const handleViewMeasurementData = async (dataId: string) => {
+    try {
+      // 현재 측정 데이터 목록에서 해당 데이터 찾기
+      const measurementData = measurementDataList.find(data => data.id === dataId)
+      if (!measurementData) {
+        setError('측정 데이터를 찾을 수 없습니다.')
+        return
+      }
+      
+      // 추가 상세 정보가 필요한 경우 MeasurementDataService에서 가져오기
+      const measurementDataService = new MeasurementDataService()
+      let detailedData = measurementData
+      
+      try {
+        const additionalData = await measurementDataService.getMeasurementData(dataId)
+        if (additionalData) {
+          detailedData = { ...measurementData, ...additionalData }
+        }
+      } catch (detailError) {
+        console.warn('추가 측정 데이터를 가져오는데 실패했습니다:', detailError)
+        // 기본 데이터로 계속 진행
+      }
+      
+      // 시계열 데이터 가져오기 (있는 경우)
+      let timeSeriesData = null
+      if (detailedData.timeSeriesDataId) {
+        try {
+          timeSeriesData = await processedDataStorageService.getProcessedTimeSeries(detailedData.timeSeriesDataId)
+          console.log('📊 시계열 데이터 로드 성공:', {
+            timeSeriesId: detailedData.timeSeriesDataId,
+            dataPoints: timeSeriesData?.eeg?.focusIndex?.length || 0,
+            duration: timeSeriesData?.duration || 0
+          })
+        } catch (timeSeriesError) {
+          console.warn('시계열 데이터를 가져오는데 실패했습니다:', timeSeriesError)
+          // 시계열 데이터 없이 계속 진행
+        }
+      }
+      
+      // 모달 열기
+      setMeasurementDetailModal({
+        isOpen: true,
+        dataId: dataId,
+        data: { ...detailedData, timeSeriesData }
+      })
+    } catch (error) {
+      console.error('측정 데이터 조회 오류:', error)
+      setError('측정 데이터를 불러오는데 실패했습니다.')
+    }
+  }
+  
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
   }
 
   useEffect(() => {
-    loadReportData()
-    loadMeasurementData()
+    // organizationId가 있을 때만 데이터 로드
+    if (organizationId) {
+      console.log('📋 데이터 로드 시작 - organizationId:', organizationId)
+      loadReportData()
+      loadMeasurementData()
+    } else {
+      console.log('⏳ organizationId 대기 중...')
+    }
     
     // Cleanup: 컴포넌트 unmount 시 모든 타이머 정리
     return () => {
@@ -183,7 +574,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         }
       })
     }
-  }, [])
+  }, [organizationId]) // organizationId가 변경될 때마다 재실행
 
   // 측정 데이터 로드
   const loadMeasurementData = async () => {
@@ -394,9 +785,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
   // 측정 데이터 기반 리포트 생성 핸들러
   const handleGenerateReportFromData = async (dataId: string, engineType: string) => {
+    console.log('🚀 AI 분석 생성 시작:', { dataId, engineType });
     
     // 중복 실행 방지
     if (generatingReports[dataId]?.isLoading) {
+      console.log('⚠️ 이미 실행 중인 분석이 있음:', dataId);
       return
     }
 
@@ -421,6 +814,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       setAnalysisTimers(prev => ({ ...prev, [dataId]: timer }))
 
       // 1. 측정 데이터 로드 (세션 ID를 통해 실제 측정 데이터 찾기)
+      console.log('📊 측정 데이터 로드 시작:', dataId);
       const measurementDataService = new MeasurementDataService()
       
       let measurementData = null
@@ -614,15 +1008,19 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       
 
       // 3. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
+      console.log('🤖 AI 엔진 초기화:', engineType);
       const aiEngine = new BasicGeminiV1Engine()
 
       // 4. 데이터 검증
+      console.log('✅ 데이터 검증 시작');
       const validation = await aiEngine.validate(aiAnalysisData)
       if (!validation.isValid) {
         throw new Error(`데이터 검증 실패: ${validation.errors.join(', ')}`)
       }
+      console.log('✅ 데이터 검증 성공');
 
       // 5. AI 분석 실행
+      console.log('🧠 AI 분석 실행 시작');
       const analysisOptions = {
         outputLanguage: 'ko' as const,
         analysisDepth: 'basic' as const,
@@ -630,9 +1028,19 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }
       
       const analysisResult = await aiEngine.analyze(aiAnalysisData, analysisOptions)
+      console.log('🧠 AI 분석 완료:', analysisResult.analysisId);
 
       // 5. 분석 결과 저장
-      const currentContext = enterpriseAuthService.getCurrentContext()
+      // 최신 context를 다시 가져옴
+      const latestContext = enterpriseAuthService.getCurrentContext()
+      console.log('📍 현재 컨텍스트:', latestContext);
+      
+      // organizationId가 없으면 오류 발생
+      if (!latestContext.organization?.id) {
+        console.error('❌ 조직 정보 없음. State currentContext:', currentContext);
+        console.error('❌ 조직 정보 없음. Latest context:', latestContext);
+        throw new Error('조직 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+      }
       
       // 🔥 MeasurementUser 찾기/생성
       let measurementUserId: string | null = null;
@@ -645,12 +1053,14 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
             gender: personalInfo.gender === 'female' ? 'FEMALE' as const : 'MALE' as const,
             birthDate: personalInfo.birthDate ? new Date(personalInfo.birthDate) : undefined,
             occupation: personalInfo.occupation,
-            department: sessionData.subjectDepartment
+            department: sessionData.subjectDepartment,
+            phone: personalInfo.phone || '',
+            address: personalInfo.address || ''
           };
           
           measurementUserId = await measurementUserIntegrationService.findOrCreateMeasurementUser(
             convertedPersonalInfo,
-            currentContext.organization?.id
+            latestContext.organization?.id
           );
         } catch (error) {
           // MeasurementUser 연결 실패해도 분석 결과는 저장
@@ -684,13 +1094,30 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         
         // 생성 정보
         createdAt: new Date(),
-        createdByUserId: currentContext.user?.id,
-        createdByUserName: currentContext.user?.displayName,
-        organizationId: currentContext.organization?.id
+        createdByUserId: latestContext.user?.id,
+        createdByUserName: latestContext.user?.displayName,
+        organizationId: latestContext.organization?.id
       }
 
       // Firestore에 분석 결과 저장
       const analysisId = await FirebaseService.addDocument('ai_analysis_results', analysisRecord)
+      
+      // 리포트 목록에도 추가 (UI에서 보이도록)
+      const reportData = {
+        userId: measurementUserId || latestContext.user?.id,
+        reportType: engineType,
+        title: `AI 건강 분석 리포트`,
+        status: 'completed',
+        organizationId: latestContext.organization?.id,
+        analysisId: analysisId,
+        personalInfo: personalInfo,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      
+      if (measurementUserId) {
+        await FirebaseService.saveHealthReport(measurementUserId, reportData)
+      }
 
       // 🔥 MeasurementUser의 reportIds 업데이트
       if (measurementUserId) {
@@ -702,11 +1129,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }
 
       // 6. 크레딧 차감
-      if (currentContext.organization && analysisResult.costUsed > 0) {
+      if (latestContext.organization && analysisResult.costUsed > 0) {
         try {
           await creditManagementService.useCredits({
-            userId: currentContext.user?.id || 'system',
-            organizationId: currentContext.organization.id,
+            userId: latestContext.user?.id || 'system',
+            organizationId: latestContext.organization.id,
             amount: analysisResult.costUsed,
             type: 'REPORT_USAGE',
             description: `AI 분석 (${aiEngine.name})`,
@@ -729,7 +1156,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       setError(null)
 
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'AI 분석 중 오류가 발생했습니다.')
+      console.error('❌ AI 분석 생성 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : 'AI 분석 중 오류가 발생했습니다.';
+      console.error('❌ 오류 메시지:', errorMessage);
+      setError(errorMessage);
     } finally {
       // 로딩 상태 종료 및 타이머 정리
       if (analysisTimers[dataId]) {
@@ -1301,8 +1731,19 @@ AI 건강 분석 리포트
       // 데이터 새로고침
       await loadReportData()
 
-      // AI Report 앱으로 이동
-      navigate('/ai-report')
+      // 리포트 뷰어 모달 표시 (Web Renderer 사용)
+      setSelectedReportForView({
+        id: analysisId,
+        engineId: aiEngine.id,
+        analysisResult: analysisResult,
+        personalInfo: personalInfo
+      })
+      setIsViewerModalOpen(true)
+      
+      // 데이터 새로고침 후 잠시 후 AI Reports 목록으로 이동
+      setTimeout(() => {
+        navigate('/org-admin/ai-reports')
+      }, 3000) // 3초 후 자동 이동
 
     } catch (error) {
       setError(error instanceof Error ? error.message : '리포트 생성에 실패했습니다.')
@@ -1334,7 +1775,7 @@ AI 건강 분석 리포트
   const renderReportGeneration = () => (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">AI 리포트 생성</h2>
+        <h2 className="text-2xl font-bold text-gray-900">AI 정신건강 리포트</h2>
           <Button 
             onClick={async () => {
               const validation = await validateConfiguration();
@@ -2157,23 +2598,33 @@ AI 건강 분석 리포트
                         {new Date(data.timestamp).toLocaleDateString('ko-KR')} {new Date(data.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                    <Button 
-                      className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
-                      disabled={generatingReports[data.id]?.isLoading || configLoading}
-                      onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}
-                    >
-                      {generatingReports[data.id]?.isLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          AI 분석 생성
-                        </>
-                      ) : (
-                        <>
-                          <Brain className="w-4 h-4 mr-2" />
-                          AI 분석 생성
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        onClick={() => handleViewMeasurementData(data.id)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        데이터 보기
+                      </Button>
+                      <Button 
+                        className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
+                        disabled={generatingReports[data.id]?.isLoading || configLoading}
+                        onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}
+                      >
+                        {generatingReports[data.id]?.isLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            AI 분석 생성
+                          </>
+                        ) : (
+                          <>
+                            <Brain className="w-4 h-4 mr-2" />
+                            AI 분석 생성
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2690,6 +3141,64 @@ AI 건강 분석 리포트
               >
                 {deleteConfirmModal.reportCount > 0 ? '모두 삭제' : '삭제'}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 측정 데이터 상세 보기 모달 */}
+      {measurementDetailModal.isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setMeasurementDetailModal({
+            isOpen: false,
+            dataId: '',
+            data: null
+          })}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="flex-shrink-0 p-6 pb-4 border-b bg-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Activity className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">측정 데이터 상세 정보</h2>
+                  {measurementDetailModal.data && (
+                    <Badge className="ml-2 bg-blue-100 text-blue-700 border-blue-200">
+                      {measurementDetailModal.data.userName || measurementDetailModal.data.subjectName || 'Unknown'}
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMeasurementDetailModal({
+                    isOpen: false,
+                    dataId: '',
+                    data: null
+                  })}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* 컨텐츠 */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+              {measurementDetailModal.data ? (
+                <MeasurementDataDetailView data={measurementDetailModal.data} />
+              ) : (
+                <div className="flex items-center justify-center h-40">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
+                    <p className="text-gray-500">데이터를 불러오는 중...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

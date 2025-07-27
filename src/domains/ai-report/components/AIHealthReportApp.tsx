@@ -22,6 +22,10 @@ import { auth, storage } from '../../../core/services/firebase';
 import { signInAnonymously } from 'firebase/auth';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
+// 🆕 시계열 데이터 수집을 위한 import
+import { ProcessedDataCollector } from '../services/ProcessedDataCollector';
+import { processedDataStorageService } from '../services/ProcessedDataStorageService';
+
 // 🔧 타입 정의 수정 (중복 제거)
 export type AIReportStep = 'personal-info' | 'device-connection' | 'data-quality' | 'measurement' | 'analysis' | 'report';
 
@@ -113,6 +117,11 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
     currentStep: 'personal-info',
     deviceStatus: { isConnected: false },
   });
+  
+  // 🆕 시계열 데이터 수집기
+  const [dataCollector, setDataCollector] = useState<ProcessedDataCollector | null>(null);
+  const [savedMeasurementId, setSavedMeasurementId] = useState<string | null>(null);
+  const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
 
   // URL에서 현재 단계 가져오기
   const getCurrentStepFromUrl = (): AIReportStep => {
@@ -172,8 +181,30 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         currentStep: 'measurement'
       }));
       // URL은 변경하지 않고 내부 상태만 변경
+      
+      // 🆕 측정 시작 시 데이터 수집기 초기화
+      if (!dataCollector) {
+        // 임시 세션 ID 생성 (나중에 실제 ID로 업데이트)
+        const tempSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        const tempMeasurementId = `measurement_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        
+        const collectorConfig = {
+          sessionId: tempSessionId,
+          measurementId: tempMeasurementId,
+          userId: auth.currentUser?.uid || 'anonymous',
+          organizationId: undefined // B2C에서는 undefined
+        };
+        
+        const newCollector = new ProcessedDataCollector(collectorConfig);
+        setDataCollector(newCollector);
+        
+        console.log('📊 ProcessedDataCollector 초기화 완료 (임시 ID)', {
+          sessionId: tempSessionId,
+          measurementId: tempMeasurementId
+        });
+      }
     }
-  }, [state.currentStep]);
+  }, [state.currentStep, dataCollector]);
 
   // 🔧 타입 호환성을 위한 데이터 변환 함수
   const convertToExpectedFormat = (measurementData: AggregatedMeasurementData) => {
@@ -247,7 +278,8 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             overallQuality: measurementData.overallQuality
           },
           authState: auth.currentUser ? '로그인됨' : '로그인되지 않음',
-          hasPersonalInfo: !!state.personalInfo
+          hasPersonalInfo: !!state.personalInfo,
+          hasDataCollector: !!dataCollector
         } 
       });
       
@@ -344,6 +376,25 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         return;
       }
 
+      // 🔧 현재 조직 컨텍스트 확인
+      let organizationId: string | null = null;
+      let organizationName: string | null = null;
+      
+      // 로컬 스토리지에서 조직 정보 확인
+      const enterpriseContext = localStorage.getItem('enterprise_context');
+      if (enterpriseContext) {
+        try {
+          const context = JSON.parse(enterpriseContext);
+          if (context.organization?.id) {
+            organizationId = context.organization.id;
+            organizationName = context.organization.name;
+            console.log('조직 컨텍스트 확인됨:', { organizationId, organizationName });
+          }
+        } catch (error) {
+          console.error('조직 컨텍스트 파싱 실패:', error);
+        }
+      }
+
       // 1. MeasurementSession 저장
       const sessionDataRaw = {
         // 🔧 실제 입력된 개인정보 사용
@@ -358,6 +409,10 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         measuredByUserId: currentUser.uid,
         measuredByUserName: currentUser.isAnonymous ? '익명 사용자' : (currentUser.displayName || currentUser.email),
         isAnonymousUser: currentUser.isAnonymous || false,
+        
+        // 🔧 조직 정보 추가
+        organizationId: organizationId,
+        organizationName: organizationName,
         
         // 세션 정보
         sessionDate: new Date(convertedData.measurementInfo?.startTime || Date.now()),
@@ -413,6 +468,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         const detailedMeasurementData = {
           sessionId: sessionId,
           userId: currentUser.uid,
+          organizationId: organizationId, // 🔧 조직 ID 추가
           measurementDate: new Date(convertedData.measurementInfo?.startTime || Date.now()),
           duration: convertedData.measurementInfo?.duration || 60,
           
@@ -505,7 +561,50 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             measurementId,
             sessionId 
           }
-        }); 
+        });
+        
+        // 🆕 저장된 ID들 상태에 저장
+        setSavedMeasurementId(measurementId);
+        setSavedSessionId(sessionId);
+        
+        // 🆕 시계열 데이터 저장 (데이터 수집기가 있는 경우)
+        if (dataCollector && dataCollector.isCollectingData()) {
+          console.log('📊 시계열 데이터 저장 시작...');
+          
+          // 데이터 수집 중지
+          dataCollector.stop();
+          
+          // 수집된 시계열 데이터 가져오기
+          const timeSeriesData = dataCollector.getCollectedData();
+          
+          if (timeSeriesData) {
+            try {
+              // measurementId와 sessionId 업데이트
+              timeSeriesData.measurementId = measurementId;
+              timeSeriesData.sessionId = sessionId;
+              
+              // 시계열 데이터 저장
+              const timeSeriesId = await processedDataStorageService.saveProcessedTimeSeries(timeSeriesData);
+              
+              console.log('✅ 시계열 데이터 저장 성공', {
+                timeSeriesId,
+                dataPoints: dataCollector.getDataPointCount(),
+                duration: timeSeriesData.duration,
+                qualityScore: timeSeriesData.metadata.qualityScore
+              });
+              
+              // 측정 데이터에 시계열 데이터 ID 추가
+              await measurementDataService.updateMeasurementData(measurementId, {
+                timeSeriesDataId: timeSeriesId,
+                hasTimeSeriesData: true
+              });
+              
+            } catch (timeSeriesError) {
+              console.error('❌ 시계열 데이터 저장 실패:', timeSeriesError);
+              // 시계열 데이터 저장 실패해도 측정은 계속 진행
+            }
+          }
+        } 
         
       } catch (detailError) {
         console.error('세션 세부 정보 저장 중 오류:', {
@@ -612,6 +711,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             onError={handleError}
             onModeChange={handleDataQualityModeChange}
             onMeasurementComplete={handleMeasurementComplete}
+            dataCollector={dataCollector}
           />
         );
         
@@ -625,6 +725,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
               onError={handleError}
               onModeChange={handleDataQualityModeChange}
               onMeasurementComplete={handleMeasurementComplete}
+              dataCollector={dataCollector}
             />
           );
         }
@@ -681,7 +782,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => navigate('/admin/ai-report')}
+                onClick={() => navigate('/org-admin/ai-reports')}
                 className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               >
                 <X className="w-5 h-5" />
