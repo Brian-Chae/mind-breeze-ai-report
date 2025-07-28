@@ -144,7 +144,7 @@ export class SystemStatsService extends BaseService {
       };
 
     } catch (error) {
-      Logger.error('SystemStatsService', '시스템 통계 조회 실패', 
+      Logger.error('SystemStatsService', '시스템 통계 조회 실패', error);
       throw error;
     }
   }
@@ -172,7 +172,7 @@ export class SystemStatsService extends BaseService {
       }));
 
     } catch (error) {
-      Logger.error('SystemStatsService', '시스템 활동 조회 실패', 
+      console.error('SystemStatsService - 시스템 활동 조회 실패:', error);
       throw error;
     }
   }
@@ -200,7 +200,7 @@ export class SystemStatsService extends BaseService {
       };
 
     } catch (error) {
-      Logger.error('SystemStatsService', '시스템 헬스 체크 실패', 
+      console.error('SystemStatsService - 시스템 헬스 체크 실패:', error);
       throw error;
     }
   }

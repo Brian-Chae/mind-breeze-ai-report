@@ -18,7 +18,8 @@ export function registerProductionEngines(): void {
     aiEngineRegistry.register(basicGeminiEngine);
 
     // EEG Advanced Gemini 엔진 등록
-    const eegAdvancedEngine = new EEGAdvancedGeminiEngine();
+    const apiKey = import.meta.env?.VITE_GOOGLE_GEMINI_API_KEY || '';
+    const eegAdvancedEngine = new EEGAdvancedGeminiEngine(apiKey);
     aiEngineRegistry.register(eegAdvancedEngine);
 
     console.log('✅ Production AI engines registered successfully');

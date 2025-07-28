@@ -51,3 +51,5 @@ export class ServiceRequestService extends BaseService {
   constructor() {
     super()
     this.deviceAllocationService = new DeviceAllocationService()
+  }
+}

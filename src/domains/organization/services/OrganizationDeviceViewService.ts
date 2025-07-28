@@ -100,3 +100,5 @@ export class OrganizationDeviceViewService extends BaseService {
     this.deviceSynchronizationService = new DeviceSynchronizationService()
     this.deviceAllocationService = new DeviceAllocationService()
     this.serviceRequestService = new ServiceRequestService()
+  }
+}

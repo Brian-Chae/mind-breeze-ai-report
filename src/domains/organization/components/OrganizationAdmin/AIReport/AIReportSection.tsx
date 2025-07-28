@@ -704,10 +704,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(focusStats.mean, 'Focus')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           Focus Index
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title={`Focus: ${getNormalRangeInfo('Focus')?.range || '1.8-2.4'}`}
-                          />
+                          <div title={`Focus: ${getNormalRangeInfo('Focus')?.range || '1.8-2.4'}`}>
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(focusStats.mean, 'Focus')}`}>
                           <ValueWithDataSource
@@ -732,10 +731,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(relaxStats.mean, 'Arousal')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           Relaxation Index
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title={`Arousal: ${getNormalRangeInfo('Arousal')?.range || '0.18-0.22'}`}
-                          />
+                          <div title={`Arousal: ${getNormalRangeInfo('Arousal')?.range || '0.18-0.22'}`}>
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(relaxStats.mean, 'Arousal')}`}>
                           <ValueWithDataSource
@@ -760,10 +758,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(stressStats.mean, 'Stress Index')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           Stress Index
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title={`Stress Index: ${getNormalRangeInfo('Stress Index')?.range || '2.8-4.0'}`}
-                          />
+                          <div title={`Stress Index: ${getNormalRangeInfo('Stress Index')?.range || '2.8-4.0'}`}>
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(stressStats.mean, 'Stress Index')}`}>
                           <ValueWithDataSource
@@ -957,10 +954,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(hrStats.mean, 'BPM')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           Heart Rate (BPM)
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title={`BPM: ${getNormalRangeInfo('BPM')?.range || '60-100'}`}
-                          />
+                          <div title={`BPM: ${getNormalRangeInfo('BPM')?.range || '60-100'}`}>
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hrStats.mean, 'BPM')}`}>
                           <ValueWithDataSource
@@ -1034,10 +1030,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(rmssdStats.mean, 'RMSSD')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           RMSSD (ms)
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title={`RMSSD: ${getNormalRangeInfo('RMSSD')?.range || '20-50 ms'}`}
-                          />
+                          <div title={`RMSSD: ${getNormalRangeInfo('RMSSD')?.range || '20-50 ms'}`}>
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(rmssdStats.mean, 'RMSSD')}`}>
                           <ValueWithDataSource
@@ -1062,10 +1057,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(pnn50Stats.mean, 'PNN50')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           PNN50 (%)
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title={`PNN50: ${getNormalRangeInfo('PNN50')?.range || '10-30%'}`}
-                          />
+                          <div title={`PNN50: ${getNormalRangeInfo('PNN50')?.range || '10-30%'}`}>
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(pnn50Stats.mean, 'PNN50')}`}>
                           <ValueWithDataSource
@@ -1090,10 +1084,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(sdnnStats.mean, 'SDNN')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           SDNN (ms)
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title="SDNN: Standard Deviation of NN intervals"
-                          />
+                          <div title="SDNN: Standard Deviation of NN intervals">
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(sdnnStats.mean, 'SDNN')}`}>
                           <ValueWithDataSource
@@ -1233,10 +1226,9 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                       <tr className={`hover:bg-gray-50 ${getValueBgColor(lfHfStats.mean, 'LF/HF')}`}>
                         <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
                           LF/HF Ratio
-                          <HelpCircle 
-                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
-                            title="LF/HF: 1.5-2.5 ideal balance"
-                          />
+                          <div title="LF/HF: 1.5-2.5 ideal balance">
+                            <HelpCircle className="w-3 h-3 ml-1 text-gray-400 cursor-help" />
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-center font-semibold ${getValueColor(lfHfStats.mean, 'LF/HF')}`}>
                           <ValueWithDataSource
@@ -2080,9 +2072,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         if (allSessions.length > 0) {
           console.log('첫 번째 세션 예시:', {
             id: allSessions[0].id,
-            organizationId: allSessions[0].organizationId,
-            measuredByUserId: allSessions[0].measuredByUserId,
-            subjectName: allSessions[0].subjectName,
             sessionDate: allSessions[0].sessionDate
           });
         }
@@ -2331,7 +2320,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       console.log('측정 데이터 목록:', measurementDataWithReports.map(data => ({
         id: data.id,
         userName: data.userName,
-        organizationId: data.organizationId,
         timestamp: data.timestamp
       })))
       
@@ -3293,10 +3281,10 @@ AI 건강 분석 리포트
 
       // 리포트 뷰어 모달 표시 (Web Renderer 사용)
       setSelectedReportForView({
-        id: analysisId,
-        engineId: aiEngine?.id || '',
-        analysisResult: analysisResult || {},
-        personalInfo: personalInfo || {}
+        id: 'temp-analysis-id',
+        engineId: selectedEngine || '',
+        analysisResult: {},
+        personalInfo: {}
       } as any)
       setIsViewerModalOpen(true)
       

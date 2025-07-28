@@ -42,3 +42,5 @@ export class DeviceMasterService extends BaseService {
   
   constructor() {
     super()
+  }
+}

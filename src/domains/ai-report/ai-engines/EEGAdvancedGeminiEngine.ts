@@ -162,7 +162,7 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
     // 브라우저 환경에서는 import.meta.env 사용
     let envApiKey = '';
     try {
-      envApiKey = import.meta.env?.VITE_GOOGLE_AI_API_KEY || '';
+      envApiKey = import.meta.env?.VITE_GOOGLE_GEMINI_API_KEY || '';
     } catch (e) {
       // 환경변수 접근 실패시 무시
     }

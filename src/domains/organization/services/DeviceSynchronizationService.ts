@@ -73,3 +73,5 @@ export class DeviceSynchronizationService extends BaseService {
     super()
     this.deviceMasterService = new DeviceMasterService()
     this.deviceAllocationService = new DeviceAllocationService()
+  }
+}
