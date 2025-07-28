@@ -117,17 +117,38 @@ export class MeasurementDataService extends BaseService {
         collection: MeasurementDataService.COLLECTION_NAME,
         hasProcessedTimeSeries: !!measurementDoc.processedTimeSeries,
         processedTimeSeriesKeys: measurementDoc.processedTimeSeries ? Object.keys(measurementDoc.processedTimeSeries) : [],
-        processedTimeSeriesStructure: measurementDoc.processedTimeSeries ? {
-          eegTimestampCount: measurementDoc.processedTimeSeries.eeg?.timestamps?.length || 0,
-          ppgTimestampCount: measurementDoc.processedTimeSeries.ppg?.timestamps?.length || 0,
-          accTimestampCount: measurementDoc.processedTimeSeries.acc?.timestamps?.length || 0,
-          sampleEegTimestamp: measurementDoc.processedTimeSeries.eeg?.timestamps?.[0],
-          samplePpgTimestamp: measurementDoc.processedTimeSeries.ppg?.timestamps?.[0]
-        } : null
+        totalDocumentKeys: Object.keys(measurementDoc),
+        documentSize: JSON.stringify(measurementDoc).length
       });
       
+      // 문제가 되는 필드를 찾기 위해 processedTimeSeries 없이 먼저 시도
+      console.log('[DATACHECK] 🔍 processedTimeSeries 제외하고 저장 시도');
+      const docWithoutTimeSeries = { ...measurementDoc };
+      delete docWithoutTimeSeries.processedTimeSeries;
+      
       const docRef = doc(collection(this.db, MeasurementDataService.COLLECTION_NAME));
-      await setDoc(docRef, measurementDoc);
+      
+      try {
+        // 1단계: processedTimeSeries 없이 저장 시도
+        await setDoc(docRef, docWithoutTimeSeries);
+        console.log('[DATACHECK] ✅ 기본 데이터 저장 성공 (processedTimeSeries 제외)');
+        
+        // 2단계: processedTimeSeries만 별도로 업데이트 시도
+        if (measurementDoc.processedTimeSeries) {
+          console.log('[DATACHECK] 📊 processedTimeSeries 별도 업데이트 시도');
+          await updateDoc(docRef, {
+            processedTimeSeries: measurementDoc.processedTimeSeries
+          });
+          console.log('[DATACHECK] ✅ processedTimeSeries 업데이트 성공');
+        }
+        
+      } catch (partialError) {
+        console.error('[DATACHECK] ❌ 부분 저장 실패:', partialError);
+        // 전체 문서를 한번에 저장 시도 (원래 방법)
+        console.log('[DATACHECK] 🔄 전체 문서 한번에 저장 시도');
+        await setDoc(docRef, measurementDoc);
+      }
+      
       const docId = docRef.id;
       
       console.log(`[DATACHECK] ✅ Measurement data saved with ID: ${docId}`);
