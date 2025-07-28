@@ -340,16 +340,17 @@ export class ProcessedDataCollector {
       const analysisMetrics = AnalysisMetricsService.getInstance();
       
       // 🔍 Store 상태 디버깅
-      console.log('📊 ProcessedDataCollector - Store 상태 확인:', {
+      console.log('[DATACHECK] 📊 ProcessedDataCollector - Store 상태 확인:', {
         hasEEGAnalysis: !!storeState.eegAnalysis,
         hasPPGAnalysis: !!storeState.ppgAnalysis,
         hasACCAnalysis: !!storeState.accAnalysis,
-        eegAnalysisContent: storeState.eegAnalysis,
-        ppgAnalysisContent: storeState.ppgAnalysis,
-        accAnalysisContent: storeState.accAnalysis,
+        eegBandPowers: eegBandPowers,
+        eegIndices: eegIndices,
+        ppgIndices: ppgIndices,
+        accIndices: storeState.accAnalysis?.indices,
+        signalQuality: storeState.signalQuality,
         eegLastUpdated: storeState.eegAnalysis?.lastUpdated || 0,
         ppgLastUpdated: storeState.ppgAnalysis?.lastUpdated || 0,
-        accLastUpdated: storeState.accAnalysis?.lastUpdated || 0,
         currentTime: Date.now()
       });
     
@@ -429,10 +430,31 @@ export class ProcessedDataCollector {
         }
       };
       
-      console.log('📊 ProcessedDataCollector - 생성된 메트릭:', {
-        eegFocusIndex: processedMetrics.eeg.focusIndex,
-        ppgHeartRate: processedMetrics.ppg.heartRate,
-        accActivityLevel: processedMetrics.acc.activityLevel,
+      console.log('[DATACHECK] 📊 ProcessedDataCollector - 생성된 메트릭:', {
+        eegMetrics: {
+          deltaPower: processedMetrics.eeg.deltaPower,
+          thetaPower: processedMetrics.eeg.thetaPower,
+          alphaPower: processedMetrics.eeg.alphaPower,
+          betaPower: processedMetrics.eeg.betaPower,
+          gammaPower: processedMetrics.eeg.gammaPower,
+          focusIndex: processedMetrics.eeg.focusIndex,
+          relaxationIndex: processedMetrics.eeg.relaxationIndex,
+          stressIndex: processedMetrics.eeg.stressIndex,
+          attentionLevel: processedMetrics.eeg.attentionLevel,
+          meditationLevel: processedMetrics.eeg.meditationLevel
+        },
+        ppgMetrics: {
+          heartRate: processedMetrics.ppg.heartRate,
+          hrv: processedMetrics.ppg.hrv,
+          rmssd: processedMetrics.ppg.rmssd,
+          lfHfRatio: processedMetrics.ppg.lfHfRatio,
+          stressLevel: processedMetrics.ppg.stressLevel
+        },
+        accMetrics: {
+          activityLevel: processedMetrics.acc.activityLevel,
+          movementIntensity: processedMetrics.acc.movementIntensity,
+          posturalStability: processedMetrics.acc.posturalStability
+        },
         hasRealData: !!(eegAnalysis?.indices && ppgAnalysis?.indices && accAnalysis?.indices)
       });
       
