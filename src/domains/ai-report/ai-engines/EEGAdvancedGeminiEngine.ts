@@ -349,8 +349,8 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
       return {
         analysisId,
         overallScore: 0,
-        stressLevel: 'unknown',
-        focusLevel: 'unknown',
+        stressLevel: 0,
+        focusLevel: 0,
         
         insights: {
           summary: '분석 중 오류가 발생했습니다.',
@@ -845,35 +845,35 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
     return Math.round(avgScore);
   }
 
-  private extractStressLevel(result: EEGAdvancedAnalysisResult): string {
+  private extractStressLevel(result: EEGAdvancedAnalysisResult): number {
     const stressAnalysis = result.analysisResults.find(r => 
       r.coreOpinion.title.toLowerCase().includes('스트레스') ||
       r.coreOpinion.title.toLowerCase().includes('stress')
     );
     
-    if (!stressAnalysis) return 'normal';
+    if (!stressAnalysis) return 50; // normal
     
     switch (stressAnalysis.coreOpinion.clinicalSignificance) {
-      case 'severe': return 'high';
-      case 'moderate': return 'elevated';
-      case 'mild': return 'slight';
-      default: return 'normal';
+      case 'severe': return 80; // high
+      case 'moderate': return 65; // elevated
+      case 'mild': return 55; // slight
+      default: return 50; // normal
     }
   }
 
-  private extractFocusLevel(result: EEGAdvancedAnalysisResult): string {
+  private extractFocusLevel(result: EEGAdvancedAnalysisResult): number {
     const focusAnalysis = result.analysisResults.find(r => 
       r.coreOpinion.title.toLowerCase().includes('집중') ||
       r.coreOpinion.title.toLowerCase().includes('focus')
     );
     
-    if (!focusAnalysis) return 'normal';
+    if (!focusAnalysis) return 70; // normal
     
     switch (focusAnalysis.coreOpinion.clinicalSignificance) {
-      case 'severe': return 'impaired';
-      case 'moderate': return 'reduced';
-      case 'mild': return 'slightly_reduced';
-      default: return 'normal';
+      case 'severe': return 30; // impaired
+      case 'moderate': return 50; // reduced
+      case 'mild': return 60; // slightly_reduced
+      default: return 70; // normal
     }
   }
 
