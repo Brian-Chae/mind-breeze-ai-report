@@ -90,14 +90,27 @@ export class MeasurementDataService extends BaseService {
             } : null,
             ppg: data.processedTimeSeries.ppg ? {
               ...data.processedTimeSeries.ppg,
-              timestamps: data.processedTimeSeries.ppg.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || []
+              timestamps: data.processedTimeSeries.ppg.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || [],
+              // 🔧 중첩 배열을 평면화: [[800, 820], [810, 830]] → [800, 820, 810, 830]
+              rrIntervals: data.processedTimeSeries.ppg.rrIntervals ? 
+                data.processedTimeSeries.ppg.rrIntervals.flat() : []
             } : null,
             acc: data.processedTimeSeries.acc ? {
               ...data.processedTimeSeries.acc,
-              timestamps: data.processedTimeSeries.acc.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || []
+              timestamps: data.processedTimeSeries.acc.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || [],
+              // 🔧 movementEvents 배열도 확인하여 중첩이 있으면 평면화
+              movementEvents: Array.isArray(data.processedTimeSeries.acc.movementEvents) ? 
+                data.processedTimeSeries.acc.movementEvents.map(event => 
+                  typeof event === 'object' && !Array.isArray(event) ? event : String(event)
+                ) : []
             } : null
           };
-          console.log('[DATACHECK] ✅ processedTimeSeries Firestore 변환 완료');
+          console.log('[DATACHECK] ✅ processedTimeSeries Firestore 변환 완료:', {
+            eegTimestamps: processedTimeSeriesForFirestore.eeg?.timestamps?.length || 0,
+            ppgTimestamps: processedTimeSeriesForFirestore.ppg?.timestamps?.length || 0,
+            ppgRrIntervalsFlattened: processedTimeSeriesForFirestore.ppg?.rrIntervals?.length || 0,
+            accTimestamps: processedTimeSeriesForFirestore.acc?.timestamps?.length || 0
+          });
         } catch (conversionError) {
           console.error('[DATACHECK] ❌ processedTimeSeries 변환 실패:', conversionError);
           processedTimeSeriesForFirestore = null;
