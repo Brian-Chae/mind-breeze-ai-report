@@ -313,6 +313,9 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
 
       // 기존 AnalysisResult 형식으로 변환
       return {
+        engineId: this.id,
+        engineVersion: this.version,
+        timestamp: new Date().toISOString(),
         analysisId,
         overallScore: this.calculateOverallScore(analysisResult),
         stressLevel: this.extractStressLevel(analysisResult),
@@ -326,9 +329,13 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
         },
         
         metrics: {
-          qualityScore: validation.qualityScore,
-          dataCompleteness: data.eegTimeSeriesStats?.qualityMetrics?.dataCompleteness || 0.9,
-          signalStrength: data.eegTimeSeriesStats?.qualityMetrics?.signalQuality || 0.8
+          eeg: {
+            alpha: data.eegTimeSeriesStats?.bandPowers?.alpha?.mean || 0,
+            beta: data.eegTimeSeriesStats?.bandPowers?.beta?.mean || 0,
+            gamma: data.eegTimeSeriesStats?.bandPowers?.gamma?.mean || 0,
+            theta: data.eegTimeSeriesStats?.bandPowers?.theta?.mean || 0,
+            delta: data.eegTimeSeriesStats?.bandPowers?.delta?.mean || 0
+          }
         },
         
         processingTime,
@@ -345,8 +352,12 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
     } catch (error) {
       console.error('🚨 EEG Advanced Analysis 오류:', error);
       const processingTime = Date.now() - this.analysisStartTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       return {
+        engineId: this.id,
+        engineVersion: this.version,
+        timestamp: new Date().toISOString(),
         analysisId,
         overallScore: 0,
         stressLevel: 0,
@@ -354,7 +365,7 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
         
         insights: {
           summary: '분석 중 오류가 발생했습니다.',
-          detailedAnalysis: `오류 내용: ${error}`,
+          detailedAnalysis: `오류 내용: ${errorMessage}`,
           recommendations: ['나중에 다시 시도해주세요.'],
           warnings: ['분석 실패']
         },
