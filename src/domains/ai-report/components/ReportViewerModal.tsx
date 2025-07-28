@@ -17,6 +17,7 @@ import { Badge } from '@ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { rendererRegistry } from '../core/registry/RendererRegistry';
 import { selectBestRenderer } from '../core/utils/EngineRendererMatcher';
+import JsonViewer from './JsonViewer';
 import { 
   Brain, 
   Eye, 
@@ -153,6 +154,30 @@ export function ReportViewerModal({
     setError(null);
     
     try {
+      // EEG Advanced 엔진 결과는 JSON 뷰어로 표시
+      const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
+      if (engineId === 'eeg-advanced-gemini-v1') {
+        console.log('🧠 EEG Advanced 결과를 JSON으로 표시');
+        
+        // EEG Advanced 분석 결과 추출
+        const eegAdvancedData = report.rawData?.eegAdvancedAnalysis || report;
+        
+        setReportContent({
+          isEEGAdvanced: true,
+          jsonData: eegAdvancedData,
+          metadata: {
+            analysisDate: new Date().toLocaleDateString(),
+            engineName: 'EEG Advanced Gemini v1',
+            processingTime: `${report?.processingTime || 0}ms`,
+            dataQuality: '우수',
+            engineId: engineId
+          }
+        });
+        
+        setIsLoading(false);
+        return;
+      }
+      
       if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
         
         // 실제 렌더러를 사용해서 HTML 생성
@@ -994,6 +1019,45 @@ export function ReportViewerModal({
               다시 시도
             </Button>
           </div>
+        </div>
+      );
+    }
+
+    // EEG Advanced 결과는 JSON 뷰어로 표시
+    if (reportContent?.isEEGAdvanced) {
+      return (
+        <div id="report-content" className="p-6 space-y-6">
+          <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">
+                EEG 전문 분석 결과
+              </h1>
+              <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
+                {reportContent.metadata.engineName}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-6 mt-4">
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-blue-700">JSON</div>
+                <div className="text-gray-700 font-medium">데이터 형식</div>
+              </div>
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-green-700">{reportContent.metadata.processingTime}</div>
+                <div className="text-gray-700 font-medium">처리 시간</div>
+              </div>
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-purple-700">{reportContent.metadata.dataQuality}</div>
+                <div className="text-gray-700 font-medium">데이터 품질</div>
+              </div>
+            </div>
+          </div>
+          
+          <JsonViewer 
+            data={reportContent.jsonData} 
+            title="EEG 전문 분석 결과"
+            className="shadow-lg"
+          />
         </div>
       );
     }

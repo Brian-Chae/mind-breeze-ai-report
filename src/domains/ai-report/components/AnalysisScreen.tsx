@@ -10,7 +10,7 @@ type PersonalInfo = {
   name: string;
   email?: string;
   birthDate?: Date;
-  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  gender?: '남성' | '여성' | '기타';
   occupation?: string;
   department?: string;
   healthConditions?: string[];
@@ -192,7 +192,7 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
       const convertedPersonalInfo = {
         name: personalInfo.name,
         age: personalInfo.birthDate ? new Date().getFullYear() - personalInfo.birthDate.getFullYear() : 30,
-        gender: personalInfo.gender === 'MALE' ? 'male' : personalInfo.gender === 'FEMALE' ? 'female' : 'male',
+        gender: personalInfo.gender === '남성' ? 'male' : personalInfo.gender === '여성' ? 'female' : 'male',
         occupation: personalInfo.occupation || 'office_worker',
         // 생년월일 추가 (렌더러에서 사용)
         birthDate: personalInfo.birthDate ? personalInfo.birthDate.toISOString().split('T')[0] : null

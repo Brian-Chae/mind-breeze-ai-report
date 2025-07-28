@@ -18,7 +18,7 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     email: initialData?.email || '',
-    gender: initialData?.gender || 'MALE' as 'MALE' | 'FEMALE' | 'OTHER',
+    gender: initialData?.gender || '남성' as '남성' | '여성' | '기타',
     birthDate: initialData?.birthDate ? initialData.birthDate.toISOString().split('T')[0] : '',
     occupation: initialData?.occupation || '',
     department: initialData?.department || '',
@@ -154,15 +154,15 @@ export function PersonalInfoScreen({ onComplete, onError, initialData }: Persona
           </label>
           <Select 
             value={formData.gender} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value as 'MALE' | 'FEMALE' | 'OTHER' }))}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value as '남성' | '여성' | '기타' }))}
           >
             <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
               <SelectValue placeholder="성별을 선택하세요" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="MALE">남성</SelectItem>
-              <SelectItem value="FEMALE">여성</SelectItem>
-              <SelectItem value="OTHER">기타</SelectItem>
+              <SelectItem value="남성">남성</SelectItem>
+              <SelectItem value="여성">여성</SelectItem>
+              <SelectItem value="기타">기타</SelectItem>
             </SelectContent>
           </Select>
           {errors.gender && (

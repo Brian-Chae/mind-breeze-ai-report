@@ -6,6 +6,7 @@
 import { aiEngineRegistry } from '../core/registry/AIEngineRegistry';
 import { BasicGeminiV1Engine } from './BasicGeminiV1Engine';
 import { MockTestEngine } from './MockTestEngine';
+import { EEGAdvancedGeminiEngine } from './EEGAdvancedGeminiEngine';
 
 /**
  * 프로덕션용 AI 엔진 등록
@@ -15,6 +16,10 @@ export function registerProductionEngines(): void {
     // Basic Gemini V1 엔진 등록
     const basicGeminiEngine = new BasicGeminiV1Engine();
     aiEngineRegistry.register(basicGeminiEngine);
+
+    // EEG Advanced Gemini 엔진 등록
+    const eegAdvancedEngine = new EEGAdvancedGeminiEngine();
+    aiEngineRegistry.register(eegAdvancedEngine);
 
     console.log('✅ Production AI engines registered successfully');
   } catch (error) {
@@ -134,7 +139,7 @@ export function getEnginesByCost(maxCost: number) {
 }
 
 // 기본 엔진들 내보내기
-export { BasicGeminiV1Engine, MockTestEngine };
+export { BasicGeminiV1Engine, MockTestEngine, EEGAdvancedGeminiEngine };
 
 // 레지스트리도 함께 내보내기
 export { aiEngineRegistry };

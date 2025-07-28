@@ -22,6 +22,7 @@ export interface ProcessedEEGTimeSeries {
   alphaPower: number[];      // 8-13 Hz
   betaPower: number[];       // 13-30 Hz
   gammaPower: number[];      // 30-100 Hz
+  totalPower: number[];      // 🔧 Signal Processor에서 계산되는 총 파워
   
   // 파생 지표 시계열
   focusIndex: number[];      // 집중도 지수
@@ -88,6 +89,13 @@ export interface ProcessedPPGTimeSeries {
   // 심장 효율성
   cardiacEfficiency: number[];   // 심장 효율성
   metabolicRate: number[];       // 대사율 추정
+  
+  // 🔧 Signal Processor의 advancedHRV 지표들 추가
+  avnn: number[];                // Average NN interval (ms)
+  pnn20: number[];               // Percentage of adjacent NN intervals differing by more than 20ms
+  sdsd: number[];                // Standard deviation of successive differences (ms)
+  hrMax: number[];               // Maximum heart rate
+  hrMin: number[];               // Minimum heart rate
   
   // 신호 품질
   signalQuality: number[];       // 신호 품질 (0-1)

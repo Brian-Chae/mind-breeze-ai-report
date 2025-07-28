@@ -505,8 +505,6 @@ export class DeviceAdminService extends BaseAdminService {
       results: [] as Array<{ deviceId: string; success: boolean; error?: string }>
     }
     
-      metadata: { action: action.action, count: action.deviceIds.length }
-    
     for (const deviceId of action.deviceIds) {
       try {
         switch (action.action) {
@@ -547,8 +545,6 @@ export class DeviceAdminService extends BaseAdminService {
           success: false,
           error: (error as Error).message
         })
-        
-          metadata: { deviceId, action: action.action }
       }
     }
     
@@ -556,8 +552,6 @@ export class DeviceAdminService extends BaseAdminService {
       results.failed === 0 ? 'success' : 'failure',
       { action, results }
     )
-    
-      metadata: results
     
     return results
   }

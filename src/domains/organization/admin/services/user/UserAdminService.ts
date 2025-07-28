@@ -310,8 +310,6 @@ export class UserAdminService extends BaseAdminService {
     await this.requirePermission(Permission.WRITE_USERS)
     
     try {
-        metadata: { userId: action.userId, action: action.action }
-      
       switch (action.action) {
         case 'activate':
           await this.activateUser(action.userId)
@@ -344,8 +342,6 @@ export class UserAdminService extends BaseAdminService {
       return true
       
     } catch (error) {
-        metadata: { action }
-      
       await this.createAuditLog(`user_${action.action}`, 'user', 'failure', {
         action,
         error: (error as Error).message
@@ -370,8 +366,6 @@ export class UserAdminService extends BaseAdminService {
       failed: 0,
       results: [] as Array<{ email: string; success: boolean; error?: string }>
     }
-    
-      metadata: { organizationId: importData.organizationId, count: importData.users.length }
     
     for (const userData of importData.users) {
       try {
@@ -426,8 +420,6 @@ export class UserAdminService extends BaseAdminService {
       results.failed === 0 ? 'success' : 'failure',
       { importData, results }
     )
-    
-      metadata: results
     
     return results
   }

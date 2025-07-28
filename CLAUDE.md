@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MIND BREEZE AI Report is a React-based Progressive Web App for AI-powered health analysis using EEG (Electroencephalography) and PPG (Photoplethysmography) biomarkers. It's built with TypeScript, Vite, and follows Domain-Driven Design principles.
 
+## Communication Guidelines
+
+- 한글로 대화하고 코드를 작성할 때는 명확하고 간결한 커뮤니케이션을 유지한다
+- 기술적 용어와 코드 관련 설명은 한글과 영어를 적절히 혼용한다
+
 ## Essential Development Commands
 
 ```bash
@@ -109,3 +114,7 @@ VITE_GOOGLE_AI_API_KEY=your_api_key_here  # Google Gemini API for report generat
 3. **Privacy**: Biomarker data processing happens locally; only AI prompts are sent to external services
 4. **Multi-tenant**: Clear separation between B2B (organization) and B2C (individual) features
 5. **Device Management**: Complex workflows for Bluetooth device pairing, assignment, and management
+
+## Development Warnings
+
+- fallback 으로 절대 임의의 숫자로 데이터를 만들지마. 나중에 fallback 값인지 실제 값인지 확인이 안되서 치명적인 신뢰도 문제를 만듦

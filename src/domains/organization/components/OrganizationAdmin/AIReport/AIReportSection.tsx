@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X, Info } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X, Info, HelpCircle } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -13,6 +13,8 @@ import measurementUserManagementService from '@domains/individual/services/Measu
 import measurementUserIntegrationService from '@domains/individual/services/MeasurementUserIntegrationService'
 import enterpriseAuthService from '../../../services/EnterpriseAuthService'
 import { MeasurementDataService } from '@domains/ai-report/services/MeasurementDataService'
+import { aiEngineRegistry } from '@domains/ai-report/ai-engines'
+import { toast } from 'sonner'
 import { processedDataStorageService } from '@domains/ai-report/services/ProcessedDataStorageService'
 import { BasicGeminiV1Engine } from '@domains/ai-report/ai-engines/BasicGeminiV1Engine'
 import { useAIReportConfiguration } from '@domains/ai-report/hooks/useAvailableEnginesAndViewers'
@@ -22,6 +24,11 @@ import { findCompatibleRenderers, getRecommendedRenderers } from '@domains/ai-re
 import { initializeRenderers } from '@domains/ai-report/report-renderers'
 import customRendererService from '@domains/ai-report/services/CustomRendererService'
 import reportSharingService from '@domains/ai-report/services/ReportSharingService'
+import { getNormalRangeInfo, getValueStatus, getClinicalInterpretation, type NormalRangeInfo } from './indexGuides'
+import { DataSourceIndicator } from './DataSourceIndicator'
+import { ValueWithDataSource } from './ValueWithDataSource'
+import { EngineSelectionModal } from '@domains/ai-report/components/EngineSelectionModal'
+import { IAIEngine } from '@domains/ai-report/core/interfaces/IAIEngine'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -31,9 +38,23 @@ interface AIReportSectionProps {
 // 측정 데이터 상세 보기 컴포넌트
 interface MeasurementDataDetailViewProps {
   data: any;
+  onRunAIAnalysis?: (data: any) => void;
+  onEngineSelectionModalOpen?: (isOpen: boolean) => void;
+  onSelectedMeasurementDataSet?: (data: any) => void;
+  isAnalyzing?: boolean;
+  analysisResults?: Map<string, any>;
+  onViewReport?: (report: any, viewerId: string, viewerName: string) => void;
 }
 
-const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ data }) => {
+const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ 
+  data, 
+  onRunAIAnalysis,
+  onEngineSelectionModalOpen,
+  onSelectedMeasurementDataSet,
+  isAnalyzing = false,
+  analysisResults = new Map(),
+  onViewReport
+}) => {
   const formatValue = (value: any, decimals: number = 2) => {
     if (typeof value === 'number') {
       return value.toFixed(decimals);
@@ -63,34 +84,67 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
     return { mean, variance, std, min, max, count: n };
   };
 
+  // 값 상태에 따른 색상 반환
+  const getValueColor = (value: number, metricName: string): string => {
+    const status = getValueStatus(value, metricName);
+    switch (status) {
+      case 'normal': return 'text-green-600';
+      case 'below': return 'text-blue-600';
+      case 'above': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  // 값 상태에 따른 배경 색상 반환
+  const getValueBgColor = (value: number, metricName: string): string => {
+    const status = getValueStatus(value, metricName);
+    switch (status) {
+      case 'normal': return 'bg-green-50 border-green-200';
+      case 'below': return 'bg-blue-50 border-blue-200';
+      case 'above': return 'bg-red-50 border-red-200';
+      default: return 'bg-gray-50 border-gray-200';
+    }
+  };
+
+  // 값 상태 설명 반환 (구체적인 임상적 해석)
+  const getValueStatusText = (value: number, metricName: string): string => {
+    const clinicalInterpretation = getClinicalInterpretation(value, metricName);
+    
+    // 임상적 해석이 있으면 항상 사용 (정상, 낮음, 높음 모든 경우)
+    if (clinicalInterpretation) {
+      return clinicalInterpretation;
+    } else {
+      // 기본 fallback
+      const status = getValueStatus(value, metricName);
+      if (status === 'normal') {
+        return 'Normal range';
+      } else {
+        return status === 'below' ? 'Below normal range' : 'Above normal range';
+      }
+    }
+  };
+
+  // Simple badge component without additional text
+  const StatusBadge = ({ value, metricName }: { value: number, metricName: string }) => {
+    const status = getValueStatus(value, metricName);
+    const text = status === 'normal' ? '정상' : status === 'below' ? '낮음' : '높음';
+    
+    return (
+      <Badge 
+        variant={status === 'normal' ? 'default' : status === 'below' ? 'secondary' : 'destructive'}
+        className={`font-semibold px-3 py-1 text-xs min-w-[50px] ${
+          status === 'normal' ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' : 
+          status === 'below' ? 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200' : 
+          'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
+        }`}
+      >
+        {text}
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      {/* 디버그 정보 */}
-      <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-xs">
-        <strong className="text-gray-700">디버그 정보:</strong> 
-        <span className={data.processedTimeSeries ? 'text-green-600' : 'text-red-600'}>
-          processedTimeSeries: {data.processedTimeSeries ? '있음' : '없음'}
-        </span>
-        {data.processedTimeSeries && (
-          <span className="text-green-600">
-            {' '}(EEG: {data.processedTimeSeries.eeg?.timestamps?.length || 0}개,
-            {' '}PPG: {data.processedTimeSeries.ppg?.heartRate?.length || 0}개,
-            {' '}ACC: {data.processedTimeSeries.acc?.activityLevel?.length || 0}개)
-          </span>
-        )}
-        <span className="text-gray-500 ml-2">
-          | 데이터 타입: {typeof data}, 키 개수: {Object.keys(data).length}
-        </span>
-        <div className="mt-2 text-xs text-gray-600">
-          <strong>전체 키 목록:</strong> {Object.keys(data).join(', ')}
-        </div>
-        {Object.keys(data).includes('processedTimeSeries') && (
-          <div className="mt-1 text-xs text-orange-600">
-            <strong>processedTimeSeries 내용:</strong> {JSON.stringify(data.processedTimeSeries, null, 2).substring(0, 200)}...
-          </div>
-        )}
-      </div>
-      
       {/* 기본 정보 */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg border">
         <h3 className="text-lg font-semibold mb-3 flex items-center text-gray-800">
@@ -117,149 +171,40 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
         </div>
       </div>
 
-      {/* EEG 데이터 */}
-      {data.eegMetrics && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center text-blue-800">
-            <Brain className="w-5 h-5 mr-2 text-blue-600" />
-            EEG 뇌파 분석 결과
-          </h3>
-          
-          {/* 주요 지표 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div className="bg-white p-3 rounded-md shadow-sm border-l-4 border-blue-500">
-              <span className="text-xs text-gray-500 block mb-1">집중도</span>
-              <p className="font-bold text-blue-700 text-lg">{formatValue(data.eegMetrics.attentionIndex)}</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm border-l-4 border-green-500">
-              <span className="text-xs text-gray-500 block mb-1">명상도</span>
-              <p className="font-bold text-green-700 text-lg">{formatValue(data.eegMetrics.meditationIndex)}</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm border-l-4 border-red-500">
-              <span className="text-xs text-gray-500 block mb-1">스트레스 지수</span>
-              <p className="font-bold text-red-700 text-lg">{formatValue(data.eegMetrics.stressIndex)}</p>
-            </div>
-          </div>
-          
-          {/* 뇌파 파워 */}
-          <div className="bg-white p-3 rounded-md shadow-sm">
-            <h4 className="font-medium mb-3 text-gray-700">뇌파 파워 분석</h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div className="text-center">
-                <span className="text-xs text-gray-500 block mb-1">Delta</span>
-                <p className="font-semibold text-purple-600">{formatValue(data.eegMetrics.delta)}</p>
-              </div>
-              <div className="text-center">
-                <span className="text-xs text-gray-500 block mb-1">Theta</span>
-                <p className="font-semibold text-blue-600">{formatValue(data.eegMetrics.theta)}</p>
-              </div>
-              <div className="text-center">
-                <span className="text-xs text-gray-500 block mb-1">Alpha</span>
-                <p className="font-semibold text-green-600">{formatValue(data.eegMetrics.alpha)}</p>
-              </div>
-              <div className="text-center">
-                <span className="text-xs text-gray-500 block mb-1">Beta</span>
-                <p className="font-semibold text-orange-600">{formatValue(data.eegMetrics.beta)}</p>
-              </div>
-              <div className="text-center">
-                <span className="text-xs text-gray-500 block mb-1">Gamma</span>
-                <p className="font-semibold text-red-600">{formatValue(data.eegMetrics.gamma)}</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* 신호 품질 */}
-          <div className="mt-3 bg-white p-3 rounded-md shadow-sm">
-            <span className="text-xs text-gray-500 block mb-1">신호 품질</span>
-            <div className="flex items-center space-x-2">
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full" 
-                  style={{ width: `${Math.min(100, (data.eegMetrics.signalQuality || 0) * 100)}%` }}
-                ></div>
-              </div>
-              <p className="font-semibold text-green-600 text-sm">{formatValue((data.eegMetrics.signalQuality || 0) * 100)}%</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PPG 데이터 */}
-      {data.ppgMetrics && (
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg border border-red-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center text-red-800">
-            <Activity className="w-5 h-5 mr-2 text-red-600" />
-            PPG 심박 분석 결과
-          </h3>
-          
-          {/* 주요 심박 지표 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            <div className="bg-white p-4 rounded-md shadow-sm border-l-4 border-red-500">
-              <span className="text-xs text-gray-500 block mb-1">심박수</span>
-              <div className="flex items-end space-x-1">
-                <p className="font-bold text-red-700 text-2xl">{formatValue(data.ppgMetrics.heartRate)}</p>
-                <span className="text-sm text-gray-600 mb-1">BPM</span>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-md shadow-sm border-l-4 border-blue-500">
-              <span className="text-xs text-gray-500 block mb-1">심박 변이도 (HRV)</span>
-              <div className="flex items-end space-x-1">
-                <p className="font-bold text-blue-700 text-2xl">{formatValue(data.ppgMetrics.heartRateVariability)}</p>
-                <span className="text-sm text-gray-600 mb-1">ms</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* 추가 지표들 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">스트레스 점수</span>
-              <p className="font-semibold text-orange-600">{formatValue(data.ppgMetrics.stressScore)}</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">자율신경 균형</span>
-              <p className="font-semibold text-green-600">{formatValue(data.ppgMetrics.autonomicBalance)}</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">신호 품질</span>
-              <p className="font-semibold text-green-600">{formatValue((data.ppgMetrics.signalQuality || 0) * 100)}%</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">움직임 노이즈</span>
-              <p className="font-semibold text-red-600">{formatValue((data.ppgMetrics.motionArtifact || 0) * 100)}%</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ACC 데이터 */}
-      {data.accMetrics && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center text-green-800">
-            <Monitor className="w-5 h-5 mr-2 text-green-600" />
-            가속도계 분석 결과
+      {/* 개인정보 */}
+      {data.personalInfo && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-lg border border-amber-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-amber-800">
+            <User className="w-5 h-5 mr-2 text-amber-600" />
+            개인 정보
+            <Badge variant="outline" className="ml-2 text-xs">
+              AI 분석 참고용
+            </Badge>
           </h3>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">활동 수준</span>
-              <p className="font-semibold text-green-600 text-lg">{formatValue(data.accMetrics.activityLevel)}</p>
+              <span className="text-xs text-gray-500 block mb-1">이름</span>
+              <p className="font-semibold text-gray-800">{data.personalInfo.name || 'N/A'}</p>
             </div>
             <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">움직임 강도</span>
-              <p className="font-semibold text-blue-600 text-lg">{formatValue(data.accMetrics.movementIntensity)}</p>
+              <span className="text-xs text-gray-500 block mb-1">나이</span>
+              <p className="font-semibold text-blue-600">{data.personalInfo.age || 'N/A'}<span className="text-xs text-gray-400 ml-1">세</span></p>
             </div>
             <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">자세 안정성</span>
-              <p className="font-semibold text-purple-600 text-lg">{formatValue(data.accMetrics.postureStability)}</p>
+              <span className="text-xs text-gray-500 block mb-1">성별</span>
+              <p className="font-semibold text-purple-600">{data.personalInfo.gender || 'N/A'}</p>
             </div>
             <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">자세</span>
-              <p className="font-semibold text-gray-700">{data.accMetrics.posture || 'N/A'}</p>
+              <span className="text-xs text-gray-500 block mb-1">직업</span>
+              <p className="font-semibold text-green-600">{data.personalInfo.occupation || 'N/A'}</p>
             </div>
           </div>
         </div>
       )}
+
+
+
 
       {/* 시계열 데이터 상세 통계 */}
       {(data.processedTimeSeries || data.timeSeriesData) && (
@@ -317,70 +262,626 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
           {/* EEG 시계열 데이터 통계 */}
           {(data.processedTimeSeries?.eeg || data.timeSeriesData?.eeg) && (() => {
             const eegData = data.processedTimeSeries?.eeg || data.timeSeriesData?.eeg;
+            
+            
+            // 모든 EEG 메트릭에 대한 통계 계산
+            const deltaStats = calculateStatistics(eegData.deltaPower);
+            const thetaStats = calculateStatistics(eegData.thetaPower);
+            const alphaStats = calculateStatistics(eegData.alphaPower);
+            const betaStats = calculateStatistics(eegData.betaPower);
+            const gammaStats = calculateStatistics(eegData.gammaPower);
+            const totalPowerStats = calculateStatistics(eegData.totalPower);
             const focusStats = calculateStatistics(eegData.focusIndex);
             const relaxStats = calculateStatistics(eegData.relaxationIndex);
             const stressStats = calculateStatistics(eegData.stressIndex);
             const attentionStats = calculateStatistics(eegData.attentionLevel);
             const meditationStats = calculateStatistics(eegData.meditationLevel);
+            const hemisphericStats = calculateStatistics(eegData.hemisphericBalance);
+            const cognitiveStats = calculateStatistics(eegData.cognitiveLoad);
+            const emotionalStats = calculateStatistics(eegData.emotionalStability);
+            const signalQualityStats = calculateStatistics(eegData.signalQuality);
+            const artifactStats = calculateStatistics(eegData.artifactRatio);
             
             return (
               <div className="bg-white p-4 rounded-md shadow-sm mb-4">
-                <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
-                  <Brain className="w-4 h-4 mr-2 text-blue-500" />
-                  EEG 시계열 데이터 통계 (초단위)
-                </h4>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-gray-800 flex items-center">
+                    <Brain className="w-4 h-4 mr-2 text-blue-500" />
+                    EEG 시계열 데이터 통계 (초단위)
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      disabled={isAnalyzing}
+                      onClick={() => {
+                        console.log('🎯 EEG AI 분석 실행 요청:', data)
+                        
+                        // EEG 통계 데이터 구조화
+                        const structuredEEGData = {
+                          // 기본 사용자 정보
+                          personalInfo: {
+                            name: data.userName || data.subjectName || '익명',
+                            age: data.userAge || 30,
+                            gender: data.userGender === '남성' ? 'male' : data.userGender === '여성' ? 'female' : 'unknown',
+                            occupation: data.userOccupation || '미지정'
+                          },
+                          
+                          // EEG 시계열 통계 데이터
+                          eegTimeSeriesStats: {
+                            bandPowers: {
+                              delta: {
+                                mean: deltaStats.mean,
+                                std: deltaStats.std,
+                                min: deltaStats.min,
+                                max: deltaStats.max,
+                                normalRange: getNormalRangeInfo('Delta Power')?.range || '50-150 μV²',
+                                status: getValueStatus(deltaStats.mean, 'Delta Power'),
+                                interpretation: getClinicalInterpretation(deltaStats.mean, 'Delta Power')
+                              },
+                              theta: {
+                                mean: thetaStats.mean,
+                                std: thetaStats.std,
+                                min: thetaStats.min,
+                                max: thetaStats.max,
+                                normalRange: getNormalRangeInfo('Theta Power')?.range || '80-200 μV²',
+                                status: getValueStatus(thetaStats.mean, 'Theta Power'),
+                                interpretation: getClinicalInterpretation(thetaStats.mean, 'Theta Power')
+                              },
+                              alpha: {
+                                mean: alphaStats.mean,
+                                std: alphaStats.std,
+                                min: alphaStats.min,
+                                max: alphaStats.max,
+                                normalRange: getNormalRangeInfo('Alpha Power')?.range || '200-500 μV²',
+                                status: getValueStatus(alphaStats.mean, 'Alpha Power'),
+                                interpretation: getClinicalInterpretation(alphaStats.mean, 'Alpha Power')
+                              },
+                              beta: {
+                                mean: betaStats.mean,
+                                std: betaStats.std,
+                                min: betaStats.min,
+                                max: betaStats.max,
+                                normalRange: getNormalRangeInfo('Beta Power')?.range || '100-300 μV²',
+                                status: getValueStatus(betaStats.mean, 'Beta Power'),
+                                interpretation: getClinicalInterpretation(betaStats.mean, 'Beta Power')
+                              },
+                              gamma: {
+                                mean: gammaStats.mean,
+                                std: gammaStats.std,
+                                min: gammaStats.min,
+                                max: gammaStats.max,
+                                normalRange: getNormalRangeInfo('Gamma Power')?.range || '30-80 μV²',
+                                status: getValueStatus(gammaStats.mean, 'Gamma Power'),
+                                interpretation: getClinicalInterpretation(gammaStats.mean, 'Gamma Power')
+                              },
+                              totalPower: {
+                                mean: totalPowerStats.mean,
+                                std: totalPowerStats.std,
+                                min: totalPowerStats.min,
+                                max: totalPowerStats.max,
+                                normalRange: getNormalRangeInfo('EEG Total Power')?.range || '850-1150 μV²',
+                                status: getValueStatus(totalPowerStats.mean, 'EEG Total Power'),
+                                interpretation: getClinicalInterpretation(totalPowerStats.mean, 'EEG Total Power')
+                              }
+                            },
+                            eegIndices: {
+                              focusIndex: {
+                                value: focusStats.mean,
+                                std: focusStats.std,
+                                min: focusStats.min,
+                                max: focusStats.max,
+                                normalRange: getNormalRangeInfo('Focus')?.range || '1.8-2.4',
+                                status: getValueStatus(focusStats.mean, 'Focus'),
+                                interpretation: getClinicalInterpretation(focusStats.mean, 'Focus')
+                              },
+                              relaxationIndex: {
+                                value: relaxStats.mean,
+                                std: relaxStats.std,
+                                min: relaxStats.min,
+                                max: relaxStats.max,
+                                normalRange: getNormalRangeInfo('Arousal')?.range || '0.18-0.22',
+                                status: getValueStatus(relaxStats.mean, 'Arousal'),
+                                interpretation: getClinicalInterpretation(relaxStats.mean, 'Arousal')
+                              },
+                              stressIndex: {
+                                value: stressStats.mean,
+                                std: stressStats.std,
+                                min: stressStats.min,
+                                max: stressStats.max,
+                                normalRange: getNormalRangeInfo('Stress Index')?.range || '2.8-4.0',
+                                status: getValueStatus(stressStats.mean, 'Stress Index'),
+                                interpretation: getClinicalInterpretation(stressStats.mean, 'Stress Index')
+                              },
+                              hemisphericBalance: {
+                                value: hemisphericStats.mean,
+                                std: hemisphericStats.std,
+                                min: hemisphericStats.min,
+                                max: hemisphericStats.max,
+                                normalRange: getNormalRangeInfo('Hemispheric Balance')?.range || '-0.1~0.1',
+                                status: getValueStatus(hemisphericStats.mean, 'Hemispheric Balance'),
+                                interpretation: getClinicalInterpretation(hemisphericStats.mean, 'Hemispheric Balance')
+                              },
+                              cognitiveLoad: {
+                                value: cognitiveStats.mean,
+                                std: cognitiveStats.std,
+                                min: cognitiveStats.min,
+                                max: cognitiveStats.max,
+                                normalRange: getNormalRangeInfo('Cognitive Load')?.range || '0.3-0.7',
+                                status: getValueStatus(cognitiveStats.mean, 'Cognitive Load'),
+                                interpretation: getClinicalInterpretation(cognitiveStats.mean, 'Cognitive Load')
+                              },
+                              emotionalStability: {
+                                value: emotionalStats.mean,
+                                std: emotionalStats.std,
+                                min: emotionalStats.min,
+                                max: emotionalStats.max,
+                                normalRange: getNormalRangeInfo('Emotional Stability')?.range || '0.7-0.9',
+                                status: getValueStatus(emotionalStats.mean, 'Emotional Stability'),
+                                interpretation: getClinicalInterpretation(emotionalStats.mean, 'Emotional Stability')
+                              }
+                            },
+                            qualityMetrics: {
+                              signalQuality: signalQualityStats.mean / 100, // 0-1 범위로 정규화
+                              measurementDuration: data.duration || 300,
+                              dataCompleteness: (100 - artifactStats.mean) / 100, // artifact ratio를 completeness로 변환
+                              artifactRatio: artifactStats.mean / 100
+                            }
+                          },
+                          
+                          // 원본 데이터도 포함
+                          originalData: data,
+                          
+                          // 메타데이터
+                          analysisMetadata: {
+                            timestamp: new Date().toISOString(),
+                            dataSource: 'EEG_TIME_SERIES_STATISTICS',
+                            version: '1.0.0'
+                          }
+                        }
+                        
+                        console.log('📊 구조화된 EEG 분석 데이터:', structuredEEGData)
+                        
+                        if (onRunAIAnalysis) {
+                          onRunAIAnalysis(structuredEEGData)
+                        } else {
+                          // fallback: 직접 호출
+                          onSelectedMeasurementDataSet?.(structuredEEGData)
+                          onEngineSelectionModalOpen?.(true)
+                        }
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-7"
+                    >
+                      {isAnalyzing ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Play className="w-3 h-3 mr-1" />
+                      )}
+                      {isAnalyzing ? '분석 중...' : 'AI 분석 실행'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={Array.from(analysisResults.values()).some(result => result.measurementId === data.id) ? "default" : "outline"}
+                      onClick={() => {
+                        // 해당 측정 데이터의 분석 결과 찾기
+                        const results = Array.from(analysisResults.values()).filter(
+                          result => result.measurementId === data.id
+                        )
+                        
+                        if (results.length === 0) {
+                          toast.info('분석 결과가 없습니다. 먼저 AI 분석을 실행해주세요.')
+                          return
+                        }
+                        
+                        // 가장 최근 결과 표시
+                        const latestResult = results.sort((a, b) => 
+                          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                        )[0]
+                        
+                        console.log('📊 분석 결과 보기:', latestResult)
+                        
+                        // 리포트 뷰어로 결과 표시
+                        if (onViewReport) {
+                          onViewReport(
+                            latestResult.result, 
+                            'universal-web-viewer', 
+                            '범용 웹 뷰어'
+                          )
+                        }
+                      }}
+                      className="text-gray-700 border-gray-300 hover:bg-gray-50 text-xs px-3 py-1 h-7"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      리포트 보기
+                    </Button>
+                  </div>
+                </div>
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full table-fixed text-sm border-collapse border border-gray-200">
+                    <colgroup>
+                      <col className="w-[20%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">지표</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">평균</th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700">표준편차</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">정상 범위</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">상태</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">최소값</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">최대값</th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700">데이터수</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">해석</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">집중도</td>
-                        <td className="px-3 py-2 text-center text-blue-600 font-semibold">{formatValue(focusStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(focusStats.std)}</td>
+                      {/* Band Powers */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Band Powers</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(deltaStats.mean, 'Delta Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Delta Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(deltaStats.mean, 'Delta Power')}`}>
+                          <ValueWithDataSource
+                            value={deltaStats.mean}
+                            metricName="Delta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Delta Power')?.range || '50-150 μV²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={deltaStats.mean} metricName="Delta Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">
+                          <ValueWithDataSource
+                            value={deltaStats.min}
+                            metricName="Delta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">
+                          <ValueWithDataSource
+                            value={deltaStats.max}
+                            metricName="Delta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(deltaStats.mean, 'Delta Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(thetaStats.mean, 'Theta Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Theta Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(thetaStats.mean, 'Theta Power')}`}>
+                          <ValueWithDataSource
+                            value={thetaStats.mean}
+                            metricName="Theta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Theta Power')?.range || '80-200 μV²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={thetaStats.mean} metricName="Theta Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">
+                          <ValueWithDataSource
+                            value={thetaStats.min}
+                            metricName="Theta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">
+                          <ValueWithDataSource
+                            value={thetaStats.max}
+                            metricName="Theta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(thetaStats.mean, 'Theta Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(alphaStats.mean, 'Alpha Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Alpha Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(alphaStats.mean, 'Alpha Power')}`}>
+                          <ValueWithDataSource
+                            value={alphaStats.mean}
+                            metricName="Alpha Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Alpha Power')?.range || '200-500 μV²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={alphaStats.mean} metricName="Alpha Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">
+                          <ValueWithDataSource
+                            value={alphaStats.min}
+                            metricName="Alpha Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">
+                          <ValueWithDataSource
+                            value={alphaStats.max}
+                            metricName="Alpha Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(alphaStats.mean, 'Alpha Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(betaStats.mean, 'Beta Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Beta Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(betaStats.mean, 'Beta Power')}`}>
+                          <ValueWithDataSource
+                            value={betaStats.mean}
+                            metricName="Beta Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Beta Power')?.range || '100-300 μV²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={betaStats.mean} metricName="Beta Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(betaStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(betaStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(betaStats.mean, 'Beta Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(gammaStats.mean, 'Gamma Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Gamma Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(gammaStats.mean, 'Gamma Power')}`}>
+                          <ValueWithDataSource
+                            value={gammaStats.mean}
+                            metricName="Gamma Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Gamma Power')?.range || '50-200 μV²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={gammaStats.mean} metricName="Gamma Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(gammaStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(gammaStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(gammaStats.mean, 'Gamma Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(totalPowerStats.mean, 'EEG Total Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Total Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(totalPowerStats.mean, 'EEG Total Power')}`}>
+                          <ValueWithDataSource
+                            value={totalPowerStats.mean}
+                            metricName="EEG Total Power"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('EEG Total Power')?.range || '850-1150 μV²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={totalPowerStats.mean} metricName="EEG Total Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(totalPowerStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(totalPowerStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(totalPowerStats.mean, 'EEG Total Power')}
+                        </td>
+                      </tr>
+                      
+                      {/* Indices */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Indices</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(focusStats.mean, 'Focus')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          Focus Index
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title={`Focus: ${getNormalRangeInfo('Focus')?.range || '1.8-2.4'}`}
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(focusStats.mean, 'Focus')}`}>
+                          <ValueWithDataSource
+                            value={focusStats.mean}
+                            metricName="Focus"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Focus')?.range || '1.8 - 2.4'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={focusStats.mean} metricName="Focus" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(focusStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(focusStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{focusStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(focusStats.mean, 'Focus')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">이완도</td>
-                        <td className="px-3 py-2 text-center text-green-600 font-semibold">{formatValue(relaxStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(relaxStats.std)}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(relaxStats.mean, 'Arousal')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          Relaxation Index
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title={`Arousal: ${getNormalRangeInfo('Arousal')?.range || '0.18-0.22'}`}
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(relaxStats.mean, 'Arousal')}`}>
+                          <ValueWithDataSource
+                            value={relaxStats.mean}
+                            metricName="Arousal"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Arousal')?.range || '0.18 - 0.22'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={relaxStats.mean} metricName="Arousal" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(relaxStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(relaxStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{relaxStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(relaxStats.mean, 'Arousal')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">스트레스</td>
-                        <td className="px-3 py-2 text-center text-red-600 font-semibold">{formatValue(stressStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.std)}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(stressStats.mean, 'Stress Index')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          Stress Index
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title={`Stress Index: ${getNormalRangeInfo('Stress Index')?.range || '2.8-4.0'}`}
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(stressStats.mean, 'Stress Index')}`}>
+                          <ValueWithDataSource
+                            value={stressStats.mean}
+                            metricName="Stress Index"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Stress Index')?.range || '2.8 - 4.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={stressStats.mean} metricName="Stress Index" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{stressStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(stressStats.mean, 'Stress Index')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">주의력</td>
-                        <td className="px-3 py-2 text-center text-purple-600 font-semibold">{formatValue(attentionStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(attentionStats.std)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(attentionStats.min)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(attentionStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{attentionStats.count}</td>
+                      
+                      {/* Additional Analysis */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Additional Analysis</td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">명상도</td>
-                        <td className="px-3 py-2 text-center text-indigo-600 font-semibold">{formatValue(meditationStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(meditationStats.std)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(meditationStats.min)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(meditationStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{meditationStats.count}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(hemisphericStats.mean, 'Hemispheric Balance')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Hemispheric Balance</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hemisphericStats.mean, 'Hemispheric Balance')}`}>
+                          <ValueWithDataSource
+                            value={hemisphericStats.mean}
+                            metricName="Hemispheric Balance"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Hemispheric Balance')?.range || '-0.1 to 0.1'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={hemisphericStats.mean} metricName="Hemispheric Balance" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hemisphericStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hemisphericStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(hemisphericStats.mean, 'Hemispheric Balance')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(cognitiveStats.mean, 'Cognitive Load')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Cognitive Load</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(cognitiveStats.mean, 'Cognitive Load')}`}>
+                          <ValueWithDataSource
+                            value={cognitiveStats.mean}
+                            metricName="Cognitive Load"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Cognitive Load')?.range || '0.3-0.7'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={cognitiveStats.mean} metricName="Cognitive Load" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(cognitiveStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(cognitiveStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(cognitiveStats.mean, 'Cognitive Load')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(emotionalStats.mean, 'Emotional Stability')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Emotional Stability</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(emotionalStats.mean, 'Emotional Stability')}`}>
+                          <ValueWithDataSource
+                            value={emotionalStats.mean}
+                            metricName="Emotional Stability"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Emotional Stability')?.range || '0.7-0.9'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={emotionalStats.mean} metricName="Emotional Stability" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(emotionalStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(emotionalStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(emotionalStats.mean, 'Emotional Stability')}
+                        </td>
+                      </tr>
+                      
+                      {/* Signal Quality */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Signal Quality</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(signalQualityStats.mean, 'Signal Quality')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Signal Quality</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(signalQualityStats.mean, 'Signal Quality')}`}>
+                          <ValueWithDataSource
+                            value={signalQualityStats.mean}
+                            metricName="Signal Quality"
+                            metricType="eeg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Signal Quality')?.range || '0.8-1.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={signalQualityStats.mean} metricName="Signal Quality" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(signalQualityStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(signalQualityStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(signalQualityStats.mean, 'Signal Quality')}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -392,10 +893,33 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
           {/* PPG 시계열 데이터 통계 */}
           {(data.processedTimeSeries?.ppg || data.timeSeriesData?.ppg) && (() => {
             const ppgData = data.processedTimeSeries?.ppg || data.timeSeriesData?.ppg;
+            
+            // 모든 PPG 메트릭에 대한 통계 계산
             const hrStats = calculateStatistics(ppgData.heartRate);
-            const hrvStats = calculateStatistics(ppgData.hrv || ppgData.rmssd);
-            const stressStats = calculateStatistics(ppgData.stressLevel);
+            const hrvStats = calculateStatistics(ppgData.hrv);
+            const rmssdStats = calculateStatistics(ppgData.rmssd);
+            const pnn50Stats = calculateStatistics(ppgData.pnn50);
+            const sdnnStats = calculateStatistics(ppgData.sdnn);
+            const vlfStats = calculateStatistics(ppgData.vlf);
+            const lfStats = calculateStatistics(ppgData.lf);
+            const hfStats = calculateStatistics(ppgData.hf);
+            const lfNormStats = calculateStatistics(ppgData.lfNorm);
+            const hfNormStats = calculateStatistics(ppgData.hfNorm);
             const lfHfStats = calculateStatistics(ppgData.lfHfRatio);
+            const totalPowerPPGStats = calculateStatistics(ppgData.totalPower);
+            const stressStats = calculateStatistics(ppgData.stressLevel);
+            const recoveryStats = calculateStatistics(ppgData.recoveryIndex);
+            const autonomicStats = calculateStatistics(ppgData.autonomicBalance);
+            const coherenceStats = calculateStatistics(ppgData.cardiacCoherence);
+            const respiratoryStats = calculateStatistics(ppgData.respiratoryRate);
+            const spo2Stats = calculateStatistics(ppgData.oxygenSaturation);
+            const avnnStats = calculateStatistics(ppgData.avnn);
+            const pnn20Stats = calculateStatistics(ppgData.pnn20);
+            const sdsdStats = calculateStatistics(ppgData.sdsd);
+            const hrMaxStats = calculateStatistics(ppgData.hrMax);
+            const hrMinStats = calculateStatistics(ppgData.hrMin);
+            const signalQualityPPGStats = calculateStatistics(ppgData.signalQuality);
+            const motionArtifactStats = calculateStatistics(ppgData.motionArtifact);
             
             return (
               <div className="bg-white p-4 rounded-md shadow-sm mb-4">
@@ -404,49 +928,621 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
                   PPG 시계열 데이터 통계 (초단위)
                 </h4>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
+                  <table className="w-full table-fixed text-sm border-collapse border border-gray-200">
+                    <colgroup>
+                      <col className="w-[20%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">지표</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">평균</th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700">표준편차</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">정상 범위</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">상태</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">최소값</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">최대값</th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700">데이터수</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">해석</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">심박수 (BPM)</td>
-                        <td className="px-3 py-2 text-center text-red-600 font-semibold">{formatValue(hrStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrStats.std)}</td>
+                      {/* Basic Cardiac Metrics */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Basic Cardiac Metrics</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(hrStats.mean, 'BPM')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          Heart Rate (BPM)
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title={`BPM: ${getNormalRangeInfo('BPM')?.range || '60-100'}`}
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hrStats.mean, 'BPM')}`}>
+                          <ValueWithDataSource
+                            value={hrStats.mean}
+                            metricName="BPM"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('BPM')?.range || '60-100 BPM'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={hrStats.mean} metricName="BPM" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{hrStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(hrStats.mean, 'BPM')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">HRV (ms)</td>
-                        <td className="px-3 py-2 text-center text-blue-600 font-semibold">{formatValue(hrvStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrvStats.std)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrvStats.min)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrvStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{hrvStats.count}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(hrMaxStats.mean, 'HR Max')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">HR Max</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hrMaxStats.mean, 'HR Max')}`}>
+                          <ValueWithDataSource
+                            value={hrMaxStats.mean}
+                            metricName="HR Max"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('HR Max')?.range || '80-150 BPM'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={hrMaxStats.mean} metricName="HR Max" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrMaxStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrMaxStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(hrMaxStats.mean, 'HR Max')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">스트레스 레벨</td>
-                        <td className="px-3 py-2 text-center text-orange-600 font-semibold">{formatValue(stressStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.std)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.min)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{stressStats.count}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(hrMinStats.mean, 'HR Min')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">HR Min</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hrMinStats.mean, 'HR Min')}`}>
+                          <ValueWithDataSource
+                            value={hrMinStats.mean}
+                            metricName="HR Min"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('HR Min')?.range || '50-80 BPM'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={hrMinStats.mean} metricName="HR Min" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrMinStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hrMinStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(hrMinStats.mean, 'HR Min')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">LF/HF 비율</td>
-                        <td className="px-3 py-2 text-center text-green-600 font-semibold">{formatValue(lfHfStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfHfStats.std)}</td>
+                      
+                      {/* HRV Time Domain */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">HRV Time Domain</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(rmssdStats.mean, 'RMSSD')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          RMSSD (ms)
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title={`RMSSD: ${getNormalRangeInfo('RMSSD')?.range || '20-50 ms'}`}
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(rmssdStats.mean, 'RMSSD')}`}>
+                          <ValueWithDataSource
+                            value={rmssdStats.mean}
+                            metricName="RMSSD"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('RMSSD')?.range || '20-200 ms'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={rmssdStats.mean} metricName="RMSSD" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(rmssdStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(rmssdStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(rmssdStats.mean, 'RMSSD')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(pnn50Stats.mean, 'PNN50')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          PNN50 (%)
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title={`PNN50: ${getNormalRangeInfo('PNN50')?.range || '10-30%'}`}
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(pnn50Stats.mean, 'PNN50')}`}>
+                          <ValueWithDataSource
+                            value={pnn50Stats.mean}
+                            metricName="PNN50"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('PNN50')?.range || '10-30%'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={pnn50Stats.mean} metricName="PNN50" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(pnn50Stats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(pnn50Stats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(pnn50Stats.mean, 'PNN50')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(sdnnStats.mean, 'SDNN')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          SDNN (ms)
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title="SDNN: Standard Deviation of NN intervals"
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(sdnnStats.mean, 'SDNN')}`}>
+                          <ValueWithDataSource
+                            value={sdnnStats.mean}
+                            metricName="SDNN"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('SDNN')?.range || '30-150 ms'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={sdnnStats.mean} metricName="SDNN" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(sdnnStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(sdnnStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(sdnnStats.mean, 'SDNN')}
+                        </td>
+                      </tr>
+                      
+                      {/* HRV Frequency Domain */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">HRV Frequency Domain</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(vlfStats.mean, 'VLF Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">VLF Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(vlfStats.mean, 'VLF Power')}`}>
+                          <ValueWithDataSource
+                            value={vlfStats.mean}
+                            metricName="VLF Power"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('VLF Power')?.range || '100-300 ms²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={vlfStats.mean} metricName="VLF Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(vlfStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(vlfStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(vlfStats.mean, 'VLF Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(lfStats.mean, 'LF Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">LF Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(lfStats.mean, 'LF Power')}`}>
+                          <ValueWithDataSource
+                            value={lfStats.mean}
+                            metricName="LF Power"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('LF Power')?.range || '200-1,200 ms²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={lfStats.mean} metricName="LF Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(lfStats.mean, 'LF Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(hfStats.mean, 'HF Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">HF Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hfStats.mean, 'HF Power')}`}>
+                          <ValueWithDataSource
+                            value={hfStats.mean}
+                            metricName="HF Power"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('HF Power')?.range || '80-4,000 ms²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={hfStats.mean} metricName="HF Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hfStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hfStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(hfStats.mean, 'HF Power')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(lfNormStats.mean, 'LF Norm')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">LF Norm</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(lfNormStats.mean, 'LF Norm')}`}>
+                          <ValueWithDataSource
+                            value={lfNormStats.mean}
+                            metricName="LF Norm"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('LF Norm')?.range || '40-70%'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={lfNormStats.mean} metricName="LF Norm" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfNormStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfNormStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(lfNormStats.mean, 'LF Norm')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(hfNormStats.mean, 'HF Norm')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">HF Norm</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(hfNormStats.mean, 'HF Norm')}`}>
+                          <ValueWithDataSource
+                            value={hfNormStats.mean}
+                            metricName="HF Norm"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('HF Norm')?.range || '30-60%'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={hfNormStats.mean} metricName="HF Norm" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hfNormStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(hfNormStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(hfNormStats.mean, 'HF Norm')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(lfHfStats.mean, 'LF/HF')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700 flex items-center">
+                          LF/HF Ratio
+                          <HelpCircle 
+                            className="w-3 h-3 ml-1 text-gray-400 cursor-help" 
+                            title="LF/HF: 1.5-2.5 ideal balance"
+                          />
+                        </td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(lfHfStats.mean, 'LF/HF')}`}>
+                          <ValueWithDataSource
+                            value={lfHfStats.mean}
+                            metricName="LF/HF"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('LF/HF')?.range || '1.5-2.5'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={lfHfStats.mean} metricName="LF/HF" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfHfStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(lfHfStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{lfHfStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(lfHfStats.mean, 'LF/HF')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(totalPowerPPGStats.mean, 'HRV Total Power')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Total Power</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(totalPowerPPGStats.mean, 'HRV Total Power')}`}>
+                          <ValueWithDataSource
+                            value={totalPowerPPGStats.mean}
+                            metricName="HRV Total Power"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('HRV Total Power')?.range || '1000-5000 ms²'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={totalPowerPPGStats.mean} metricName="HRV Total Power" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(totalPowerPPGStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(totalPowerPPGStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(totalPowerPPGStats.mean, 'HRV Total Power')}
+                        </td>
+                      </tr>
+                      
+                      {/* Stress & Autonomic */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Stress & Autonomic</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(stressStats.mean, 'Stress Level')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Stress Level</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(stressStats.mean, 'Stress Level')}`}>
+                          <ValueWithDataSource
+                            value={stressStats.mean}
+                            metricName="Stress Level"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Stress Level')?.range || '0.0-0.5'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={stressStats.mean} metricName="Stress Level" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stressStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(stressStats.mean, 'Stress Level')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(recoveryStats.mean, 'Recovery Index')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Recovery Index</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(recoveryStats.mean, 'Recovery Index')}`}>
+                          <ValueWithDataSource
+                            value={recoveryStats.mean}
+                            metricName="Recovery Index"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Recovery Index')?.range || '0.6-1.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={recoveryStats.mean} metricName="Recovery Index" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(recoveryStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(recoveryStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(recoveryStats.mean, 'Recovery Index')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(autonomicStats.mean, 'Autonomic Balance')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Autonomic Balance</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(autonomicStats.mean, 'Autonomic Balance')}`}>
+                          <ValueWithDataSource
+                            value={autonomicStats.mean}
+                            metricName="Autonomic Balance"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Autonomic Balance')?.range || '0.4-0.8'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={autonomicStats.mean} metricName="Autonomic Balance" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(autonomicStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(autonomicStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(autonomicStats.mean, 'Autonomic Balance')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(coherenceStats.mean, 'Cardiac Coherence')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Cardiac Coherence</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(coherenceStats.mean, 'Cardiac Coherence')}`}>
+                          <ValueWithDataSource
+                            value={coherenceStats.mean}
+                            metricName="Cardiac Coherence"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Cardiac Coherence')?.range || '0.5-1.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={coherenceStats.mean} metricName="Cardiac Coherence" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(coherenceStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(coherenceStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(coherenceStats.mean, 'Cardiac Coherence')}
+                        </td>
+                      </tr>
+                      
+                      {/* Physiological */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Physiological</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(respiratoryStats.mean, 'Respiratory Rate')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Respiratory Rate</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(respiratoryStats.mean, 'Respiratory Rate')}`}>
+                          <ValueWithDataSource
+                            value={respiratoryStats.mean}
+                            metricName="Respiratory Rate"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Respiratory Rate')?.range || '12-20 bpm'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={respiratoryStats.mean} metricName="Respiratory Rate" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(respiratoryStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(respiratoryStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(respiratoryStats.mean, 'Respiratory Rate')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(spo2Stats.mean, 'SpO2')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">SpO2 (%)</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(spo2Stats.mean, 'SpO2')}`}>
+                          <ValueWithDataSource
+                            value={spo2Stats.mean}
+                            metricName="SpO2"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('SpO2')?.range || '95-100%'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={spo2Stats.mean} metricName="SpO2" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(spo2Stats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(spo2Stats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(spo2Stats.mean, 'SpO2')}
+                        </td>
+                      </tr>
+                      
+                      
+                      
+                      {/* Advanced HRV */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Advanced HRV</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(avnnStats.mean, 'AVNN')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">AVNN (ms)</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(avnnStats.mean, 'AVNN')}`}>
+                          <ValueWithDataSource
+                            value={avnnStats.mean}
+                            metricName="AVNN"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('AVNN')?.range || '600-1000 ms'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={avnnStats.mean} metricName="AVNN" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(avnnStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(avnnStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(avnnStats.mean, 'AVNN')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(pnn20Stats.mean, 'PNN20')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">PNN20 (%)</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(pnn20Stats.mean, 'PNN20')}`}>
+                          <ValueWithDataSource
+                            value={pnn20Stats.mean}
+                            metricName="PNN20"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('PNN20')?.range || '20-60%'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={pnn20Stats.mean} metricName="PNN20" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(pnn20Stats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(pnn20Stats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(pnn20Stats.mean, 'PNN20')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(sdsdStats.mean, 'SDSD')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">SDSD (ms)</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(sdsdStats.mean, 'SDSD')}`}>
+                          <ValueWithDataSource
+                            value={sdsdStats.mean}
+                            metricName="SDSD"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('SDSD')?.range || '15-40 ms'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={sdsdStats.mean} metricName="SDSD" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(sdsdStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(sdsdStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(sdsdStats.mean, 'SDSD')}
+                        </td>
+                      </tr>
+                      
+                      {/* Signal Quality */}
+                      <tr className="hover:bg-gray-50 bg-gray-50">
+                        <td colSpan={7} className="px-3 py-2 font-semibold text-gray-700">Signal Quality</td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(signalQualityPPGStats.mean, 'Signal Quality')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Signal Quality</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(signalQualityPPGStats.mean, 'Signal Quality')}`}>
+                          <ValueWithDataSource
+                            value={signalQualityPPGStats.mean}
+                            metricName="PPG Signal Quality"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Signal Quality')?.range || '0.8-1.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={signalQualityPPGStats.mean} metricName="Signal Quality" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(signalQualityPPGStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(signalQualityPPGStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(signalQualityPPGStats.mean, 'Signal Quality')}
+                        </td>
+                      </tr>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(motionArtifactStats.mean, 'Motion Artifact')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Motion Artifact</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(motionArtifactStats.mean, 'Motion Artifact')}`}>
+                          <ValueWithDataSource
+                            value={motionArtifactStats.mean}
+                            metricName="Motion Artifact"
+                            metricType="ppg"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Motion Artifact')?.range || '0.0-0.2'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={motionArtifactStats.mean} metricName="Motion Artifact" />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(motionArtifactStats.min)}</td>
+                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(motionArtifactStats.max)}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(motionArtifactStats.mean, 'Motion Artifact')}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -469,41 +1565,93 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
                   ACC 시계열 데이터 통계 (초단위)
                 </h4>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
+                  <table className="w-full table-fixed text-sm border-collapse border border-gray-200">
+                    <colgroup>
+                      <col className="w-[20%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left font-medium text-gray-700">지표</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">평균</th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700">표준편차</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">정상 범위</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">상태</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">최소값</th>
                         <th className="px-3 py-2 text-center font-medium text-gray-700">최대값</th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700">데이터수</th>
+                        <th className="px-3 py-2 text-center font-medium text-gray-700">해석</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">활동 레벨</td>
-                        <td className="px-3 py-2 text-center text-green-600 font-semibold">{formatValue(activityStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(activityStats.std)}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(activityStats.mean, 'Activity Level')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Activity Level</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(activityStats.mean, 'Activity Level')}`}>
+                          <ValueWithDataSource
+                            value={activityStats.mean}
+                            metricName="Activity Level"
+                            metricType="acc"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Activity Level')?.range || '1.0-3.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={activityStats.mean} metricName="Activity Level" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(activityStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(activityStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{activityStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(activityStats.mean, 'Activity Level')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">움직임 강도</td>
-                        <td className="px-3 py-2 text-center text-blue-600 font-semibold">{formatValue(movementStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(movementStats.std)}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(movementStats.mean, 'Movement Intensity')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Movement Intensity</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(movementStats.mean, 'Movement Intensity')}`}>
+                          <ValueWithDataSource
+                            value={movementStats.mean}
+                            metricName="Movement Intensity"
+                            metricType="acc"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Movement Intensity')?.range || '0.1-0.5'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={movementStats.mean} metricName="Movement Intensity" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(movementStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(movementStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{movementStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(movementStats.mean, 'Movement Intensity')}
+                        </td>
                       </tr>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-700">자세 안정성</td>
-                        <td className="px-3 py-2 text-center text-purple-600 font-semibold">{formatValue(stabilityStats.mean)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{formatValue(stabilityStats.std)}</td>
+                      <tr className={`hover:bg-gray-50 ${getValueBgColor(stabilityStats.mean, 'Postural Stability')}`}>
+                        <td className="px-3 py-2 font-medium text-gray-700">Postural Stability</td>
+                        <td className={`px-3 py-2 text-center font-semibold ${getValueColor(stabilityStats.mean, 'Postural Stability')}`}>
+                          <ValueWithDataSource
+                            value={stabilityStats.mean}
+                            metricName="Postural Stability"
+                            metricType="acc"
+                            formatValue={formatValue}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center text-gray-600 text-xs">
+                          {getNormalRangeInfo('Postural Stability')?.range || '0.7-1.0'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <StatusBadge value={stabilityStats.mean} metricName="Postural Stability" />
+                        </td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(stabilityStats.min)}</td>
                         <td className="px-3 py-2 text-center text-gray-600">{formatValue(stabilityStats.max)}</td>
-                        <td className="px-3 py-2 text-center text-gray-600">{stabilityStats.count}</td>
+                        <td className="px-3 py-2 text-xs text-gray-500">
+                          {getValueStatusText(stabilityStats.mean, 'Postural Stability')}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -514,37 +1662,6 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({ d
         </div>
       )}
 
-      {/* 개인정보 */}
-      {data.personalInfo && (
-        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-lg border border-amber-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center text-amber-800">
-            <User className="w-5 h-5 mr-2 text-amber-600" />
-            개인 정보
-            <Badge variant="outline" className="ml-2 text-xs">
-              AI 분석 참고용
-            </Badge>
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">이름</span>
-              <p className="font-semibold text-gray-800">{data.personalInfo.name || 'N/A'}</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">나이</span>
-              <p className="font-semibold text-blue-600">{data.personalInfo.age || 'N/A'}<span className="text-xs text-gray-400 ml-1">세</span></p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">성별</span>
-              <p className="font-semibold text-purple-600">{data.personalInfo.gender || 'N/A'}</p>
-            </div>
-            <div className="bg-white p-3 rounded-md shadow-sm text-center">
-              <span className="text-xs text-gray-500 block mb-1">직업</span>
-              <p className="font-semibold text-green-600">{data.personalInfo.occupation || 'N/A'}</p>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* 세션 정보 (측정 데이터가 없을 때) */}
       {!data.eegMetrics && !data.ppgMetrics && data.sessionOnly && data.sessionData && (
@@ -618,9 +1735,75 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest') // 정렬 옵션
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all') // 기간 필터
   
+  // AI 엔진 선택 모달 상태
+  const [isEngineSelectionModalOpen, setIsEngineSelectionModalOpen] = useState(false)
+  const [selectedMeasurementData, setSelectedMeasurementData] = useState<any>(null)
+  
+  // AI 분석 실행 상태
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResults, setAnalysisResults] = useState<Map<string, any>>(new Map())
+  
   // AI Report 설정을 위한 organization ID
   const [currentContext, setCurrentContext] = useState(enterpriseAuthService.getCurrentContext())
   const organizationId = currentContext.organization?.id || ''
+  
+  // AI 분석 실행 핸들러
+  const handleRunAIAnalysis = (measurementData: any) => {
+    console.log('🎯 EEG AI 분석 실행 요청:', measurementData)
+    setSelectedMeasurementData(measurementData)
+    setIsEngineSelectionModalOpen(true)
+  }
+  
+  // AI 엔진 선택 핸들러
+  const handleEngineSelect = async (engine: IAIEngine) => {
+    if (!selectedMeasurementData) return
+    
+    console.log('🧠 선택된 엔진으로 분석 시작:', {
+      engineId: engine.id,
+      engineName: engine.name,
+      data: selectedMeasurementData
+    })
+    
+    // 모달 닫기
+    setIsEngineSelectionModalOpen(false)
+    setIsAnalyzing(true)
+    
+    try {
+      toast.info(`${engine.name} 엔진으로 AI 분석을 시작합니다...`)
+      
+      // 선택된 엔진으로 분석 실행
+      const analysisResult = await engine.analyze(selectedMeasurementData)
+      
+      console.log('✅ AI 분석 완료:', analysisResult)
+      
+      // 결과 저장
+      const resultKey = `${selectedMeasurementData.id}_${engine.id}_${Date.now()}`
+      setAnalysisResults(prev => new Map(prev.set(resultKey, {
+        id: resultKey,
+        measurementId: selectedMeasurementData.id,
+        engineId: engine.id,
+        engineName: engine.name,
+        result: analysisResult,
+        timestamp: new Date().toISOString(),
+        status: 'completed'
+      })))
+      
+      toast.success(`${engine.name} 분석이 완료되었습니다!`)
+      
+    } catch (error) {
+      console.error('❌ AI 분석 실행 오류:', error)
+      toast.error(`분석 중 오류가 발생했습니다: ${error}`)
+    } finally {
+      setIsAnalyzing(false)
+      setSelectedMeasurementData(null)
+    }
+  }
+  
+  // 엔진 선택 모달 닫기
+  const handleEngineSelectionModalClose = () => {
+    setIsEngineSelectionModalOpen(false)
+    setSelectedMeasurementData(null)
+  }
   
   // enterpriseAuthService의 상태 변경 감지
   useEffect(() => {
@@ -658,6 +1841,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
 
     loadCustomRenderers()
   }, [organizationId])
+  
   const {
     selectedEngine,
     selectedViewer,
@@ -1357,7 +2541,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       const personalInfo = {
         name: sessionData.subjectName || targetMeasurementData?.userName || '알 수 없음',
         age: calculatedAge,
-        gender: (sessionData.subjectGender === 'FEMALE' ? 'female' : 'male') as 'male' | 'female',
+        gender: (sessionData.subjectGender === '여성' ? 'female' : 'male') as 'male' | 'female',
         occupation: sessionData.subjectOccupation || targetMeasurementData?.userOccupation || 'office_worker',
         // 🎯 공유 링크를 위한 생년월일 추가
         birthDate: sessionData.subjectBirthDate ? 
@@ -1428,12 +2612,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           const convertedPersonalInfo = {
             name: personalInfo.name,
             email: sessionData.subjectEmail,
-            gender: personalInfo.gender === 'female' ? 'FEMALE' as const : 'MALE' as const,
+            gender: personalInfo.gender === 'female' ? '여성' as const : '남성' as const,
             birthDate: personalInfo.birthDate ? new Date(personalInfo.birthDate) : undefined,
             occupation: personalInfo.occupation,
-            department: sessionData.subjectDepartment,
-            phone: personalInfo.phone || '',
-            address: personalInfo.address || ''
+            department: sessionData.subjectDepartment
           };
           
           measurementUserId = await measurementUserIntegrationService.findOrCreateMeasurementUser(
@@ -1830,7 +3012,7 @@ AI 건강 분석 리포트
         // 측정 대상자 정보
         subjectName: `테스트사용자${Math.floor(Math.random() * 100)}`,
         subjectEmail: `test${Math.floor(Math.random() * 100)}@example.com`,
-        subjectGender: 'MALE',
+        subjectGender: '남성',
         
         // 측정 실행자 정보
         organizationId: currentContext.organization.id,
@@ -2112,10 +3294,10 @@ AI 건강 분석 리포트
       // 리포트 뷰어 모달 표시 (Web Renderer 사용)
       setSelectedReportForView({
         id: analysisId,
-        engineId: aiEngine.id,
-        analysisResult: analysisResult,
-        personalInfo: personalInfo
-      })
+        engineId: aiEngine?.id || '',
+        analysisResult: analysisResult || {},
+        personalInfo: personalInfo || {}
+      } as any)
       setIsViewerModalOpen(true)
       
       // 데이터 새로고침 후 잠시 후 AI Reports 목록으로 이동
@@ -2413,7 +3595,7 @@ AI 건강 분석 리포트
                         
                         {report.subjectGender && report.subjectGender !== '미지정' && (
                           <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
-                            {report.subjectGender === 'MALE' ? '남성' : report.subjectGender === 'FEMALE' ? '여성' : report.subjectGender}
+                            {report.subjectGender}
                           </Badge>
                         )}
                         
@@ -2933,7 +4115,7 @@ AI 건강 분석 리포트
                       
                       {data.userGender && data.userGender !== '미지정' && (
                         <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">
-                          {data.userGender === 'MALE' ? '남성' : data.userGender === 'FEMALE' ? '여성' : data.userGender}
+                          {data.userGender}
                         </Badge>
                       )}
                       
@@ -3158,6 +4340,7 @@ AI 건강 분석 리포트
                   size="sm"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
+                  className="text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   이전
                 </Button>
@@ -3182,8 +4365,8 @@ AI 건강 분석 리포트
                       onClick={() => handlePageChange(pageNum)}
                       className={
                         currentPage === pageNum 
-                          ? "bg-purple-600 text-white hover:bg-purple-700" 
-                          : "hover:bg-purple-50 hover:border-purple-300"
+                          ? "bg-purple-600 text-white hover:bg-purple-700 font-semibold shadow-sm" 
+                          : "text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
                       }
                     >
                       {pageNum}
@@ -3196,6 +4379,7 @@ AI 건강 분석 리포트
                   size="sm"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
+                  className="text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   다음
                 </Button>
@@ -3568,7 +4752,15 @@ AI 건강 분석 리포트
             {/* 컨텐츠 */}
             <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
               {measurementDetailModal.data ? (
-                <MeasurementDataDetailView data={measurementDetailModal.data} />
+                <MeasurementDataDetailView 
+                  data={measurementDetailModal.data} 
+                  onRunAIAnalysis={handleRunAIAnalysis}
+                  onEngineSelectionModalOpen={setIsEngineSelectionModalOpen}
+                  onSelectedMeasurementDataSet={setSelectedMeasurementData}
+                  isAnalyzing={isAnalyzing}
+                  analysisResults={analysisResults}
+                  onViewReport={handleViewReportWithViewer}
+                />
               ) : (
                 <div className="flex items-center justify-center h-40">
                   <div className="text-center">
@@ -3581,6 +4773,15 @@ AI 건강 분석 리포트
           </div>
         </div>
       )}
+      
+      {/* AI 엔진 선택 모달 */}
+      <EngineSelectionModal
+        isOpen={isEngineSelectionModalOpen}
+        onClose={handleEngineSelectionModalClose}
+        onSelect={handleEngineSelect}
+        availableCredits={10} // TODO: 실제 크레딧 정보로 교체
+        requiredDataTypes={{ eeg: true, ppg: true, acc: false }}
+      />
     </div>
   )
 } 

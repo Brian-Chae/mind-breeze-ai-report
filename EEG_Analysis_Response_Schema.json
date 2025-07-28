@@ -1,0 +1,326 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EEG Advanced Analysis Response",
+  "type": "object",
+  "required": ["analysisResults", "detailedDataAnalysis", "metadata"],
+  "properties": {
+    "analysisResults": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "3개의 주요 분석 결과 (우선순위 순)",
+      "items": {
+        "type": "object",
+        "required": ["priority", "coreOpinion", "dataEvidence", "validityOpinion"],
+        "properties": {
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "우선순위 (1: 최우선, 2: 중요, 3: 보조)"
+          },
+          "coreOpinion": {
+            "type": "object",
+            "required": ["title", "summary", "clinicalSignificance", "personalizedInterpretation"],
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "핵심 의견 제목 (예: '집중력 저하 및 인지 부하 증가')"
+              },
+              "summary": {
+                "type": "string",
+                "description": "핵심 의견 요약 (2-3문장)"
+              },
+              "clinicalSignificance": {
+                "type": "string",
+                "enum": ["정상", "경미한 이상", "중등도 이상", "심각한 이상"],
+                "description": "의학적 중요도"
+              },
+              "personalizedInterpretation": {
+                "type": "string",
+                "description": "나이, 성별, 직업을 고려한 개인화된 해석"
+              }
+            }
+          },
+          "dataEvidence": {
+            "type": "object",
+            "required": ["primaryMetrics", "supportingMetrics", "statisticalAnalysis"],
+            "properties": {
+              "primaryMetrics": {
+                "type": "array",
+                "description": "핵심 근거가 되는 주요 지표들",
+                "items": {
+                  "type": "object",
+                  "required": ["metricName", "observedValue", "normalRange", "deviation", "interpretation"],
+                  "properties": {
+                    "metricName": {
+                      "type": "string",
+                      "description": "지표명 (예: 'Alpha Power', 'Focus Index')"
+                    },
+                    "observedValue": {
+                      "type": "number",
+                      "description": "관찰된 값"
+                    },
+                    "normalRange": {
+                      "type": "string",
+                      "description": "정상 범위 (나이/성별 고려)"
+                    },
+                    "deviation": {
+                      "type": "string",
+                      "enum": ["정상 범위", "경미하게 높음", "경미하게 낮음", "현저히 높음", "현저히 낮음"],
+                      "description": "정상 범위와의 편차"
+                    },
+                    "interpretation": {
+                      "type": "string",
+                      "description": "해당 지표의 의학적 의미"
+                    }
+                  }
+                }
+              },
+              "supportingMetrics": {
+                "type": "array",
+                "description": "보조 근거가 되는 지표들",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "metricName": { "type": "string" },
+                    "observedValue": { "type": "number" },
+                    "interpretation": { "type": "string" }
+                  }
+                }
+              },
+              "statisticalAnalysis": {
+                "type": "object",
+                "required": ["correlationAnalysis", "demographicComparison"],
+                "properties": {
+                  "correlationAnalysis": {
+                    "type": "string",
+                    "description": "지표 간 상관관계 분석"
+                  },
+                  "demographicComparison": {
+                    "type": "string",
+                    "description": "동일 연령/성별/직업군 대비 비교 분석"
+                  }
+                }
+              }
+            }
+          },
+          "validityOpinion": {
+            "type": "object",
+            "required": ["scientificBasis", "clinicalReferences", "limitationsAndCaveats"],
+            "properties": {
+              "scientificBasis": {
+                "type": "string",
+                "description": "과학적 근거 설명"
+              },
+              "clinicalReferences": {
+                "type": "array",
+                "description": "관련 논문 및 임상 사례 (간략히)",
+                "items": {
+                  "type": "object",
+                  "required": ["referenceType", "summary", "relevance"],
+                  "properties": {
+                    "referenceType": {
+                      "type": "string",
+                      "enum": ["연구논문", "임상사례", "가이드라인", "메타분석"],
+                      "description": "참고자료 유형"
+                    },
+                    "summary": {
+                      "type": "string",
+                      "description": "참고자료 요약 (1-2문장)"
+                    },
+                    "relevance": {
+                      "type": "string",
+                      "description": "현재 사례와의 연관성 설명"
+                    }
+                  }
+                }
+              },
+              "limitationsAndCaveats": {
+                "type": "string",
+                "description": "해석의 한계점 및 주의사항"
+              }
+            }
+          }
+        }
+      }
+    },
+    "detailedDataAnalysis": {
+      "type": "object",
+      "required": ["bandPowerAnalysis", "eegIndicesAnalysis", "cognitiveStateAnalysis"],
+      "properties": {
+        "bandPowerAnalysis": {
+          "type": "object",
+          "required": ["delta", "theta", "alpha", "beta", "gamma"],
+          "properties": {
+            "delta": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "clinicalSignificance"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "델타파 해석" },
+                "evidence": { "type": "string", "description": "근거 데이터" },
+                "clinicalSignificance": { "type": "string", "description": "임상적 의미" }
+              }
+            },
+            "theta": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "clinicalSignificance"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "세타파 해석" },
+                "evidence": { "type": "string", "description": "근거 데이터" },
+                "clinicalSignificance": { "type": "string", "description": "임상적 의미" }
+              }
+            },
+            "alpha": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "clinicalSignificance"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "알파파 해석" },
+                "evidence": { "type": "string", "description": "근거 데이터" },
+                "clinicalSignificance": { "type": "string", "description": "임상적 의미" }
+              }
+            },
+            "beta": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "clinicalSignificance"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "베타파 해석" },
+                "evidence": { "type": "string", "description": "근거 데이터" },
+                "clinicalSignificance": { "type": "string", "description": "임상적 의미" }
+              }
+            },
+            "gamma": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "clinicalSignificance"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "감마파 해석" },
+                "evidence": { "type": "string", "description": "근거 데이터" },
+                "clinicalSignificance": { "type": "string", "description": "임상적 의미" }
+              }
+            }
+          }
+        },
+        "eegIndicesAnalysis": {
+          "type": "object",
+          "required": ["focus", "relaxation", "stress", "hemisphericBalance", "cognitiveLoad", "emotionalStability"],
+          "properties": {
+            "focus": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "recommendations"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "집중력 상태 해석" },
+                "evidence": { "type": "string", "description": "구체적 근거 (지표값 및 계산 방식)" },
+                "recommendations": { "type": "array", "items": { "type": "string" }, "description": "개선 방안" }
+              }
+            },
+            "relaxation": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "recommendations"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "이완 상태 해석" },
+                "evidence": { "type": "string", "description": "구체적 근거" },
+                "recommendations": { "type": "array", "items": { "type": "string" }, "description": "개선 방안" }
+              }
+            },
+            "stress": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "recommendations"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "스트레스 상태 해석" },
+                "evidence": { "type": "string", "description": "구체적 근거" },
+                "recommendations": { "type": "array", "items": { "type": "string" }, "description": "개선 방안" }
+              }
+            },
+            "hemisphericBalance": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "recommendations"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "좌우뇌 균형 해석" },
+                "evidence": { "type": "string", "description": "구체적 근거" },
+                "recommendations": { "type": "array", "items": { "type": "string" }, "description": "개선 방안" }
+              }
+            },
+            "cognitiveLoad": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "recommendations"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "인지 부하 해석" },
+                "evidence": { "type": "string", "description": "구체적 근거" },
+                "recommendations": { "type": "array", "items": { "type": "string" }, "description": "개선 방안" }
+              }
+            },
+            "emotionalStability": {
+              "type": "object",
+              "required": ["interpretation", "evidence", "recommendations"],
+              "properties": {
+                "interpretation": { "type": "string", "description": "정서 안정성 해석" },
+                "evidence": { "type": "string", "description": "구체적 근거" },
+                "recommendations": { "type": "array", "items": { "type": "string" }, "description": "개선 방안" }
+              }
+            }
+          }
+        },
+        "cognitiveStateAnalysis": {
+          "type": "object",
+          "required": ["overallAssessment", "attentionPatterns", "mentalFatigue", "neurologicalIndicators"],
+          "properties": {
+            "overallAssessment": {
+              "type": "string",
+              "description": "전반적인 인지 상태 평가"
+            },
+            "attentionPatterns": {
+              "type": "string",
+              "description": "주의력 패턴 분석"
+            },
+            "mentalFatigue": {
+              "type": "string",
+              "description": "정신적 피로도 분석"
+            },
+            "neurologicalIndicators": {
+              "type": "string",
+              "description": "신경학적 지표 해석"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["analysisTimestamp", "personalInfo", "dataQuality", "analysisEngine"],
+      "properties": {
+        "analysisTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "분석 수행 시각"
+        },
+        "personalInfo": {
+          "type": "object",
+          "required": ["age", "gender", "occupation"],
+          "properties": {
+            "age": { "type": "integer", "description": "나이" },
+            "gender": { "type": "string", "enum": ["male", "female"], "description": "성별" },
+            "occupation": { "type": "string", "description": "직업" }
+          }
+        },
+        "dataQuality": {
+          "type": "object",
+          "required": ["signalQuality", "measurementDuration", "dataCompleteness"],
+          "properties": {
+            "signalQuality": { "type": "number", "minimum": 0, "maximum": 1, "description": "신호 품질 (0-1)" },
+            "measurementDuration": { "type": "number", "description": "측정 시간 (초)" },
+            "dataCompleteness": { "type": "number", "minimum": 0, "maximum": 1, "description": "데이터 완성도 (0-1)" }
+          }
+        },
+        "analysisEngine": {
+          "type": "object",
+          "required": ["engineId", "version", "processingTime"],
+          "properties": {
+            "engineId": { "type": "string", "description": "분석 엔진 ID" },
+            "version": { "type": "string", "description": "엔진 버전" },
+            "processingTime": { "type": "number", "description": "처리 시간 (ms)" }
+          }
+        }
+      }
+    }
+  }
+}

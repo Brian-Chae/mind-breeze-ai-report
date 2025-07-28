@@ -32,7 +32,7 @@ export interface PersonalInfo {
   name: string;
   email?: string;
   birthDate?: Date;
-  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  gender?: '남성' | '여성' | '기타';
   occupation?: string;
   department?: string;
   healthConditions?: string[];
@@ -508,7 +508,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
           personalInfo: {
             name: state.personalInfo?.name || '알 수 없음',
             age: state.personalInfo?.birthDate ? new Date().getFullYear() - state.personalInfo.birthDate.getFullYear() : 30,
-            gender: state.personalInfo?.gender === 'MALE' ? 'male' : state.personalInfo?.gender === 'FEMALE' ? 'female' : 'male',
+            gender: state.personalInfo?.gender === '남성' ? 'male' : state.personalInfo?.gender === '여성' ? 'female' : 'male',
             occupation: state.personalInfo?.occupation || 'office_worker',
             birthDate: state.personalInfo?.birthDate ? state.personalInfo.birthDate.toISOString().split('T')[0] : null
           },

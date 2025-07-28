@@ -382,6 +382,13 @@ export class StreamProcessor {
   processACCData(data: any[]): void {
     const startTime = performance.now();
     
+    // 🔍 ACC 데이터 입력 로깅
+    console.log('[ACC_INPUT] 📥 ACC 데이터 수신:', {
+      dataLength: data?.length || 0,
+      sampleData: data?.slice(0, 3) || [],
+      timestamp: new Date().toISOString()
+    });
+    
     if (this.isProcessing) {
       this.performanceMetrics.droppedPackets++;
       return;
@@ -411,6 +418,15 @@ export class StreamProcessor {
       
       // 3) 충분한 데이터가 있을 때 비동기로 고급 신호 처리
       const bufferData = this.accBuffer.toArray();
+      
+      // 🔍 ACC 버퍼 상태 로깅
+      console.log('[ACC_BUFFER] 📊 ACC 버퍼 상태:', {
+        bufferLength: bufferData.length,
+        threshold: 30,
+        willProcessAdvanced: bufferData.length >= 30,
+        timestamp: new Date().toISOString()
+      });
+      
       if (bufferData.length >= 30) {
         this.performAdvancedACCProcessing(bufferData);
       }
@@ -907,6 +923,17 @@ export class StreamProcessor {
           value: m.value
         }));
 
+        // 🔍 ACC 처리 성공 시 결과 로깅
+        console.log('[ACC_SUCCESS] ✅ ACC 데이터 처리 성공:', {
+          activityIntensity: result.activity.intensity,
+          posturalStability: result.posture.stability,
+          posturalBalance: result.posture.balance,
+          activityType: result.activity.type,
+          avgMovement: result.movement.avgMovement,
+          accDataLength: accData.length,
+          timestamp: new Date().toISOString()
+        });
+
         // ProcessedDataStore 업데이트
         this.processedDataStore.updateACCAnalysis({
           magnitude: magnitudeGraphData,
@@ -990,6 +1017,16 @@ export class StreamProcessor {
       }
       
     } catch (error) {
+      // 🔍 ACC 처리 오류 상세 로깅
+      console.error('[ACC_ERROR] ❌ ACC 데이터 처리 실패:', {
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : 'No stack trace',
+        accDataLength: accData?.length || 0,
+        accDataSample: accData?.slice(0, 3) || [],
+        processorExists: !!this.accProcessor,
+        timestamp: new Date().toISOString()
+      });
+      
       // 오류 시 기본값으로 업데이트
       if (this.processedDataStore && this.processedDataStore.updateACCAnalysis) {
         this.processedDataStore.updateACCAnalysis({

@@ -75,10 +75,12 @@ export function EngineSelectionModal({
   }, [isOpen, requiredDataTypes]);
 
   const loadEngines = async () => {
+    console.log('🚀 loadEngines 시작 - 모달 열림')
     setIsLoading(true);
     
     try {
       // 등록된 모든 엔진 조회
+      console.log('🔍 aiEngineRegistry 상태 확인:', aiEngineRegistry)
       const allEngines = aiEngineRegistry.getAll();
       
       // 디버깅 로그
@@ -89,6 +91,19 @@ export function EngineSelectionModal({
         console.warn('⚠️ No engines registered! Checking registry state...');
         const stats = aiEngineRegistry.getStats();
         console.log('📊 Registry stats:', stats);
+        
+        // 강제로 엔진 재등록 시도
+        console.log('🔄 엔진 재등록 시도...')
+        const { initializeEngines } = await import('../ai-engines')
+        initializeEngines()
+        
+        // 재등록 후 다시 조회
+        const allEnginesAfterInit = aiEngineRegistry.getAll();
+        console.log('🔍 재등록 후 Available engines:', allEnginesAfterInit.length);
+        console.log('🔍 재등록 후 Engine details:', allEnginesAfterInit.map(e => ({ id: e.id, name: e.name, provider: e.provider })));
+        
+        // 업데이트된 엔진 목록 사용
+        allEngines.push(...allEnginesAfterInit)
       }
       
       // 엔진별 호환성 및 추천도 계산

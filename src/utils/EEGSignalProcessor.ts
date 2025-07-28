@@ -236,17 +236,43 @@ export class EEGSignalProcessor {
 
     const totalPower = Object.values(ch1BandPowers).reduce((sum, power) => sum + power, 0);
     
+    // 🔍 밴드 파워 값 디버깅
+    console.log('[DATACHECK] 🧠 EEGSignalProcessor - 밴드 파워 값:', {
+      ch1BandPowers,
+      ch2BandPowers,
+      totalPower,
+      timestamp: Date.now()
+    });
+    
     // EEG 지수 계산 (중복 변수 제거하고 직접 접근)
-    const focusIndex = safeFloat((ch1BandPowers.alpha + ch1BandPowers.theta) > 0 ? 
-      ch1BandPowers.beta / (ch1BandPowers.alpha + ch1BandPowers.theta) : 0);
-    const relaxationIndex = safeFloat((ch1BandPowers.alpha + ch1BandPowers.beta) > 0 ? 
-      ch1BandPowers.alpha / (ch1BandPowers.alpha + ch1BandPowers.beta) : 0);
-    const stressIndex = safeFloat((ch1BandPowers.alpha + ch1BandPowers.theta) > 0 ? 
-      (ch1BandPowers.beta + ch1BandPowers.gamma) / (ch1BandPowers.alpha + ch1BandPowers.theta) : 0);
+    // 🔧 절대값을 사용하여 음수 밴드 파워 문제 해결
+    const absDelta = Math.abs(ch1BandPowers.delta);
+    const absTheta = Math.abs(ch1BandPowers.theta);
+    const absAlpha = Math.abs(ch1BandPowers.alpha);
+    const absBeta = Math.abs(ch1BandPowers.beta);
+    const absGamma = Math.abs(ch1BandPowers.gamma);
+    
+    const focusIndex = safeFloat((absAlpha + absTheta) > 0 ? 
+      absBeta / (absAlpha + absTheta) : 0);
+    const relaxationIndex = safeFloat((absAlpha + absBeta) > 0 ? 
+      absAlpha / (absAlpha + absBeta) : 0);
+    const stressIndex = safeFloat((absAlpha + absTheta) > 0 ? 
+      (absBeta + absGamma) / (absAlpha + absTheta) : 0);
+    
+    // 🔍 계산된 지수 값 디버깅
+    console.log('[DATACHECK] 📊 EEGSignalProcessor - 계산된 지수:', {
+      focusIndex,
+      relaxationIndex,
+      stressIndex,
+      hemisphericBalance: 'calculating...',
+      cognitiveLoad: 'calculating...',
+      emotionalStability: 'calculating...'
+    });
     
     // 좌우뇌 균형 계산 개선 (0으로 나누기 방지 및 자연스러운 값 처리)
-    const leftAlpha = ch1BandPowers.alpha || 0;
-    const rightAlpha = ch2BandPowers.alpha || 0;
+    // 🔧 절대값 사용
+    const leftAlpha = Math.abs(ch1BandPowers.alpha || 0);
+    const rightAlpha = Math.abs(ch2BandPowers.alpha || 0);
     const alphaSum = leftAlpha + rightAlpha;
     
     let hemisphericBalance = 0;
@@ -260,10 +286,10 @@ export class EEGSignalProcessor {
     hemisphericBalance = Math.max(-1, Math.min(1, hemisphericBalance));
     hemisphericBalance = safeFloat(hemisphericBalance);
     
-    const cognitiveLoad = safeFloat(ch1BandPowers.alpha > 0 ? 
-      ch1BandPowers.theta / ch1BandPowers.alpha : 0);
-    const emotionalStability = safeFloat(ch1BandPowers.gamma > 0 ? 
-      (ch1BandPowers.alpha + ch1BandPowers.theta) / ch1BandPowers.gamma : 0);
+    const cognitiveLoad = safeFloat(absAlpha > 0 ? 
+      absTheta / absAlpha : 0);
+    const emotionalStability = safeFloat(absGamma > 0 ? 
+      (absAlpha + absTheta) / absGamma : 0);
 
     // 신호 품질 평가 (이미 퍼센트 값으로 계산됨)
     const signalQuality: SignalQuality = {
@@ -329,6 +355,19 @@ export class EEGSignalProcessor {
     (result as any).hemisphericBalance = hemisphericBalance;
     (result as any).cognitiveLoad = cognitiveLoad;
     (result as any).emotionalStability = emotionalStability;
+    
+    // indices 객체로도 추가 (StreamProcessor 호환성)
+    (result as any).indices = {
+      focusIndex: focusIndex,
+      relaxationIndex: relaxationIndex,
+      stressIndex: stressIndex,
+      hemisphericBalance: hemisphericBalance,
+      cognitiveLoad: cognitiveLoad,
+      emotionalStability: emotionalStability,
+      totalPower: safeFloat(totalPower),
+      attentionIndex: focusIndex,  // focusIndex를 attentionIndex로도 사용
+      meditationIndex: relaxationIndex  // relaxationIndex를 meditationIndex로도 사용
+    };
 
     return result;
   }

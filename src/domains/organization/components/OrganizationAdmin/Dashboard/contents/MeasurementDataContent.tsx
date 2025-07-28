@@ -35,6 +35,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import systemAdminService from '../../../../services/SystemAdminService'
+import { EngineSelectionModal } from '@domains/ai-report/components/EngineSelectionModal'
+import { IAIEngine } from '@domains/ai-report/core/interfaces/IAIEngine'
 
 interface DataStats {
   totalSessions: number
@@ -89,6 +91,18 @@ export default function MeasurementDataContent() {
   const [filterType, setFilterType] = useState<string>('all')
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
+  
+  // AI 엔진 선택 모달 상태
+  const [isEngineSelectionModalOpen, setIsEngineSelectionModalOpen] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  
+  // 모달 상태 디버깅
+  useEffect(() => {
+    console.log('🔍 모달 상태 변경:', { 
+      isEngineSelectionModalOpen, 
+      selectedUserId 
+    })
+  }, [isEngineSelectionModalOpen, selectedUserId])
   
   // 현재 페이지 상태
   const [currentPage, setCurrentPage] = useState(1)
@@ -305,8 +319,47 @@ export default function MeasurementDataContent() {
 
   // 리포트 보기 핸들러
   const handleViewReport = (userId: string, reportId: string) => {
-    console.log('리포트 보기:', userId, reportId)
+    console.log('🔍 handleViewReport 호출됨:', { userId, reportId })
+    
+    // 새로운 AI 분석 생성 요청인 경우
+    if (reportId === 'new_analysis') {
+      console.log('🎯 AI 분석 생성 요청 - 모달 열기')
+      setSelectedUserId(userId)
+      setIsEngineSelectionModalOpen(true)
+      return
+    }
+    
+    // 기존 리포트 보기
+    console.log('👁️ 기존 리포트 보기:', userId, reportId)
     toast.success('리포트 뷰어를 준비 중입니다...')
+  }
+
+  // AI 엔진 선택 핸들러
+  const handleEngineSelect = (engine: IAIEngine) => {
+    if (!selectedUserId) return
+    
+    console.log('🎯 엔진 선택됨:', {
+      engineId: engine.id,
+      engineName: engine.name,
+      userId: selectedUserId,
+      provider: engine.provider,
+      costPerAnalysis: engine.costPerAnalysis
+    })
+    
+    toast.success(`${engine.name} 엔진으로 AI 분석을 시작합니다...`)
+    
+    // 실제 AI 분석 로직은 여기에 추가
+    // TODO: AI 분석 실행 로직 구현
+    
+    // 모달 닫기
+    setIsEngineSelectionModalOpen(false)
+    setSelectedUserId(null)
+  }
+
+  // 엔진 선택 모달 닫기 핸들러
+  const handleEngineSelectionModalClose = () => {
+    setIsEngineSelectionModalOpen(false)
+    setSelectedUserId(null)
   }
 
   // 리포트 공유 핸들러
@@ -602,17 +655,44 @@ export default function MeasurementDataContent() {
                 <button
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   이전
                 </button>
-                <span className="flex items-center px-3 py-1 text-sm">
-                  {currentPage} / {totalPages}
-                </span>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNum 
+                            ? "bg-purple-600 text-white hover:bg-purple-700 font-semibold shadow-sm" 
+                            : "text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+                </div>
+                
                 <button
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   다음
                 </button>
@@ -621,6 +701,15 @@ export default function MeasurementDataContent() {
           )}
         </div>
       )}
+      
+      {/* AI 엔진 선택 모달 */}
+      <EngineSelectionModal
+        isOpen={isEngineSelectionModalOpen}
+        onClose={handleEngineSelectionModalClose}
+        onSelect={handleEngineSelect}
+        availableCredits={10} // TODO: 실제 크레딧 정보로 교체
+        requiredDataTypes={{ eeg: true, ppg: true, acc: false }}
+      />
     </div>
   )
 } 

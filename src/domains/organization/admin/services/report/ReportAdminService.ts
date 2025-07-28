@@ -168,8 +168,6 @@ export class ReportAdminService extends BaseAdminService {
         )
       }
       
-        metadata: { count: result.data.length, total: result.total }
-      
       return result
       
     } catch (error) {
@@ -338,8 +336,6 @@ export class ReportAdminService extends BaseAdminService {
       results: [] as Array<{ reportId: string; success: boolean; error?: string }>
     }
     
-      metadata: { action: action.action, count: action.reportIds.length }
-    
     for (const reportId of action.reportIds) {
       try {
         switch (action.action) {
@@ -366,8 +362,6 @@ export class ReportAdminService extends BaseAdminService {
           success: false,
           error: (error as Error).message
         })
-        
-          metadata: { reportId, action: action.action }
       }
     }
     
@@ -375,8 +369,6 @@ export class ReportAdminService extends BaseAdminService {
       results.failed === 0 ? 'success' : 'failure',
       { action, results }
     )
-    
-      metadata: results
     
     return results
   }

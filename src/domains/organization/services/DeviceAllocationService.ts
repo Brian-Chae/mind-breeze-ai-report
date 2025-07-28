@@ -45,3 +45,4 @@ export class DeviceAllocationService extends BaseService {
   constructor() {
     super()
     this.deviceMasterService = new DeviceMasterService()
+  }

@@ -257,7 +257,7 @@ export class TestDataInitializer {
         displayName: userData.displayName,
         organizationId: userData.organizationId,
         isActive: userData.isActive,
-        gender: Math.random() > 0.5 ? 'MALE' : 'FEMALE',
+        gender: Math.random() > 0.5 ? '남성' : '여성',
         birthYear: 1980 + Math.floor(Math.random() * 30),
         consentStatus: 'CONSENTED',
         lastMeasurementDate: Timestamp.fromDate(new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)),
