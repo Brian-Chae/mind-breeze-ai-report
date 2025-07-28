@@ -433,6 +433,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
 
       // 2. 상세 측정 데이터 저장 (MeasurementDataService 사용)
       try {
+        console.log('[DATACHECK] 📊 상세 측정 데이터 저장 시작');
         const measurementDataService = new MeasurementDataService();
         
         const detailedMeasurementData = {
@@ -544,7 +545,9 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
             deviceModel: detailedMeasurementData.deviceInfo.model,
             dataQualityScore: detailedMeasurementData.dataQuality.overallScore
           }
-        }); 
+        });
+        
+        console.log('[DATACHECK] 📊 measurementDataService.saveMeasurementData 호출 직전'); 
 
         const measurementId = await measurementDataService.saveMeasurementData(detailedMeasurementData);
         console.log('[DATACHECK] 📊 측정 데이터 저장 성공:', {

@@ -50,16 +50,29 @@ export class MeasurementDataService extends BaseService {
    */
   async saveMeasurementData(data: Omit<MeasurementData, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
+      console.log('[DATACHECK] 📊 MeasurementDataService.saveMeasurementData 시작');
+      
       // 데이터 품질 검증
+      console.log('[DATACHECK] 📊 데이터 품질 검증 시작:', {
+        overallScore: data.dataQuality.overallScore,
+        usableForAnalysis: data.dataQuality.usableForAnalysis,
+        eegQuality: data.dataQuality.eegQuality,
+        ppgQuality: data.dataQuality?.ppgQuality || 'undefined'
+      });
       const qualityValidation = this.validateDataQuality(data.dataQuality);
       if (!qualityValidation.isValid) {
+        console.error('[DATACHECK] ❌ 데이터 품질 검증 실패:', qualityValidation.reason);
         throw new Error(`Data quality validation failed: ${qualityValidation.reason}`);
       }
+      console.log('[DATACHECK] ✅ 데이터 품질 검증 통과');
       
       // 메트릭 데이터 검증
+      console.log('[DATACHECK] 📊 메트릭 데이터 검증 시작');
       this.validateMetrics(data.eegMetrics, data.ppgMetrics, data.accMetrics);
+      console.log('[DATACHECK] ✅ 메트릭 데이터 검증 통과');
       
       // Firestore 문서 생성
+      console.log('[DATACHECK] 📊 Firestore 문서 생성 시작');
       const measurementDoc = {
         ...data,
         measurementDate: Timestamp.fromDate(data.measurementDate),
@@ -67,15 +80,26 @@ export class MeasurementDataService extends BaseService {
         updatedAt: Timestamp.now()
       };
       
+      console.log('[DATACHECK] 📊 Firestore setDoc 호출 직전:', {
+        collection: MeasurementDataService.COLLECTION_NAME,
+        hasProcessedTimeSeries: !!measurementDoc.processedTimeSeries,
+        processedTimeSeriesKeys: measurementDoc.processedTimeSeries ? Object.keys(measurementDoc.processedTimeSeries) : []
+      });
+      
       const docRef = doc(collection(this.db, MeasurementDataService.COLLECTION_NAME));
       await setDoc(docRef, measurementDoc);
       const docId = docRef.id;
       
-      console.log(`Measurement data saved with ID: ${docId}`);
+      console.log(`[DATACHECK] ✅ Measurement data saved with ID: ${docId}`);
       return docId;
       
     } catch (error: any) {
-      console.error('Failed to save measurement data:', error);
+      console.error('[DATACHECK] ❌ MeasurementDataService 저장 실패:', {
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorName: error.constructor.name,
+        hasProcessedTimeSeries: !!data.processedTimeSeries
+      });
       throw new AIReportErrorClass({
         code: 'MEASUREMENT_DATA_SAVE_FAILED',
         message: `Failed to save measurement data: ${error.message}`,
