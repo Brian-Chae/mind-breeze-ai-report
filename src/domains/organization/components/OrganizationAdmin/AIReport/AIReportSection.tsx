@@ -421,7 +421,7 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
                               }
                             },
                             qualityMetrics: {
-                              signalQuality: signalQualityStats.mean / 100, // 0-1 범위로 정규화
+                              signalQuality: signalQualityStats.mean, // 이미 0-1 범위의 값
                               measurementDuration: data.duration || 300,
                               dataCompleteness: (100 - artifactStats.mean) / 100, // artifact ratio를 completeness로 변환
                               artifactRatio: artifactStats.mean / 100

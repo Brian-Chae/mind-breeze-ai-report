@@ -237,7 +237,9 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
         const indices = ['focusIndex', 'relaxationIndex', 'stressIndex', 'hemisphericBalance', 'cognitiveLoad', 'emotionalStability'];
         
         for (const index of indices) {
-          if (typeof eegIndices[index] === 'number') {
+          const indexData = eegIndices[index];
+          // 객체 형태로 저장된 경우 value 속성 확인, 직접 숫자로 저장된 경우도 확인
+          if ((indexData && typeof indexData.value === 'number') || typeof indexData === 'number') {
             qualityScore += 5; // 각 지수당 5점
           } else {
             warnings.push(`${index} 지수 데이터가 부족합니다.`);
@@ -248,10 +250,15 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
         const qualityMetrics = data.eegTimeSeriesStats?.qualityMetrics;
         if (qualityMetrics) {
           const signalQuality = qualityMetrics.signalQuality;
-          if (signalQuality < 0.4) {
+          console.log('📊 신호 품질 검증:', { signalQuality, qualityMetrics });
+          
+          // 신호 품질이 0-1 범위가 아닌 경우 정규화
+          const normalizedSignalQuality = signalQuality > 1 ? signalQuality / 100 : signalQuality;
+          
+          if (normalizedSignalQuality < 0.4) {
             warnings.push('신호 품질이 낮습니다. 분석 결과의 신뢰도가 떨어질 수 있습니다.');
             qualityScore *= 0.7;
-          } else if (signalQuality > 0.8) {
+          } else if (normalizedSignalQuality > 0.8) {
             qualityScore *= 1.1;
           }
           
