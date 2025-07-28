@@ -73,17 +73,57 @@ export class MeasurementDataService extends BaseService {
       
       // Firestore 문서 생성
       console.log('[DATACHECK] 📊 Firestore 문서 생성 시작');
+      
+      // processedTimeSeries 데이터를 Firestore 호환 형태로 변환
+      let processedTimeSeriesForFirestore = null;
+      if (data.processedTimeSeries) {
+        try {
+          processedTimeSeriesForFirestore = {
+            ...data.processedTimeSeries,
+            // Date 객체들을 Firestore Timestamp로 변환
+            startTime: data.processedTimeSeries.startTime ? Timestamp.fromDate(new Date(data.processedTimeSeries.startTime)) : null,
+            endTime: data.processedTimeSeries.endTime ? Timestamp.fromDate(new Date(data.processedTimeSeries.endTime)) : null,
+            // 각 센서의 timestamps 배열을 숫자 배열로 확실히 변환
+            eeg: data.processedTimeSeries.eeg ? {
+              ...data.processedTimeSeries.eeg,
+              timestamps: data.processedTimeSeries.eeg.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || []
+            } : null,
+            ppg: data.processedTimeSeries.ppg ? {
+              ...data.processedTimeSeries.ppg,
+              timestamps: data.processedTimeSeries.ppg.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || []
+            } : null,
+            acc: data.processedTimeSeries.acc ? {
+              ...data.processedTimeSeries.acc,
+              timestamps: data.processedTimeSeries.acc.timestamps?.map(ts => typeof ts === 'number' ? ts : Number(ts)) || []
+            } : null
+          };
+          console.log('[DATACHECK] ✅ processedTimeSeries Firestore 변환 완료');
+        } catch (conversionError) {
+          console.error('[DATACHECK] ❌ processedTimeSeries 변환 실패:', conversionError);
+          processedTimeSeriesForFirestore = null;
+        }
+      }
+      
       const measurementDoc = {
         ...data,
         measurementDate: Timestamp.fromDate(data.measurementDate),
         createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
+        // 변환된 processedTimeSeries 사용
+        ...(processedTimeSeriesForFirestore ? { processedTimeSeries: processedTimeSeriesForFirestore } : {})
       };
       
       console.log('[DATACHECK] 📊 Firestore setDoc 호출 직전:', {
         collection: MeasurementDataService.COLLECTION_NAME,
         hasProcessedTimeSeries: !!measurementDoc.processedTimeSeries,
-        processedTimeSeriesKeys: measurementDoc.processedTimeSeries ? Object.keys(measurementDoc.processedTimeSeries) : []
+        processedTimeSeriesKeys: measurementDoc.processedTimeSeries ? Object.keys(measurementDoc.processedTimeSeries) : [],
+        processedTimeSeriesStructure: measurementDoc.processedTimeSeries ? {
+          eegTimestampCount: measurementDoc.processedTimeSeries.eeg?.timestamps?.length || 0,
+          ppgTimestampCount: measurementDoc.processedTimeSeries.ppg?.timestamps?.length || 0,
+          accTimestampCount: measurementDoc.processedTimeSeries.acc?.timestamps?.length || 0,
+          sampleEegTimestamp: measurementDoc.processedTimeSeries.eeg?.timestamps?.[0],
+          samplePpgTimestamp: measurementDoc.processedTimeSeries.ppg?.timestamps?.[0]
+        } : null
       });
       
       const docRef = doc(collection(this.db, MeasurementDataService.COLLECTION_NAME));
