@@ -7,6 +7,7 @@ import { aiEngineRegistry } from '../core/registry/AIEngineRegistry';
 import { BasicGeminiV1Engine } from './BasicGeminiV1Engine';
 import { MockTestEngine } from './MockTestEngine';
 import { EEGAdvancedGeminiEngine } from './EEGAdvancedGeminiEngine';
+import { PPGAdvancedGeminiEngine } from './PPGAdvancedGeminiEngine';
 
 /**
  * 프로덕션용 AI 엔진 등록
@@ -21,6 +22,13 @@ export function registerProductionEngines(): void {
     const apiKey = import.meta.env?.VITE_GOOGLE_GEMINI_API_KEY || '';
     const eegAdvancedEngine = new EEGAdvancedGeminiEngine(apiKey);
     aiEngineRegistry.register(eegAdvancedEngine);
+
+    // PPG Advanced Gemini 엔진 등록
+    console.log('🔄 PPG Advanced Gemini 엔진 생성 중...');
+    const ppgAdvancedEngine = new PPGAdvancedGeminiEngine(apiKey);
+    console.log('✅ PPG Advanced Gemini 엔진 생성 완료:', ppgAdvancedEngine.id, ppgAdvancedEngine.name);
+    aiEngineRegistry.register(ppgAdvancedEngine);
+    console.log('🔧 PPG Advanced Gemini 엔진 등록 완료');
 
     console.log('✅ Production AI engines registered successfully');
   } catch (error) {
@@ -140,7 +148,7 @@ export function getEnginesByCost(maxCost: number) {
 }
 
 // 기본 엔진들 내보내기
-export { BasicGeminiV1Engine, MockTestEngine, EEGAdvancedGeminiEngine };
+export { BasicGeminiV1Engine, MockTestEngine, EEGAdvancedGeminiEngine, PPGAdvancedGeminiEngine };
 
 // 레지스트리도 함께 내보내기
 export { aiEngineRegistry };

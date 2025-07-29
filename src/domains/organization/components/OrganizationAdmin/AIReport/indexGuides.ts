@@ -219,7 +219,7 @@ export const indexGuides: Record<string, string> = {
     <strong>Interpretation:</strong> Below -0.1: 창의적 사고 (우뇌 우세); Above 0.1: 논리적 사고 (좌뇌 우세)<br/>
     <strong>Reference:</strong> Davidson, R. J. (2004). Biological Psychology, 67(1-2), 219-234
   `,
-  'Cognitive Load': `
+  'Cognitive Load Index': `
     <strong>Description:</strong> Cognitive load reflects mental workload and effort based on theta/alpha ratio.<br/>
     <strong>Formula:</strong> Cognitive Load = Theta Power / Alpha Power<br/>
     <strong>Normal Range:</strong> 0.3 - 0.8 (optimal load)<br/>
