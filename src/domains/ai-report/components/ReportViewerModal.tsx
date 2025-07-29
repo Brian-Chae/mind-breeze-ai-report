@@ -18,6 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { rendererRegistry } from '../core/registry/RendererRegistry';
 import { selectBestRenderer } from '../core/utils/EngineRendererMatcher';
 import JsonViewer from './JsonViewer';
+import { EEGAdvancedReportComponent } from '../report-renderers/EEGAdvancedReactRenderer';
+import { PPGAdvancedReportComponent } from '../report-renderers/PPGAdvancedReactRenderer';
 import { 
   Brain, 
   Eye, 
@@ -103,6 +105,20 @@ export function ReportViewerModal({
           }
         }
         
+        // 1-1. EEG Advanced Gemini 엔진은 특별 처리 (React 컴포넌트 직접 사용)
+        if (engineId === 'eeg-advanced-gemini-v1') {
+          // React 컴포넌트를 직접 사용하므로 renderer는 null로 설정
+          targetRenderer = null;
+          setRendererName('EEG 고급 분석 뷰어');
+        }
+        
+        // 1-2. PPG Advanced Gemini 엔진은 특별 처리 (React 컴포넌트 직접 사용)
+        if (engineId === 'ppg-advanced-gemini-v1') {
+          // React 컴포넌트를 직접 사용하므로 renderer는 null로 설정
+          targetRenderer = null;
+          setRendererName('PPG 고급 분석 뷰어');
+        }
+        
         // 2. 전용 렌더러가 없으면 selectBestRenderer 시도
         if (!targetRenderer) {
           targetRenderer = selectBestRenderer(engineId, 'web');
@@ -156,11 +172,18 @@ export function ReportViewerModal({
     try {
       // EEG Advanced 엔진 결과는 JSON 뷰어로 표시
       const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
-      if (engineId === 'eeg-advanced-gemini-v1') {
+      console.log('🔍 엔진 ID 확인:', { engineId, reportKeys: Object.keys(report), rawDataKeys: report.rawData ? Object.keys(report.rawData) : [] });
+      
+      if (engineId === 'eeg-advanced-gemini-v1' || engineId.includes('eeg-advanced')) {
         console.log('🧠 EEG Advanced 결과를 JSON으로 표시');
         
         // EEG Advanced 분석 결과 추출
         const eegAdvancedData = report.rawData?.eegAdvancedAnalysis || report;
+        console.log('📊 EEG Advanced 데이터:', { 
+          hasRawData: !!report.rawData, 
+          hasEEGAdvancedAnalysis: !!report.rawData?.eegAdvancedAnalysis,
+          dataKeys: eegAdvancedData ? Object.keys(eegAdvancedData) : []
+        });
         
         setReportContent({
           isEEGAdvanced: true,
@@ -168,6 +191,34 @@ export function ReportViewerModal({
           metadata: {
             analysisDate: new Date().toLocaleDateString(),
             engineName: 'EEG Advanced Gemini v1',
+            processingTime: `${report?.processingTime || 0}ms`,
+            dataQuality: '우수',
+            engineId: engineId
+          }
+        });
+        
+        setIsLoading(false);
+        return;
+      }
+
+      // PPG Advanced 엔진 결과는 JSON 뷰어로 표시
+      if (engineId === 'ppg-advanced-gemini-v1' || engineId.includes('ppg-advanced')) {
+        console.log('💓 PPG Advanced 결과를 JSON으로 표시');
+        
+        // PPG Advanced 분석 결과 추출
+        const ppgAdvancedData = report.rawData?.ppgAdvancedAnalysis || report;
+        console.log('💓 PPG Advanced 데이터:', { 
+          hasRawData: !!report.rawData, 
+          hasPPGAdvancedAnalysis: !!report.rawData?.ppgAdvancedAnalysis,
+          dataKeys: ppgAdvancedData ? Object.keys(ppgAdvancedData) : []
+        });
+        
+        setReportContent({
+          isPPGAdvanced: true,
+          jsonData: ppgAdvancedData,
+          metadata: {
+            analysisDate: new Date().toLocaleDateString(),
+            engineName: 'PPG Advanced Gemini v1',
             processingTime: `${report?.processingTime || 0}ms`,
             dataQuality: '우수',
             engineId: engineId
@@ -1023,6 +1074,7 @@ export function ReportViewerModal({
       );
     }
 
+    // Advanced 엔진들에 대한 JSON 뷰어 처리
     // EEG Advanced 결과는 JSON 뷰어로 표시
     if (reportContent?.isEEGAdvanced) {
       return (
@@ -1056,6 +1108,45 @@ export function ReportViewerModal({
           <JsonViewer 
             data={reportContent.jsonData} 
             title="EEG 전문 분석 결과"
+            className="shadow-lg"
+          />
+        </div>
+      );
+    }
+
+    // PPG Advanced 결과는 JSON 뷰어로 표시
+    if (reportContent?.isPPGAdvanced) {
+      return (
+        <div id="report-content" className="p-6 space-y-6">
+          <div className="bg-gradient-to-r from-red-100 to-pink-100 rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">
+                PPG 전문 분석 결과
+              </h1>
+              <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
+                {reportContent.metadata.engineName}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-6 mt-4">
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-red-700">JSON</div>
+                <div className="text-gray-700 font-medium">데이터 형식</div>
+              </div>
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-green-700">{reportContent.metadata.processingTime}</div>
+                <div className="text-gray-700 font-medium">처리 시간</div>
+              </div>
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-red-700">{reportContent.metadata.dataQuality}</div>
+                <div className="text-gray-700 font-medium">데이터 품질</div>
+              </div>
+            </div>
+          </div>
+          
+          <JsonViewer 
+            data={reportContent.jsonData} 
+            title="PPG 전문 분석 결과"
             className="shadow-lg"
           />
         </div>
