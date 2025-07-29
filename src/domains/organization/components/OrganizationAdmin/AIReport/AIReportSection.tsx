@@ -27,7 +27,7 @@ import reportSharingService from '@domains/ai-report/services/ReportSharingServi
 import { getNormalRangeInfo, getValueStatus, getClinicalInterpretation, type NormalRangeInfo } from './indexGuides'
 import { DataSourceIndicator } from './DataSourceIndicator'
 import { ValueWithDataSource } from './ValueWithDataSource'
-import { EngineSelectionModal } from '@domains/ai-report/components/EngineSelectionModal'
+import { EngineSelectionModal } from './EngineSelectionModal'
 import { IAIEngine } from '@domains/ai-report/core/interfaces/IAIEngine'
 
 interface AIReportSectionProps {
@@ -1801,7 +1801,6 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   useEffect(() => {
     const updateContext = () => {
       const newContext = enterpriseAuthService.getCurrentContext()
-      console.log('🔄 Context 업데이트:', newContext)
       setCurrentContext(newContext)
     }
     
@@ -1913,6 +1912,73 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     dataId: '',
     data: null
   })
+  
+  // 엔진 선택 모달 상태
+  const [engineSelectionModal, setEngineSelectionModal] = useState<{
+    isOpen: boolean;
+    dataId: string;
+  }>({
+    isOpen: false,
+    dataId: ''
+  })
+  
+  // 엔진 선택 핸들러
+  const handleEngineSelection = async (engineId: string) => {
+    const { dataId } = engineSelectionModal
+    if (!dataId) return
+    
+    // 모달 닫기
+    setEngineSelectionModal({ isOpen: false, dataId: '' })
+    
+    // 선택된 엔진으로 분석 실행
+    await handleGenerateReportFromData(dataId, engineId)
+  }
+  
+  // 엔진 ID에 따른 표시 이름 반환
+  const getEngineDisplayName = (engineId: string): string => {
+    // 정확한 매칭 먼저 시도
+    switch (engineId) {
+      case 'basic-gemini-v1':
+        return '기본 Gemini 분석';
+      case 'eeg-advanced-gemini':
+      case 'eeg-advanced-gemini-v1':
+        return 'EEG 전문 분석 v1';
+      case 'ppg-advanced-gemini-v1':
+        return 'PPG 전문 분석 v1';
+      case 'mock-test':
+        return '데모 AI 엔진';
+    }
+    
+    // 부분 매칭으로 fallback
+    if (engineId.includes('eeg-advanced')) {
+      return 'EEG 전문 분석 v1';
+    }
+    if (engineId.includes('ppg-advanced')) {
+      return 'PPG 전문 분석 v1';
+    }
+    if (engineId.includes('basic-gemini')) {
+      return '기본 Gemini 분석';
+    }
+    if (engineId.includes('mock')) {
+      return '데모 AI 엔진';
+    }
+    
+    return '기본 분석';
+  }
+  
+  // 엔진 타입에 따른 기능 지원 여부 확인
+  const getEngineCapabilities = (engineId: string) => {
+    const isEEGAdvanced = engineId.includes('eeg-advanced');
+    const isPPGAdvanced = engineId.includes('ppg-advanced');
+    const isAdvancedEngine = isEEGAdvanced || isPPGAdvanced;
+    
+    return {
+      supportsSharing: !isAdvancedEngine, // 전문 분석은 공유 미지원
+      supportsPDF: !isAdvancedEngine,     // 전문 분석은 PDF 미지원
+      supportsViewers: !isAdvancedEngine, // 전문 분석은 뷰어 선택 미지원
+      hasAdvancedReport: isAdvancedEngine // 전문 분석은 고급 리포트
+    };
+  }
   
   // 이메일 복사 핸들러
   const handleEmailCopy = async (dataId: string, email: string) => {
@@ -2229,7 +2295,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                availableReports: analysisResults.map((analysis: any) => ({
                  id: analysis.id,
                  engineId: analysis.engineId || 'basic-gemini-v1',
-                 engineName: analysis.engineName || '기본 분석',
+                 engineName: getEngineDisplayName(analysis.engineId || 'basic-gemini-v1'),
                  analysisId: analysis.analysisId,
                  timestamp: analysis.timestamp,
                  personalInfo: analysis.personalInfo, // 🎯 개인 정보 추가
@@ -2557,9 +2623,13 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }
       
 
-      // 3. AI 엔진 초기화 (기본적으로 basic-gemini-v1 사용)
+      // 3. AI 엔진 초기화 (선택된 엔진 사용)
       console.log('🤖 AI 엔진 초기화:', engineType);
-      const aiEngine = new BasicGeminiV1Engine()
+      const aiEngine = aiEngineRegistry.get(engineType);
+      
+      if (!aiEngine) {
+        throw new Error(`선택된 AI 엔진을 찾을 수 없습니다: ${engineType}`);
+      }
 
       // 4. 데이터 검증
       console.log('✅ 데이터 검증 시작');
@@ -2619,7 +2689,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         measurementDataId: dataId,
         measurementUserId, // 🔥 MeasurementUser ID 추가
         engineId: aiEngine.id,
-        engineName: aiEngine.name,
+        engineName: getEngineDisplayName(aiEngine.id),
         engineVersion: aiEngine.version,
         analysisId: analysisResult.analysisId,
         timestamp: analysisResult.timestamp,
@@ -3661,44 +3731,66 @@ AI 건강 분석 리포트
                       
                       {/* 액션 버튼들 */}
                       <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleCreateShareLink(report)}
-                          disabled={creatingShareLinks[report.id]}
-                          className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors"
-                        >
-                          {creatingShareLinks[report.id] ? (
-                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                          ) : (
-                            <Share2 className="w-4 h-4 mr-1" />
-                          )}
-                          공유하기
-                        </Button>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              리포트보기
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
-                              <DropdownMenuItem 
-                                key={viewer.id}
-                                onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
-                                className="text-gray-900 hover:text-gray-900"
-                              >
-                                {viewer.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {(() => {
+                          const capabilities = getEngineCapabilities(report.engineId || 'basic-gemini-v1');
+                          
+                          return (
+                            <>
+                              {capabilities.supportsSharing && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCreateShareLink(report)}
+                                  disabled={creatingShareLinks[report.id]}
+                                  className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 transition-colors"
+                                >
+                                  {creatingShareLinks[report.id] ? (
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Share2 className="w-4 h-4 mr-1" />
+                                  )}
+                                  공유하기
+                                </Button>
+                              )}
+                              
+                              {capabilities.supportsViewers ? (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      리포트보기
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent>
+                                    {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
+                                      <DropdownMenuItem 
+                                        key={viewer.id}
+                                        onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                                        className="text-gray-900 hover:text-gray-900"
+                                      >
+                                        {viewer.name}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              ) : capabilities.hasAdvancedReport ? (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleViewReportWithViewer(report, '', 'EEG 고급 분석 뷰어')}
+                                  className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  상세 분석 보기
+                                </Button>
+                              ) : null}
+                            </>
+                          );
+                        })()}
                         
                         <Button 
                           size="sm" 
@@ -4158,7 +4250,7 @@ AI 건강 분석 리포트
                       <Button 
                         className="bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-400"
                         disabled={generatingReports[data.id]?.isLoading || configLoading}
-                        onClick={() => handleGenerateReportFromData(data.id, 'basic-gemini-v1')}
+                        onClick={() => setEngineSelectionModal({ isOpen: true, dataId: data.id })}
                       >
                         {generatingReports[data.id]?.isLoading ? (
                           <>
@@ -4194,7 +4286,9 @@ AI 건강 분석 리포트
                             <div className="flex items-center space-x-4 flex-1">
                               <div className="flex items-center space-x-2">
                                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                <span className="font-medium text-gray-900">기본 Gemini 분석</span>
+                                <span className="font-medium text-gray-900">
+                                  {getEngineDisplayName(report.engineId || 'basic-gemini-v1')}
+                                </span>
                               </div>
                               
                               <div className="text-center">
@@ -4221,54 +4315,78 @@ AI 건강 분석 리포트
                             </div>
                             
                             <div className="flex items-center space-x-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCreateShareLink(report)}
-                                disabled={creatingShareLinks[report.id]}
-                                className="text-green-600 border-green-300 hover:bg-green-50"
-                              >
-                                {creatingShareLinks[report.id] ? (
-                                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                ) : (
-                                  <Share2 className="w-4 h-4 mr-1" />
-                                )}
-                                공유하기
-                              </Button>
-                              
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                                  >
-                                    <Eye className="w-4 h-4 mr-1" />
-                                    리포트보기
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
-                                    <DropdownMenuItem 
-                                      key={viewer.id}
-                                      onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
-                                      className="text-gray-900 hover:text-gray-900"
-                                    >
-                                      {viewer.name}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDownloadPDF(report.id, report)}
-                                className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                              >
-                                <Download className="w-4 h-4 mr-1" />
-                                PDF 보기
-                              </Button>
+                              {(() => {
+                                const capabilities = getEngineCapabilities(report.engineId || 'basic-gemini-v1');
+                                
+                                return (
+                                  <>
+                                    {capabilities.supportsSharing && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleCreateShareLink(report)}
+                                        disabled={creatingShareLinks[report.id]}
+                                        className="text-green-600 border-green-300 hover:bg-green-50"
+                                      >
+                                        {creatingShareLinks[report.id] ? (
+                                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                        ) : (
+                                          <Share2 className="w-4 h-4 mr-1" />
+                                        )}
+                                        공유하기
+                                      </Button>
+                                    )}
+                                    
+                                    {capabilities.supportsViewers ? (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                          >
+                                            <Eye className="w-4 h-4 mr-1" />
+                                            리포트보기
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                          {getCompatibleViewers(report.engineId || 'unknown').map(viewer => (
+                                            <DropdownMenuItem 
+                                              key={viewer.id}
+                                              onClick={() => handleViewReportWithViewer(report, viewer.id, viewer.name)}
+                                              className="text-gray-900 hover:text-gray-900"
+                                            >
+                                              {viewer.name}
+                                            </DropdownMenuItem>
+                                          ))}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    ) : capabilities.hasAdvancedReport ? (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => handleViewReportWithViewer(report, '', 'EEG 고급 분석 뷰어')}
+                                        className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                      >
+                                        <Eye className="w-4 h-4 mr-1" />
+                                        상세 분석 보기
+                                      </Button>
+                                    ) : null}
+                                    
+                                    {capabilities.supportsPDF && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => handleDownloadPDF(report.id, report)}
+                                        className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                                      >
+                                        <Download className="w-4 h-4 mr-1" />
+                                        PDF 보기
+                                      </Button>
+                                    )}
+                                  </>
+                                );
+                              })()}
                               
                               <Button 
                                 size="sm" 
@@ -4628,6 +4746,14 @@ AI 건강 분석 리포트
           viewerName={selectedViewerName}
         />
       )}
+      
+      {/* 엔진 선택 모달 */}
+      <EngineSelectionModal
+        isOpen={engineSelectionModal.isOpen}
+        onClose={() => setEngineSelectionModal({ isOpen: false, dataId: '' })}
+        onSelectEngine={handleEngineSelection}
+        isGenerating={!!generatingReports[engineSelectionModal.dataId]?.isLoading}
+      />
 
       {/* 측정 데이터 삭제 확인 모달 */}
       {deleteConfirmModal.isOpen && (
