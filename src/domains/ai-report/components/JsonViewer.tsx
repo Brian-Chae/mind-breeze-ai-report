@@ -71,7 +71,7 @@ export function JsonViewer({ data, title = "JSON 데이터", className = "" }: J
               variant="outline"
               size="sm"
               onClick={() => setShowRaw(!showRaw)}
-              className="text-xs"
+              className="text-xs border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-800"
             >
               {showRaw ? (
                 <>
@@ -90,11 +90,11 @@ export function JsonViewer({ data, title = "JSON 데이터", className = "" }: J
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="text-xs"
+              className="text-xs border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 mr-1 text-green-500" />
+                  <Check className="w-4 h-4 mr-1 text-green-600" />
                   복사됨
                 </>
               ) : (
@@ -109,7 +109,7 @@ export function JsonViewer({ data, title = "JSON 데이터", className = "" }: J
               variant="outline"
               size="sm"
               onClick={handleDownload}
-              className="text-xs"
+              className="text-xs border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 hover:text-green-800"
             >
               <Download className="w-4 h-4 mr-1" />
               다운로드
