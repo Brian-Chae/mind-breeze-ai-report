@@ -6,6 +6,9 @@
 import { rendererRegistry } from '../core/registry/RendererRegistry';
 import { BasicGeminiV1WebRenderer } from './web/BasicGeminiV1WebRenderer';
 import { BasicGeminiV1MobileRenderer } from './web/BasicGeminiV1MobileRenderer';
+import { EEGAdvancedReactRenderer } from './EEGAdvancedReactRenderer';
+import { PPGAdvancedReactRenderer } from './PPGAdvancedReactRenderer';
+import { IntegratedAdvancedReactRenderer } from './IntegratedAdvancedReactRenderer';
 
 /**
  * 모든 리포트 렌더러 등록
@@ -19,6 +22,18 @@ export function registerAllRenderers(): void {
     // Gemini V1 Mobile 렌더러 등록
     const basicGeminiV1MobileRenderer = new BasicGeminiV1MobileRenderer();
     rendererRegistry.register(basicGeminiV1MobileRenderer);
+
+    // EEG Advanced React 렌더러 등록
+    const eegAdvancedReactRenderer = new EEGAdvancedReactRenderer();
+    rendererRegistry.register(eegAdvancedReactRenderer);
+
+    // PPG Advanced React 렌더러 등록
+    const ppgAdvancedReactRenderer = new PPGAdvancedReactRenderer();
+    rendererRegistry.register(ppgAdvancedReactRenderer);
+
+    // Integrated Advanced React 렌더러 등록
+    const integratedAdvancedReactRenderer = new IntegratedAdvancedReactRenderer();
+    rendererRegistry.register(integratedAdvancedReactRenderer);
 
     console.log('✅ All report renderers registered successfully');
   } catch (error) {
@@ -64,7 +79,13 @@ export function initializeRenderers(): void {
 }
 
 // 기본 렌더러들 내보내기
-export { BasicGeminiV1WebRenderer, BasicGeminiV1MobileRenderer };
+export { 
+  BasicGeminiV1WebRenderer, 
+  BasicGeminiV1MobileRenderer,
+  EEGAdvancedReactRenderer,
+  PPGAdvancedReactRenderer,
+  IntegratedAdvancedReactRenderer
+};
 
 // 레지스트리도 함께 내보내기
 export { rendererRegistry };

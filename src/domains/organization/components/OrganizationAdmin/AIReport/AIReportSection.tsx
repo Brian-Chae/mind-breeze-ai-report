@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X, Info, HelpCircle } from 'lucide-react'
+import { Brain, Plus, Eye, Download, Send, Search, Filter, CheckCircle, AlertCircle, Clock, Star, BarChart3, FileText, User, Calendar, TrendingUp, MoreHorizontal, Edit, Trash2, Play, Pause, RefreshCw, Loader2, Activity, Monitor, Share2, Copy, Link, DollarSign, Briefcase, Building, Mail, UserCheck, X, Info, HelpCircle, Sparkles } from 'lucide-react'
 import { Card } from '@ui/card'
 import { Button } from '@ui/button'
 import { Badge } from '@ui/badge'
@@ -29,6 +29,10 @@ import { DataSourceIndicator } from './DataSourceIndicator'
 import { ValueWithDataSource } from './ValueWithDataSource'
 import { EngineSelectionModal } from './EngineSelectionModal'
 import { IAIEngine } from '@domains/ai-report/core/interfaces/IAIEngine'
+import { useAnalysisPipeline } from '@domains/ai-report/hooks/useAnalysisPipeline'
+import { PipelineProgressModal } from '@domains/ai-report/components/PipelineProgressModal'
+import { PersonalInfo } from '@domains/ai-report/ai-engines/IntegratedAdvancedGeminiEngine'
+import { pipelineReportService } from '@domains/ai-report/services/PipelineReportService'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -1735,6 +1739,18 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResults, setAnalysisResults] = useState<Map<string, any>>(new Map())
   
+  // 파이프라인 관련 상태
+  const { 
+    isRunning: isPipelineRunning, 
+    progress: pipelineProgress, 
+    result: pipelineResult, 
+    error: pipelineError,
+    runPipeline,
+    cancelPipeline,
+    reset: resetPipeline
+  } = useAnalysisPipeline()
+  const [isPipelineModalOpen, setIsPipelineModalOpen] = useState(false)
+  
   // AI Report 설정을 위한 organization ID
   const [currentContext, setCurrentContext] = useState(enterpriseAuthService.getCurrentContext())
   const organizationId = currentContext.organization?.id || ''
@@ -1795,6 +1811,82 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const handleEngineSelectionModalClose = () => {
     setIsEngineSelectionModalOpen(false)
     setSelectedMeasurementData(null)
+  }
+  
+  // 파이프라인 실행 (통합 분석)
+  const handleRunPipeline = async (measurementData: any) => {
+    console.log('🚀 통합 분석 파이프라인 실행:', measurementData);
+    
+    try {
+      // 개인정보 확인
+      const personalInfo: PersonalInfo = {
+        age: measurementData.personalInfo?.age || measurementData.userAge || 30,
+        gender: measurementData.personalInfo?.gender || 
+                (measurementData.userGender === '남성' ? 'male' : 
+                 measurementData.userGender === '여성' ? 'female' : 'male'),
+        occupation: measurementData.personalInfo?.occupation || measurementData.userOccupation,
+        lifestyle: measurementData.personalInfo?.lifestyle
+      };
+      
+      // 파이프라인 모달 열기
+      setIsPipelineModalOpen(true);
+      
+      // 파이프라인 실행
+      const result = await runPipeline({
+        personalInfo,
+        measurementData: {
+          eeg: measurementData.eeg || measurementData.processedEEG,
+          ppg: measurementData.ppg || measurementData.processedPPG
+        },
+        options: {
+          includeDetailedAnalysis: true
+        }
+      });
+      
+      if (result) {
+        console.log('✅ 파이프라인 완료:', result);
+        
+        // Firestore에 결과 저장
+        const savedReport = await pipelineReportService.savePipelineReport(
+          result,
+          organizationId,
+          measurementData.userId,
+          measurementData.id,
+          {
+            name: measurementData.userName || '알 수 없음',
+            age: personalInfo.age,
+            gender: personalInfo.gender,
+            occupation: personalInfo.occupation
+          }
+        );
+        
+        console.log('✅ 파이프라인 리포트 저장 완료:', savedReport.id);
+        
+        // 성공 메시지 표시
+        toast.success('통합 분석이 완료되었습니다!');
+        
+        // 측정 데이터 목록 다시 불러오기 (파이프라인 리포트 포함)
+        await loadMeasurementData();
+        
+        // 모달 닫기
+        setTimeout(() => {
+          setIsPipelineModalOpen(false);
+          resetPipeline();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('❌ 파이프라인 실행 실패:', error);
+      toast.error('통합 분석 중 오류가 발생했습니다.');
+    }
+  }
+  
+  // 파이프라인 모달 닫기
+  const handlePipelineModalClose = () => {
+    setIsPipelineModalOpen(false);
+    if (isPipelineRunning) {
+      cancelPipeline();
+    }
+    resetPipeline();
   }
   
   // enterpriseAuthService의 상태 변경 감지
@@ -1945,6 +2037,8 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         return 'EEG 전문 분석 v1';
       case 'ppg-advanced-gemini-v1':
         return 'PPG 전문 분석 v1';
+      case 'integrated-advanced-gemini-v1':
+        return '통합 고급 분석 v1';
       case 'mock-test':
         return '데모 AI 엔진';
     }
@@ -1955,6 +2049,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     }
     if (engineId.includes('ppg-advanced')) {
       return 'PPG 전문 분석 v1';
+    }
+    if (engineId.includes('integrated-advanced')) {
+      return '통합 고급 분석 v1';
     }
     if (engineId.includes('basic-gemini')) {
       return '기본 Gemini 분석';
@@ -2235,6 +2332,9 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
              ]
              const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
              
+             // 파이프라인 리포트 조회
+             const pipelineReports = await pipelineReportService.getPipelineReportsByMeasurementData(session.id)
+             
              // 담당자 정보 조회
              let managerInfo = null;
              if (session.measuredByUserId || session.measurementByUserId) {
@@ -2291,21 +2391,23 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                ppgSamples: session.metadata?.ppgSamples || Math.floor(Math.random() * 1000) + 3000,
                accSamples: session.metadata?.accSamples || Math.floor(Math.random() * 1000) + 3000,
                duration: session.duration || 60,
-               hasReports: analysisResults.length > 0,
-               availableReports: analysisResults.map((analysis: any) => ({
-                 id: analysis.id,
-                 engineId: analysis.engineId || 'basic-gemini-v1',
-                 engineName: getEngineDisplayName(analysis.engineId || 'basic-gemini-v1'),
-                 analysisId: analysis.analysisId,
-                 timestamp: analysis.timestamp,
-                 personalInfo: analysis.personalInfo, // 🎯 개인 정보 추가
-                 overallScore: analysis.overallScore || 0,
-                 stressLevel: analysis.stressLevel || 0,
-                 focusLevel: analysis.focusLevel || 0,
-                 insights: analysis.insights, // 🎯 insights 필드 추가
-                 rawData: analysis.rawData, // 🎯 rawData 필드 추가
-                 metrics: analysis.metrics, // 🎯 metrics 필드 추가
-                 costUsed: analysis.costUsed || 1,
+               hasReports: analysisResults.length > 0 || pipelineReports.length > 0,
+               availableReports: [
+                 ...analysisResults.map((analysis: any) => ({
+                   id: analysis.id,
+                   engineId: analysis.engineId || 'basic-gemini-v1',
+                   engineName: getEngineDisplayName(analysis.engineId || 'basic-gemini-v1'),
+                   analysisId: analysis.analysisId,
+                   timestamp: analysis.timestamp,
+                   personalInfo: analysis.personalInfo, // 🎯 개인 정보 추가
+                   overallScore: analysis.overallScore || 0,
+                   stressLevel: analysis.stressLevel || 0,
+                   focusLevel: analysis.focusLevel || 0,
+                   isPipelineReport: false,
+                   insights: analysis.insights, // 🎯 insights 필드 추가
+                   rawData: analysis.rawData, // 🎯 rawData 필드 추가
+                   metrics: analysis.metrics, // 🎯 metrics 필드 추가
+                   costUsed: analysis.costUsed || 1,
                  processingTime: analysis.processingTime || 0,
                  qualityScore: analysis.qualityScore || 0,
                  createdAt: (() => {
@@ -2326,7 +2428,31 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                    return new Date().toISOString()
                  })(),
                  createdByUserName: analysis.createdByUserName || '시스템'
-               })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+               })),
+               ...pipelineReports.map((report: any) => ({
+                 id: report.id,
+                 engineId: 'integrated-advanced-gemini-v1',
+                 engineName: '통합 고급 분석 (Gemini)',
+                 analysisId: report.integratedAnalysisId,
+                 timestamp: report.metadata.timestamp,
+                 personalInfo: report.personalInfo,
+                 overallScore: report.integratedAnalysisResult?.overallSummary?.healthScore || 0,
+                 stressLevel: report.integratedAnalysisResult?.overallSummary?.stressLevel || 0,
+                 focusLevel: report.integratedAnalysisResult?.eegReport?.summary?.focusLevel || 0,
+                 isPipelineReport: true,
+                 insights: report.integratedAnalysisResult?.improvementPlan,
+                 rawData: report.integratedAnalysisResult,
+                 metrics: {
+                   eeg: report.eegAnalysisResult,
+                   ppg: report.ppgAnalysisResult
+                 },
+                 costUsed: 0.015,
+                 processingTime: report.metadata.totalDuration,
+                 qualityScore: 100,
+                 createdAt: report.createdAt?.toDate?.().toISOString() || report.metadata.timestamp,
+                 createdByUserName: '통합 분석 시스템'
+               }))
+               ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
                sessionData: session // 원본 세션 데이터 보관
              }
            } catch (error) {
@@ -4264,6 +4390,26 @@ AI 건강 분석 리포트
                           </>
                         )}
                       </Button>
+                      {/* 통합 분석 버튼 - EEG와 PPG 데이터가 모두 있을 때만 표시 */}
+                      {data.processedEEG && data.processedPPG && (
+                        <Button 
+                          className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 disabled:bg-gray-400"
+                          disabled={isPipelineRunning || configLoading}
+                          onClick={() => handleRunPipeline(data)}
+                        >
+                          {isPipelineRunning ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              통합 분석 중...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              통합 분석
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -4895,6 +5041,16 @@ AI 건강 분석 리포트
         onSelect={handleEngineSelect}
         availableCredits={10} // TODO: 실제 크레딧 정보로 교체
         requiredDataTypes={{ eeg: true, ppg: true, acc: false }}
+      />
+      
+      {/* 파이프라인 진행 모달 */}
+      <PipelineProgressModal
+        isOpen={isPipelineModalOpen}
+        onClose={handlePipelineModalClose}
+        progress={pipelineProgress}
+        onCancel={cancelPipeline}
+        isRunning={isPipelineRunning}
+        error={pipelineError}
       />
     </div>
   )

@@ -21,9 +21,19 @@ export const EngineSelectionModal: React.FC<EngineSelectionModalProps> = ({
   const engines = getRegisteredEngines();
   
   // EEG 및 PPG 데이터를 지원하는 엔진들 필터링
-  const compatibleEngines = engines.filter(engine => 
-    engine.supportedDataTypes.includes('EEG') || engine.supportedDataTypes.includes('PPG')
-  );
+  // 통합 분석 엔진은 EEG와 PPG 둘 다 지원해야 함
+  const compatibleEngines = engines.filter(engine => {
+    const supportsEEG = engine.supportedDataTypes.includes('EEG');
+    const supportsPPG = engine.supportedDataTypes.includes('PPG');
+    
+    // 통합 분석 엔진 (EEG와 PPG 둘 다 지원)
+    if (engine.id.includes('integrated')) {
+      return supportsEEG && supportsPPG;
+    }
+    
+    // 개별 분석 엔진 (EEG 또는 PPG 중 하나만 지원해도 됨)
+    return supportsEEG || supportsPPG;
+  });
   
   console.log('🔍 조직 관리 페이지 - 등록된 엔진들:', engines);
   console.log('🔍 조직 관리 페이지 - 필터링된 엔진들:', compatibleEngines);
@@ -107,6 +117,22 @@ export const EngineSelectionModal: React.FC<EngineSelectionModalProps> = ({
                           </span>
                           <span className="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded">
                             의료 인사이트
+                          </span>
+                        </div>
+                      )}
+                      {engine.id === 'integrated-advanced-gemini-v1' && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                            종합 분석
+                          </span>
+                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                            EEG + PPG 통합
+                          </span>
+                          <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
+                            맞춤형 건강 플랜
+                          </span>
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded">
+                            심층 인사이트
                           </span>
                         </div>
                       )}

@@ -20,6 +20,7 @@ import { selectBestRenderer } from '../core/utils/EngineRendererMatcher';
 import JsonViewer from './JsonViewer';
 import { EEGAdvancedReportComponent } from '../report-renderers/EEGAdvancedReactRenderer';
 import { PPGAdvancedReportComponent } from '../report-renderers/PPGAdvancedReactRenderer';
+import { PipelineReportViewer } from './PipelineReportViewer';
 import { 
   Brain, 
   Eye, 
@@ -117,6 +118,13 @@ export function ReportViewerModal({
           // React 컴포넌트를 직접 사용하므로 renderer는 null로 설정
           targetRenderer = null;
           setRendererName('PPG 고급 분석 뷰어');
+        }
+        
+        // 1-3. Integrated Advanced Gemini 엔진은 특별 처리 (React 컴포넌트 직접 사용)
+        if (engineId === 'integrated-advanced-gemini-v1') {
+          // React 컴포넌트를 직접 사용하므로 renderer는 null로 설정
+          targetRenderer = null;
+          setRendererName('통합 고급 분석 뷰어');
         }
         
         // 2. 전용 렌더러가 없으면 selectBestRenderer 시도
@@ -219,6 +227,31 @@ export function ReportViewerModal({
           metadata: {
             analysisDate: new Date().toLocaleDateString(),
             engineName: 'PPG Advanced Gemini v1',
+            processingTime: `${report?.processingTime || 0}ms`,
+            dataQuality: '우수',
+            engineId: engineId
+          }
+        });
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // Integrated Advanced 엔진 결과는 전용 뷰어로 표시
+      if (engineId === 'integrated-advanced-gemini-v1' || engineId.includes('integrated-advanced')) {
+        console.log('🧠💓 Integrated Advanced 결과를 전용 뷰어로 표시');
+        
+        // 파이프라인 리포트인지 확인
+        const isPipelineReport = report.isPipelineReport || !!report.metadata?.pipelineId;
+        
+        setReportContent({
+          isIntegratedAdvanced: true,
+          isPipelineReport: isPipelineReport,
+          pipelineData: isPipelineReport ? report : null,
+          jsonData: report.rawData || report,
+          metadata: {
+            analysisDate: new Date().toLocaleDateString(),
+            engineName: '통합 고급 분석 (Gemini)',
             processingTime: `${report?.processingTime || 0}ms`,
             dataQuality: '우수',
             engineId: engineId
@@ -1153,6 +1186,58 @@ export function ReportViewerModal({
       );
     }
 
+    // Integrated Advanced 결과 표시
+    if (reportContent?.isIntegratedAdvanced) {
+      // 파이프라인 리포트는 전용 뷰어 사용
+      if (reportContent.isPipelineReport && reportContent.pipelineData) {
+        return (
+          <div id="report-content" className="w-full">
+            <PipelineReportViewer 
+              report={reportContent.pipelineData} 
+              onClose={onClose}
+            />
+          </div>
+        );
+      }
+      
+      // 일반 통합 분석 결과는 JSON 뷰어로 표시
+      return (
+        <div id="report-content" className="p-6 space-y-6">
+          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">
+                통합 고급 분석 결과
+              </h1>
+              <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
+                {reportContent.metadata.engineName}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-6 mt-4">
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-purple-700">통합</div>
+                <div className="text-gray-700 font-medium">분석 유형</div>
+              </div>
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-green-700">{reportContent.metadata.processingTime}</div>
+                <div className="text-gray-700 font-medium">처리 시간</div>
+              </div>
+              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-blue-700">{reportContent.metadata.dataQuality}</div>
+                <div className="text-gray-700 font-medium">데이터 품질</div>
+              </div>
+            </div>
+          </div>
+          
+          <JsonViewer 
+            data={reportContent.jsonData} 
+            title="통합 고급 분석 결과"
+            className="shadow-lg"
+          />
+        </div>
+      );
+    }
+
     // 실제 선택된 렌더러 기준으로 렌더링
     console.log('렌더러 선택:', actualRenderer?.id);
     if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
@@ -1169,9 +1254,11 @@ export function ReportViewerModal({
         className={`${
           isFullscreen 
             ? 'max-w-[100vw] max-h-[100vh] !rounded-none !m-0' 
-            : viewMode === 'mobile'
-              ? '!w-[390px] !max-w-[390px] max-h-[90vh]'
-              : '!w-[1180px] !max-w-none max-h-[95vh]'
+            : reportContent?.isPipelineReport
+              ? '!w-[1400px] !max-w-[95vw] max-h-[95vh]'
+              : viewMode === 'mobile'
+                ? '!w-[390px] !max-w-[390px] max-h-[90vh]'
+                : '!w-[1180px] !max-w-none max-h-[95vh]'
         } overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl`}
         style={{
           width: isFullscreen 
