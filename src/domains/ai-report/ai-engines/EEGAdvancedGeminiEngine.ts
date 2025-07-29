@@ -46,9 +46,32 @@ interface EEGAnalysisInput {
 
 // EEG 고급 분석 결과 인터페이스
 interface EEGAdvancedAnalysisResult {
-  analysisResults: CoreAnalysisResult[];
+  analysisResults?: CoreAnalysisResult[]; // 기존 구조 호환성
+  fourDimensionAnalysis?: FourDimensionAnalysis; // 새로운 4대 지표 구조
   detailedDataAnalysis: DetailedDataAnalysis;
+  comprehensiveAssessment?: ComprehensiveAssessment; // 종합 평가
   metadata: AnalysisMetadata;
+}
+
+// 4대 지표 분석 인터페이스
+interface FourDimensionAnalysis {
+  arousal: DimensionAnalysis;
+  valence: DimensionAnalysis;
+  focus: DimensionAnalysis;
+  stress: DimensionAnalysis;
+}
+
+interface DimensionAnalysis {
+  dimension: string;
+  level: string;
+  score: number;
+  interpretation: string;
+  evidence: {
+    [key: string]: any;
+  };
+  clinicalSignificance: 'normal' | 'mild' | 'moderate' | 'severe';
+  personalizedInterpretation: string;
+  recommendations: string[];
 }
 
 interface CoreAnalysisResult {
@@ -109,6 +132,35 @@ interface DetailedDataAnalysis {
     mentalFatigue: string;
     neurologicalIndicators: string;
   };
+}
+
+interface ComprehensiveAssessment {
+  overallSummary: string;
+  keyFindings: string[];
+  primaryConcerns: string[];
+  ageGenderAnalysis: {
+    ageComparison: string;
+    genderConsiderations: string;
+    developmentalContext: string;
+  };
+  occupationalAnalysis: {
+    jobDemands: string;
+    workRelatedPatterns: string;
+    professionalRecommendations: string[];
+  };
+  improvementPlan: {
+    shortTermGoals: string[];
+    longTermGoals: string[];
+    actionItems: string[];
+    monitoringPlan: string;
+  };
+  riskAssessment: {
+    level: 'low' | 'moderate' | 'high';
+    factors: string[];
+    preventiveMeasures: string[];
+  };
+  overallScore: number;
+  clinicalRecommendation: string;
 }
 
 interface AnalysisMetadata {
@@ -394,6 +446,7 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
       // 구조화된 데이터가 이미 있는 경우 (AIReportSection에서 전달된 경우)
       if (data.eegTimeSeriesStats && data.personalInfo) {
         console.log('✅ 구조화된 EEG 데이터 사용');
+        console.log('🔍 EEG 지수 원본 데이터:', data.eegTimeSeriesStats.eegIndices);
         return {
           personalInfo: {
             name: data.personalInfo.name,
@@ -435,10 +488,38 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
               }
             },
             eegIndices: {
-              focusIndex: data.eegTimeSeriesStats.eegIndices.focusIndex?.value || data.eegTimeSeriesStats.eegIndices.focusIndex || 2.0,
-              relaxationIndex: data.eegTimeSeriesStats.eegIndices.relaxationIndex?.value || data.eegTimeSeriesStats.eegIndices.relaxationIndex || 0.2,
-              stressIndex: data.eegTimeSeriesStats.eegIndices.stressIndex?.value || data.eegTimeSeriesStats.eegIndices.stressIndex || 3.2,
-              hemisphericBalance: data.eegTimeSeriesStats.eegIndices.hemisphericBalance?.value || data.eegTimeSeriesStats.eegIndices.hemisphericBalance || 0.05,
+              focusIndex: (() => {
+                const value = data.eegTimeSeriesStats.eegIndices.focusIndex?.value || data.eegTimeSeriesStats.eegIndices.focusIndex || 2.0;
+                console.log('🔍 Focus Index 추출:', { 
+                  raw: data.eegTimeSeriesStats.eegIndices.focusIndex, 
+                  extracted: value 
+                });
+                return value;
+              })(),
+              relaxationIndex: (() => {
+                const value = data.eegTimeSeriesStats.eegIndices.relaxationIndex?.value || data.eegTimeSeriesStats.eegIndices.relaxationIndex || 0.2;
+                console.log('🔍 Relaxation Index 추출:', { 
+                  raw: data.eegTimeSeriesStats.eegIndices.relaxationIndex, 
+                  extracted: value 
+                });
+                return value;
+              })(),
+              stressIndex: (() => {
+                const value = data.eegTimeSeriesStats.eegIndices.stressIndex?.value || data.eegTimeSeriesStats.eegIndices.stressIndex || 3.2;
+                console.log('🔍 Stress Index 추출:', { 
+                  raw: data.eegTimeSeriesStats.eegIndices.stressIndex, 
+                  extracted: value 
+                });
+                return value;
+              })(),
+              hemisphericBalance: (() => {
+                const value = data.eegTimeSeriesStats.eegIndices.hemisphericBalance?.value || data.eegTimeSeriesStats.eegIndices.hemisphericBalance || 0.05;
+                console.log('🔍 Hemispheric Balance 추출:', { 
+                  raw: data.eegTimeSeriesStats.eegIndices.hemisphericBalance, 
+                  extracted: value 
+                });
+                return value;
+              })(),
               cognitiveLoad: data.eegTimeSeriesStats.eegIndices.cognitiveLoad?.value || data.eegTimeSeriesStats.eegIndices.cognitiveLoad || 0.5,
               emotionalStability: data.eegTimeSeriesStats.eegIndices.emotionalStability?.value || data.eegTimeSeriesStats.eegIndices.emotionalStability || 0.8
             },
@@ -475,12 +556,12 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
               gamma: { mean: eegMetrics.gammaStats?.mean || 55, std: 15, min: 35, max: 85 }
             },
             eegIndices: {
-              focusIndex: eegMetrics.focusIndex?.value || 2.5,
-              relaxationIndex: eegMetrics.relaxationIndex?.value || 0.2,
-              stressIndex: eegMetrics.stressIndex?.value || 0.6,
-              hemisphericBalance: eegMetrics.hemisphericBalance?.value || 0.05,
-              cognitiveLoad: eegMetrics.cognitiveLoad?.value || 1.8,
-              emotionalStability: eegMetrics.emotionalStability?.value || 0.75
+              focusIndex: eegMetrics.focusIndex?.value || eegMetrics.focusIndex || 2.5,
+              relaxationIndex: eegMetrics.relaxationIndex?.value || eegMetrics.relaxationIndex || 0.2,
+              stressIndex: eegMetrics.stressIndex?.value || eegMetrics.stressIndex || 3.2,
+              hemisphericBalance: eegMetrics.hemisphericBalance?.value || eegMetrics.hemisphericBalance || 0.05,
+              cognitiveLoad: eegMetrics.cognitiveLoad?.value || eegMetrics.cognitiveLoad || 1.8,
+              emotionalStability: eegMetrics.emotionalStability?.value || eegMetrics.emotionalStability || 0.75
             },
             qualityMetrics: {
               signalQuality: data.measurementData.qualityMetrics?.signalQuality || 0.85,
@@ -506,7 +587,7 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
           eegIndices: {
             focusIndex: 2.5,
             relaxationIndex: 0.2,
-            stressIndex: 0.6,
+            stressIndex: 3.2,
             hemisphericBalance: 0.05,
             cognitiveLoad: 1.8,
             emotionalStability: 0.75
@@ -587,31 +668,40 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
 - 상태: ${bandPowers.gamma?.status || '정상'}
 - 해석: ${bandPowers.gamma?.interpretation || '복잡한 인지 처리 및 의식 통합'}
 
-## EEG 지수 분석
+## 4대 뇌파 분석 지표
 
-### Focus Index (집중도 지수)
-- 측정값: ${eegTimeSeriesStats.eegIndices.focusIndex.toFixed(2)}
-- 정상범위: ${eegIndices.focusIndex?.normalRange || '1.5-3.0'}
-- 상태: ${eegIndices.focusIndex?.status || '정상'}
-- 해석: ${eegIndices.focusIndex?.interpretation || '집중력 상태를 나타냄'}
+### 1. Arousal (뇌파 각성도)
+- **Beta/Alpha Ratio**: ${(eegTimeSeriesStats.bandPowers.beta.mean / eegTimeSeriesStats.bandPowers.alpha.mean).toFixed(2)}
+- **계산 공식**: Beta Power / Alpha Power
+- **정상범위**: 0.8-1.5
+- **해석**: 뇌의 전반적인 활성화 수준 (Beta파↑ = 각성도↑, Alpha파↑ = 이완상태)
+- **임상적 의미**: 높으면 과각성, 낮으면 저각성 상태
 
-### Relaxation Index (이완도 지수)
-- 측정값: ${eegTimeSeriesStats.eegIndices.relaxationIndex.toFixed(2)}
-- 정상범위: ${eegIndices.relaxationIndex?.normalRange || '0.18-0.22'}
-- 상태: ${eegIndices.relaxationIndex?.status || '정상'}
-- 해석: ${eegIndices.relaxationIndex?.interpretation || '정신적 이완 상태를 나타냄'}
+### 2. Valence (감정균형도)  
+- **Hemispheric Balance**: ${eegTimeSeriesStats.eegIndices.hemisphericBalance.toFixed(3)}
+- **계산 공식**: (Left Alpha - Right Alpha) / (Left Alpha + Right Alpha)
+- **정상범위**: -0.1 ~ 0.1
+- **해석**: 좌우뇌 활성 균형 (양수=좌뇌우세/긍정적, 음수=우뇌우세/부정적)
+- **임상적 의미**: 절댓값 0.1 초과시 감정 편향성 시사
 
-### Stress Index (스트레스 지수)
-- 측정값: ${eegTimeSeriesStats.eegIndices.stressIndex.toFixed(2)}
-- 정상범위: ${eegIndices.stressIndex?.normalRange || '2.8-4.0'}
-- 상태: ${eegIndices.stressIndex?.status || '정상'}
-- 해석: ${eegIndices.stressIndex?.interpretation || '스트레스 수준을 나타냄'}
+### 3. Focus (뇌파 집중도)
+- **Focus Index**: ${eegTimeSeriesStats.eegIndices.focusIndex.toFixed(2)}
+- **계산 공식**: Beta Power / (Alpha Power + Theta Power)
+- **정상범위**: 1.5-3.0
+- **해석**: 주의력과 인지적 집중 능력 (Beta파=집중, Alpha+Theta파=이완/몽상)
+- **임상적 의미**: 높으면 과집중, 낮으면 주의력 부족
 
-### Hemispheric Balance (좌우뇌 균형)
-- 측정값: ${eegTimeSeriesStats.eegIndices.hemisphericBalance.toFixed(3)}
-- 정상범위: ${eegIndices.hemisphericBalance?.normalRange || '-0.1~0.1'}
-- 상태: ${eegIndices.hemisphericBalance?.status || '정상'}
-- 해석: ${eegIndices.hemisphericBalance?.interpretation || '좌우뇌 활성도 균형'}
+### 4. Stress (스트레스 수준)
+- **Stress Index**: ${eegTimeSeriesStats.eegIndices.stressIndex.toFixed(2)}
+- **계산 공식**: (Beta Power + Gamma Power) / (Alpha Power + Theta Power)
+- **정상범위**: 2.8-4.0
+- **해석**: 정신적/신체적 스트레스 부하 (고주파수파=스트레스, 저주파수파=안정)
+- **임상적 의미**: 높으면 스트레스 과부하, 낮으면 무기력 상태
+
+### 보조 지표
+- Relaxation Index: ${eegTimeSeriesStats.eegIndices.relaxationIndex.toFixed(2)} (정상범위: 0.18-0.22)
+- Cognitive Load: ${eegTimeSeriesStats.eegIndices.cognitiveLoad.toFixed(2)} (인지 부하)
+- Emotional Stability: ${eegTimeSeriesStats.eegIndices.emotionalStability.toFixed(2)} (정서 안정성)
 
 ## 데이터 품질
 - 신호 품질: ${(eegTimeSeriesStats.qualityMetrics.signalQuality * 100).toFixed(1)}%
@@ -619,46 +709,119 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
 - 데이터 완성도: ${(eegTimeSeriesStats.qualityMetrics.dataCompleteness * 100).toFixed(1)}%
 
 ## 분석 요청사항
-위의 상세한 EEG 데이터를 바탕으로 다음 JSON 형식으로 의료급 분석 결과를 제공해주세요:
+위의 상세한 EEG 데이터를 바탕으로 다음 JSON 형식으로 4대 뇌파 분석 지표 중심의 의료급 분석 결과를 제공해주세요:
 
 {
-  "analysisResults": [
-    {
-      "priority": 1,
-      "coreOpinion": {
-        "title": "핵심 소견 (실제 측정값 기반)",
-        "summary": "측정된 Band Power와 EEG 지수를 종합한 요약",
-        "clinicalSignificance": "normal|mild|moderate|severe",
-        "personalizedInterpretation": "${personalInfo.age}세 ${personalInfo.occupation}의 특성을 고려한 해석"
+  "fourDimensionAnalysis": {
+    "arousal": {
+      "dimension": "뇌파 각성 건강도",
+      "level": "우수|양호|개선필요",
+      "score": 0-100,
+      "interpretation": "뇌 활성화의 적절성 수준 해석 (100점에 가까울수록 건강한 각성 상태)",
+      "evidence": {
+        "betaAlphaRatio": ${(eegTimeSeriesStats.bandPowers.beta.mean / eegTimeSeriesStats.bandPowers.alpha.mean).toFixed(2)},
+        "gammaActivity": ${eegTimeSeriesStats.bandPowers.gamma.mean.toFixed(2)},
+        "calculationFormula": "Beta Power / Alpha Power",
+        "normalRange": "Beta/Alpha 비율 0.8-1.5, Gamma 30-80μV²"
       },
-      "dataEvidence": {
-        "primaryMetrics": [실제 측정값과 정상범위를 비교한 주요 지표들],
-        "supportingMetrics": [보조 지표들],
-        "statisticalAnalysis": {
-          "correlationAnalysis": "Band Power 간 상관관계 분석",
-          "demographicComparison": "${personalInfo.age}세 ${personalInfo.gender === 'male' ? '남성' : '여성'} 평균과 비교"
-        }
+      "clinicalSignificance": "normal|mild|moderate|severe",
+      "personalizedInterpretation": "${personalInfo.age}세 ${personalInfo.occupation}의 각성도 특성 해석",
+      "recommendations": ["각성도 조절을 위한 개인 맞춤 권장사항"]
+    },
+    "valence": {
+      "dimension": "감정균형도",
+      "level": "우수|양호|개선필요",
+      "score": 0-100,
+      "interpretation": "감정 균형의 안정성 수준 해석 (100점에 가까울수록 건강한 감정 균형)",
+      "evidence": {
+        "hemisphericBalance": ${eegTimeSeriesStats.eegIndices.hemisphericBalance.toFixed(3)},
+        "leftBrainDominance": "좌뇌 우세 여부",
+        "calculationFormula": "(Left Alpha - Right Alpha) / (Left Alpha + Right Alpha)",
+        "normalRange": "-0.1~0.1"
       },
-      "validityOpinion": {
-        "scientificBasis": "EEG 연구 기반 과학적 근거",
-        "clinicalReferences": [관련 연구 및 임상 가이드라인],
-        "limitationsAndCaveats": "측정 환경 및 개인차 고려사항"
-      }
+      "clinicalSignificance": "normal|mild|moderate|severe",
+      "personalizedInterpretation": "개인의 감정 상태와 균형 특성 해석",
+      "recommendations": ["감정 균형 개선을 위한 개인 맞춤 권장사항"]
+    },
+    "focus": {
+      "dimension": "뇌파 집중 건강도",
+      "level": "우수|양호|개선필요",
+      "score": 0-100,
+      "interpretation": "집중력의 적절성 수준 해석 (100점에 가까울수록 건강한 집중 능력)",
+      "evidence": {
+        "focusIndex": ${eegTimeSeriesStats.eegIndices.focusIndex.toFixed(2)},
+        "calculationFormula": "Beta Power / (Alpha Power + Theta Power)",
+        "normalRange": "1.5-3.0",
+        "betaActivity": "집중 관련 베타파 활동"
+      },
+      "clinicalSignificance": "normal|mild|moderate|severe",
+      "personalizedInterpretation": "개인의 집중력 특성과 직업적 요구사항 고려",
+      "recommendations": ["집중력 향상을 위한 개인 맞춤 권장사항"]
+    },
+    "stress": {
+      "dimension": "스트레스 건강도",
+      "level": "우수|양호|개선필요",
+      "score": 0-100,
+      "interpretation": "스트레스 관리 상태 해석 (100점에 가까울수록 건강한 스트레스 수준)",
+      "evidence": {
+        "stressIndex": ${eegTimeSeriesStats.eegIndices.stressIndex.toFixed(2)},
+        "calculationFormula": "(Beta Power + Gamma Power) / (Alpha Power + Theta Power)",
+        "normalRange": "2.8-4.0",
+        "physiologicalMarkers": "스트레스 관련 생리적 지표"
+      },
+      "clinicalSignificance": "normal|mild|moderate|severe",
+      "personalizedInterpretation": "개인의 스트레스 반응 패턴과 대처 능력 해석",
+      "recommendations": ["스트레스 관리를 위한 개인 맞춤 권장사항"]
     }
-  ],
+  },
   "detailedDataAnalysis": {
     "bandPowerAnalysis": {
-      "각 주파수 밴드별": {"interpretation": "실제 측정값 기반 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"}
-    },
-    "eegIndicesAnalysis": {
-      "각 지수별": {"interpretation": "실제 측정값 기반 해석", "evidence": "수치적 근거", "recommendations": ["개인 맞춤 권장사항"]}
+      "frontalNeuroActivity": {"interpretation": "전두엽 신경활성도 실제 측정값 기반 전체 뇌파 활동 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
+      "delta": {"interpretation": "Delta 파 실제 측정값 기반 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
+      "theta": {"interpretation": "Theta 파 실제 측정값 기반 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
+      "alpha": {"interpretation": "Alpha 파 실제 측정값 기반 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
+      "beta": {"interpretation": "Beta 파 실제 측정값 기반 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
+      "gamma": {"interpretation": "Gamma 파 실제 측정값 기반 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"}
     },
     "cognitiveStateAnalysis": {
-      "overallAssessment": "전반적인 뇌 기능 상태 평가",
-      "attentionPatterns": "집중력 패턴 분석",
-      "mentalFatigue": "정신적 피로도 평가",
+      "overallAssessment": "4대 지표 종합 뇌 기능 상태 평가",
+      "dimensionCorrelations": "Arousal-Valence, Focus-Stress 간 상관관계 분석",
+      "balanceAnalysis": "4대 지표 간 균형성 평가",
       "neurologicalIndicators": "신경학적 지표 해석"
+    },
+    "auxiliaryMetrics": {
+      "relaxationIndex": {"value": ${eegTimeSeriesStats.eegIndices.relaxationIndex.toFixed(2)}, "interpretation": "이완 상태 보조 지표"},
+      "cognitiveLoad": {"value": ${eegTimeSeriesStats.eegIndices.cognitiveLoad.toFixed(2)}, "interpretation": "인지 부하 보조 지표"},
+      "emotionalStability": {"value": ${eegTimeSeriesStats.eegIndices.emotionalStability.toFixed(2)}, "interpretation": "정서 안정성 보조 지표"}
     }
+  },
+  "comprehensiveAssessment": {
+    "overallSummary": "4가지 축(Arousal, Valence, Focus, Stress)을 종합한 전체적인 뇌 기능 상태 평가",
+    "keyFindings": ["주요 발견사항 1", "주요 발견사항 2", "주요 발견사항 3"],
+    "primaryConcerns": ["주요 문제점이나 개선이 필요한 영역"],
+    "ageGenderAnalysis": {
+      "ageComparison": "${personalInfo.age}세 연령대 평균과 비교한 분석",
+      "genderConsiderations": "${personalInfo.gender} 성별 특성을 고려한 해석",
+      "developmentalContext": "연령대별 뇌파 특성과 정상 발달 범위 내 평가"
+    },
+    "occupationalAnalysis": {
+      "jobDemands": "${personalInfo.occupation} 직업의 인지적 요구사항 분석",
+      "workRelatedPatterns": "업무 스트레스 및 집중도 패턴 해석",
+      "professionalRecommendations": "직업적 특성을 고려한 맞춤형 권장사항"
+    },
+    "improvementPlan": {
+      "shortTermGoals": ["1-4주 내 개선 목표"],
+      "longTermGoals": ["3-6개월 장기 개선 방향"],
+      "actionItems": ["구체적인 실행 계획"],
+      "monitoringPlan": "추후 측정 및 모니터링 계획"
+    },
+    "riskAssessment": {
+      "level": "low|moderate|high",
+      "factors": ["위험 요소들"],
+      "preventiveMeasures": ["예방적 조치사항"]
+    },
+    "overallScore": "0-100점 범위의 종합 점수",
+    "clinicalRecommendation": "전문의 상담 필요성 여부 및 추가 검사 권장사항"
   }
 }`;
   }
@@ -750,76 +913,156 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
 
     const { personalInfo, eegTimeSeriesStats } = eegData;
     
+    const betaAlphaRatio = eegTimeSeriesStats.bandPowers.beta.mean / eegTimeSeriesStats.bandPowers.alpha.mean;
+    
     return {
-      analysisResults: [
-        {
-          priority: 1,
-          coreOpinion: {
-            title: "Beta 과활성과 스트레스 지수 상승",
-            summary: `${personalInfo.age}세 ${personalInfo.gender === 'male' ? '남성' : '여성'}의 Beta Power가 정상 범위를 초과하여 과도한 집중 상태를 시사합니다.`,
-            clinicalSignificance: "moderate" as const,
-            personalizedInterpretation: `${personalInfo.occupation} 직업 특성상 높은 인지 부하가 예상되나, 현재 수준은 주의가 필요합니다.`
+      fourDimensionAnalysis: {
+        arousal: {
+          dimension: "뇌파 각성 건강도",
+          level: this.calculateHealthLevel(betaAlphaRatio, 0.8, 1.5),
+          score: this.calculateArousalHealthScore(betaAlphaRatio),
+          interpretation: `Beta/Alpha 비율 ${betaAlphaRatio.toFixed(2)}로 ${this.calculateHealthLevel(betaAlphaRatio, 0.8, 1.5) === '우수' ? '최적의 뇌파 각성 건강도' : this.calculateHealthLevel(betaAlphaRatio, 0.8, 1.5) === '양호' ? '양호한 뇌파 각성 건강도' : '뇌파 각성 개선 필요'}를 보입니다.`,
+          evidence: {
+            betaAlphaRatio: betaAlphaRatio,
+            gammaActivity: eegTimeSeriesStats.bandPowers.gamma.mean,
+            calculationFormula: "Beta Power / Alpha Power",
+            explanation: "Beta파(13-30Hz)는 집중과 각성을 나타내고, Alpha파(8-13Hz)는 이완과 휴식을 나타냅니다. 이 비율이 높을수록 각성도가 높음을 의미합니다.",
+            normalRange: "Beta/Alpha 비율 0.8-1.5, Gamma 30-80μV²"
           },
-          dataEvidence: {
-            primaryMetrics: [
-              {
-                metricName: "Beta Power",
-                observedValue: eegTimeSeriesStats.bandPowers.beta.mean,
-                normalRange: "90-280 μV²",
-                deviation: eegTimeSeriesStats.bandPowers.beta.mean > 280 ? "significantly_high" : "normal",
-                interpretation: "과도한 집중 상태 또는 스트레스 반응"
-              }
-            ],
-            supportingMetrics: [
-              {
-                metricName: "Stress Index",
-                observedValue: eegTimeSeriesStats.eegIndices.stressIndex,
-                normalRange: "0.3-0.7",
-                deviation: eegTimeSeriesStats.eegIndices.stressIndex > 0.7 ? "mildly_high" : "normal",
-                interpretation: "스트레스 수준 평가"
-              }
-            ],
-            statisticalAnalysis: {
-              correlationAnalysis: "Beta Power와 Stress Index 간 양의 상관관계 관찰",
-              demographicComparison: `동일 연령대 ${personalInfo.occupation} 평균 대비 분석`
-            }
+          clinicalSignificance: betaAlphaRatio > 2.0 || betaAlphaRatio < 0.5 ? "moderate" as const : betaAlphaRatio > 1.7 || betaAlphaRatio < 0.7 ? "mild" as const : "normal" as const,
+          personalizedInterpretation: `${personalInfo.age}세 ${personalInfo.occupation}의 각성도는 ${betaAlphaRatio > 1.5 ? '업무 집중으로 인한 과각성' : '적절한 수준'}을 보입니다.`,
+          recommendations: betaAlphaRatio > 1.5 
+            ? ["규칙적인 휴식", "이완 훈련", "과집중 방지"]
+            : betaAlphaRatio < 0.8 
+            ? ["활동성 증가", "자극적 환경", "각성도 향상 훈련"]
+            : ["현재 수준 유지", "균형 잡힌 활동"]
+        },
+        valence: {
+          dimension: "감정균형도",
+          level: this.calculateHealthLevel(Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance), 0, 0.1),
+          score: this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance),
+          interpretation: `좌우뇌 균형 ${eegTimeSeriesStats.eegIndices.hemisphericBalance.toFixed(3)}으로 ${Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) < 0.05 ? '최적의 감정균형도' : Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) < 0.1 ? '양호한 감정균형도' : '감정균형도 개선 필요'}를 보입니다.`,
+          evidence: {
+            hemisphericBalance: eegTimeSeriesStats.eegIndices.hemisphericBalance,
+            leftBrainDominance: eegTimeSeriesStats.eegIndices.hemisphericBalance > 0 ? "좌뇌 우세" : "우뇌 우세",
+            calculationFormula: "(Left Alpha - Right Alpha) / (Left Alpha + Right Alpha)",
+            explanation: "좌뇌는 논리와 언어를, 우뇌는 창의와 감정을 담당합니다. 좌뇌 Alpha파 우세(양수)는 긍정적 감정을, 우뇌 Alpha파 우세(음수)는 창의적/내성적 성향을 나타냅니다.",
+            normalRange: "-0.1~0.1"
           },
-          validityOpinion: {
-            scientificBasis: "Beta파 과활성은 전전두엽 피질의 과도한 활성화를 반영",
-            clinicalReferences: [
-              {
-                referenceType: "research" as const,
-                summary: "직업적 스트레스와 Beta파 활성 간 상관관계 연구",
-                relevance: "현재 패턴과 직업적 특성이 일치"
-              }
-            ],
-            limitationsAndCaveats: "단일 시점 측정으로 일시적 상태일 가능성"
-          }
+          clinicalSignificance: Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) > 0.15 ? "moderate" as const : Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) > 0.1 ? "mild" as const : "normal" as const,
+          personalizedInterpretation: `현재 감정 상태는 ${Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) < 0.05 ? '매우 균형잡힌' : '안정적인'} 상태입니다.`,
+          recommendations: Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) > 0.1
+            ? ["좌우뇌 균형 훈련", "명상", "창의적-논리적 활동 균형"]
+            : ["현재 균형 상태 유지", "다양한 뇌 활동 지속"]
+        },
+        focus: {
+          dimension: "뇌파 집중 건강도",
+          level: this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.focusIndex, 1.5, 3.0),
+          score: this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex),
+          interpretation: `Focus Index ${eegTimeSeriesStats.eegIndices.focusIndex.toFixed(2)}로 ${this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.focusIndex, 1.5, 3.0) === '우수' ? '최적의 뇌파 집중 건강도' : this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.focusIndex, 1.5, 3.0) === '양호' ? '양호한 뇌파 집중 건강도' : '뇌파 집중 개선 필요'}를 보입니다.`,
+          evidence: {
+            focusIndex: eegTimeSeriesStats.eegIndices.focusIndex,
+            calculationFormula: "Beta Power / (Alpha Power + Theta Power)",
+            explanation: "Beta파는 집중과 인지 활동을, Alpha파와 Theta파는 이완과 몽상 상태를 나타냅니다. 이 비율이 높을수록 집중도가 높음을 의미합니다.",
+            normalRange: "1.5-3.0",
+            betaActivity: `Beta 활동 ${eegTimeSeriesStats.bandPowers.beta.mean.toFixed(1)}μV²`
+          },
+          clinicalSignificance: eegTimeSeriesStats.eegIndices.focusIndex > 3.5 || eegTimeSeriesStats.eegIndices.focusIndex < 1.0 ? "moderate" as const : eegTimeSeriesStats.eegIndices.focusIndex > 3.0 || eegTimeSeriesStats.eegIndices.focusIndex < 1.5 ? "mild" as const : "normal" as const,
+          personalizedInterpretation: `${personalInfo.occupation} 업무에 ${eegTimeSeriesStats.eegIndices.focusIndex > 2.5 ? '필요 이상의 집중력을 보이고 있어' : '적절한 집중력을 유지하고 있어'} 효율적인 작업이 가능합니다.`,
+          recommendations: this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.focusIndex, 1.5, 3.0) === '개선필요'
+            ? eegTimeSeriesStats.eegIndices.focusIndex > 3.0 
+              ? ["정기적인 휴식", "과집중 방지", "멘탈 브레이크"]
+              : ["집중력 훈련", "명상", "주의력 개선 운동"]
+            : ["현재 뇌파 집중 건강도 유지", "균형잡힌 활동"]
+        },
+        stress: {
+          dimension: "스트레스 건강도",
+          level: this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.stressIndex, 2.8, 4.0),
+          score: this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex),
+          interpretation: `Stress Index ${eegTimeSeriesStats.eegIndices.stressIndex.toFixed(2)}로 ${this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.stressIndex, 2.8, 4.0) === '우수' ? '최적의 스트레스 건강도' : this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.stressIndex, 2.8, 4.0) === '양호' ? '양호한 스트레스 건강도' : '스트레스 개선 필요'}를 보입니다.`,
+          evidence: {
+            stressIndex: eegTimeSeriesStats.eegIndices.stressIndex,
+            calculationFormula: "(Beta Power + Gamma Power) / (Alpha Power + Theta Power)",
+            explanation: "Beta파와 Gamma파는 스트레스와 각성을, Alpha파와 Theta파는 이완과 안정을 나타냅니다. 이 비율이 높을수록 스트레스 수준이 높음을 의미합니다.",
+            normalRange: "2.8-4.0",
+            physiologicalMarkers: "고주파수(스트레스) / 저주파수(이완) 비율 기반"
+          },
+          clinicalSignificance: eegTimeSeriesStats.eegIndices.stressIndex > 5.0 || eegTimeSeriesStats.eegIndices.stressIndex < 2.0 ? "moderate" as const : eegTimeSeriesStats.eegIndices.stressIndex > 4.5 || eegTimeSeriesStats.eegIndices.stressIndex < 2.5 ? "mild" as const : "normal" as const,
+          personalizedInterpretation: `현재 스트레스 수준은 ${eegTimeSeriesStats.eegIndices.stressIndex > 4.0 ? '관리가 필요한 수준으로 적극적인 스트레스 관리가 권장됩니다' : '건강한 수준을 유지하고 있습니다'}.`,
+          recommendations: this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.stressIndex, 2.8, 4.0) === '개선필요'
+            ? eegTimeSeriesStats.eegIndices.stressIndex > 4.0
+              ? ["스트레스 관리", "이완 훈련", "충분한 수면", "규칙적 운동"]
+              : ["적절한 자극 제공", "활동성 증가", "목표 설정"]
+            : ["현재 스트레스 건강도 유지", "예방적 케어"]
         }
-      ],
+      },
       detailedDataAnalysis: {
         bandPowerAnalysis: {
+          frontalNeuroActivity: {
+            interpretation: `전두엽 신경활성도 ${(eegTimeSeriesStats.bandPowers.delta.mean + eegTimeSeriesStats.bandPowers.theta.mean + eegTimeSeriesStats.bandPowers.alpha.mean + eegTimeSeriesStats.bandPowers.beta.mean + eegTimeSeriesStats.bandPowers.gamma.mean).toFixed(2)}μV²는 전두엽 신경 네트워크의 전반적인 활성화 수준을 나타냅니다.`,
+            evidence: `측정값 ${(eegTimeSeriesStats.bandPowers.delta.mean + eegTimeSeriesStats.bandPowers.theta.mean + eegTimeSeriesStats.bandPowers.alpha.mean + eegTimeSeriesStats.bandPowers.beta.mean + eegTimeSeriesStats.bandPowers.gamma.mean).toFixed(2)}μV², 정상범위 800-2000μV²`,
+            clinicalSignificance: (eegTimeSeriesStats.bandPowers.delta.mean + eegTimeSeriesStats.bandPowers.theta.mean + eegTimeSeriesStats.bandPowers.alpha.mean + eegTimeSeriesStats.bandPowers.beta.mean + eegTimeSeriesStats.bandPowers.gamma.mean) > 2000 ? "과도한 전두엽 신경 활성화" : (eegTimeSeriesStats.bandPowers.delta.mean + eegTimeSeriesStats.bandPowers.theta.mean + eegTimeSeriesStats.bandPowers.alpha.mean + eegTimeSeriesStats.bandPowers.beta.mean + eegTimeSeriesStats.bandPowers.gamma.mean) < 800 ? "전두엽 신경 활동 저하" : "정상적인 전두엽 신경 활성도"
+          },
+          delta: {
+            interpretation: `Delta Power ${eegTimeSeriesStats.bandPowers.delta.mean.toFixed(2)}μV²는 깊은 수면과 뇌 회복 상태를 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.delta.mean.toFixed(2)}μV², 정상범위 200-600μV²`,
+            clinicalSignificance: eegTimeSeriesStats.bandPowers.delta.mean > 600 ? "과도한 뇌 억제 또는 병리적 상태" : eegTimeSeriesStats.bandPowers.delta.mean < 200 ? "뇌 회복 부족" : "정상적인 뇌 회복 상태"
+          },
+          theta: {
+            interpretation: `Theta Power ${eegTimeSeriesStats.bandPowers.theta.mean.toFixed(2)}μV²는 창의성과 기억 처리 상태를 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.theta.mean.toFixed(2)}μV², 정상범위 150-400μV²`,
+            clinicalSignificance: eegTimeSeriesStats.bandPowers.theta.mean > 400 ? "과도한 몽상 또는 주의력 결핍" : eegTimeSeriesStats.bandPowers.theta.mean < 150 ? "창의성 억제" : "정상적인 창의적 사고 상태"
+          },
           alpha: {
-            interpretation: `Alpha Power ${eegTimeSeriesStats.bandPowers.alpha.mean}μV²는 이완 상태를 나타냅니다.`,
-            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.alpha.mean}μV², 정상범위 180-450μV²`,
-            clinicalSignificance: "정상적인 휴식 상태의 뇌파 활동"
+            interpretation: `Alpha Power ${eegTimeSeriesStats.bandPowers.alpha.mean.toFixed(2)}μV²는 이완 상태를 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.alpha.mean.toFixed(2)}μV², 정상범위 180-450μV²`,
+            clinicalSignificance: eegTimeSeriesStats.bandPowers.alpha.mean > 450 ? "과도한 이완 또는 졸음" : eegTimeSeriesStats.bandPowers.alpha.mean < 180 ? "긴장 상태" : "정상적인 휴식 상태의 뇌파 활동"
           },
           beta: {
-            interpretation: `Beta Power ${eegTimeSeriesStats.bandPowers.beta.mean}μV²는 집중 상태를 나타냅니다.`,
-            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.beta.mean}μV², 정상범위 90-280μV²`,
-            clinicalSignificance: eegTimeSeriesStats.bandPowers.beta.mean > 280 ? "과도한 집중 또는 스트레스" : "정상적인 집중 상태"
+            interpretation: `Beta Power ${eegTimeSeriesStats.bandPowers.beta.mean.toFixed(2)}μV²는 집중 상태를 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.beta.mean.toFixed(2)}μV², 정상범위 90-280μV²`,
+            clinicalSignificance: eegTimeSeriesStats.bandPowers.beta.mean > 280 ? "과도한 집중 또는 스트레스" : eegTimeSeriesStats.bandPowers.beta.mean < 90 ? "집중력 부족" : "정상적인 집중 상태"
+          },
+          gamma: {
+            interpretation: `Gamma Power ${eegTimeSeriesStats.bandPowers.gamma.mean.toFixed(2)}μV²는 고차원적 인지 처리를 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.bandPowers.gamma.mean.toFixed(2)}μV², 정상범위 30-80μV²`,
+            clinicalSignificance: eegTimeSeriesStats.bandPowers.gamma.mean > 80 ? "과도한 인지 부하" : eegTimeSeriesStats.bandPowers.gamma.mean < 30 ? "인지 기능 저하" : "정상적인 고차원 인지 처리"
           }
         },
         eegIndicesAnalysis: {
-          focus: {
-            interpretation: `Focus Index ${eegTimeSeriesStats.eegIndices.focusIndex}는 집중력 상태를 나타냅니다.`,
-            evidence: `측정값 ${eegTimeSeriesStats.eegIndices.focusIndex}, 정상범위 1.5-3.0`,
-            recommendations: ["정기적인 휴식", "주의력 분산 활동", "스트레스 관리"]
+          focusIndex: {
+            interpretation: `Focus Index ${eegTimeSeriesStats.eegIndices.focusIndex.toFixed(2)}는 ${eegTimeSeriesStats.eegIndices.focusIndex > 2.5 ? '높은' : eegTimeSeriesStats.eegIndices.focusIndex < 2.0 ? '낮은' : '적절한'} 집중력 상태를 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.eegIndices.focusIndex.toFixed(2)}, 정상범위 1.5-3.0, Beta/Alpha 비율 기반 계산`,
+            recommendations: eegTimeSeriesStats.eegIndices.focusIndex > 2.5 
+              ? ["정기적인 휴식", "과집중 방지", "멘탈 브레이크 활용"]
+              : eegTimeSeriesStats.eegIndices.focusIndex < 2.0
+              ? ["집중력 훈련", "명상", "카페인 섭취 조절"]
+              : ["현재 수준 유지", "규칙적인 휴식"]
           },
-          stress: {
-            interpretation: `Stress Index ${eegTimeSeriesStats.eegIndices.stressIndex}는 스트레스 수준을 나타냅니다.`,
-            evidence: `측정값 ${eegTimeSeriesStats.eegIndices.stressIndex}, 정상범위 0.3-0.7`,
-            recommendations: ["이완 훈련", "규칙적 운동", "충분한 수면"]
+          relaxationIndex: {
+            interpretation: `Relaxation Index ${eegTimeSeriesStats.eegIndices.relaxationIndex.toFixed(3)}는 ${eegTimeSeriesStats.eegIndices.relaxationIndex > 0.22 ? '높은' : eegTimeSeriesStats.eegIndices.relaxationIndex < 0.18 ? '낮은' : '적절한'} 이완 상태를 보여줍니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.eegIndices.relaxationIndex.toFixed(3)}, 정상범위 0.18-0.22, Alpha/Beta 비율 기반`,
+            recommendations: eegTimeSeriesStats.eegIndices.relaxationIndex < 0.18
+              ? ["이완 기법 연습", "요가 또는 명상", "스트레스 관리"]
+              : eegTimeSeriesStats.eegIndices.relaxationIndex > 0.22
+              ? ["활동성 증가", "각성도 향상", "적절한 자극"]
+              : ["현재 이완 상태 유지", "균형 잡힌 활동"]
+          },
+          stressIndex: {
+            interpretation: `Stress Index ${eegTimeSeriesStats.eegIndices.stressIndex.toFixed(2)}는 ${eegTimeSeriesStats.eegIndices.stressIndex > 4.0 ? '높은' : eegTimeSeriesStats.eegIndices.stressIndex < 2.8 ? '낮은' : '적절한'} 스트레스 수준을 나타냅니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.eegIndices.stressIndex.toFixed(2)}, 정상범위 2.8-4.0, Beta/(Alpha+Theta) 비율 기반`,
+            recommendations: eegTimeSeriesStats.eegIndices.stressIndex > 4.0
+              ? ["스트레스 관리", "이완 훈련", "충분한 수면", "규칙적 운동"]
+              : eegTimeSeriesStats.eegIndices.stressIndex < 2.8
+              ? ["적절한 자극 제공", "활동성 증가", "목표 설정"]
+              : ["현재 스트레스 수준 관리", "예방적 케어"]
+          },
+          hemisphericBalance: {
+            interpretation: `Hemispheric Balance ${eegTimeSeriesStats.eegIndices.hemisphericBalance.toFixed(3)}는 ${Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) > 0.1 ? '불균형' : '균형잡힌'} 좌우뇌 활성도를 보여줍니다.`,
+            evidence: `측정값 ${eegTimeSeriesStats.eegIndices.hemisphericBalance.toFixed(3)}, 정상범위 -0.1~0.1, 좌뇌(${eegTimeSeriesStats.eegIndices.hemisphericBalance > 0 ? '우세' : '열세'})`,
+            recommendations: Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance) > 0.1
+              ? ["양쪽 뇌 활용 훈련", "창의적-논리적 활동 균형", "뇌 균형 운동"]
+              : ["현재 균형 상태 유지", "다양한 뇌 활동 지속"]
           }
         },
         cognitiveStateAnalysis: {
@@ -828,6 +1071,71 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
           mentalFatigue: "중등도의 정신적 피로 징후가 나타납니다.",
           neurologicalIndicators: "특별한 신경학적 이상 소견은 관찰되지 않습니다."
         }
+      },
+      comprehensiveAssessment: {
+        overallSummary: `${personalInfo.age}세 ${personalInfo.occupation}의 뇌파 분석 결과, 4대 지표 평균 건강도 ${Math.round((this.calculateArousalHealthScore(betaAlphaRatio) + this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance) + this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) + this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex)) / 4)}점으로 ${Math.round((this.calculateArousalHealthScore(betaAlphaRatio) + this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance) + this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) + this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex)) / 4) > 80 ? '우수한 뇌 건강 상태' : Math.round((this.calculateArousalHealthScore(betaAlphaRatio) + this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance) + this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) + this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex)) / 4) > 70 ? '양호한 뇌 건강 상태' : '개선이 필요한 뇌 건강 상태'}입니다.`,
+        keyFindings: [
+          `뇌파 각성 건강도: ${this.calculateHealthLevel(betaAlphaRatio, 0.8, 1.5)} (${this.calculateArousalHealthScore(betaAlphaRatio)}점)`,
+          `감정균형도: ${this.calculateHealthLevel(Math.abs(eegTimeSeriesStats.eegIndices.hemisphericBalance), 0, 0.1)} (${this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance)}점)`,
+          `뇌파 집중 건강도: ${this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.focusIndex, 1.5, 3.0)} (${this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex)}점)`,
+          `스트레스 건강도: ${this.calculateHealthLevel(eegTimeSeriesStats.eegIndices.stressIndex, 2.8, 4.0)} (${this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex)}점)`
+        ],
+        primaryConcerns: this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 70 || this.calculateArousalHealthScore(betaAlphaRatio) < 70 ? 
+          ["스트레스 건강도 개선 필요", "각성도 건강도 조절 필요"] : 
+          this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) < 70 ? ["뇌파 집중 건강도 개선 필요"] : 
+          ["현재 특별한 문제점 없음"],
+        ageGenderAnalysis: {
+          ageComparison: `${personalInfo.age}세 연령대 평균 대비 ${this.calculateArousalHealthScore(betaAlphaRatio) > 80 ? '우수한' : this.calculateArousalHealthScore(betaAlphaRatio) > 70 ? '양호한' : '개선이 필요한'} 각성도 건강도를 보입니다.`,
+          genderConsiderations: `${personalInfo.gender === 'male' ? '남성' : '여성'} 특성상 ${this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance) > 80 ? '우수한 감정균형도' : '정상 범위 내 감정균형도'}를 보입니다.`,
+          developmentalContext: `${personalInfo.age < 30 ? '청년기' : personalInfo.age < 50 ? '중년기' : '장년기'} 뇌파 특성에 부합하는 전반적으로 양호한 건강도 패턴입니다.`
+        },
+        occupationalAnalysis: {
+          jobDemands: `${personalInfo.occupation} 업무는 ${personalInfo.occupation.includes('개발') || personalInfo.occupation.includes('연구') ? '높은 집중력과 논리적 사고' : '균형잡힌 인지 능력'}을 요구합니다.`,
+          workRelatedPatterns: `업무 특성상 뇌파 집중 건강도 ${this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex)}점으로 ${this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) > 80 ? '우수한 수준' : this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) > 70 ? '양호한 수준' : '개선이 필요한 수준'}이며, 스트레스 건강도 ${this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex)}점으로 ${this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) > 80 ? '우수한 관리 상태' : this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) > 70 ? '양호한 관리 상태' : '관리가 필요한 상태'}입니다.`,
+          professionalRecommendations: personalInfo.occupation.includes('개발') ? 
+            ["정기적인 휴식", "눈의 피로 관리", "업무 집중도 최적화"] :
+            ["업무-휴식 균형", "스트레스 관리", "인지 능력 향상"]
+        },
+        improvementPlan: {
+          shortTermGoals: this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 70 ? 
+            ["스트레스 건강도 개선", "이완 기법 연습", "충분한 수면"] :
+            ["현재 건강도 유지", "규칙적인 생활", "적절한 운동"],
+          longTermGoals: [
+            "4대 지표 건강도 최적화 (뇌파 각성, 감정균형도, 뇌파 집중, 스트레스)",
+            "뇌 건강 종합 점수 90점 이상 달성",
+            "장기적 뇌 건강 관리 체계 구축"
+          ],
+          actionItems: [
+            "주 3회 이상 30분 유산소 운동",
+            "매일 10분 명상 또는 이완 훈련",
+            "규칙적인 수면 패턴 유지 (7-8시간)",
+            "업무 중 정기적 휴식 (50분 작업 후 10분 휴식)"
+          ],
+          monitoringPlan: "4-6주 후 재측정을 통한 개선 효과 확인 권장"
+        },
+        riskAssessment: {
+          level: this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 50 || this.calculateArousalHealthScore(betaAlphaRatio) < 50 ? "moderate" as const : 
+                 this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 70 || this.calculateArousalHealthScore(betaAlphaRatio) < 70 ? "low" as const : "low" as const,
+          factors: this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 70 || this.calculateArousalHealthScore(betaAlphaRatio) < 70 ? 
+            ["스트레스 건강도 저하", "각성도 건강도 불균형"] :
+            ["현재 특별한 위험 요소 없음"],
+          preventiveMeasures: [
+            "정기적인 뇌파 모니터링",
+            "스트레스 조기 감지 및 관리",
+            "건강한 생활습관 유지"
+          ]
+        },
+        overallScore: Math.round(
+          (this.calculateArousalHealthScore(betaAlphaRatio) * 0.25) +
+          (this.calculateValenceHealthScore(eegTimeSeriesStats.eegIndices.hemisphericBalance) * 0.25) +
+          (this.calculateFocusHealthScore(eegTimeSeriesStats.eegIndices.focusIndex) * 0.25) +
+          (this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) * 0.25)
+        ),
+        clinicalRecommendation: this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 50 || this.calculateArousalHealthScore(betaAlphaRatio) < 50 ?
+          "전문의 상담 권장, 뇌 건강 정밀 검진 고려" :
+          this.calculateStressHealthScore(eegTimeSeriesStats.eegIndices.stressIndex) < 70 || this.calculateArousalHealthScore(betaAlphaRatio) < 70 ?
+          "생활습관 개선을 통한 건강도 향상 후 재검사 권장" :
+          "현재 양호한 뇌 건강 상태, 정기적 모니터링을 통한 건강도 유지 권장"
       },
       metadata: {
         analysisTimestamp: new Date().toISOString(),
@@ -846,69 +1154,241 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
     };
   }
 
-  // 헬퍼 메서드들
+  // 건강도 계산 헬퍼 메서드들
+  private calculateHealthLevel(value: number, minNormal: number, maxNormal: number): string {
+    if (value >= minNormal && value <= maxNormal) {
+      const midpoint = (minNormal + maxNormal) / 2;
+      const distanceFromMid = Math.abs(value - midpoint);
+      const rangeHalf = (maxNormal - minNormal) / 2;
+      
+      if (distanceFromMid <= rangeHalf * 0.3) {
+        return "우수";
+      } else {
+        return "양호";
+      }
+    } else {
+      return "개선필요";
+    }
+  }
+
+  private calculateArousalHealthScore(betaAlphaRatio: number): number {
+    // Beta/Alpha 비율 0.8-1.5가 정상, 1.15가 이상적
+    const optimalRatio = 1.15;
+    const normalMin = 0.8;
+    const normalMax = 1.5;
+    
+    if (betaAlphaRatio >= normalMin && betaAlphaRatio <= normalMax) {
+      // 정상 범위 내에서는 1.15에 가까울수록 100점
+      const distanceFromOptimal = Math.abs(betaAlphaRatio - optimalRatio);
+      const maxDistance = Math.max(optimalRatio - normalMin, normalMax - optimalRatio);
+      return Math.round(100 - (distanceFromOptimal / maxDistance) * 15);
+    } else {
+      // 정상 범위 밖에서는 거리에 따라 감점
+      const distanceFromRange = betaAlphaRatio < normalMin ? 
+        normalMin - betaAlphaRatio : betaAlphaRatio - normalMax;
+      const penalty = Math.min(distanceFromRange * 30, 70);
+      return Math.max(30, 85 - Math.round(penalty));
+    }
+  }
+
+  private calculateValenceHealthScore(hemisphericBalance: number): number {
+    // 좌우뇌 균형 -0.1~0.1이 정상, 0에 가까울수록 좋음
+    const absBalance = Math.abs(hemisphericBalance);
+    const normalRange = 0.1;
+    
+    if (absBalance <= normalRange) {
+      // 정상 범위 내에서는 0에 가까울수록 100점
+      return Math.round(100 - (absBalance / normalRange) * 15);
+    } else {
+      // 정상 범위 밖에서는 거리에 따라 감점
+      const excess = absBalance - normalRange;
+      const penalty = Math.min(excess * 200, 70);
+      return Math.max(30, 85 - Math.round(penalty));
+    }
+  }
+
+  private calculateFocusHealthScore(focusIndex: number): number {
+    // Focus Index 1.5-3.0이 정상, 2.25가 이상적
+    const optimalFocus = 2.25;
+    const normalMin = 1.5;
+    const normalMax = 3.0;
+    
+    if (focusIndex >= normalMin && focusIndex <= normalMax) {
+      // 정상 범위 내에서는 2.25에 가까울수록 100점
+      const distanceFromOptimal = Math.abs(focusIndex - optimalFocus);
+      const maxDistance = Math.max(optimalFocus - normalMin, normalMax - optimalFocus);
+      return Math.round(100 - (distanceFromOptimal / maxDistance) * 15);
+    } else {
+      // 정상 범위 밖에서는 거리에 따라 감점
+      const distanceFromRange = focusIndex < normalMin ? 
+        normalMin - focusIndex : focusIndex - normalMax;
+      const penalty = Math.min(distanceFromRange * 25, 70);
+      return Math.max(30, 85 - Math.round(penalty));
+    }
+  }
+
+  private calculateStressHealthScore(stressIndex: number): number {
+    // Stress Index 2.8-4.0이 정상, 3.4가 이상적 (낮을수록 건강)
+    const optimalStress = 3.4;
+    const normalMin = 2.8;
+    const normalMax = 4.0;
+    
+    if (stressIndex >= normalMin && stressIndex <= normalMax) {
+      // 정상 범위 내에서는 3.4에 가까울수록 100점
+      const distanceFromOptimal = Math.abs(stressIndex - optimalStress);
+      const maxDistance = Math.max(optimalStress - normalMin, normalMax - optimalStress);
+      return Math.round(100 - (distanceFromOptimal / maxDistance) * 15);
+    } else {
+      // 정상 범위 밖에서는 거리에 따라 감점 (높을수록 더 큰 패널티)
+      if (stressIndex > normalMax) {
+        // 스트레스가 높으면 더 큰 패널티
+        const excess = stressIndex - normalMax;
+        const penalty = Math.min(excess * 35, 70);
+        return Math.max(20, 85 - Math.round(penalty));
+      } else {
+        // 스트레스가 너무 낮으면 무기력 상태로 판단
+        const deficit = normalMin - stressIndex;
+        const penalty = Math.min(deficit * 25, 60);
+        return Math.max(30, 85 - Math.round(penalty));
+      }
+    }
+  }
+
+  // 기존 헬퍼 메서드들
   private calculateOverallScore(result: EEGAdvancedAnalysisResult): number {
-    // 임상적 중요도 기반 점수 계산
-    const significanceScores = {
-      'normal': 85,
-      'mild': 75,
-      'moderate': 60,
-      'severe': 40
-    };
+    // 4대 지표 구조가 있으면 이를 기반으로 계산
+    if (result.fourDimensionAnalysis) {
+      const dimensions = result.fourDimensionAnalysis;
+      const totalScore = (dimensions.arousal?.score || 0) + 
+                        (dimensions.valence?.score || 0) + 
+                        (dimensions.focus?.score || 0) + 
+                        (100 - (dimensions.stress?.score || 0)); // 스트레스는 낮을수록 좋음
+      return Math.round(totalScore / 4);
+    }
     
-    const avgScore = result.analysisResults.reduce((sum, analysis) => 
-      sum + significanceScores[analysis.coreOpinion.clinicalSignificance], 0
-    ) / result.analysisResults.length;
+    // 기존 구조 호환성
+    if (result.analysisResults && result.analysisResults.length > 0) {
+      const significanceScores = {
+        'normal': 85,
+        'mild': 75,
+        'moderate': 60,
+        'severe': 40
+      };
+      
+      const avgScore = result.analysisResults.reduce((sum, analysis) => 
+        sum + significanceScores[analysis.coreOpinion.clinicalSignificance], 0
+      ) / result.analysisResults.length;
+      
+      return Math.round(avgScore);
+    }
     
-    return Math.round(avgScore);
+    return 75; // 기본값
   }
 
   private extractStressLevel(result: EEGAdvancedAnalysisResult): number {
-    const stressAnalysis = result.analysisResults.find(r => 
-      r.coreOpinion.title.toLowerCase().includes('스트레스') ||
-      r.coreOpinion.title.toLowerCase().includes('stress')
-    );
-    
-    if (!stressAnalysis) return 50; // normal
-    
-    switch (stressAnalysis.coreOpinion.clinicalSignificance) {
-      case 'severe': return 80; // high
-      case 'moderate': return 65; // elevated
-      case 'mild': return 55; // slight
-      default: return 50; // normal
+    // 4대 지표 구조에서 추출
+    if (result.fourDimensionAnalysis?.stress) {
+      return result.fourDimensionAnalysis.stress.score;
     }
+    
+    // 기존 구조 호환성
+    if (result.analysisResults) {
+      const stressAnalysis = result.analysisResults.find(r => 
+        r.coreOpinion.title.toLowerCase().includes('스트레스') ||
+        r.coreOpinion.title.toLowerCase().includes('stress')
+      );
+      
+      if (stressAnalysis) {
+        switch (stressAnalysis.coreOpinion.clinicalSignificance) {
+          case 'severe': return 80;
+          case 'moderate': return 65;
+          case 'mild': return 55;
+          default: return 50;
+        }
+      }
+    }
+    
+    return 50; // 기본값
   }
 
   private extractFocusLevel(result: EEGAdvancedAnalysisResult): number {
-    const focusAnalysis = result.analysisResults.find(r => 
-      r.coreOpinion.title.toLowerCase().includes('집중') ||
-      r.coreOpinion.title.toLowerCase().includes('focus')
-    );
-    
-    if (!focusAnalysis) return 70; // normal
-    
-    switch (focusAnalysis.coreOpinion.clinicalSignificance) {
-      case 'severe': return 30; // impaired
-      case 'moderate': return 50; // reduced
-      case 'mild': return 60; // slightly_reduced
-      default: return 70; // normal
+    // 4대 지표 구조에서 추출
+    if (result.fourDimensionAnalysis?.focus) {
+      return result.fourDimensionAnalysis.focus.score;
     }
+    
+    // 기존 구조 호환성
+    if (result.analysisResults) {
+      const focusAnalysis = result.analysisResults.find(r => 
+        r.coreOpinion.title.toLowerCase().includes('집중') ||
+        r.coreOpinion.title.toLowerCase().includes('focus')
+      );
+      
+      if (focusAnalysis) {
+        switch (focusAnalysis.coreOpinion.clinicalSignificance) {
+          case 'severe': return 30;
+          case 'moderate': return 50;
+          case 'mild': return 60;
+          default: return 70;
+        }
+      }
+    }
+    
+    return 70; // 기본값
   }
 
   private generateSummary(result: EEGAdvancedAnalysisResult): string {
-    return result.analysisResults.map((analysis, index) => 
-      `${index + 1}. ${analysis.coreOpinion.title}: ${analysis.coreOpinion.summary}`
-    ).join('\n\n');
+    // 4대 지표 구조에서 요약 생성
+    if (result.fourDimensionAnalysis) {
+      const dimensions = result.fourDimensionAnalysis;
+      const summaries: string[] = [];
+      
+      if (dimensions.arousal) {
+        summaries.push(`뇌파 각성: ${dimensions.arousal.level} (${dimensions.arousal.score}점)`);
+      }
+      if (dimensions.valence) {
+        summaries.push(`감정균형도: ${dimensions.valence.level} (${dimensions.valence.score}점)`);
+      }
+      if (dimensions.focus) {
+        summaries.push(`뇌파 집중: ${dimensions.focus.level} (${dimensions.focus.score}점)`);
+      }
+      if (dimensions.stress) {
+        summaries.push(`스트레스: ${dimensions.stress.level} (${dimensions.stress.score}점)`);
+      }
+      
+      return summaries.join(', ');
+    }
+    
+    // 기존 구조 호환성
+    if (result.analysisResults && result.analysisResults.length > 0) {
+      return result.analysisResults.map((analysis, index) => 
+        `${index + 1}. ${analysis.coreOpinion.title}: ${analysis.coreOpinion.summary}`
+      ).join('\n\n');
+    }
+    
+    return "4대 뇌파 분석 지표 기반 종합 분석 완료";
   }
 
   private extractRecommendations(result: EEGAdvancedAnalysisResult): string[] {
     const recommendations: string[] = [];
     
-    Object.values(result.detailedDataAnalysis.eegIndicesAnalysis).forEach(analysis => {
-      if (analysis.recommendations) {
-        recommendations.push(...analysis.recommendations);
-      }
-    });
+    // 4대 지표 구조에서 권장사항 추출
+    if (result.fourDimensionAnalysis) {
+      Object.values(result.fourDimensionAnalysis).forEach(dimension => {
+        if (dimension.recommendations) {
+          recommendations.push(...dimension.recommendations);
+        }
+      });
+    }
+    
+    // 기존 구조에서도 추출
+    if (result.detailedDataAnalysis?.eegIndicesAnalysis) {
+      Object.values(result.detailedDataAnalysis.eegIndicesAnalysis).forEach(analysis => {
+        if (analysis.recommendations) {
+          recommendations.push(...analysis.recommendations);
+        }
+      });
+    }
     
     return [...new Set(recommendations)]; // 중복 제거
   }
