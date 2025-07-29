@@ -85,7 +85,8 @@ export function EngineSelectionModal({
       
       // 디버깅 로그
       console.log('🔍 Available engines:', allEngines.length);
-      console.log('🔍 Engine details:', allEngines.map(e => ({ id: e.id, name: e.name, provider: e.provider })));
+      console.log('🔍 Engine details:', allEngines.map(e => ({ id: e.id, name: e.name, provider: e.provider, supportedDataTypes: e.supportedDataTypes })));
+      console.log('🔍 Required data types:', requiredDataTypes);
       
       if (allEngines.length === 0) {
         console.warn('⚠️ No engines registered! Checking registry state...');
@@ -115,6 +116,16 @@ export function EngineSelectionModal({
         if (requiredDataTypes.eeg && engine.supportedDataTypes.eeg) compatibilityScore += 40;
         if (requiredDataTypes.ppg && engine.supportedDataTypes.ppg) compatibilityScore += 40;
         if (requiredDataTypes.acc && engine.supportedDataTypes.acc) compatibilityScore += 20;
+        
+        console.log(`🔍 엔진 ${engine.name} (${engine.id}) 호환성:`, {
+          requiredEEG: requiredDataTypes.eeg,
+          supportsEEG: engine.supportedDataTypes.eeg,
+          requiredPPG: requiredDataTypes.ppg,
+          supportsPPG: engine.supportedDataTypes.ppg,
+          requiredACC: requiredDataTypes.acc,
+          supportsACC: engine.supportedDataTypes.acc,
+          compatibilityScore
+        });
         
                  // 추가 점수 (품질, 사용량 등)
          if (metadata && metadata.averageRating > 4) compatibilityScore += 10;

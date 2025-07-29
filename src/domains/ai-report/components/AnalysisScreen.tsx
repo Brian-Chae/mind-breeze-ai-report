@@ -496,7 +496,7 @@ export function AnalysisScreen({ onComplete, onBack, onError, personalInfo, meas
         availableCredits={availableCredits}
         requiredDataTypes={{
           eeg: !!measurementData.eegSummary,
-          ppg: !!measurementData.ppgSummary,
+          ppg: true, // PPG 엔진을 항상 표시 (테스트용 Mock 데이터 지원)
           acc: !!measurementData.accSummary
         }}
       />
