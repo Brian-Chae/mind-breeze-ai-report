@@ -1039,19 +1039,67 @@ export class EEGAdvancedGeminiEngine implements IAIEngine {
       stressIndexValue: getIndexValue(eegIndices.stressIndex)
     });
     
+    // 개인정보 기반 동적 프롬프트 생성
+    const age = personalInfo.age || 30;
+    const gender = personalInfo.gender === 'male' ? '남성' : '여성';
+    const occupation = personalInfo.occupation || '일반직';
+    
+    // 연령대별 특성
+    const getAgeCharacteristics = (age: number) => {
+      if (age < 30) {
+        return '청년기 뇌 발달 완성기의 신경가소성과 최적화된 인지 기능';
+      } else if (age < 50) {
+        return '중년기 신경생리학적 변화 - 호르몬 변동, 인지 예비능 활용, 백질 완전성 변화';
+      } else {
+        return '장년기 뇌 노화 과정 - 신경 효율성, 보상 기전, 축적된 경험의 활용';
+      }
+    };
+    
+    // 성별별 특성
+    const getGenderCharacteristics = (gender: string) => {
+      if (gender === '남성') {
+        return '남성 호르몬 변동, HPA축 반응성, 편도체-전전두피질 연결성 특성';
+      } else {
+        return '여성 호르몬 주기, 스트레스 반응성, 좌우뇌 연결성 특성';
+      }
+    };
+    
+    // 직업별 특성
+    const getOccupationCharacteristics = (occupation: string) => {
+      const occupationLower = occupation.toLowerCase();
+      
+      if (occupationLower.includes('개발') || occupationLower.includes('프로그래머') || occupationLower.includes('엔지니어')) {
+        return '장시간 화면 노출, 복잡한 논리적 사고, 멀티태스킹, 좌뇌 우세 패턴';
+      } else if (occupationLower.includes('장교') || occupationLower.includes('군') || occupationLower.includes('경찰')) {
+        return '고도의 스트레스 관리, 신속한 의사결정, 리더십 요구, 규칙적 생활패턴';
+      } else if (occupationLower.includes('의사') || occupationLower.includes('간호') || occupationLower.includes('치료')) {
+        return '높은 책임감, 정밀한 집중력, 감정적 부담, 불규칙한 근무패턴';
+      } else if (occupationLower.includes('교사') || occupationLower.includes('교수') || occupationLower.includes('강사')) {
+        return '지속적 집중력, 언어적 사고, 대인관계 스트레스, 창의적 문제해결';
+      } else if (occupationLower.includes('회계') || occupationLower.includes('사무') || occupationLower.includes('관리')) {
+        return '세밀한 집중력, 반복적 업무, 정확성 요구, 좌뇌 우세 패턴';
+      } else if (occupationLower.includes('예술') || occupationLower.includes('디자인') || occupationLower.includes('창작')) {
+        return '창의적 사고, 우뇌 활성화, 감정적 표현, 직관적 처리';
+      } else if (occupationLower.includes('백수') || occupationLower.includes('무직')) {
+        return '불규칙한 생활패턴, 사회적 스트레스, 목적의식 부족, 활동량 저하';
+      } else {
+        return '일반적인 직업적 스트레스, 업무 관련 인지적 요구사항, 사회적 상호작용';
+      }
+    };
+    
     return `
-당신은 신경생리학 및 뇌파 분석 전문의입니다. 43세 중년 남성 소프트웨어 개발자의 EEG 데이터를 최대한 전문적이고 상세하게 분석해주세요.
+당신은 신경생리학 및 뇌파 분석 전문의입니다. ${age}세 ${gender} ${occupation}의 EEG 데이터를 최대한 전문적이고 상세하게 분석해주세요.
 
 ## 개인정보 및 전문적 고려사항
 - 이름: ${personalInfo.name}
-- 나이: ${personalInfo.age}세 (중년기 신경생리학적 변화 고려)
-- 성별: ${personalInfo.gender === 'male' ? '남성' : '여성'} (남성 호르몬 변동, HPA축 반응성 특성 반영)
-- 직업: ${personalInfo.occupation} (장시간 화면 노출, 인지적 과부하, 좌뇌 우세 패턴 고려)
+- 나이: ${age}세 (${getAgeCharacteristics(age)})
+- 성별: ${gender} (${getGenderCharacteristics(gender)})
+- 직업: ${occupation} (${getOccupationCharacteristics(occupation)})
 
 ## 전문의로서의 분석 지침
-- 43세 남성의 테스토스테론 감소, 코르티솔 반응성 변화를 뇌파 해석에 반영
-- 개발자 직업군의 특수한 인지적 요구사항과 스트레스 패턴 분석
-- 중년기 뇌 가소성, 백질 완전성, 도파민 시스템 변화 고려
+- ${age}세 ${gender}의 연령/성별별 신경생리학적 특성을 뇌파 해석에 반영
+- ${occupation} 직업군의 특수한 인지적 요구사항과 스트레스 패턴 분석
+- 개인의 생활패턴과 직업적 특성을 고려한 뇌파 변화 해석
 - 신경학적 근거에 기반한 개별화된 임상적 해석 제공
 
 ## EEG Band Powers 분석 (μV²)
@@ -1329,14 +1377,14 @@ ${bandPowers.totalPower ? `### Total Power
     "keyFindings": ["주요 발견사항 1", "주요 발견사항 2", "주요 발견사항 3"],
     "primaryConcerns": ["주요 문제점이나 개선이 필요한 영역"],
     "ageGenderAnalysis": {
-      "ageComparison": "${personalInfo.age}세 중년 남성의 신경생리학적 특성을 반영한 상세 분석 - 테스토스테론 수준 변화, 코르티솔 반응성, 전전두엽 성숙도를 고려한 뇌파 패턴 해석",
-      "genderConsiderations": "43세 남성 특성: 편도체-전전두피질 연결성 변화, 남성 호르몬 변동기에 따른 스트레스 반응 패턴, HPA축 활성화 특성 및 신경가소성 변화를 반영한 개별화 해석 제공",
-      "developmentalContext": "중년기 남성의 뇌 발달 특성: 백질 완전성 변화, 도파민 시스템 변화, 인지 예비능 활용 패턴, 신경 효율성 최적화 상태를 고려한 연령 특화 뇌파 분석"
+      "ageComparison": "${age}세 ${gender}의 신경생리학적 특성을 반영한 상세 분석 - ${getAgeCharacteristics(age)}에 따른 뇌파 패턴 해석",
+      "genderConsiderations": "${age}세 ${gender} 특성: ${getGenderCharacteristics(gender)}을 반영한 개별화 해석 제공",
+      "developmentalContext": "${age < 30 ? '청년기' : age < 50 ? '중년기' : '장년기'} ${gender}의 뇌 발달 특성을 고려한 연령 특화 뇌파 분석"
     },
     "occupationalAnalysis": {
-      "jobDemands": "소프트웨어 개발자의 인지적 요구사항: 장시간 시각적 집중(화면응시), 복잡한 논리적 사고, 멀티태스킹, 문제해결 능력, 지속적 학습 부담이 뇌파 패턴에 미치는 영향 분석",
-      "workRelatedPatterns": "개발자 직업군 특화 패턴: 장시간 코딩으로 인한 시각피질 과활성화, 논리적 사고로 인한 좌뇌 우세, 디버깅 스트레스로 인한 베타파 증가, 창의적 문제해결 시 알파-세타 동조화 패턴 해석",
-      "professionalRecommendations": "43세 개발자 맞춤 권장사항: 블루라이트 노출 관리, 인지적 과부하 방지를 위한 뽀모도로 기법, 좌우뇌 균형을 위한 창의적 활동, 눈의 피로도 관리, 경력 전환기 스트레스 관리 전략"
+      "jobDemands": "${occupation}의 인지적 요구사항: ${getOccupationCharacteristics(occupation)}이 뇌파 패턴에 미치는 영향 분석",
+      "workRelatedPatterns": "${occupation} 직업군 특화 패턴: 직업적 특성에 따른 뇌파 변화와 스트레스 반응 패턴 해석",
+      "professionalRecommendations": "${age}세 ${occupation} 맞춤 권장사항: 직업적 특성과 연령을 고려한 뇌 건강 관리 전략"
     },
     "improvementPlan": {
       "shortTermGoals": ["1-4주 내 개선 목표"],
