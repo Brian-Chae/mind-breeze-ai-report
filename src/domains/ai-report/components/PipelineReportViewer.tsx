@@ -32,7 +32,7 @@ import {
   Share2,
   ChevronRight
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@shared/components/ui/utils';
 
 interface PipelineReportViewerProps {
   report: any; // PipelineReport 타입

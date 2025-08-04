@@ -14,6 +14,7 @@ export interface PipelineConfig {
     eeg?: any; // EEG 데이터
     ppg?: any; // PPG 데이터
   };
+  processedTimeSeries?: any; // 실제 시계열 데이터
   options?: {
     skipEEG?: boolean;
     skipPPG?: boolean;
@@ -60,15 +61,33 @@ export class AnalysisPipelineOrchestrator {
   private integratedEngine: IAIEngine | null = null;
   private currentStatus: PipelineStatus = PipelineStatus.IDLE;
   private progressCallback?: PipelineProgressCallback;
+  private enginesInitialized = false;
 
   constructor() {
-    this.initializeEngines();
+    // 생성자에서는 engines 초기화를 하지 않음 (지연 초기화)
   }
 
   /**
-   * 엔진 초기화
+   * 엔진 초기화 (지연 초기화)
    */
-  private initializeEngines(): void {
+  private ensureEnginesInitialized(): void {
+    if (this.enginesInitialized) {
+      return;
+    }
+
+    // engines가 아직 등록되지 않았다면 초기화 시도
+    const engineCount = aiEngineRegistry.getStats().totalEngines;
+    if (engineCount === 0) {
+      console.log('🔄 Engines not found, attempting to initialize...');
+      try {
+        // engines 초기화 함수를 동적으로 import하여 실행
+        const { initializeEngines } = require('../ai-engines');
+        initializeEngines();
+      } catch (error) {
+        console.error('❌ Engine initialization failed:', error);
+      }
+    }
+
     // 기본 엔진 설정
     this.eegEngine = aiEngineRegistry.get('eeg-advanced-gemini-v1');
     this.ppgEngine = aiEngineRegistry.get('ppg-advanced-gemini-v1');
@@ -84,6 +103,9 @@ export class AnalysisPipelineOrchestrator {
       console.error('❌ Integrated Advanced 엔진을 찾을 수 없습니다!');
       throw new Error('통합 분석 엔진이 등록되지 않았습니다.');
     }
+
+    this.enginesInitialized = true;
+    console.log('✅ Pipeline engines initialized successfully');
   }
 
   /**
@@ -108,6 +130,9 @@ export class AnalysisPipelineOrchestrator {
    * 파이프라인 실행
    */
   public async runPipeline(config: PipelineConfig): Promise<PipelineResult> {
+    // engines 초기화 확인
+    this.ensureEnginesInitialized();
+    
     const startTime = Date.now();
     const pipelineId = `pipeline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -146,12 +171,227 @@ export class AnalysisPipelineOrchestrator {
       
       if (!config.options?.skipEEG && config.measurementData.eeg && this.eegEngine) {
         this.updateProgress(PipelineStatus.RUNNING_EEG, 10, 'EEG 분석 시작...');
-        analysisPromises.push(this.runEEGAnalysis(config.measurementData.eeg));
+        // EEG 엔진이 기대하는 형식으로 데이터 변환
+        const eegData = config.measurementData.eeg;
+        
+        // processedTimeSeries가 있으면 해당 데이터를 사용하고, 없으면 eegData 사용
+        let eegTimeSeriesStats;
+        
+        if (config.processedTimeSeries) {
+          console.log('📊 processedTimeSeries 데이터 활용');
+          // processedTimeSeries가 직접 데이터를 포함하거나 eeg 하위에 있는 경우 모두 처리
+          const timeSeriesData = config.processedTimeSeries.eeg || config.processedTimeSeries;
+          
+          // 이미 통계 형태인지 시계열 배열인지 확인
+          if (timeSeriesData.bandPowers) {
+            // 이미 통계 형태
+            eegTimeSeriesStats = timeSeriesData;
+          } else if (timeSeriesData.AlphaPower || timeSeriesData.alphaPower || 
+                     timeSeriesData.DeltaPower || timeSeriesData.deltaPower ||
+                     timeSeriesData.ThetaPower || timeSeriesData.thetaPower ||
+                     timeSeriesData.BetaPower || timeSeriesData.betaPower ||
+                     timeSeriesData.GammaPower || timeSeriesData.gammaPower) {
+            // 시계열 배열 형태 - 실제 데이터에서 통계 계산
+            console.log('🔍 시계열 데이터에서 실제 통계 계산');
+            eegTimeSeriesStats = this.calculateEEGStatsFromTimeSeries(timeSeriesData);
+          } else {
+            // 기본 구조
+            eegTimeSeriesStats = eegData;
+          }
+        } else {
+          // bandPowers와 eegIndices가 최상위에 없으면 구조 재구성
+          eegTimeSeriesStats = {
+            bandPowers: eegData.bandPowers || {
+              delta: { 
+                mean: eegData.delta?.mean || 100, 
+                std: eegData.delta?.std || 20, 
+                min: eegData.delta?.min || 50, 
+                max: eegData.delta?.max || 150 
+              },
+              theta: { 
+                mean: eegData.theta?.mean || 100, 
+                std: eegData.theta?.std || 20, 
+                min: eegData.theta?.min || 50, 
+                max: eegData.theta?.max || 150 
+              },
+              alpha: { 
+                mean: eegData.alpha?.mean || 100, 
+                std: eegData.alpha?.std || 20, 
+                min: eegData.alpha?.min || 50, 
+                max: eegData.alpha?.max || 150 
+              },
+              beta: { 
+                mean: eegData.beta?.mean || 100, 
+                std: eegData.beta?.std || 20, 
+                min: eegData.beta?.min || 50, 
+                max: eegData.beta?.max || 150 
+              },
+              gamma: { 
+                mean: eegData.gamma?.mean || 100, 
+                std: eegData.gamma?.std || 20, 
+                min: eegData.gamma?.min || 50, 
+                max: eegData.gamma?.max || 150 
+              }
+            },
+            eegIndices: eegData.eegIndices || {
+              engagementIndex: { 
+                mean: eegData.engagementIndex?.mean || 50, 
+                std: eegData.engagementIndex?.std || 15, 
+                min: eegData.engagementIndex?.min || 20, 
+                max: eegData.engagementIndex?.max || 80 
+              },
+              relaxationIndex: { 
+                mean: eegData.relaxationIndex?.mean || 0.2, 
+                std: eegData.relaxationIndex?.std || 0.02, 
+                min: eegData.relaxationIndex?.min || 0.18, 
+                max: eegData.relaxationIndex?.max || 0.22 
+              },
+              focusIndex: { 
+                mean: eegData.focusIndex?.mean || 2.25, 
+                std: eegData.focusIndex?.std || 0.5, 
+                min: eegData.focusIndex?.min || 1.5, 
+                max: eegData.focusIndex?.max || 3.0 
+              },
+              stressIndex: { 
+                mean: eegData.stressIndex?.mean || 3.4, 
+                std: eegData.stressIndex?.std || 0.6, 
+                min: eegData.stressIndex?.min || 2.8, 
+                max: eegData.stressIndex?.max || 4.0 
+              },
+              fatigueIndex: { 
+                mean: eegData.fatigueIndex?.mean || 50, 
+                std: eegData.fatigueIndex?.std || 15, 
+                min: eegData.fatigueIndex?.min || 20, 
+                max: eegData.fatigueIndex?.max || 80 
+              },
+              hemisphericBalance: { 
+                mean: eegData.hemisphericBalance?.mean || eegData.hemisphericBalance || 0.0,
+                std: eegData.hemisphericBalance?.std || 0.05,
+                min: eegData.hemisphericBalance?.min || -0.1,
+                max: eegData.hemisphericBalance?.max || 0.1
+              },
+              cognitiveLoad: { 
+                mean: eegData.cognitiveLoad?.mean || eegData.cognitiveLoad || 1.5,
+                std: eegData.cognitiveLoad?.std || 0.5,
+                min: eegData.cognitiveLoad?.min || 0.5,
+                max: eegData.cognitiveLoad?.max || 2.5
+              },
+              emotionalStability: { 
+                mean: eegData.emotionalStability?.mean || eegData.emotionalStability || 0.8,
+                std: eegData.emotionalStability?.std || 0.2,
+                min: eegData.emotionalStability?.min || 0.4,
+                max: eegData.emotionalStability?.max || 1.2
+              }
+            },
+            qualityMetrics: eegData.qualityMetrics || {
+              signalQuality: 80,
+              artifactRatio: 0.1,
+              validSegments: 90
+            }
+          };
+        }
+        
+        const eegAnalysisData = {
+          personalInfo: config.personalInfo,
+          measurementData: {
+            eegMetrics: eegTimeSeriesStats
+          },
+          eegTimeSeriesStats: eegTimeSeriesStats,
+          // processedTimeSeries 데이터 추가
+          processedTimeSeries: config.processedTimeSeries,
+          // 원본 데이터 전달 (추가 디버깅용)
+          rawData: config
+        };
+        
+        console.log('🔍 EEG 분석 데이터 구조:', {
+          hasProcessedTimeSeries: !!eegAnalysisData.processedTimeSeries,
+          processedTimeSeriesKeys: eegAnalysisData.processedTimeSeries ? Object.keys(eegAnalysisData.processedTimeSeries) : [],
+          hasEegTimeSeriesStats: !!eegAnalysisData.eegTimeSeriesStats,
+          bandPowerSample: eegAnalysisData.eegTimeSeriesStats?.bandPowers?.alpha
+        });
+        analysisPromises.push(this.runEEGAnalysis(eegAnalysisData));
       }
 
       if (!config.options?.skipPPG && config.measurementData.ppg && this.ppgEngine) {
         this.updateProgress(PipelineStatus.RUNNING_PPG, 10, 'PPG 분석 시작...');
-        analysisPromises.push(this.runPPGAnalysis(config.measurementData.ppg));
+        // PPG 엔진이 기대하는 형식으로 데이터 변환
+        const ppgData = config.measurementData.ppg;
+        
+        // PPG 데이터 구조 정규화 - 객체 형태로 유지하되 숫자 값 확보
+        const ppgTimeSeriesStats = {
+          hrvTimeMetrics: ppgData.hrvTimeMetrics || {
+            meanRR: { 
+              mean: ppgData.meanRR?.mean || 800, 
+              std: ppgData.meanRR?.std || 50, 
+              min: ppgData.meanRR?.min || 600, 
+              max: ppgData.meanRR?.max || 1000 
+            },
+            sdnn: { 
+              mean: ppgData.sdnn?.mean || 50, 
+              std: ppgData.sdnn?.std || 15, 
+              min: ppgData.sdnn?.min || 20, 
+              max: ppgData.sdnn?.max || 100 
+            },
+            rmssd: { 
+              mean: ppgData.rmssd?.mean || 40, 
+              std: ppgData.rmssd?.std || 15, 
+              min: ppgData.rmssd?.min || 15, 
+              max: ppgData.rmssd?.max || 80 
+            },
+            pnn50: { 
+              mean: ppgData.pnn50?.mean || 25, 
+              std: ppgData.pnn50?.std || 15, 
+              min: ppgData.pnn50?.min || 5, 
+              max: ppgData.pnn50?.max || 50 
+            },
+            pnn20: { 
+              mean: ppgData.pnn20?.mean || 50, 
+              std: ppgData.pnn20?.std || 20, 
+              min: ppgData.pnn20?.min || 10, 
+              max: ppgData.pnn20?.max || 80 
+            }
+          },
+          heartRate: { 
+            mean: ppgData.heartRate?.mean || 75, 
+            std: ppgData.heartRate?.std || 10, 
+            min: ppgData.heartRate?.min || 50, 
+            max: ppgData.heartRate?.max || 100 
+          },
+          hrvFrequencyMetrics: ppgData.hrvFrequencyMetrics || {
+            lfPower: ppgData.lf?.mean || ppgData.lfPower || 1200,
+            hfPower: ppgData.hf?.mean || ppgData.hfPower || 800,
+            lfHfRatio: ppgData.lfHfRatio?.mean || ppgData.lfHfRatio || 1.5,
+            stressIndex: ppgData.stressLevel?.mean || ppgData.stressIndex?.mean || ppgData.stressIndex || 45
+          },
+          oxygenSaturation: { 
+            mean: ppgData.oxygenSaturation?.mean || 97, 
+            std: ppgData.oxygenSaturation?.std || 1.5, 
+            min: ppgData.oxygenSaturation?.min || 95, 
+            max: ppgData.oxygenSaturation?.max || 100 
+          },
+          pulseWaveMetrics: ppgData.pulseWaveMetrics || {
+            amplitude: { mean: 1.0, std: 0.2, min: 0.5, max: 1.5 },
+            peakTime: { mean: 150, std: 20, min: 100, max: 200 },
+            augmentationIndex: { mean: 20, std: 10, min: -10, max: 50 }
+          },
+          bloodPressureEstimates: ppgData.bloodPressureEstimates || {
+            systolic: { mean: 120, std: 15, min: 90, max: 160 },
+            diastolic: { mean: 80, std: 10, min: 60, max: 100 }
+          },
+          qualityMetrics: ppgData.qualityMetrics || {
+            signalQuality: 0.8,
+            measurementDuration: 60
+          }
+        };
+        
+        const ppgAnalysisData = {
+          personalInfo: config.personalInfo,
+          measurementData: {
+            ppgMetrics: ppgTimeSeriesStats
+          },
+          ppgTimeSeriesStats: ppgTimeSeriesStats
+        };
+        analysisPromises.push(this.runPPGAnalysis(ppgAnalysisData));
       }
 
       // 병렬 실행 및 결과 수집
@@ -178,6 +418,32 @@ export class AnalysisPipelineOrchestrator {
 
       // Step 3: 통합 분석
       this.updateProgress(PipelineStatus.RUNNING_INTEGRATED, 50, '통합 분석 시작...');
+      
+      // 디버깅: 통합 분석에 전달할 데이터 구조 확인
+      console.log('🔍 파이프라인 오케스트레이터 - 통합 분석 전 데이터 확인:');
+      console.log('EEG 분석 결과:', results.eegAnalysis ? '존재' : '없음');
+      if (results.eegAnalysis) {
+        console.log('EEG Analysis Keys:', Object.keys(results.eegAnalysis));
+        console.log('EEG Analysis Type:', typeof results.eegAnalysis);
+        if (results.eegAnalysis.analysisResult) {
+          console.log('EEG analysisResult Keys:', Object.keys(results.eegAnalysis.analysisResult));
+        }
+        if (results.eegAnalysis.rawData) {
+          console.log('EEG rawData Keys:', Object.keys(results.eegAnalysis.rawData));
+        }
+      }
+      
+      console.log('PPG 분석 결과:', results.ppgAnalysis ? '존재' : '없음');
+      if (results.ppgAnalysis) {
+        console.log('PPG Analysis Keys:', Object.keys(results.ppgAnalysis));
+        console.log('PPG Analysis Type:', typeof results.ppgAnalysis);
+        if (results.ppgAnalysis.analysisResult) {
+          console.log('PPG analysisResult Keys:', Object.keys(results.ppgAnalysis.analysisResult));
+        }
+        if (results.ppgAnalysis.rawData) {
+          console.log('PPG rawData Keys:', Object.keys(results.ppgAnalysis.rawData));
+        }
+      }
       
       const integratedInput: IntegratedAnalysisInput = {
         eegAnalysis: results.eegAnalysis,
@@ -262,7 +528,7 @@ export class AnalysisPipelineOrchestrator {
   /**
    * EEG 분석 실행
    */
-  private async runEEGAnalysis(eegData: any): Promise<any> {
+  private async runEEGAnalysis(data: any): Promise<any> {
     if (!this.eegEngine) {
       throw new Error('EEG 엔진이 초기화되지 않았습니다.');
     }
@@ -270,7 +536,7 @@ export class AnalysisPipelineOrchestrator {
     console.log('🧠 EEG 분석 실행 중...');
     
     try {
-      const result = await this.eegEngine.analyze(eegData);
+      const result = await this.eegEngine.analyze(data);
       console.log('✅ EEG 분석 완료');
       return result;
     } catch (error) {
@@ -282,7 +548,7 @@ export class AnalysisPipelineOrchestrator {
   /**
    * PPG 분석 실행
    */
-  private async runPPGAnalysis(ppgData: any): Promise<any> {
+  private async runPPGAnalysis(data: any): Promise<any> {
     if (!this.ppgEngine) {
       throw new Error('PPG 엔진이 초기화되지 않았습니다.');
     }
@@ -290,7 +556,7 @@ export class AnalysisPipelineOrchestrator {
     console.log('💓 PPG 분석 실행 중...');
     
     try {
-      const result = await this.ppgEngine.analyze(ppgData);
+      const result = await this.ppgEngine.analyze(data);
       console.log('✅ PPG 분석 완료');
       return result;
     } catch (error) {
@@ -317,6 +583,124 @@ export class AnalysisPipelineOrchestrator {
       console.error('❌ 통합 분석 실패:', error);
       throw error;
     }
+  }
+
+  /**
+   * 시계열 EEG 데이터에서 통계 계산
+   */
+  private calculateEEGStatsFromTimeSeries(timeSeriesData: any): any {
+    console.log('📊 시계열 데이터에서 실제 통계 계산 시작');
+    
+    // 통계 계산 함수
+    const calculateStats = (data: number[]) => {
+      if (!Array.isArray(data) || data.length === 0) {
+        return { mean: 0, std: 0, min: 0, max: 0 };
+      }
+      
+      const mean = data.reduce((a, b) => a + b, 0) / data.length;
+      const variance = data.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / data.length;
+      const std = Math.sqrt(variance);
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      
+      return { mean, std, min, max };
+    };
+
+    // Band Powers 통계 계산
+    const bandPowers: any = {};
+    
+    // Delta
+    const deltaData = timeSeriesData.DeltaPower || timeSeriesData.deltaPower;
+    if (deltaData && Array.isArray(deltaData)) {
+      bandPowers.delta = calculateStats(deltaData);
+      console.log('📊 Delta 통계:', bandPowers.delta);
+    }
+    
+    // Theta
+    const thetaData = timeSeriesData.ThetaPower || timeSeriesData.thetaPower;
+    if (thetaData && Array.isArray(thetaData)) {
+      bandPowers.theta = calculateStats(thetaData);
+      console.log('📊 Theta 통계:', bandPowers.theta);
+    }
+    
+    // Alpha  
+    const alphaData = timeSeriesData.AlphaPower || timeSeriesData.alphaPower;
+    if (alphaData && Array.isArray(alphaData)) {
+      bandPowers.alpha = calculateStats(alphaData);
+      console.log('📊 Alpha 통계:', bandPowers.alpha);
+    }
+    
+    // Beta
+    const betaData = timeSeriesData.BetaPower || timeSeriesData.betaPower;
+    if (betaData && Array.isArray(betaData)) {
+      bandPowers.beta = calculateStats(betaData);
+      console.log('📊 Beta 통계:', bandPowers.beta);
+    }
+    
+    // Gamma
+    const gammaData = timeSeriesData.GammaPower || timeSeriesData.gammaPower;
+    if (gammaData && Array.isArray(gammaData)) {
+      bandPowers.gamma = calculateStats(gammaData);
+      console.log('📊 Gamma 통계:', bandPowers.gamma);
+    }
+
+    // EEG Indices 통계 계산
+    const eegIndices: any = {};
+    
+    // Focus Index
+    const focusData = timeSeriesData.FocusIndex || timeSeriesData.focusIndex;
+    if (focusData && Array.isArray(focusData)) {
+      eegIndices.focusIndex = calculateStats(focusData);
+      console.log('📊 Focus Index 통계:', eegIndices.focusIndex);
+    }
+    
+    // Relaxation Index
+    const relaxationData = timeSeriesData.RelaxationIndex || timeSeriesData.relaxationIndex;
+    if (relaxationData && Array.isArray(relaxationData)) {
+      eegIndices.relaxationIndex = calculateStats(relaxationData);
+      console.log('📊 Relaxation Index 통계:', eegIndices.relaxationIndex);
+    }
+    
+    // Stress Index
+    const stressData = timeSeriesData.StressIndex || timeSeriesData.stressIndex;
+    if (stressData && Array.isArray(stressData)) {
+      eegIndices.stressIndex = calculateStats(stressData);
+      console.log('📊 Stress Index 통계:', eegIndices.stressIndex);
+    }
+    
+    // Hemispheric Balance
+    const hemisphericData = timeSeriesData.HemisphericBalance || timeSeriesData.hemisphericBalance;
+    if (hemisphericData && Array.isArray(hemisphericData)) {
+      eegIndices.hemisphericBalance = calculateStats(hemisphericData);
+      console.log('📊 Hemispheric Balance 통계:', eegIndices.hemisphericBalance);
+    }
+    
+    // Cognitive Load
+    const cognitiveData = timeSeriesData.CognitiveLoad || timeSeriesData.cognitiveLoad;
+    if (cognitiveData && Array.isArray(cognitiveData)) {
+      eegIndices.cognitiveLoad = calculateStats(cognitiveData);
+      console.log('📊 Cognitive Load 통계:', eegIndices.cognitiveLoad);
+    }
+    
+    // Emotional Stability
+    const emotionalData = timeSeriesData.EmotionalStability || timeSeriesData.emotionalStability;
+    if (emotionalData && Array.isArray(emotionalData)) {
+      eegIndices.emotionalStability = calculateStats(emotionalData);
+      console.log('📊 Emotional Stability 통계:', eegIndices.emotionalStability);
+    }
+
+    const result = {
+      bandPowers,
+      eegIndices,
+      qualityMetrics: timeSeriesData.qualityMetrics || {
+        signalQuality: 80,
+        artifactRatio: 0.1,
+        validSegments: 90
+      }
+    };
+    
+    console.log('✅ 시계열 통계 계산 완료:', result);
+    return result;
   }
 
   /**

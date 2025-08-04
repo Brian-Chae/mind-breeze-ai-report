@@ -12,9 +12,10 @@ import {
   orderBy,
   limit as firestoreLimit,
   getDocs,
+  deleteDoc,
   Timestamp 
 } from 'firebase/firestore';
-import { db } from '@/shared/services/firebase';
+import { db } from '@core/services/firebase';
 import { PipelineResult } from './AnalysisPipelineOrchestrator';
 
 export interface PipelineReport {
@@ -58,6 +59,35 @@ export interface PipelineReport {
 
 export class PipelineReportService {
   private static readonly COLLECTION_NAME = 'pipelineReports';
+  
+  /**
+   * 재귀적으로 객체에서 undefined 값을 제거
+   */
+  private removeUndefinedValues(obj: any): any {
+    if (obj === null) return null;
+    if (obj === undefined) return null;
+    if (obj instanceof Date || obj instanceof Timestamp) return obj;
+    if (typeof obj !== 'object') return obj;
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedValues(item))
+        .filter(item => item !== undefined);
+    }
+    
+    const cleanedObj: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const value = obj[key];
+        if (value !== undefined) {
+          const cleanedValue = this.removeUndefinedValues(value);
+          if (cleanedValue !== undefined) {
+            cleanedObj[key] = cleanedValue;
+          }
+        }
+      }
+    }
+    return cleanedObj;
+  }
   
   /**
    * 파이프라인 결과를 Firestore에 저장
@@ -104,14 +134,24 @@ export class PipelineReportService {
         updatedAt: Timestamp.now()
       };
       
+      // undefined 값 제거
+      const cleanedReport = this.removeUndefinedValues(pipelineReport);
+      
       // Firestore에 저장
       await setDoc(
         doc(db, PipelineReportService.COLLECTION_NAME, reportId),
-        pipelineReport
+        cleanedReport
       );
       
-      console.log('✅ 파이프라인 리포트 저장 완료:', reportId);
-      return pipelineReport;
+      console.log('✅ 파이프라인 리포트 저장 완료:', {
+        reportId: reportId,
+        organizationId: cleanedReport.organizationId,
+        measurementDataId: cleanedReport.measurementDataId,
+        hasEEG: !!cleanedReport.eegAnalysisResult,
+        hasPPG: !!cleanedReport.ppgAnalysisResult,
+        hasIntegrated: !!cleanedReport.integratedAnalysisResult
+      });
+      return cleanedReport as PipelineReport;
       
     } catch (error) {
       console.error('❌ 파이프라인 리포트 저장 실패:', error);
@@ -149,19 +189,26 @@ export class PipelineReportService {
     measurementDataId: string
   ): Promise<PipelineReport[]> {
     try {
+      // 인덱스 없이 조회하기 위해 orderBy 제거
       const q = query(
         collection(db, PipelineReportService.COLLECTION_NAME),
-        where('measurementDataId', '==', measurementDataId),
-        orderBy('createdAt', 'desc'),
-        firestoreLimit(10)
+        where('measurementDataId', '==', measurementDataId)
       );
       
       const querySnapshot = await getDocs(q);
       
-      return querySnapshot.docs.map(doc => ({
+      // 클라이언트 측에서 정렬
+      const reports = querySnapshot.docs.map(doc => ({
         ...doc.data() as PipelineReport,
         id: doc.id
       }));
+      
+      // createdAt 기준으로 내림차순 정렬
+      return reports.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
       
     } catch (error) {
       console.error('❌ 측정 데이터별 파이프라인 리포트 조회 실패:', error);
@@ -177,23 +224,48 @@ export class PipelineReportService {
     limitCount: number = 20
   ): Promise<PipelineReport[]> {
     try {
+      // 인덱스 없이 조회하기 위해 orderBy와 limit 제거
       const q = query(
         collection(db, PipelineReportService.COLLECTION_NAME),
-        where('organizationId', '==', organizationId),
-        orderBy('createdAt', 'desc'),
-        firestoreLimit(limitCount)
+        where('organizationId', '==', organizationId)
       );
       
       const querySnapshot = await getDocs(q);
       
-      return querySnapshot.docs.map(doc => ({
+      // 클라이언트 측에서 정렬 및 제한
+      const reports = querySnapshot.docs.map(doc => ({
         ...doc.data() as PipelineReport,
         id: doc.id
       }));
       
+      // createdAt 기준으로 내림차순 정렬 후 limitCount만큼 자르기
+      return reports
+        .sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        })
+        .slice(0, limitCount);
+      
     } catch (error) {
       console.error('❌ 조직별 파이프라인 리포트 조회 실패:', error);
       return [];
+    }
+  }
+
+  /**
+   * 파이프라인 리포트 삭제
+   */
+  async deleteReport(reportId: string): Promise<void> {
+    try {
+      console.log('🗑️ 파이프라인 리포트 삭제 시작:', reportId);
+      
+      await deleteDoc(doc(db, PipelineReportService.COLLECTION_NAME, reportId));
+      
+      console.log('✅ 파이프라인 리포트 삭제 완료:', reportId);
+    } catch (error) {
+      console.error('❌ 파이프라인 리포트 삭제 실패:', error);
+      throw new Error(`파이프라인 리포트 삭제에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     }
   }
 }
