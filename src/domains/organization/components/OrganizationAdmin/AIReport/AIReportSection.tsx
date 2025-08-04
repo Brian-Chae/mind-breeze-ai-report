@@ -33,6 +33,7 @@ import { useAnalysisPipeline } from '@domains/ai-report/hooks/useAnalysisPipelin
 import { PipelineProgressModal } from '@domains/ai-report/components/PipelineProgressModal'
 import { PersonalInfo } from '@domains/ai-report/ai-engines/IntegratedAdvancedGeminiEngine'
 import { pipelineReportService } from '@domains/ai-report/services/PipelineReportService'
+import { PipelineHistoryModal } from '@domains/ai-report/components/PipelineHistoryModal'
 
 interface AIReportSectionProps {
   subSection: string;
@@ -268,23 +269,31 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
             const eegData = data.processedTimeSeries?.eeg || data.timeSeriesData?.eeg;
             
             
-            // 모든 EEG 메트릭에 대한 통계 계산
-            const deltaStats = calculateStatistics(eegData.deltaPower);
-            const thetaStats = calculateStatistics(eegData.thetaPower);
-            const alphaStats = calculateStatistics(eegData.alphaPower);
-            const betaStats = calculateStatistics(eegData.betaPower);
-            const gammaStats = calculateStatistics(eegData.gammaPower);
-            const totalPowerStats = calculateStatistics(eegData.totalPower);
-            const focusStats = calculateStatistics(eegData.focusIndex);
-            const relaxStats = calculateStatistics(eegData.relaxationIndex);
-            const stressStats = calculateStatistics(eegData.stressIndex);
-            const attentionStats = calculateStatistics(eegData.attentionLevel);
-            const meditationStats = calculateStatistics(eegData.meditationLevel);
-            const hemisphericStats = calculateStatistics(eegData.hemisphericBalance);
-            const cognitiveStats = calculateStatistics(eegData.cognitiveLoad);
-            const emotionalStats = calculateStatistics(eegData.emotionalStability);
-            const signalQualityStats = calculateStatistics(eegData.signalQuality);
-            const artifactStats = calculateStatistics(eegData.artifactRatio);
+            // 데이터 키 확인을 위한 로그
+            console.log('🔍 EEG 시계열 데이터 키:', Object.keys(eegData));
+            console.log('🔍 DeltaPower 존재 여부:', {
+              DeltaPower: !!eegData.DeltaPower,
+              deltaPower: !!eegData.deltaPower,
+              sample: eegData.DeltaPower?.slice(0, 5) || eegData.deltaPower?.slice(0, 5)
+            });
+            
+            // 모든 EEG 메트릭에 대한 통계 계산 (대소문자 모두 처리)
+            const deltaStats = calculateStatistics(eegData.DeltaPower || eegData.deltaPower);
+            const thetaStats = calculateStatistics(eegData.ThetaPower || eegData.thetaPower);
+            const alphaStats = calculateStatistics(eegData.AlphaPower || eegData.alphaPower);
+            const betaStats = calculateStatistics(eegData.BetaPower || eegData.betaPower);
+            const gammaStats = calculateStatistics(eegData.GammaPower || eegData.gammaPower);
+            const totalPowerStats = calculateStatistics(eegData.TotalPower || eegData.totalPower);
+            const focusStats = calculateStatistics(eegData.FocusIndex || eegData.focusIndex);
+            const relaxStats = calculateStatistics(eegData.RelaxationIndex || eegData.relaxationIndex);
+            const stressStats = calculateStatistics(eegData.StressIndex || eegData.stressIndex);
+            const attentionStats = calculateStatistics(eegData.AttentionLevel || eegData.attentionLevel);
+            const meditationStats = calculateStatistics(eegData.MeditationLevel || eegData.meditationLevel);
+            const hemisphericStats = calculateStatistics(eegData.HemisphericBalance || eegData.hemisphericBalance);
+            const cognitiveStats = calculateStatistics(eegData.CognitiveLoad || eegData.cognitiveLoad);
+            const emotionalStats = calculateStatistics(eegData.EmotionalStability || eegData.emotionalStability);
+            const signalQualityStats = calculateStatistics(eegData.SignalQuality || eegData.signalQuality);
+            const artifactStats = calculateStatistics(eegData.ArtifactRatio || eegData.artifactRatio);
             
             return (
               <div className="bg-white p-4 rounded-md shadow-sm mb-4">
@@ -1750,6 +1759,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
     reset: resetPipeline
   } = useAnalysisPipeline()
   const [isPipelineModalOpen, setIsPipelineModalOpen] = useState(false)
+  const [isPipelineHistoryModalOpen, setIsPipelineHistoryModalOpen] = useState(false)
   
   // AI Report 설정을 위한 organization ID
   const [currentContext, setCurrentContext] = useState(enterpriseAuthService.getCurrentContext())
@@ -1832,12 +1842,38 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       setIsPipelineModalOpen(true);
       
       // 파이프라인 실행
+      // processedTimeSeries 데이터 확인
+      const processedTimeSeries = measurementData.processedTimeSeries || measurementData.sessionData?.processedTimeSeries;
+      
+      console.log('🔍 파이프라인에 전달할 데이터:', {
+        eeg: measurementData.eeg || measurementData.processedEEG,
+        ppg: measurementData.ppg || measurementData.processedPPG,
+        processedTimeSeries: processedTimeSeries,
+        processedTimeSeriesKeys: processedTimeSeries ? Object.keys(processedTimeSeries) : [],
+        processedTimeSeriesEegKeys: processedTimeSeries?.eeg ? Object.keys(processedTimeSeries.eeg) : [],
+        personalInfo
+      });
+      
+      // processedTimeSeries가 있는 경우 직접 EEG 데이터 포함 여부 확인
+      if (processedTimeSeries && !processedTimeSeries.eeg) {
+        const keys = Object.keys(processedTimeSeries);
+        if (keys.includes('AlphaPower') || keys.includes('alphaPower')) {
+          console.log('⚠️ processedTimeSeries가 직접 EEG 데이터를 포함하고 있습니다.');
+          console.log('샘플 데이터:', {
+            AlphaPower: processedTimeSeries.AlphaPower?.slice(0, 5),
+            BetaPower: processedTimeSeries.BetaPower?.slice(0, 5)
+          });
+        }
+      }
+      
       const result = await runPipeline({
         personalInfo,
         measurementData: {
-          eeg: measurementData.eeg || measurementData.processedEEG,
-          ppg: measurementData.ppg || measurementData.processedPPG
+          eeg: measurementData.eeg || measurementData.processedEEG || measurementData.sessionData?.processedEEG,
+          ppg: measurementData.ppg || measurementData.processedPPG || measurementData.sessionData?.processedPPG
         },
+        // processedTimeSeries 추가
+        processedTimeSeries: processedTimeSeries,
         options: {
           includeDetailedAnalysis: true
         }
@@ -1847,11 +1883,21 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         console.log('✅ 파이프라인 완료:', result);
         
         // Firestore에 결과 저장
+        console.log('📝 파이프라인 리포트 저장 시작:', {
+          organizationId,
+          userId: measurementData.userId,
+          measurementDataId: measurementData.id
+        });
+        
+        // 측정 데이터 ID 확인
+        const measurementDataId = measurementData.sessionData?.id || measurementData.id;
+        console.log('📝 사용할 measurementDataId:', measurementDataId);
+        
         const savedReport = await pipelineReportService.savePipelineReport(
           result,
           organizationId,
           measurementData.userId,
-          measurementData.id,
+          measurementDataId,
           {
             name: measurementData.userName || '알 수 없음',
             age: personalInfo.age,
@@ -1860,7 +1906,11 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
           }
         );
         
-        console.log('✅ 파이프라인 리포트 저장 완료:', savedReport.id);
+        console.log('✅ 파이프라인 리포트 저장 완료:', {
+          reportId: savedReport.id,
+          measurementDataId: savedReport.measurementDataId,
+          organizationId: savedReport.organizationId
+        });
         
         // 성공 메시지 표시
         toast.success('통합 분석이 완료되었습니다!');
@@ -2015,14 +2065,24 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   })
   
   // 엔진 선택 핸들러
-  const handleEngineSelection = async (engineId: string) => {
+  const handleEngineSelection = async (engineId: string, analysisConfig?: any) => {
     const { dataId } = engineSelectionModal
     if (!dataId) return
     
     // 모달 닫기
     setEngineSelectionModal({ isOpen: false, dataId: '' })
     
+    // 분석 설정 로깅
+    if (analysisConfig) {
+      console.log('🎯 선택된 분석 설정:', {
+        engineId,
+        analysisType: analysisConfig.analysisType,
+        options: analysisConfig.analysisOptions
+      });
+    }
+    
     // 선택된 엔진으로 분석 실행
+    // TODO: analysisConfig를 활용하여 분석 옵션 적용
     await handleGenerateReportFromData(dataId, engineId)
   }
   
@@ -2038,7 +2098,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       case 'ppg-advanced-gemini-v1':
         return 'PPG 전문 분석 v1';
       case 'integrated-advanced-gemini-v1':
-        return '통합 고급 분석 v1';
+        return '종합 Gemini 분석';
       case 'mock-test':
         return '데모 AI 엔진';
     }
@@ -2067,7 +2127,8 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
   const getEngineCapabilities = (engineId: string) => {
     const isEEGAdvanced = engineId.includes('eeg-advanced');
     const isPPGAdvanced = engineId.includes('ppg-advanced');
-    const isAdvancedEngine = isEEGAdvanced || isPPGAdvanced;
+    const isIntegratedAdvanced = engineId.includes('integrated-advanced');
+    const isAdvancedEngine = isEEGAdvanced || isPPGAdvanced || isIntegratedAdvanced;
     
     return {
       supportsSharing: !isAdvancedEngine, // 전문 분석은 공유 미지원
@@ -2325,15 +2386,47 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
              // 각 세션의 AI 분석 결과 조회 및 데이터 변환
        const measurementDataWithReports = await Promise.all(
          measurementSessions.map(async (session: any) => {
+           // 해당 세션의 실제 측정 데이터 ID 조회
+           let actualMeasurementDataId = session.id; // 기본값은 세션 ID
+           try {
+             // 세션 ID로 실제 측정 데이터 조회
+             const measurementDataFilters = [
+               FirebaseService.createWhereFilter('sessionId', '==', session.id)
+             ];
+             const measurementDataDocs = await FirebaseService.getDocuments('measurementData', measurementDataFilters);
+             
+             if (measurementDataDocs.length > 0) {
+               actualMeasurementDataId = measurementDataDocs[0].id;
+              }
+           } catch (error) {
+             console.warn(`⚠️ 세션 ${session.id}의 측정 데이터 조회 실패:`, error);
+           }
+           
            // 해당 세션의 AI 분석 결과 조회 (ai_analysis_results 컬렉션에서)
            try {
              const analysisFilters = [
-               FirebaseService.createWhereFilter('measurementDataId', '==', session.id)
+               FirebaseService.createWhereFilter('measurementDataId', '==', actualMeasurementDataId)
              ]
              const analysisResults = await FirebaseService.getDocuments('ai_analysis_results', analysisFilters)
              
-             // 파이프라인 리포트 조회
-             const pipelineReports = await pipelineReportService.getPipelineReportsByMeasurementData(session.id)
+             
+             // 세션 ID로도 조회 시도 (기본 Gemini 분석이 세션 ID로 저장되었을 가능성)
+             let additionalAnalysisResults: any[] = [];
+             if (session.id !== actualMeasurementDataId) {
+               try {
+                 const sessionAnalysisFilters = [
+                   FirebaseService.createWhereFilter('measurementDataId', '==', session.id)
+                 ];
+                 additionalAnalysisResults = await FirebaseService.getDocuments('ai_analysis_results', sessionAnalysisFilters);
+                 
+               } catch (error) {
+                 console.warn(`세션 ID로 AI 분석 결과 조회 실패:`, error);
+               }
+             }
+             
+             // 파이프라인 리포트 조회 - 실제 측정 데이터 ID 사용
+             const pipelineReports = await pipelineReportService.getPipelineReportsByMeasurementData(actualMeasurementDataId)
+             
              
              // 담당자 정보 조회
              let managerInfo = null;
@@ -2391,9 +2484,28 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                ppgSamples: session.metadata?.ppgSamples || Math.floor(Math.random() * 1000) + 3000,
                accSamples: session.metadata?.accSamples || Math.floor(Math.random() * 1000) + 3000,
                duration: session.duration || 60,
-               hasReports: analysisResults.length > 0 || pipelineReports.length > 0,
+               hasReports: (() => {
+                 // 모든 분석 결과 합치기 (중복 제거)
+                 const allAnalysisResults = [...analysisResults, ...additionalAnalysisResults];
+                 const uniqueAnalysisResults = allAnalysisResults.reduce((unique: any[], analysis) => {
+                   if (!unique.find(a => a.id === analysis.id)) {
+                     unique.push(analysis);
+                   }
+                   return unique;
+                 }, []);
+                 return uniqueAnalysisResults.length > 0 || pipelineReports.length > 0;
+               })(),
                availableReports: [
-                 ...analysisResults.map((analysis: any) => ({
+                 ...(() => {
+                   // 모든 분석 결과 합치기 (중복 제거)
+                   const allAnalysisResults = [...analysisResults, ...additionalAnalysisResults];
+                   const uniqueAnalysisResults = allAnalysisResults.reduce((unique: any[], analysis) => {
+                     if (!unique.find(a => a.id === analysis.id)) {
+                       unique.push(analysis);
+                     }
+                     return unique;
+                   }, []);
+                   return uniqueAnalysisResults.map((analysis: any) => ({
                    id: analysis.id,
                    engineId: analysis.engineId || 'basic-gemini-v1',
                    engineName: getEngineDisplayName(analysis.engineId || 'basic-gemini-v1'),
@@ -2428,19 +2540,72 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                    return new Date().toISOString()
                  })(),
                  createdByUserName: analysis.createdByUserName || '시스템'
-               })),
-               ...pipelineReports.map((report: any) => ({
-                 id: report.id,
-                 engineId: 'integrated-advanced-gemini-v1',
-                 engineName: '통합 고급 분석 (Gemini)',
-                 analysisId: report.integratedAnalysisId,
-                 timestamp: report.metadata.timestamp,
-                 personalInfo: report.personalInfo,
-                 overallScore: report.integratedAnalysisResult?.overallSummary?.healthScore || 0,
-                 stressLevel: report.integratedAnalysisResult?.overallSummary?.stressLevel || 0,
-                 focusLevel: report.integratedAnalysisResult?.eegReport?.summary?.focusLevel || 0,
-                 isPipelineReport: true,
-                 insights: report.integratedAnalysisResult?.improvementPlan,
+               }));
+               })(),
+               ...pipelineReports.map((report: any) => {
+                 const reports = [];
+                 
+                 // EEG 분석 결과 추가
+                 if (report.eegAnalysisResult) {
+                   reports.push({
+                     id: `${report.id}_eeg`,
+                     engineId: report.engineInfo?.eegEngine || 'eeg-advanced-gemini-v1',
+                     engineName: 'EEG 전문 분석',
+                     analysisId: report.eegAnalysisId,
+                     timestamp: report.metadata.timestamp,
+                     personalInfo: report.personalInfo,
+                     overallScore: report.eegAnalysisResult?.overallScore || 0,
+                     stressLevel: report.eegAnalysisResult?.stressLevel || 0,
+                     focusLevel: report.eegAnalysisResult?.focusLevel || 0,
+                     isPipelineReport: true,
+                     pipelineReportId: report.id,
+                     insights: report.eegAnalysisResult?.insights,
+                     rawData: report.eegAnalysisResult?.rawData,
+                     metrics: report.eegAnalysisResult?.metrics,
+                     costUsed: report.eegAnalysisResult?.costUsed || 5,
+                     processingTime: report.eegAnalysisResult?.processingTime || 0,
+                     createdAt: report.createdAt?.toDate?.()?.toISOString() || report.createdAt,
+                     createdByUserName: '파이프라인'
+                   });
+                 }
+                 
+                 // PPG 분석 결과 추가
+                 if (report.ppgAnalysisResult) {
+                   reports.push({
+                     id: `${report.id}_ppg`,
+                     engineId: report.engineInfo?.ppgEngine || 'ppg-advanced-gemini-v1',
+                     engineName: 'PPG 전문 분석',
+                     analysisId: report.ppgAnalysisId,
+                     timestamp: report.metadata.timestamp,
+                     personalInfo: report.personalInfo,
+                     overallScore: report.ppgAnalysisResult?.overallScore || 0,
+                     stressLevel: report.ppgAnalysisResult?.stressLevel || 0,
+                     focusLevel: report.ppgAnalysisResult?.focusLevel || 0,
+                     isPipelineReport: true,
+                     pipelineReportId: report.id,
+                     insights: report.ppgAnalysisResult?.insights,
+                     rawData: report.ppgAnalysisResult?.rawData,
+                     metrics: report.ppgAnalysisResult?.metrics,
+                     costUsed: report.ppgAnalysisResult?.costUsed || 5,
+                     processingTime: report.ppgAnalysisResult?.processingTime || 0,
+                     createdAt: report.createdAt?.toDate?.()?.toISOString() || report.createdAt,
+                     createdByUserName: '파이프라인'
+                   });
+                 }
+                 
+                 // 통합 분석 결과 추가
+                 reports.push({
+                   id: report.id,
+                   engineId: 'integrated-advanced-gemini-v1',
+                   engineName: '종합 Gemini 분석',
+                   analysisId: report.integratedAnalysisId,
+                   timestamp: report.metadata.timestamp,
+                   personalInfo: report.personalInfo,
+                   overallScore: report.integratedAnalysisResult?.overallSummary?.healthScore || 0,
+                   stressLevel: report.integratedAnalysisResult?.overallSummary?.stressLevel || 0,
+                   focusLevel: report.integratedAnalysisResult?.eegReport?.summary?.focusLevel || 0,
+                   isPipelineReport: true,
+                   insights: report.integratedAnalysisResult?.improvementPlan,
                  rawData: report.integratedAnalysisResult,
                  metrics: {
                    eeg: report.eegAnalysisResult,
@@ -2451,7 +2616,10 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
                  qualityScore: 100,
                  createdAt: report.createdAt?.toDate?.().toISOString() || report.metadata.timestamp,
                  createdByUserName: '통합 분석 시스템'
-               }))
+                 });
+                 
+                 return reports;
+               }).flat()
                ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
                sessionData: session // 원본 세션 데이터 보관
              }
@@ -2569,6 +2737,7 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
         if (sessionMeasurementData.length > 0) {
           // 가장 최신 측정 데이터 사용
           measurementData = sessionMeasurementData[0]
+          console.log('📊 실제 측정 데이터 ID:', measurementData.id);
         }
       } catch (sessionError) {
       }
@@ -2749,7 +2918,49 @@ export default function AIReportSection({ subSection, onNavigate }: AIReportSect
       }
       
 
-      // 3. AI 엔진 초기화 (선택된 엔진 사용)
+      // 3. 통합 분석 엔진인 경우 파이프라인 실행
+      if (engineType === 'integrated-advanced-gemini-v1') {
+        console.log('🚀 통합 분석 파이프라인으로 전환');
+        
+        // 타이머 정리
+        if (timer) {
+          clearInterval(timer);
+          setAnalysisTimers(prev => {
+            const newTimers = { ...prev };
+            delete newTimers[dataId];
+            return newTimers;
+          });
+        }
+        
+        // 로딩 상태 종료
+        setGeneratingReports(prev => {
+          const newState = { ...prev };
+          delete newState[dataId];
+          return newState;
+        });
+        
+        // 통합 분석을 위한 데이터 준비
+        const pipelineData = {
+          ...measurementData,
+          id: measurementData.id || dataId, // 실제 측정 데이터 ID 사용
+          sessionId: dataId, // 원본 세션 ID 보관
+          personalInfo,
+          userAge: calculatedAge,
+          userName: personalInfo.name,
+          userGender: personalInfo.gender === 'female' ? '여성' : '남성',
+          userOccupation: personalInfo.occupation,
+          eeg: measurementData.eegMetrics || measurementData.processedEEG || sessionData.processedEEG,
+          ppg: measurementData.ppgMetrics || measurementData.processedPPG || sessionData.processedPPG,
+          processedEEG: measurementData.processedEEG || sessionData.processedEEG,
+          processedPPG: measurementData.processedPPG || sessionData.processedPPG
+        };
+        
+        // 파이프라인 실행
+        await handleRunPipeline(pipelineData);
+        return;
+      }
+
+      // 4. AI 엔진 초기화 (선택된 엔진 사용 - 통합 분석이 아닌 경우)
       console.log('🤖 AI 엔진 초기화:', engineType);
       const aiEngine = aiEngineRegistry.get(engineType);
       
@@ -3907,13 +4118,47 @@ AI 건강 분석 리포트
                                 <Button 
                                   size="sm" 
                                   variant="outline"
-                                  onClick={() => handleViewReportWithViewer(report, '', 'EEG 고급 분석 뷰어')}
+                                  onClick={() => {
+                                    const viewerName = report.engineId?.includes('integrated') ? '통합 고급 분석 뷰어' : 
+                                                      report.engineId?.includes('eeg') ? 'EEG 고급 분석 뷰어' : 
+                                                      report.engineId?.includes('ppg') ? 'PPG 고급 분석 뷰어' : '고급 분석 뷰어';
+                                    handleViewReportWithViewer(report, '', viewerName);
+                                  }}
                                   className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                                >
+                                  <FileText className="w-4 h-4 mr-1" />
+                                  리포트 보기
+                                </Button>
+                              ) : null}
+                              {report && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    // JSON 뷰어로 원본 분석 데이터 표시
+                                    console.log('🔍 상세 분석 보기 클릭 (위치1):', {
+                                      report,
+                                      reportKeys: report ? Object.keys(report) : []
+                                    });
+                                    
+                                    // JSON 뷰어 모드로 설정된 리포트 데이터 생성
+                                    const jsonViewerReport = {
+                                      ...report,
+                                      // JSON 뷰어 모드임을 표시하는 플래그 추가
+                                      _forceJsonViewer: true
+                                    };
+                                    
+                                    setSelectedReportForView(jsonViewerReport);
+                                    setSelectedViewerId('json-viewer');
+                                    setSelectedViewerName('JSON 상세 분석 뷰어');
+                                    setIsViewerModalOpen(true);
+                                  }}
+                                  className="text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors ml-2"
                                 >
                                   <Eye className="w-4 h-4 mr-1" />
                                   상세 분석 보기
                                 </Button>
-                              ) : null}
+                              )}
                             </>
                           );
                         })()}
@@ -3921,7 +4166,11 @@ AI 건강 분석 리포트
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
+                          onClick={(e) => {
+                            console.log('Delete button clicked in main list', { reportId: report.id, engineId: report.engineId });
+                            e.stopPropagation();
+                            handleDeleteReport(report.id, getEngineDisplayName(report.engineId || 'basic-gemini-v1'), report);
+                          }}
                           disabled={deletingReports[report.id]}
                           className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors"
                         >
@@ -4217,6 +4466,15 @@ AI 건강 분석 리포트
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">측정 데이터 및 AI 분석 리포트</h2>
         <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsPipelineHistoryModalOpen(true)} 
+            className="text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            파이프라인 이력
+          </Button>
           <Button variant="outline" size="sm" onClick={loadMeasurementData} className="text-gray-900 border-gray-300 hover:bg-gray-50">
             <RefreshCw className="w-4 h-4 mr-2" />
             새로고침
@@ -4410,6 +4668,24 @@ AI 건강 분석 리포트
                           )}
                         </Button>
                       )}
+                      {/* 측정 데이터 삭제 버튼 */}
+                      <Button 
+                        variant="outline"
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                        onClick={() => handleOpenDeleteMeasurementDataConfirm(
+                          data.id, 
+                          data.userName, 
+                          data.availableReports?.length || 0
+                        )}
+                        disabled={deletingMeasurementData[data.id]}
+                      >
+                        {deletingMeasurementData[data.id] ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 mr-2" />
+                        )}
+                        삭제
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -4511,13 +4787,47 @@ AI 건강 분석 리포트
                                       <Button 
                                         size="sm" 
                                         variant="outline"
-                                        onClick={() => handleViewReportWithViewer(report, '', 'EEG 고급 분석 뷰어')}
+                                        onClick={() => {
+                                    const viewerName = report.engineId?.includes('integrated') ? '통합 고급 분석 뷰어' : 
+                                                      report.engineId?.includes('eeg') ? 'EEG 고급 분석 뷰어' : 
+                                                      report.engineId?.includes('ppg') ? 'PPG 고급 분석 뷰어' : '고급 분석 뷰어';
+                                    handleViewReportWithViewer(report, '', viewerName);
+                                  }}
                                         className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                                      >
+                                        <FileText className="w-4 h-4 mr-1" />
+                                        리포트 보기
+                                      </Button>
+                                    ) : null}
+                                    {report && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          // JSON 뷰어로 원본 분석 데이터 표시
+                                          console.log('🔍 상세 분석 보기 클릭 (위치2):', {
+                                            report,
+                                            reportKeys: report ? Object.keys(report) : []
+                                          });
+                                          
+                                          // JSON 뷰어 모드로 설정된 리포트 데이터 생성
+                                          const jsonViewerReport = {
+                                            ...report,
+                                            // JSON 뷰어 모드임을 표시하는 플래그 추가
+                                            _forceJsonViewer: true
+                                          };
+                                          
+                                          setSelectedReportForView(jsonViewerReport);
+                                          setSelectedViewerId('json-viewer');
+                                          setSelectedViewerName('JSON 상세 분석 뷰어');
+                                          setIsViewerModalOpen(true);
+                                        }}
+                                        className="text-gray-600 border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors ml-2"
                                       >
                                         <Eye className="w-4 h-4 mr-1" />
                                         상세 분석 보기
                                       </Button>
-                                    ) : null}
+                                    )}
                                     
                                     {capabilities.supportsPDF && (
                                       <Button 
@@ -4537,7 +4847,11 @@ AI 건강 분석 리포트
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleDeleteReport(report.id, report.engineName || '분석 결과')}
+                                onClick={(e) => {
+                                  console.log('Delete button clicked in report list', { reportId: report.id, engineId: report.engineId });
+                                  e.stopPropagation();
+                                  handleDeleteReport(report.id, getEngineDisplayName(report.engineId || 'basic-gemini-v1'), report);
+                                }}
                                 disabled={deletingReports[report.id]}
                                 className="text-red-600 border-red-300 hover:bg-red-50"
                               >
@@ -4764,10 +5078,20 @@ AI 건강 분석 리포트
   }
 
   // AI 분석 결과 삭제 핸들러
-  const handleDeleteReport = async (reportId: string, reportName: string) => {
+  const handleDeleteReport = async (reportId: string, reportName: string, report?: any) => {
+    console.log('handleDeleteReport called:', { reportId, reportName, report });
+    
+    // 파이프라인 리포트의 개별 분석인 경우 전체 파이프라인 삭제 확인
+    let actualReportId = reportId;
+    let deleteMessage = `정말로 "${reportName}" 분석 결과를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`;
+    
+    if (report?.isPipelineReport && report?.pipelineReportId) {
+      actualReportId = report.pipelineReportId;
+      deleteMessage = `"${reportName}"은(는) 통합 분석의 일부입니다.\n전체 통합 분석 리포트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`;
+    }
+    
     // 삭제 확인
-    const confirmMessage = `정말로 "${reportName}" 분석 결과를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
-    if (!confirm(confirmMessage)) {
+    if (!confirm(deleteMessage)) {
       return
     }
 
@@ -4781,8 +5105,16 @@ AI 건강 분석 리포트
       // 삭제 상태 시작
       setDeletingReports(prev => ({ ...prev, [reportId]: true }))
 
-      // Firestore에서 분석 결과 삭제
-      await FirebaseService.deleteDocument('ai_analysis_results', reportId)
+      // 파이프라인 리포트인지 확인
+      if (actualReportId.includes('pipeline_report_')) {
+        console.log('파이프라인 리포트 삭제 시도:', actualReportId);
+        // 파이프라인 리포트 삭제
+        await pipelineReportService.deleteReport(actualReportId)
+      } else {
+        console.log('일반 AI 분석 결과 삭제 시도:', actualReportId);
+        // Firestore에서 분석 결과 삭제
+        await FirebaseService.deleteDocument('ai_analysis_results', actualReportId)
+      }
 
       // 데이터 새로고침
       await loadMeasurementData()
@@ -5051,6 +5383,17 @@ AI 건강 분석 리포트
         onCancel={cancelPipeline}
         isRunning={isPipelineRunning}
         error={pipelineError}
+      />
+      
+      {/* 파이프라인 실행 이력 모달 */}
+      <PipelineHistoryModal
+        isOpen={isPipelineHistoryModalOpen}
+        onClose={() => setIsPipelineHistoryModalOpen(false)}
+        organizationId={organizationId}
+        onViewReport={(report) => {
+          setIsPipelineHistoryModalOpen(false);
+          handleViewReportWithViewer(report, 'integrated-advanced-react-renderer', '통합 고급 분석 뷰어');
+        }}
       />
     </div>
   )
