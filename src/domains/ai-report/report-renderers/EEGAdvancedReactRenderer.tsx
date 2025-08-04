@@ -59,11 +59,19 @@ const getClinicalSignificanceColor = (significance: string): string => {
 const getClinicalSignificanceLabel = (significance: string): string => {
   switch (significance) {
     case 'normal': return '정상';
-    case 'mild': return '경미';
-    case 'moderate': return '중등도';
-    case 'severe': return '심각';
-    default: return '평가중';
+    case 'mild': return '주의';
+    case 'moderate': return '경계';
+    case 'severe': return '위험';
+    default: return '정상';
   }
+};
+
+// 점수 기준 임상적 의미 계산 함수
+const calculateClinicalSignificanceFromScore = (score: number): 'normal' | 'mild' | 'moderate' | 'severe' => {
+  if (score >= 80) return 'normal';    // 80점 이상: 정상
+  if (score >= 60) return 'mild';      // 60-79점: 주의  
+  if (score >= 40) return 'moderate';  // 40-59점: 경계
+  return 'severe';                     // 40점 미만: 위험
 };
 
 const getDimensionIcon = (dimension: string): React.ReactElement => {
@@ -129,26 +137,26 @@ const EEGReportHeader: React.FC<{ metadata: any }> = ({ metadata }) => {
     new Date().toLocaleDateString('ko-KR');
   
   return (
-    <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border border-purple-100">
+    <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-8 rounded-xl border border-purple-200 shadow-lg">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-purple-100 rounded-full">
-            <Brain className="w-8 h-8 text-purple-600" />
+        <div className="flex items-center gap-6">
+          <div className="p-4 bg-purple-100 rounded-full shadow-md">
+            <Brain className="w-10 h-10 text-purple-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">EEG 전문 뇌파 분석 결과</h1>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-              <span>{age}세 {gender}</span>
-              {occupation && <span>• {occupation}</span>}
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">EEG 전문 뇌파 분석 결과</h1>
+            <div className="flex items-center gap-6 text-base text-gray-700">
+              <span className="font-medium">{age}세 {gender}</span>
+              {occupation && <span className="font-medium">• {occupation}</span>}
               <span>• 측정일: {measurementDate}</span>
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Badge className="bg-purple-600 text-white">
+        <div className="flex flex-col items-end gap-3">
+          <Badge className="bg-purple-600 text-white px-4 py-2 text-base font-medium">
             신호 품질: {signalQuality}%
           </Badge>
-          <div className="text-xs text-gray-500">
+          <div className="text-sm text-gray-600 font-medium">
             분석 엔진: EEG Advanced v1.0
           </div>
         </div>
@@ -164,68 +172,68 @@ const FourDimensionDashboard: React.FC<{ data: any }> = ({ data }) => {
   if (!data || Object.keys(data).length === 0) return null;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {Object.entries(data).map(([key, dimension]: [string, any]) => (
-        <Card key={key} className="border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-shadow">
-          <CardContent className="p-6">
-            <div className="space-y-4">
+        <Card key={key} className="border-l-4 border-l-purple-500 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+          <CardContent className="p-8">
+            <div className="space-y-6">
               {/* 헤더 */}
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   {getDimensionIcon(dimension.dimension)}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-xl font-bold text-gray-900">
                       {dimension.dimension}
                     </h3>
-                    <p className="text-sm text-gray-600">{dimension.level}</p>
+                    <p className="text-base text-gray-600 font-medium">{dimension.level}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-purple-600">
+                  <div className="text-4xl font-bold text-purple-600">
                     {dimension.score}
                   </div>
-                  <div className="text-xs text-gray-500">건강도</div>
+                  <div className="text-sm text-gray-500 font-medium">건강도</div>
                 </div>
               </div>
               
               {/* 점수 시각화 */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-red-500">위험</span>
-                  <span className="text-green-500">정상</span>
+              <div className="mb-6">
+                <div className="flex justify-between text-base mb-3 font-medium">
+                  <span className="text-red-600">위험</span>
+                  <span className="text-green-600">정상</span>
                 </div>
                 <div className="relative">
                   <Progress 
                     value={dimension.score} 
-                    className="h-3"
+                    className="h-4"
                   />
-                  <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 opacity-20 rounded-full" />
+                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 opacity-25 rounded-full" />
                 </div>
               </div>
               
               {/* 임상적 의미 */}
-              <div className="mb-4">
+              <div className="mb-6">
                 <Badge 
                   variant="outline" 
-                  className={cn("border", getClinicalSignificanceColor(dimension.clinicalSignificance))}
+                  className={cn("border text-base px-4 py-2 font-medium", getClinicalSignificanceColor(calculateClinicalSignificanceFromScore(dimension.score)))}
                 >
-                  {getClinicalSignificanceLabel(dimension.clinicalSignificance)}
+                  {getClinicalSignificanceLabel(calculateClinicalSignificanceFromScore(dimension.score))}
                 </Badge>
               </div>
               
               {/* 해석 */}
-              <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+              <p className="text-base text-gray-700 mb-4 leading-relaxed font-medium">
                 {dimension.interpretation}
               </p>
               
               {/* 개인 맞춤 해석 */}
               {dimension.personalizedInterpretation && (
-                <div className="bg-blue-50 p-3 rounded-lg mb-3">
-                  <div className="flex items-start gap-2">
-                    <User className="w-4 h-4 text-blue-600 mt-0.5" />
+                <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <User className="w-5 h-5 text-blue-600 mt-1" />
                     <div>
-                      <p className="text-xs font-medium text-blue-800">개인 맞춤 해석</p>
-                      <p className="text-sm text-blue-700 mt-1">
+                      <p className="text-sm font-bold text-blue-800 mb-2">개인 맞춤 해석</p>
+                      <p className="text-base text-blue-700">
                         {dimension.personalizedInterpretation}
                       </p>
                     </div>
@@ -235,12 +243,12 @@ const FourDimensionDashboard: React.FC<{ data: any }> = ({ data }) => {
               
               {/* 권장사항 */}
               {dimension.recommendations?.length > 0 && (
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <Target className="w-4 h-4 text-green-600 mt-0.5" />
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <div className="flex items-start gap-3">
+                    <Target className="w-5 h-5 text-green-600 mt-1" />
                     <div>
-                      <p className="text-xs font-medium text-green-800">권장사항</p>
-                      <ul className="text-sm text-green-700 mt-1 space-y-1">
+                      <p className="text-sm font-bold text-green-800 mb-2">권장사항</p>
+                      <ul className="text-base text-green-700 space-y-2">
                         {dimension.recommendations.map((rec: string, idx: number) => (
                           <li key={idx} className="flex items-start gap-2">
                             <span className="text-green-600">•</span>
@@ -291,15 +299,15 @@ const BandPowerAnalysis: React.FC<{ data: any, inputData?: any }> = ({ data, inp
   };
   
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900">
-          <BarChart3 className="w-5 h-5 text-purple-600" />
-          뇌파 주파수 대역별 분석
+    <Card className="shadow-xl">
+      <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-purple-100">
+        <CardTitle className="flex items-center gap-3 text-gray-900">
+          <BarChart3 className="w-6 h-6 text-purple-600" />
+          <span className="text-xl font-bold">뇌파 주파수 대역별 분석</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
+      <CardContent className="p-8">
+        <div className="space-y-8">
           {/* 원하는 순서로 정렬: delta, theta, alpha, beta, gamma, frontalNeuroActivity */}
           {['delta', 'theta', 'alpha', 'beta', 'gamma', 'frontalNeuroActivity'].map((band) => {
             const analysis = data[band];
@@ -384,29 +392,29 @@ const BandPowerAnalysis: React.FC<{ data: any, inputData?: any }> = ({ data, inp
             }
             
             return (
-              <div key={band} className="border-l-4 border-purple-300 pl-4 bg-gray-50 p-4 rounded-r-lg">
+              <div key={band} className="border-l-4 border-purple-400 pl-6 bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-r-xl shadow-md hover:shadow-lg transition-shadow">
                 {/* 제목 */}
-                <div className="flex items-center gap-2 mb-3">
-                  <h4 className="font-semibold text-gray-900">
+                <div className="flex items-center gap-3 mb-4">
+                  <h4 className="text-lg font-bold text-gray-900">
                     {formatBandName(band)}
                   </h4>
                   {!hasRealData && (
-                    <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 text-xs">
+                    <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 text-sm px-3 py-1">
                       예상값
                     </Badge>
                   )}
                 </div>
                 
                 {/* 평균값 (정상범위) */}
-                <div className="mb-3">
-                  <span className="text-lg font-bold text-purple-600">{meanValue.toFixed(2)} μV²</span>
+                <div className="mb-4">
+                  <span className="text-xl font-bold text-purple-600">{meanValue.toFixed(2)} μV²</span>
                   {normalRange && (
-                    <span className="text-sm text-gray-500 ml-2">
+                    <span className="text-base text-gray-600 ml-3 font-medium">
                       (정상범위: {normalRange.min}-{normalRange.max} {normalRange.unit})
                     </span>
                   )}
                   <Badge variant="outline" className={cn(
-                    "ml-2",
+                    "ml-3 text-sm px-3 py-1 font-medium",
                     status === 'normal' ? 'bg-green-50 text-green-700 border-green-300' :
                     status === 'high' ? 'bg-yellow-50 text-yellow-700 border-yellow-300' :
                     status === 'veryHigh' ? 'bg-red-50 text-red-700 border-red-300' :
@@ -424,7 +432,7 @@ const BandPowerAnalysis: React.FC<{ data: any, inputData?: any }> = ({ data, inp
                 
                 {/* 해석 */}
                 {(analysis.interpretation || analysis.clinicalSignificance) && (
-                  <div className="mb-3 text-sm text-gray-700">
+                  <div className="mb-4 text-base text-gray-700 font-medium leading-relaxed">
                     {analysis.interpretation || analysis.clinicalSignificance}
                   </div>
                 )}
@@ -647,24 +655,24 @@ const ImprovementPlan: React.FC<{ data: any }> = ({ data }) => {
   if (!data) return null;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* 단기 목표 */}
       {data.shortTermGoals?.length > 0 && (
-        <Card className="border-green-200 bg-gradient-to-b from-green-50 to-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700">
-              <Timer className="w-5 h-5" />
-              단기 목표 (1-4주)
+        <Card className="border-green-200 bg-gradient-to-b from-green-50 to-white shadow-xl hover:shadow-2xl transition-shadow">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-green-700">
+              <Timer className="w-6 h-6" />
+              <span className="text-lg font-bold">단기 목표 (1-4주)</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+          <CardContent className="pt-0">
+            <ul className="space-y-4">
               {data.shortTermGoals.map((goal: string, idx: number) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-green-600">{idx + 1}</span>
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span className="text-sm font-bold text-green-600">{idx + 1}</span>
                   </div>
-                  <span className="text-sm text-green-800">{goal}</span>
+                  <span className="text-base text-green-800 font-medium leading-relaxed">{goal}</span>
                 </li>
               ))}
             </ul>
@@ -674,21 +682,21 @@ const ImprovementPlan: React.FC<{ data: any }> = ({ data }) => {
       
       {/* 장기 목표 */}
       {data.longTermGoals?.length > 0 && (
-        <Card className="border-blue-200 bg-gradient-to-b from-blue-50 to-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
-              <Calendar className="w-5 h-5" />
-              장기 목표 (3-6개월)
+        <Card className="border-blue-200 bg-gradient-to-b from-blue-50 to-white shadow-xl hover:shadow-2xl transition-shadow">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-blue-700">
+              <Calendar className="w-6 h-6" />
+              <span className="text-lg font-bold">장기 목표 (3-6개월)</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+          <CardContent className="pt-0">
+            <ul className="space-y-4">
               {data.longTermGoals.map((goal: string, idx: number) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-blue-600">{idx + 1}</span>
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span className="text-sm font-bold text-blue-600">{idx + 1}</span>
                   </div>
-                  <span className="text-sm text-blue-800">{goal}</span>
+                  <span className="text-base text-blue-800 font-medium leading-relaxed">{goal}</span>
                 </li>
               ))}
             </ul>
@@ -698,21 +706,21 @@ const ImprovementPlan: React.FC<{ data: any }> = ({ data }) => {
       
       {/* 실행 계획 */}
       {data.actionItems?.length > 0 && (
-        <Card className="border-purple-200 bg-gradient-to-b from-purple-50 to-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-purple-700">
-              <Zap className="w-5 h-5" />
-              실행 계획
+        <Card className="border-purple-200 bg-gradient-to-b from-purple-50 to-white shadow-xl hover:shadow-2xl transition-shadow">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-purple-700">
+              <Zap className="w-6 h-6" />
+              <span className="text-lg font-bold">실행 계획</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+          <CardContent className="pt-0">
+            <ul className="space-y-4">
               {data.actionItems.map((item: string, idx: number) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <CheckCircle className="w-3 h-3 text-purple-600" />
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <CheckCircle className="w-4 h-4 text-purple-600" />
                   </div>
-                  <span className="text-sm text-purple-800">{item}</span>
+                  <span className="text-base text-purple-800 font-medium leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
@@ -841,8 +849,8 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 1. 종합 분석 요약 */}
       {comprehensiveAssessment && Object.keys(comprehensiveAssessment).length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <BarChart3 className="w-7 h-7 text-purple-600" />
             종합 분석 요약
           </h2>
           <ComprehensiveAssessment data={comprehensiveAssessment} />
@@ -851,45 +859,45 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
 
       {/* 연령 및 성별 기준 분석 */}
       {comprehensiveAssessment.ageGenderAnalysis && (
-        <Card className="shadow-lg border-t-4 border-t-purple-500">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50">
-            <CardTitle className="flex items-center gap-3 text-purple-800 text-lg font-semibold">
-              <User className="w-6 h-6" />
+        <Card className="shadow-xl border-t-4 border-t-purple-500">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 p-8">
+            <CardTitle className="flex items-center gap-4 text-purple-800 text-xl font-bold">
+              <User className="w-7 h-7" />
               연령 및 성별 기준 분석
-              <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 border-purple-300">
+              <Badge variant="outline" className="text-base bg-purple-100 text-purple-700 border-purple-300 px-3 py-1">
                 인구학적 분석
               </Badge>
             </CardTitle>
-            <p className="text-sm text-purple-600 mt-1">
+            <p className="text-base text-purple-600 mt-3 font-medium">
               연령대별 뇌파 패턴 분석 및 성별 특성 기반 개인화 평가
             </p>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
+          <CardContent className="pt-8 p-8">
+            <div className="space-y-6">
               {comprehensiveAssessment.ageGenderAnalysis.ageComparison && (
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-25 rounded-lg border-l-4 border-l-purple-400">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-purple-600" />
-                    <h4 className="text-base font-semibold text-purple-800">연령대 비교 분석</h4>
+                <div className="p-6 bg-gradient-to-r from-purple-50 to-purple-25 rounded-xl border-l-4 border-l-purple-400 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Calendar className="w-5 h-5 text-purple-600" />
+                    <h4 className="text-lg font-bold text-purple-800">연령대 비교 분석</h4>
                   </div>
-                  <p className="text-sm text-purple-700 leading-relaxed mb-2">
+                  <p className="text-base text-purple-700 leading-relaxed mb-4 font-medium">
                     {comprehensiveAssessment.ageGenderAnalysis.ageComparison}
                   </p>
-                  <div className="text-xs text-purple-600 bg-white/50 p-2 rounded border">
+                  <div className="text-base text-purple-600 bg-white/50 p-4 rounded-lg border">
                     💡 <strong>임상적 의의:</strong> 동일 연령대 평균 대비 개별적 특성을 고려한 맞춤형 관리가 필요합니다.
                   </div>
                 </div>
               )}
               {comprehensiveAssessment.ageGenderAnalysis.genderConsiderations && (
-                <div className="p-4 bg-gradient-to-r from-indigo-50 to-indigo-25 rounded-lg border-l-4 border-l-indigo-400">
-                  <div className="flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4 text-indigo-600" />
-                    <h4 className="text-base font-semibold text-indigo-800">성별 특성 고려사항</h4>
+                <div className="p-6 bg-gradient-to-r from-indigo-50 to-indigo-25 rounded-xl border-l-4 border-l-indigo-400 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <User className="w-5 h-5 text-indigo-600" />
+                    <h4 className="text-lg font-bold text-indigo-800">성별 특성 고려사항</h4>
                   </div>
-                  <p className="text-sm text-indigo-700 leading-relaxed mb-2">
+                  <p className="text-base text-indigo-700 leading-relaxed mb-4 font-medium">
                     {comprehensiveAssessment.ageGenderAnalysis.genderConsiderations}
                   </p>
-                  <div className="text-xs text-indigo-600 bg-white/50 p-2 rounded border">
+                  <div className="text-base text-indigo-600 bg-white/50 p-4 rounded-lg border">
                     🧬 <strong>생리학적 근거:</strong> 성별에 따른 신경생리학적 반응 차이를 반영한 개별화 접근이 중요합니다.
                   </div>
                 </div>
@@ -901,65 +909,65 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       
       {/* 직업적 특성 분석 */}
       {comprehensiveAssessment.occupationalAnalysis && (
-        <Card className="shadow-lg border-t-4 border-t-indigo-500">
-          <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50">
-            <CardTitle className="flex items-center gap-3 text-indigo-800 text-lg font-semibold">
-              <BrainCircuit className="w-6 h-6" />
+        <Card className="shadow-xl border-t-4 border-t-indigo-500">
+          <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 p-8">
+            <CardTitle className="flex items-center gap-4 text-indigo-800 text-xl font-bold">
+              <BrainCircuit className="w-7 h-7" />
               직업적 특성 분석
-              <Badge variant="outline" className="text-xs bg-indigo-100 text-indigo-700 border-indigo-300">
+              <Badge variant="outline" className="text-base bg-indigo-100 text-indigo-700 border-indigo-300 px-3 py-1">
                 직업건강 평가
               </Badge>
             </CardTitle>
-            <p className="text-sm text-indigo-600 mt-1">
+            <p className="text-base text-indigo-600 mt-3 font-medium">
               직업군별 신경생리학적 패턴 분석 및 업무 관련 스트레스 평가
             </p>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
+          <CardContent className="pt-8 p-8">
+            <div className="space-y-6">
               {comprehensiveAssessment.occupationalAnalysis.jobDemands && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-25 rounded-lg border-l-4 border-l-blue-400">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-4 h-4 text-blue-600" />
-                    <h4 className="text-base font-semibold text-blue-800">업무 요구사항 분석</h4>
+                <div className="p-6 bg-gradient-to-r from-blue-50 to-blue-25 rounded-xl border-l-4 border-l-blue-400 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <h4 className="text-lg font-bold text-blue-800">업무 요구사항 분석</h4>
                   </div>
-                  <p className="text-sm text-blue-700 leading-relaxed mb-2">
+                  <p className="text-base text-blue-700 leading-relaxed mb-4 font-medium">
                     {comprehensiveAssessment.occupationalAnalysis.jobDemands}
                   </p>
-                  <div className="text-xs text-blue-600 bg-white/50 p-2 rounded border">
+                  <div className="text-base text-blue-600 bg-white/50 p-4 rounded-lg border">
                     🎯 <strong>인지부하 평가:</strong> 고집중력 업무는 전두엽 활성도 증가와 베타/감마파 상승을 유발할 수 있습니다.
                   </div>
                 </div>
               )}
               {comprehensiveAssessment.occupationalAnalysis.workRelatedPatterns && (
-                <div className="p-4 bg-gradient-to-r from-teal-50 to-teal-25 rounded-lg border-l-4 border-l-teal-400">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-teal-600" />
-                    <h4 className="text-base font-semibold text-teal-800">업무 관련 패턴 분석</h4>
+                <div className="p-6 bg-gradient-to-r from-teal-50 to-teal-25 rounded-xl border-l-4 border-l-teal-400 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <TrendingUp className="w-5 h-5 text-teal-600" />
+                    <h4 className="text-lg font-bold text-teal-800">업무 관련 패턴 분석</h4>
                   </div>
-                  <p className="text-sm text-teal-700 leading-relaxed mb-2">
+                  <p className="text-base text-teal-700 leading-relaxed mb-4 font-medium">
                     {comprehensiveAssessment.occupationalAnalysis.workRelatedPatterns}
                   </p>
-                  <div className="text-xs text-teal-600 bg-white/50 p-2 rounded border">
+                  <div className="text-base text-teal-600 bg-white/50 p-4 rounded-lg border">
                     📈 <strong>누적효과 고려:</strong> 장기간 고강도 인지작업은 만성적 각성상태와 스트레스 호르몬 분비 증가로 이어질 수 있습니다.
                   </div>
                 </div>
               )}
               
               {/* 추가 전문적 해석 */}
-              <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-4 h-4 text-gray-600" />
-                  <h4 className="text-base font-semibold text-gray-800">종합 해석</h4>
+              <div className="p-6 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <Lightbulb className="w-5 h-5 text-gray-600" />
+                  <h4 className="text-lg font-bold text-gray-800">종합 해석</h4>
                 </div>
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p className="leading-relaxed">
+                <div className="space-y-4 text-base text-gray-700">
+                  <p className="leading-relaxed font-medium">
                     직업적 특성에 따른 뇌파 패턴 변화는 <strong>업무 요구도와 인지부하</strong>의 직접적 반영입니다. 
                     특히 정보처리 집약적 업무는 전전두엽 피질의 지속적 활성화를 요구하며, 
                     이는 베타파(12-30Hz) 및 감마파(30-100Hz) 증가로 나타납니다.
                   </p>
-                  <div className="flex items-start gap-2 mt-3 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400">
-                    <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                    <div className="text-xs text-yellow-700">
+                  <div className="flex items-start gap-3 mt-4 p-4 bg-yellow-50 rounded-lg border-l-2 border-yellow-400">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-base text-yellow-700 font-medium">
                       <strong>주의사항:</strong> 지속적인 고인지부하 상태는 HPA축(시상하부-뇌하수체-부신축) 활성화를 통해 
                       코르티솔 분비를 증가시키며, 장기적으로 신경가소성 저하와 인지기능 감소를 초래할 수 있습니다.
                     </div>
@@ -974,8 +982,8 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 2. 4대 뇌파 건강 지표 */}
       {Object.keys(fourDimensionAnalysis).length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Brain className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <Brain className="w-7 h-7 text-purple-600" />
             4대 뇌파 건강 지표
           </h2>
           <FourDimensionDashboard data={fourDimensionAnalysis} />
@@ -985,8 +993,8 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 3. 주파수 대역 분석 */}
       {detailedAnalysis.bandPowerAnalysis && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <Activity className="w-7 h-7 text-purple-600" />
             주파수 대역 분석
           </h2>
           <BandPowerAnalysis data={detailedAnalysis.bandPowerAnalysis} inputData={{ ...inputData, eegTimeSeriesStats }} />
@@ -996,8 +1004,8 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 4. 뇌파 7대 지표 상세 분석 */}
       {detailedAnalysis.eegIndicesAnalysis && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Zap className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <Zap className="w-7 h-7 text-purple-600" />
             뇌파 7대 지표 상세 분석
           </h2>
           
@@ -1234,8 +1242,8 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 5. 인지 상태 분석 */}
       {detailedAnalysis.cognitiveStateAnalysis && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BrainCircuit className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <BrainCircuit className="w-7 h-7 text-purple-600" />
             인지 상태 분석
           </h2>
           <Card className="shadow-lg">
@@ -1353,45 +1361,45 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 6. 보조 지표 분석 */}
       {detailedAnalysis.auxiliaryMetrics && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <BarChart3 className="w-7 h-7 text-purple-600" />
             보조 지표 분석
           </h2>
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <BarChart3 className="w-5 h-5 text-purple-600" />
-                추가 뇌파 지표
+          <Card className="shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-purple-100">
+              <CardTitle className="flex items-center gap-3 text-gray-900">
+                <BarChart3 className="w-6 h-6 text-purple-600" />
+                <span className="text-xl font-bold">추가 뇌파 지표</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {Object.entries(detailedAnalysis.auxiliaryMetrics).map(([key, metric]: [string, any]) => {
                   // 상태에 따른 배경색 결정
                   const getBackgroundColor = (status: string) => {
                     switch (status) {
                       case '높음':
-                        return 'bg-gradient-to-br from-red-50 to-red-100';
+                        return 'bg-gradient-to-br from-red-50 to-red-100 border-red-200';
                       case '낮음':
-                        return 'bg-gradient-to-br from-yellow-50 to-yellow-100';
+                        return 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200';
                       case '정상':
                       default:
-                        return 'bg-gradient-to-br from-gray-50 to-blue-50';
+                        return 'bg-gradient-to-br from-gray-50 to-blue-50 border-blue-200';
                     }
                   };
 
                   return (
-                    <div key={key} className={`${getBackgroundColor(metric.status)} p-6 rounded-lg border border-gray-200`}>
+                    <div key={key} className={`${getBackgroundColor(metric.status)} p-8 rounded-xl border-2 shadow-md hover:shadow-lg transition-all duration-300`}>
                     {/* 지표명 */}
-                    <div className="text-center mb-4">
-                      <h4 className="text-lg font-bold text-gray-900">
+                    <div className="text-center mb-6">
+                      <h4 className="text-xl font-bold text-gray-900">
                         {metric.indicator || metric.name || key}
                       </h4>
                     </div>
                     
                     {/* 측정값 */}
-                    <div className="text-center mb-4">
-                      <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-center mb-6">
+                      <div className="text-4xl font-bold text-blue-600">
                         {typeof metric.value === 'number' ? 
                           (key === 'hemisphericBalance' ? metric.value.toFixed(3) : metric.value.toFixed(2)) 
                           : metric.value || 'N/A'}
@@ -1399,10 +1407,10 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
                     </div>
                     
                     {/* 정상범위 및 상태 */}
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-4 mb-6">
                       {metric.normalRange && (
-                        <div className="text-sm text-gray-600 text-center">
-                          <span className="font-medium">정상범위:</span> {metric.normalRange}
+                        <div className="text-base text-gray-600 text-center font-medium">
+                          <span className="font-semibold">정상범위:</span> {metric.normalRange}
                         </div>
                       )}
                       
@@ -1410,11 +1418,11 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
                         <div className="text-center">
                           <Badge 
                             variant="outline" 
-                            className={cn("text-sm font-medium", 
-                              metric.status === '정상' ? 'text-green-600 border-green-300' :
-                              metric.status === '높음' ? 'text-red-600 border-red-300' :
-                              metric.status === '낮음' ? 'text-orange-600 border-orange-300' :
-                              'text-gray-600 border-gray-300'
+                            className={cn("text-base font-semibold px-4 py-2", 
+                              metric.status === '정상' ? 'text-green-700 border-green-400 bg-green-50' :
+                              metric.status === '높음' ? 'text-red-700 border-red-400 bg-red-50' :
+                              metric.status === '낮음' ? 'text-orange-700 border-orange-400 bg-orange-50' :
+                              'text-gray-700 border-gray-400 bg-gray-50'
                             )}
                           >
                             {metric.status}
@@ -1425,15 +1433,15 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
                     
                     {/* 측정 범위 (최소-최대) */}
                     {(metric.min !== undefined && metric.max !== undefined && metric.min !== 'N/A' && metric.max !== 'N/A') && (
-                      <div className="text-sm text-gray-500 text-center mb-3">
-                        <span className="font-medium">측정범위:</span> {metric.min} - {metric.max}
+                      <div className="text-base text-gray-500 text-center mb-4 font-medium">
+                        <span className="font-semibold">측정범위:</span> {metric.min} - {metric.max}
                       </div>
                     )}
                     
                     {/* 해석 */}
                     {metric.interpretation && (
-                      <div className="bg-white p-3 rounded border-l-4 border-blue-400">
-                        <p className="text-sm text-gray-700 leading-relaxed">
+                      <div className="bg-white p-4 rounded-lg border-l-4 border-blue-400 shadow-sm">
+                        <p className="text-base text-gray-700 leading-relaxed font-medium">
                           {metric.interpretation}
                         </p>
                       </div>
@@ -1450,8 +1458,8 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       {/* 7. 개선 방향 */}
       {comprehensiveAssessment.improvementPlan && (
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Target className="w-6 h-6 text-purple-600" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <Target className="w-7 h-7 text-purple-600" />
             개선 방향
           </h2>
           <ImprovementPlan data={comprehensiveAssessment.improvementPlan} />
@@ -1462,15 +1470,15 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       
       {/* 임상 권장사항 */}
       {comprehensiveAssessment.clinicalRecommendation && (
-        <Card className="shadow-lg border-gray-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-700">
-              <Info className="w-5 h-5" />
-              임상 권장사항
+        <Card className="shadow-xl border-gray-200">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-100">
+            <CardTitle className="flex items-center gap-3 text-gray-700">
+              <Info className="w-6 h-6" />
+              <span className="text-xl font-bold">임상 권장사항</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-700 leading-relaxed">
+          <CardContent className="p-8">
+            <p className="text-base text-gray-700 leading-relaxed font-medium">
               {comprehensiveAssessment.clinicalRecommendation}
             </p>
           </CardContent>
@@ -1478,7 +1486,7 @@ export const EEGAdvancedReportComponent: React.FC<EEGAdvancedReportProps> = ({ d
       )}
       
       {/* 메타데이터 */}
-      <div className="text-xs text-gray-500 text-center pt-4 border-t">
+      <div className="text-sm text-gray-500 text-center pt-6 border-t border-gray-200 font-medium">
         분석 일시: {new Date(metadata.analysisTimestamp).toLocaleString('ko-KR')} | 
         처리 시간: {(metadata.analysisEngine?.processingTime / 1000 || 0).toFixed(1)}초 | 
         엔진 버전: v{metadata.analysisEngine?.version || '1.0.0'}
