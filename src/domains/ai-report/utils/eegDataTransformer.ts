@@ -162,7 +162,7 @@ export const EEG_NORMAL_RANGES = {
     theta: { min: 80, max: 200, unit: 'μV²', description: '성인의 정상 범위' },
     alpha: { min: 200, max: 500, unit: 'μV²', description: '건강한 성인의 정상 범위' },
     beta: { min: 100, max: 300, unit: 'μV²', description: '활동적인 성인의 정상 범위' },
-    gamma: { min: 30, max: 80, unit: 'μV²', description: '인지 처리의 정상 범위' },
+    gamma: { min: 50, max: 200, unit: 'μV²', description: '인지 처리의 정상 범위' },
     totalPower: { min: 850, max: 1150, unit: 'μV²', description: '전체 뇌파 활동의 정상 범위' }
   },
   indices: {

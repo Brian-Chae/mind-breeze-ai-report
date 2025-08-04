@@ -286,7 +286,7 @@ const BandPowerAnalysis: React.FC<{ data: any, inputData?: any }> = ({ data, inp
     theta: { min: 80, max: 200, unit: 'μV²' },
     alpha: { min: 200, max: 500, unit: 'μV²' },
     beta: { min: 100, max: 300, unit: 'μV²' },
-    gamma: { min: 30, max: 80, unit: 'μV²' },
+    gamma: { min: 50, max: 200, unit: 'μV²' },
     frontalNeuroActivity: { min: 850, max: 1150, unit: 'μV²' } // Total Power 정상 범위
   };
   
