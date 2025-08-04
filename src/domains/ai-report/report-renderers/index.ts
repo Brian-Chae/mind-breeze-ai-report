@@ -8,7 +8,8 @@ import { BasicGeminiV1WebRenderer } from './web/BasicGeminiV1WebRenderer';
 import { BasicGeminiV1MobileRenderer } from './web/BasicGeminiV1MobileRenderer';
 import { EEGAdvancedReactRenderer } from './EEGAdvancedReactRenderer';
 import { PPGAdvancedReactRenderer } from './PPGAdvancedReactRenderer';
-import { IntegratedAdvancedReactRenderer } from './IntegratedAdvancedReactRenderer';
+// IntegratedAdvancedReactRenderer는 PipelineReportViewer로 대체됨
+import { IntegratedAdvancedJsonRenderer } from './IntegratedAdvancedJsonRenderer';
 
 /**
  * 모든 리포트 렌더러 등록
@@ -31,9 +32,11 @@ export function registerAllRenderers(): void {
     const ppgAdvancedReactRenderer = new PPGAdvancedReactRenderer();
     rendererRegistry.register(ppgAdvancedReactRenderer);
 
-    // Integrated Advanced React 렌더러 등록
-    const integratedAdvancedReactRenderer = new IntegratedAdvancedReactRenderer();
-    rendererRegistry.register(integratedAdvancedReactRenderer);
+    // Integrated Advanced React 렌더러는 PipelineReportViewer로 대체됨
+
+    // Integrated Advanced JSON 렌더러 등록
+    const integratedAdvancedJsonRenderer = new IntegratedAdvancedJsonRenderer();
+    rendererRegistry.register(integratedAdvancedJsonRenderer);
 
     console.log('✅ All report renderers registered successfully');
   } catch (error) {
@@ -84,7 +87,8 @@ export {
   BasicGeminiV1MobileRenderer,
   EEGAdvancedReactRenderer,
   PPGAdvancedReactRenderer,
-  IntegratedAdvancedReactRenderer
+  // IntegratedAdvancedReactRenderer는 PipelineReportViewer로 대체됨
+  IntegratedAdvancedJsonRenderer
 };
 
 // 레지스트리도 함께 내보내기
