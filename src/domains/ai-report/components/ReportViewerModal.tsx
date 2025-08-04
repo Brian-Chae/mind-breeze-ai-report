@@ -79,7 +79,6 @@ export function ReportViewerModal({
   
   // 실제 렌더러 찾기 (viewMode에 따라 모바일/웹 렌더러 선택)
   useEffect(() => {
-    console.log('렌더러 찾는 중...');
     if (report && isOpen) {
       try {
         // report에서 engineId를 가져와서 적절한 렌더러 찾기
@@ -97,9 +96,7 @@ export function ReportViewerModal({
           if (viewMode === 'mobile') {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-mobile');
             if (targetRenderer) {
-              console.log('모바일 렌더러 찾음');
             } else {
-              console.log('모바일 렌더러 못 찾음');
             }
           } else {
             targetRenderer = rendererRegistry.get('basic-gemini-v1-web');
@@ -165,33 +162,17 @@ export function ReportViewerModal({
   }, [isOpen, report, onClose]);
 
   const loadReportContent = async () => {
-    console.log('리포트 컨텐츠 로딩 시작');
-    // 🔍 실제 받은 report 데이터 구조 확인
-    console.log('리포트 데이터 구조:', {
-      reportKeys: Object.keys(report || {}),
-      hasPersonalInfo: !!report?.personalInfo,
-      hasInsights: !!report?.insights,
-      hasRawData: !!report?.rawData,
-      hasAnalysisResults: !!report?.analysisResults
-    });
     setIsLoading(true);
     setError(null);
     
     try {
       // EEG Advanced 엔진 결과는 JSON 뷰어로 표시
       const engineId = report.engineId || report.engineName || 'basic-gemini-v1';
-      console.log('🔍 엔진 ID 확인:', { engineId, reportKeys: Object.keys(report), rawDataKeys: report.rawData ? Object.keys(report.rawData) : [] });
       
       if (engineId === 'eeg-advanced-gemini-v1' || engineId.includes('eeg-advanced')) {
-        console.log('🧠 EEG Advanced 결과를 JSON으로 표시');
         
         // EEG Advanced 분석 결과 추출
         const eegAdvancedData = report.rawData?.eegAdvancedAnalysis || report;
-        console.log('📊 EEG Advanced 데이터:', { 
-          hasRawData: !!report.rawData, 
-          hasEEGAdvancedAnalysis: !!report.rawData?.eegAdvancedAnalysis,
-          dataKeys: eegAdvancedData ? Object.keys(eegAdvancedData) : []
-        });
         
         setReportContent({
           isEEGAdvanced: true,
@@ -237,18 +218,20 @@ export function ReportViewerModal({
         return;
       }
       
-      // Integrated Advanced 엔진 결과는 전용 뷰어로 표시
+      // Integrated Advanced 엔진 결과는 JSON 뷰어로 표시
       if (engineId === 'integrated-advanced-gemini-v1' || engineId.includes('integrated-advanced')) {
-        console.log('🧠💓 Integrated Advanced 결과를 전용 뷰어로 표시');
+        console.log('🧠💓 Integrated Advanced 결과를 JSON으로 표시');
         
-        // 파이프라인 리포트인지 확인
-        const isPipelineReport = report.isPipelineReport || !!report.metadata?.pipelineId;
+        // Integrated Advanced 분석 결과 추출
+        const integratedAdvancedData = report.rawData || report;
+        console.log('🔄 Integrated Advanced 데이터:', { 
+          hasRawData: !!report.rawData, 
+          dataKeys: integratedAdvancedData ? Object.keys(integratedAdvancedData) : []
+        });
         
         setReportContent({
           isIntegratedAdvanced: true,
-          isPipelineReport: isPipelineReport,
-          pipelineData: isPipelineReport ? report : null,
-          jsonData: report.rawData || report,
+          jsonData: integratedAdvancedData,
           metadata: {
             analysisDate: new Date().toLocaleDateString(),
             engineName: '통합 고급 분석 (Gemini)',
@@ -276,16 +259,6 @@ export function ReportViewerModal({
         // 🎯 실제 리포트 데이터 사용 (report에서 가져오기)
         let actualAnalysisResult;
         
-        // 📊 디버깅: 실제 report 구조 확인
-        console.log('리포트 상세 구조:', {
-          reportKeys: Object.keys(report || {}),
-          hasInsights: !!report?.insights,
-          hasRawData: !!report?.rawData,
-          hasAnalysisResults: !!report?.analysisResults,
-          insightsDetailedAnalysisType: typeof report?.insights?.detailedAnalysis,
-          rawDataDetailedAnalysisType: typeof report?.rawData?.detailedAnalysis,
-          hasRawDataDetailedAnalysis: !!report?.rawData?.detailedAnalysis
-        });
         
         // 🎯 우선순위: rawData.detailedAnalysis 객체 > insights.detailedAnalysis 문자열 파싱
         if (report?.rawData?.detailedAnalysis && typeof report.rawData.detailedAnalysis === 'object') {
@@ -449,14 +422,9 @@ export function ReportViewerModal({
         };
         
         // 실제 렌더러로 HTML 생성
-        console.log('렌더러 호출 중:', actualRenderer.id);
         
         const renderedReport = await actualRenderer.render(analysisResult, renderOptions);
         
-        console.log('렌더링 완료:', {
-          rendererId: renderedReport.rendererId,
-          renderTime: renderedReport.renderTime
-        });
         
         const reportContentData = {
           htmlContent: renderedReport.content,
@@ -470,7 +438,6 @@ export function ReportViewerModal({
           }
         };
         
-        console.log('리포트 컨텐츠 설정 완료');
         
         setReportContent(reportContentData);
         
@@ -813,7 +780,6 @@ export function ReportViewerModal({
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
           
-          console.log('리포트 이미지 저장 완료:', fileName);
         }
       }, 'image/png', 1.0); // 최고 품질로 PNG 저장
       
@@ -1025,7 +991,6 @@ export function ReportViewerModal({
         const parser = new DOMParser();
         const doc = parser.parseFromString(reportContent.htmlContent, 'text/html');
         
-        console.log('모바일 렌더러 HTML 파싱 완료');
         
         // 스타일 추출
         const styles = Array.from(doc.querySelectorAll('style'))
@@ -1075,7 +1040,26 @@ export function ReportViewerModal({
   };
 
   const renderReportContent = () => {
-    console.log('리포트 컨텐츠 렌더링 시작');
+    // JSON 뷰어 강제 표시 모드 (상세 분석 보기용) - 최우선 처리
+    if (report?._forceJsonViewer) {
+      console.log('🔍 JSON 뷰어 강제 표시 (최우선):', {
+        hasReport: !!report,
+        reportKeys: report ? Object.keys(report) : [],
+        forceJsonViewer: report._forceJsonViewer,
+        engineId: report?.engineId
+      });
+      
+      return (
+        <div id="report-content" className="p-6 space-y-6">
+          <JsonViewer 
+            data={report} 
+            title="분석 결과 상세 데이터"
+            className="shadow-lg"
+          />
+        </div>
+      );
+    }
+
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-12 bg-white rounded-lg m-6 border border-gray-200 shadow-sm">
@@ -1107,141 +1091,60 @@ export function ReportViewerModal({
       );
     }
 
-    // Advanced 엔진들에 대한 JSON 뷰어 처리
-    // EEG Advanced 결과는 JSON 뷰어로 표시
+    // Advanced 엔진들에 대한 전문 뷰어 처리
+    // EEG Advanced 결과는 전문 리포트 컴포넌트로 표시
     if (reportContent?.isEEGAdvanced) {
       return (
         <div id="report-content" className="p-6 space-y-6">
-          <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">
-                EEG 전문 분석 결과
-              </h1>
-              <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
-                {reportContent.metadata.engineName}
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-6 mt-4">
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-blue-700">JSON</div>
-                <div className="text-gray-700 font-medium">데이터 형식</div>
-              </div>
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-green-700">{reportContent.metadata.processingTime}</div>
-                <div className="text-gray-700 font-medium">처리 시간</div>
-              </div>
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-purple-700">{reportContent.metadata.dataQuality}</div>
-                <div className="text-gray-700 font-medium">데이터 품질</div>
-              </div>
-            </div>
-          </div>
-          
-          <JsonViewer 
-            data={reportContent.jsonData} 
-            title="EEG 전문 분석 결과"
-            className="shadow-lg"
-          />
+          <EEGAdvancedReportComponent data={reportContent.jsonData} />
         </div>
       );
     }
 
-    // PPG Advanced 결과는 JSON 뷰어로 표시
+    // PPG Advanced 결과는 전문 리포트 컴포넌트로 표시
     if (reportContent?.isPPGAdvanced) {
       return (
         <div id="report-content" className="p-6 space-y-6">
-          <div className="bg-gradient-to-r from-red-100 to-pink-100 rounded-lg border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">
-                PPG 전문 분석 결과
-              </h1>
-              <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
-                {reportContent.metadata.engineName}
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-6 mt-4">
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-red-700">JSON</div>
-                <div className="text-gray-700 font-medium">데이터 형식</div>
-              </div>
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-green-700">{reportContent.metadata.processingTime}</div>
-                <div className="text-gray-700 font-medium">처리 시간</div>
-              </div>
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-red-700">{reportContent.metadata.dataQuality}</div>
-                <div className="text-gray-700 font-medium">데이터 품질</div>
-              </div>
-            </div>
-          </div>
-          
-          <JsonViewer 
-            data={reportContent.jsonData} 
-            title="PPG 전문 분석 결과"
-            className="shadow-lg"
-          />
+          <PPGAdvancedReportComponent data={reportContent.jsonData} />
         </div>
       );
     }
 
-    // Integrated Advanced 결과 표시
+    // Integrated Advanced 결과는 통합 리포트 뷰어로 표시
     if (reportContent?.isIntegratedAdvanced) {
-      // 파이프라인 리포트는 전용 뷰어 사용
-      if (reportContent.isPipelineReport && reportContent.pipelineData) {
-        return (
-          <div id="report-content" className="w-full">
-            <PipelineReportViewer 
-              report={reportContent.pipelineData} 
-              onClose={onClose}
-            />
-          </div>
-        );
-      }
-      
-      // 일반 통합 분석 결과는 JSON 뷰어로 표시
       return (
         <div id="report-content" className="p-6 space-y-6">
-          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">
-                통합 고급 분석 결과
-              </h1>
-              <Badge variant="outline" className="text-sm bg-white text-gray-800 border-gray-300 font-medium">
-                {reportContent.metadata.engineName}
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-6 mt-4">
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-purple-700">통합</div>
-                <div className="text-gray-700 font-medium">분석 유형</div>
-              </div>
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-green-700">{reportContent.metadata.processingTime}</div>
-                <div className="text-gray-700 font-medium">처리 시간</div>
-              </div>
-              <div className="text-center bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <div className="text-2xl font-bold text-blue-700">{reportContent.metadata.dataQuality}</div>
-                <div className="text-gray-700 font-medium">데이터 품질</div>
-              </div>
-            </div>
-          </div>
-          
-          <JsonViewer 
-            data={reportContent.jsonData} 
-            title="통합 고급 분석 결과"
-            className="shadow-lg"
-          />
+          <PipelineReportViewer report={reportContent.jsonData} />
         </div>
       );
     }
 
     // 실제 선택된 렌더러 기준으로 렌더링
-    console.log('렌더러 선택:', actualRenderer?.id);
     if (actualRenderer && (actualRenderer.id === 'basic-gemini-v1-web' || actualRenderer.id === 'basic-gemini-v1-mobile')) {
       return renderBasicGeminiViewer();
+    }
+
+
+    // JSON 뷰어로 원본 데이터 표시 (기존 방식)
+    if (reportContent && !reportContent.isEEGAdvanced && !reportContent.isPPGAdvanced && !reportContent.isIntegratedAdvanced) {
+      console.log('🔍 JSON 뷰어 표시:', {
+        hasReportContent: !!reportContent,
+        isEEGAdvanced: reportContent.isEEGAdvanced,
+        isPPGAdvanced: reportContent.isPPGAdvanced,
+        isIntegratedAdvanced: reportContent.isIntegratedAdvanced,
+        jsonData: reportContent.jsonData,
+        reportContentKeys: Object.keys(reportContent)
+      });
+      
+      return (
+        <div id="report-content" className="p-6 space-y-6">
+          <JsonViewer 
+            data={reportContent.jsonData || reportContent} 
+            title="분석 결과 상세 데이터"
+            className="shadow-lg"
+          />
+        </div>
+      );
     }
 
     // 기본 Universal Web Viewer 사용
