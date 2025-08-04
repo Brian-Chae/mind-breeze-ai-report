@@ -492,3 +492,22 @@ export const PPGAdvancedReportComponent: React.FC<PPGAdvancedReportProps> = ({ r
     </div>
   );
 };
+
+// 렌더러 클래스 export
+export class PPGAdvancedReactRenderer {
+  id = 'ppg-advanced-react-renderer';
+  name = 'PPG 고급 분석 React 렌더러';
+  description = 'PPG 고급 분석 결과를 React 컴포넌트로 렌더링';
+  version = '1.0.0';
+  supportedEngines = ['ppg-advanced-gemini-v1'];
+  outputFormat = 'react';
+  costPerRender = 0;
+  
+  async render(analysis: any, options?: any) {
+    return {
+      component: PPGAdvancedReportComponent,
+      props: { report: analysis },
+      format: 'react'
+    };
+  }
+}
