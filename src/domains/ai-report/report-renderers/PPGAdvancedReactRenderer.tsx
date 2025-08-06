@@ -781,15 +781,23 @@ export const PPGAdvancedReportComponent: React.FC<PPGAdvancedReportProps> = ({ r
   const prepareRRHistogram = (rrIntervals: number[]) => {
     if (rrIntervals.length === 0) return [];
     
-    const min = Math.min(...rrIntervals);
-    const max = Math.max(...rrIntervals);
-    const binSize = 50; // 50ms bins (RR 간격 분포를 10개 구간으로 줄이기 위해)
+    // 550ms ~ 1250ms 범위, 10ms 단위 bins
+    const minBin = 550;
+    const maxBin = 1250;
+    const binSize = 10;
     const bins: Record<string, number> = {};
     
-    // 히스토그램 생성
+    // 모든 bin 초기화 (0으로)
+    for (let i = minBin; i <= maxBin; i += binSize) {
+      bins[i] = 0;
+    }
+    
+    // 히스토그램 생성 (550-1250ms 범위 내의 값만 카운트)
     rrIntervals.forEach(rr => {
-      const binKey = Math.floor(rr / binSize) * binSize;
-      bins[binKey] = (bins[binKey] || 0) + 1;
+      if (rr >= minBin && rr <= maxBin) {
+        const binKey = Math.floor(rr / binSize) * binSize;
+        bins[binKey] = (bins[binKey] || 0) + 1;
+      }
     });
     
     // 차트 데이터로 변환
@@ -1003,7 +1011,435 @@ export const PPGAdvancedReportComponent: React.FC<PPGAdvancedReportProps> = ({ r
         </div>
       )}
 
-      {/* 3. 심박수 분석 */}
+      {/* 3. HRV 상세 시각화 */}
+      {hasNewStructure && finalRRIntervals.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <Activity className="w-7 h-7 text-red-600" />
+            HRV 상세 시각화
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* RR Interval Histogram - 왼쪽 상단 */}
+            <Card className="shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <BarChart3 className="w-5 h-5 text-red-600" />
+                  RR 간격 분포
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {rrHistogramData.length > 0 ? (
+                  <div className="space-y-4">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={rrHistogramData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="interval" 
+                          label={{ value: 'RR 간격 (ms)', position: 'insideBottom', offset: -5 }}
+                          domain={[550, 1250]}
+                          ticks={[550, 650, 750, 850, 950, 1050, 1150, 1250]}
+                          tickFormatter={(value) => `${value}ms`}
+                        />
+                        <YAxis 
+                          label={{ value: '빈도 (%)', angle: -90, position: 'insideLeft' }}
+                        />
+                        <Tooltip 
+                          formatter={(value: number, name: string) => {
+                            if (name === 'percentage') return [`${value.toFixed(1)}%`, '비율'];
+                            return [value, '개수'];
+                          }}
+                          labelFormatter={(label) => `${label} - ${label + 10} ms`}
+                          contentStyle={{ color: '#000000' }}
+                          labelStyle={{ color: '#000000', fontWeight: 'bold' }}
+                        />
+                        <Bar 
+                          dataKey="percentage" 
+                          fill="#6366f1"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                    
+                    {/* 통계 정보 */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-2 bg-indigo-50 rounded">
+                        <div className="text-xs text-gray-600">평균 RR</div>
+                        <div className="font-bold text-indigo-600">
+                          {(finalRRIntervals.reduce((a: number, b: number) => a + b, 0) / finalRRIntervals.length).toFixed(0)}ms
+                        </div>
+                      </div>
+                      <div className="text-center p-2 bg-indigo-50 rounded">
+                        <div className="text-xs text-gray-600">표준편차</div>
+                        <div className="font-bold text-indigo-600">
+                          {(() => {
+                            const mean = finalRRIntervals.reduce((a: number, b: number) => a + b, 0) / finalRRIntervals.length;
+                            const variance = finalRRIntervals.reduce((a: number, b: number) => a + Math.pow(b - mean, 2), 0) / finalRRIntervals.length;
+                            return Math.sqrt(variance).toFixed(1);
+                          })()}ms
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-gray-700">
+                    분석할 데이터가 부족합니다
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* RR Interval 시계열 - 오른쪽 상단 */}
+            <Card className="shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <Activity className="w-5 h-5 text-red-600" />
+                  심박 간격 변화 (1분)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {rrTimeSeriesData.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={rrTimeSeriesData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="time" 
+                          label={{ value: '시간 (초)', position: 'insideBottom', offset: -5 }}
+                          domain={[0, 60]}
+                          ticks={[0, 10, 20, 30, 40, 50, 60]}
+                          tickFormatter={(value) => `${value}초`}
+                        />
+                        <YAxis 
+                          label={{ value: 'RR 간격 (ms)', angle: -90, position: 'insideLeft' }}
+                          domain={[550, 1250]}
+                          ticks={[550, 650, 750, 850, 950, 1050, 1150, 1250]}
+                          tickFormatter={(value) => `${value}ms`}
+                          interval={0}
+                        />
+                        <Tooltip />
+                        <Line 
+                          type="monotone" 
+                          dataKey="rrInterval" 
+                          stroke="#3b82f6" 
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                          animationDuration={300}
+                        />
+                        {/* 평균선 */}
+                        <ReferenceLine 
+                          y={poincarePlotData.meanRR} 
+                          stroke="#10b981" 
+                          strokeDasharray="5 5"
+                          label="평균"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    
+                    {/* 간단한 통계 */}
+                    <div className="grid grid-cols-4 gap-2 mt-4">
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-xs text-gray-900">평균</div>
+                        <div className="font-bold text-gray-900">{poincarePlotData.meanRR.toFixed(0)}ms</div>
+                      </div>
+                      <div className="text-center p-2 bg-blue-50 rounded">
+                        <div className="text-xs text-gray-900">RMSSD</div>
+                        <div className="font-bold text-blue-600">
+                          {threeDimensionAnalysis.hrv?.evidence?.rmssd?.toFixed(1) || 0}ms
+                        </div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-xs text-gray-900">최소</div>
+                        <div className="font-bold text-gray-900">{Math.min(...finalRRIntervals).toFixed(0)}ms</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-xs text-gray-900">최대</div>
+                        <div className="font-bold text-gray-900">{Math.max(...finalRRIntervals).toFixed(0)}ms</div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-gray-700">
+                    RR interval 데이터가 없습니다
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Poincaré Plot - 왼쪽 하단 */}
+            <Card className="shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <ScatterChart className="w-5 h-5 text-red-600" />
+                  심박 패턴 분석
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {poincarePlotData.points.length > 0 ? (
+                  <div className="space-y-4">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RechartsScatterChart margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          type="number"
+                          dataKey="x" 
+                          name="RR(n)" 
+                          unit="ms"
+                          label={{ value: "RR(n) [ms]", position: "insideBottom", offset: -5 }}
+                          domain={[550, 1250]}
+                          ticks={[550, 650, 750, 850, 950, 1050, 1150, 1250]}
+                          interval={0}
+                        />
+                        <YAxis 
+                          type="number"
+                          dataKey="y" 
+                          name="RR(n+1)" 
+                          unit="ms"
+                          label={{ value: "RR(n+1) [ms]", angle: -90, position: "insideLeft" }}
+                          domain={[550, 1250]}
+                          ticks={[550, 650, 750, 850, 950, 1050, 1150, 1250]}
+                          interval={0}
+                        />
+                        <Tooltip 
+                          cursor={{ strokeDasharray: '3 3' }}
+                          formatter={(value: number, name: string) => [`${value.toFixed(0)} ms`, name]}
+                        />
+                        
+                        {/* Identity line (y = x) */}
+                        <ReferenceLine 
+                          segment={[
+                            { x: 550, y: 550 },
+                            { x: 1250, y: 1250 }
+                          ]}
+                          stroke="#374151"
+                          strokeDasharray="5 5"
+                        />
+                        
+                        {/* 평균점 */}
+                        <ReferenceLine 
+                          x={poincarePlotData.meanRR} 
+                          stroke="#9ca3af" 
+                          strokeDasharray="3 3" 
+                        />
+                        <ReferenceLine 
+                          y={poincarePlotData.meanRR} 
+                          stroke="#9ca3af" 
+                          strokeDasharray="3 3" 
+                        />
+                        
+                        <Scatter 
+                          name="RR intervals" 
+                          data={poincarePlotData.points} 
+                          fill="#8b5cf6"
+                          fillOpacity={0.6}
+                        />
+                      </RechartsScatterChart>
+                    </ResponsiveContainer>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-purple-50 rounded">
+                        <div className="text-xs text-gray-700">단기 변동성 (SD1)</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {poincarePlotData.sd1.toFixed(1)} ms
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {poincarePlotData.sd1 > 20 ? '양호' : '낮음'}
+                        </div>
+                      </div>
+                      
+                      <div className="p-3 bg-indigo-50 rounded">
+                        <div className="text-xs text-gray-700">장기 변동성 (SD2)</div>
+                        <div className="text-lg font-bold text-indigo-600">
+                          {poincarePlotData.sd2?.toFixed(1) || 'N/A'} ms
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {poincarePlotData.sd2 > 50 ? '양호' : '낮음'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-gray-700">
+                    분석할 데이터가 부족합니다
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* 자율신경 균형 분석 - 오른쪽 하단 */}
+            <Card className="shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <BarChart3 className="w-5 h-5 text-red-600" />
+                  자율신경 균형 분석
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* LF/HF 균형 막대 */}
+                  <div>
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span className="font-medium text-gray-900">교감신경 (LF)</span>
+                      <span className="font-medium text-gray-900">부교감신경 (HF)</span>
+                    </div>
+                    <div className="relative h-12 bg-gray-200 rounded-full overflow-hidden">
+                      {(() => {
+                        const realLfPower = threeDimensionAnalysis.autonomic?.evidence?.lfPower || 
+                                           threeDimensionAnalysis.stress?.evidence?.lfPower;
+                        const realHfPower = threeDimensionAnalysis.autonomic?.evidence?.hfPower || 
+                                           threeDimensionAnalysis.stress?.evidence?.hfPower;
+                        
+                        const isDataMissing = !realLfPower || !realHfPower;
+                        
+                        if (isDataMissing) {
+                          return (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
+                              <span className="text-gray-600 font-medium text-sm">
+                                실제 데이터 없음 (시뮬레이션)
+                              </span>
+                            </div>
+                          );
+                        }
+                        
+                        const total = realLfPower + realHfPower;
+                        const lfPercent = total > 0 ? (realLfPower / total) * 100 : 50;
+                        const hfPercent = total > 0 ? (realHfPower / total) * 100 : 50;
+                        
+                        return (
+                          <>
+                            <div 
+                              className="absolute h-full bg-blue-500 flex items-center justify-center"
+                              style={{ width: `${lfPercent}%` }}
+                            >
+                              <span className="text-white font-medium text-sm">
+                                {lfPercent.toFixed(0)}%
+                              </span>
+                            </div>
+                            <div 
+                              className="absolute h-full bg-green-500 flex items-center justify-center"
+                              style={{ 
+                                left: `${lfPercent}%`,
+                                width: `${hfPercent}%` 
+                              }}
+                            >
+                              <span className="text-white font-medium text-sm">
+                                {hfPercent.toFixed(0)}%
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  
+                  {/* 주파수 스펙트럼 차트 */}
+                  <div className="mt-4">
+                    {(() => {
+                      const realLfPower = threeDimensionAnalysis.autonomic?.evidence?.lfPower || 
+                                         threeDimensionAnalysis.stress?.evidence?.lfPower;
+                      const realHfPower = threeDimensionAnalysis.autonomic?.evidence?.hfPower || 
+                                         threeDimensionAnalysis.stress?.evidence?.hfPower;
+                      const isSpectrumSimulated = !realLfPower || !realHfPower;
+                      
+                      return (
+                        <div className="relative">
+                          {isSpectrumSimulated && (
+                            <div className="absolute top-2 right-2 z-10 bg-red-100 text-red-700 text-xs px-2 py-1 rounded">
+                              시뮬레이션 데이터
+                            </div>
+                          )}
+                          <ResponsiveContainer width="100%" height={180}>
+                            <LineChart data={frequencySpectrumData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis 
+                                dataKey="frequency" 
+                                domain={[0, 0.5]}
+                                ticks={[0, 0.1, 0.2, 0.3, 0.4, 0.5]}
+                              />
+                              <YAxis />
+                              <Tooltip formatter={(value: number) => value.toFixed(2)} />
+                              
+                              {/* LF 영역 표시 */}
+                              <ReferenceLine x={0.04} stroke="#3b82f6" strokeDasharray="3 3" />
+                              <ReferenceLine x={0.15} stroke="#3b82f6" strokeDasharray="3 3" />
+                              
+                              {/* HF 영역 표시 */}
+                              <ReferenceLine x={0.15} stroke="#10b981" strokeDasharray="3 3" />
+                              <ReferenceLine x={0.4} stroke="#10b981" strokeDasharray="3 3" />
+                              
+                              <Line 
+                                type="monotone" 
+                                dataKey="power" 
+                                stroke={isSpectrumSimulated ? "#9ca3af" : "#8b5cf6"}
+                                strokeWidth={2}
+                                dot={false}
+                                strokeDasharray={isSpectrumSimulated ? "5 5" : "0 0"}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  
+                  {/* 주요 지표 */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {(() => {
+                      // 실제 LF/HF 데이터 확인
+                      const realLfPower = threeDimensionAnalysis.autonomic?.evidence?.lfPower || 
+                                          threeDimensionAnalysis.stress?.evidence?.lfPower;
+                      const realHfPower = threeDimensionAnalysis.autonomic?.evidence?.hfPower || 
+                                          threeDimensionAnalysis.stress?.evidence?.hfPower;
+                      const realLfHfRatio = threeDimensionAnalysis.autonomic?.evidence?.lfHfRatio || 
+                                            threeDimensionAnalysis.stress?.evidence?.lfHfRatio;
+                      
+                      const isLfFallback = !realLfPower;
+                      const isHfFallback = !realHfPower;
+                      const isRatioFallback = !realLfHfRatio;
+                      
+                      return (
+                        <>
+                          <div className="text-center p-2 bg-blue-50 rounded relative">
+                            <div className="text-xs text-gray-700">LF</div>
+                            <div className={`text-sm font-bold ${isLfFallback ? 'text-gray-400' : 'text-blue-600'}`}>
+                              {isLfFallback ? '데이터 없음' : realLfPower.toFixed(0)}
+                            </div>
+                            {isLfFallback && (
+                              <div className="text-xs text-red-500 mt-1">* 시뮬레이션</div>
+                            )}
+                          </div>
+                          
+                          <div className="text-center p-2 bg-green-50 rounded relative">
+                            <div className="text-xs text-gray-700">HF</div>
+                            <div className={`text-sm font-bold ${isHfFallback ? 'text-gray-400' : 'text-green-600'}`}>
+                              {isHfFallback ? '데이터 없음' : realHfPower.toFixed(0)}
+                            </div>
+                            {isHfFallback && (
+                              <div className="text-xs text-red-500 mt-1">* 시뮬레이션</div>
+                            )}
+                          </div>
+                          
+                          <div className="text-center p-2 bg-purple-50 rounded relative">
+                            <div className="text-xs text-gray-700">LF/HF</div>
+                            <div className={`text-sm font-bold ${isRatioFallback ? 'text-gray-400' : 'text-purple-600'}`}>
+                              {isRatioFallback ? '계산 불가' : realLfHfRatio.toFixed(2)}
+                            </div>
+                            {isRatioFallback && (
+                              <div className="text-xs text-red-500 mt-1">* 시뮬레이션</div>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* 4. 심박수 분석 */}
       {detailedAnalysis.heartRateAnalysis && (
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
@@ -1289,7 +1725,7 @@ export const PPGAdvancedReportComponent: React.FC<PPGAdvancedReportProps> = ({ r
         </div>
       )}
 
-      {/* 4. HRV 지표 분석 */}
+      {/* 5. HRV 지표 분석 */}
       {detailedAnalysis.hrvIndicesAnalysis && (
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
@@ -1420,7 +1856,7 @@ export const PPGAdvancedReportComponent: React.FC<PPGAdvancedReportProps> = ({ r
         </div>
       )}
 
-      {/* 5. 자율신경계 종합 분석 */}
+      {/* 6. 자율신경계 종합 분석 */}
       {detailedAnalysis.autonomicAnalysis && (
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
@@ -1577,422 +2013,7 @@ export const PPGAdvancedReportComponent: React.FC<PPGAdvancedReportProps> = ({ r
         </div>
       )}
 
-      {/* 6. HRV 상세 시각화 */}
-      {hasNewStructure && finalRRIntervals.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-            <Activity className="w-7 h-7 text-red-600" />
-            HRV 상세 시각화
-          </h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* RR Interval Histogram - 왼쪽 상단 */}
-            <Card className="shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <BarChart3 className="w-5 h-5 text-red-600" />
-                  RR 간격 분포
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {rrHistogramData.length > 0 ? (
-                  <div className="space-y-4">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={rrHistogramData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="interval" 
-                          label={{ value: 'RR 간격 (ms)', position: 'insideBottom', offset: -5 }}
-                          tickFormatter={(value) => `${value}`}
-                        />
-                        <YAxis 
-                          label={{ value: '빈도 (%)', angle: -90, position: 'insideLeft' }}
-                        />
-                        <Tooltip 
-                          formatter={(value: number, name: string) => {
-                            if (name === 'percentage') return [`${value.toFixed(1)}%`, '비율'];
-                            return [value, '개수'];
-                          }}
-                          labelFormatter={(label) => `${label} - ${label + 25} ms`}
-                        />
-                        <Bar 
-                          dataKey="percentage" 
-                          fill="#6366f1"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                    
-                    {/* 통계 정보 */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="text-center p-2 bg-indigo-50 rounded">
-                        <div className="text-xs text-gray-600">평균 RR</div>
-                        <div className="font-bold text-indigo-600">
-                          {(finalRRIntervals.reduce((a: number, b: number) => a + b, 0) / finalRRIntervals.length).toFixed(0)}ms
-                        </div>
-                      </div>
-                      <div className="text-center p-2 bg-indigo-50 rounded">
-                        <div className="text-xs text-gray-600">표준편차</div>
-                        <div className="font-bold text-indigo-600">
-                          {(() => {
-                            const mean = finalRRIntervals.reduce((a: number, b: number) => a + b, 0) / finalRRIntervals.length;
-                            const variance = finalRRIntervals.reduce((a: number, b: number) => a + Math.pow(b - mean, 2), 0) / finalRRIntervals.length;
-                            return Math.sqrt(variance).toFixed(1);
-                          })()}ms
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-64 text-gray-700">
-                    분석할 데이터가 부족합니다
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* RR Interval 시계열 - 오른쪽 상단 */}
-            <Card className="shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <Activity className="w-5 h-5 text-red-600" />
-                  심박 간격 변화 (1분)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {rrTimeSeriesData.length > 0 ? (
-                  <>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={rrTimeSeriesData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="time" 
-                          label={{ value: '시간 (초)', position: 'insideBottom', offset: -5 }}
-                          domain={[0, 60]}
-                        />
-                        <YAxis 
-                          label={{ value: 'RR 간격 (ms)', angle: -90, position: 'insideLeft' }}
-                        />
-                        <Tooltip />
-                        <Line 
-                          type="monotone" 
-                          dataKey="rrInterval" 
-                          stroke="#3b82f6" 
-                          strokeWidth={2}
-                          dot={{ r: 2 }}
-                          animationDuration={300}
-                        />
-                        {/* 평균선 */}
-                        <ReferenceLine 
-                          y={poincarePlotData.meanRR} 
-                          stroke="#10b981" 
-                          strokeDasharray="5 5"
-                          label="평균"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                    
-                    {/* 간단한 통계 */}
-                    <div className="grid grid-cols-4 gap-2 mt-4">
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <div className="text-xs text-gray-900">평균</div>
-                        <div className="font-bold text-gray-900">{poincarePlotData.meanRR.toFixed(0)}ms</div>
-                      </div>
-                      <div className="text-center p-2 bg-blue-50 rounded">
-                        <div className="text-xs text-gray-900">RMSSD</div>
-                        <div className="font-bold text-blue-600">
-                          {threeDimensionAnalysis.hrv?.evidence?.rmssd?.toFixed(1) || 0}ms
-                        </div>
-                      </div>
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <div className="text-xs text-gray-900">최소</div>
-                        <div className="font-bold text-gray-900">{Math.min(...finalRRIntervals).toFixed(0)}ms</div>
-                      </div>
-                      <div className="text-center p-2 bg-gray-50 rounded">
-                        <div className="text-xs text-gray-900">최대</div>
-                        <div className="font-bold text-gray-900">{Math.max(...finalRRIntervals).toFixed(0)}ms</div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-64 text-gray-700">
-                    RR interval 데이터가 없습니다
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Poincaré Plot - 왼쪽 하단 */}
-            <Card className="shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <ScatterChart className="w-5 h-5 text-red-600" />
-                  심박 패턴 분석
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {poincarePlotData.points.length > 0 ? (
-                  <div className="space-y-4">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <RechartsScatterChart margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          type="number"
-                          dataKey="x" 
-                          name="RR(n)" 
-                          unit="ms"
-                          label={{ value: "RR(n) [ms]", position: "insideBottom", offset: -5 }}
-                          domain={[600, 1000]}
-                          ticks={[600, 700, 800, 900, 1000]}
-                        />
-                        <YAxis 
-                          type="number"
-                          dataKey="y" 
-                          name="RR(n+1)" 
-                          unit="ms"
-                          label={{ value: "RR(n+1) [ms]", angle: -90, position: "insideLeft" }}
-                          domain={[600, 1000]}
-                          ticks={[600, 700, 800, 900, 1000]}
-                        />
-                        <Tooltip 
-                          cursor={{ strokeDasharray: '3 3' }}
-                          formatter={(value: number, name: string) => [`${value.toFixed(0)} ms`, name]}
-                        />
-                        
-                        {/* Identity line (y = x) */}
-                        <ReferenceLine 
-                          segment={[
-                            { x: 600, y: 600 },
-                            { x: 1000, y: 1000 }
-                          ]}
-                          stroke="#374151"
-                          strokeDasharray="5 5"
-                        />
-                        
-                        {/* 평균점 */}
-                        <ReferenceLine 
-                          x={poincarePlotData.meanRR} 
-                          stroke="#9ca3af" 
-                          strokeDasharray="3 3" 
-                        />
-                        <ReferenceLine 
-                          y={poincarePlotData.meanRR} 
-                          stroke="#9ca3af" 
-                          strokeDasharray="3 3" 
-                        />
-                        
-                        <Scatter 
-                          name="RR intervals" 
-                          data={poincarePlotData.points} 
-                          fill="#8b5cf6"
-                          fillOpacity={0.6}
-                        />
-                      </RechartsScatterChart>
-                    </ResponsiveContainer>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-purple-50 rounded">
-                        <div className="text-xs text-gray-700">단기 변동성 (SD1)</div>
-                        <div className="text-lg font-bold text-purple-600">
-                          {poincarePlotData.sd1.toFixed(1)} ms
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          {poincarePlotData.sd1 > 20 ? '양호' : '낮음'}
-                        </div>
-                      </div>
-                      
-                      <div className="p-3 bg-indigo-50 rounded">
-                        <div className="text-xs text-gray-700">장기 변동성 (SD2)</div>
-                        <div className="text-lg font-bold text-indigo-600">
-                          {poincarePlotData.sd2?.toFixed(1) || 'N/A'} ms
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          {poincarePlotData.sd2 > 50 ? '양호' : '낮음'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-64 text-gray-700">
-                    분석할 데이터가 부족합니다
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* 자율신경 균형 분석 - 오른쪽 하단 */}
-            <Card className="shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50 border-b border-red-100">
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <BarChart3 className="w-5 h-5 text-red-600" />
-                  자율신경 균형 분석
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* LF/HF 균형 막대 */}
-                  <div>
-                    <div className="flex justify-between mb-2 text-sm">
-                      <span className="font-medium text-gray-900">교감신경 (LF)</span>
-                      <span className="font-medium text-gray-900">부교감신경 (HF)</span>
-                    </div>
-                    <div className="relative h-12 bg-gray-200 rounded-full overflow-hidden">
-                      {(() => {
-                        const realLfPower = threeDimensionAnalysis.autonomic?.evidence?.lfPower || 
-                                           threeDimensionAnalysis.stress?.evidence?.lfPower;
-                        const realHfPower = threeDimensionAnalysis.autonomic?.evidence?.hfPower || 
-                                           threeDimensionAnalysis.stress?.evidence?.hfPower;
-                        
-                        const isDataMissing = !realLfPower || !realHfPower;
-                        
-                        if (isDataMissing) {
-                          return (
-                            <div className="absolute inset-0 flex items-center justify-center bg-gray-300">
-                              <span className="text-gray-600 font-medium text-sm">
-                                실제 데이터 없음 (시뮬레이션)
-                              </span>
-                            </div>
-                          );
-                        }
-                        
-                        const total = realLfPower + realHfPower;
-                        const lfPercent = total > 0 ? (realLfPower / total) * 100 : 50;
-                        const hfPercent = total > 0 ? (realHfPower / total) * 100 : 50;
-                        
-                        return (
-                          <>
-                            <div 
-                              className="absolute h-full bg-blue-500 flex items-center justify-center"
-                              style={{ width: `${lfPercent}%` }}
-                            >
-                              <span className="text-white font-medium text-sm">
-                                {lfPercent.toFixed(0)}%
-                              </span>
-                            </div>
-                            <div 
-                              className="absolute h-full bg-green-500 flex items-center justify-center"
-                              style={{ 
-                                left: `${lfPercent}%`,
-                                width: `${hfPercent}%` 
-                              }}
-                            >
-                              <span className="text-white font-medium text-sm">
-                                {hfPercent.toFixed(0)}%
-                              </span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  
-                  {/* 주파수 스펙트럼 차트 */}
-                  <div className="mt-4">
-                    {(() => {
-                      const realLfPower = threeDimensionAnalysis.autonomic?.evidence?.lfPower || 
-                                         threeDimensionAnalysis.stress?.evidence?.lfPower;
-                      const realHfPower = threeDimensionAnalysis.autonomic?.evidence?.hfPower || 
-                                         threeDimensionAnalysis.stress?.evidence?.hfPower;
-                      const isSpectrumSimulated = !realLfPower || !realHfPower;
-                      
-                      return (
-                        <div className="relative">
-                          {isSpectrumSimulated && (
-                            <div className="absolute top-2 right-2 z-10 bg-red-100 text-red-700 text-xs px-2 py-1 rounded">
-                              시뮬레이션 데이터
-                            </div>
-                          )}
-                          <ResponsiveContainer width="100%" height={180}>
-                            <LineChart data={frequencySpectrumData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis 
-                                dataKey="frequency" 
-                                domain={[0, 0.5]}
-                                ticks={[0, 0.1, 0.2, 0.3, 0.4, 0.5]}
-                              />
-                              <YAxis />
-                              <Tooltip formatter={(value: number) => value.toFixed(2)} />
-                              
-                              {/* LF 영역 표시 */}
-                              <ReferenceLine x={0.04} stroke="#3b82f6" strokeDasharray="3 3" />
-                              <ReferenceLine x={0.15} stroke="#3b82f6" strokeDasharray="3 3" />
-                              
-                              {/* HF 영역 표시 */}
-                              <ReferenceLine x={0.15} stroke="#10b981" strokeDasharray="3 3" />
-                              <ReferenceLine x={0.4} stroke="#10b981" strokeDasharray="3 3" />
-                              
-                              <Line 
-                                type="monotone" 
-                                dataKey="power" 
-                                stroke={isSpectrumSimulated ? "#9ca3af" : "#8b5cf6"}
-                                strokeWidth={2}
-                                dot={false}
-                                strokeDasharray={isSpectrumSimulated ? "5 5" : "0 0"}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  
-                  {/* 주요 지표 */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {(() => {
-                      // 실제 LF/HF 데이터 확인
-                      const realLfPower = threeDimensionAnalysis.autonomic?.evidence?.lfPower || 
-                                          threeDimensionAnalysis.stress?.evidence?.lfPower;
-                      const realHfPower = threeDimensionAnalysis.autonomic?.evidence?.hfPower || 
-                                          threeDimensionAnalysis.stress?.evidence?.hfPower;
-                      const realLfHfRatio = threeDimensionAnalysis.autonomic?.evidence?.lfHfRatio || 
-                                            threeDimensionAnalysis.stress?.evidence?.lfHfRatio;
-                      
-                      const isLfFallback = !realLfPower;
-                      const isHfFallback = !realHfPower;
-                      const isRatioFallback = !realLfHfRatio;
-                      
-                      return (
-                        <>
-                          <div className="text-center p-2 bg-blue-50 rounded relative">
-                            <div className="text-xs text-gray-700">LF</div>
-                            <div className={`text-sm font-bold ${isLfFallback ? 'text-gray-400' : 'text-blue-600'}`}>
-                              {isLfFallback ? '데이터 없음' : realLfPower.toFixed(0)}
-                            </div>
-                            {isLfFallback && (
-                              <div className="text-xs text-red-500 mt-1">* 시뮬레이션</div>
-                            )}
-                          </div>
-                          
-                          <div className="text-center p-2 bg-green-50 rounded relative">
-                            <div className="text-xs text-gray-700">HF</div>
-                            <div className={`text-sm font-bold ${isHfFallback ? 'text-gray-400' : 'text-green-600'}`}>
-                              {isHfFallback ? '데이터 없음' : realHfPower.toFixed(0)}
-                            </div>
-                            {isHfFallback && (
-                              <div className="text-xs text-red-500 mt-1">* 시뮬레이션</div>
-                            )}
-                          </div>
-                          
-                          <div className="text-center p-2 bg-purple-50 rounded relative">
-                            <div className="text-xs text-gray-700">LF/HF</div>
-                            <div className={`text-sm font-bold ${isRatioFallback ? 'text-gray-400' : 'text-purple-600'}`}>
-                              {isRatioFallback ? '계산 불가' : realLfHfRatio.toFixed(2)}
-                            </div>
-                            {isRatioFallback && (
-                              <div className="text-xs text-red-500 mt-1">* 시뮬레이션</div>
-                            )}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
+      {/* 중복된 HRV 상세 시각화 섹션 완전 제거 - 섹션 3으로 이동 완료 */} 
       {/* 7. 종합 권장사항 */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
