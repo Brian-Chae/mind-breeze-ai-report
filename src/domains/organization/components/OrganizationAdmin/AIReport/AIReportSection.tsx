@@ -904,8 +904,29 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
           {(data.processedTimeSeries?.ppg || data.timeSeriesData?.ppg) && (() => {
             const ppgData = data.processedTimeSeries?.ppg || data.timeSeriesData?.ppg;
             
+            // PPG 데이터 구조 디버깅
+            console.log('🔍 PPG 데이터 구조 확인:', {
+              ppgDataKeys: Object.keys(ppgData),
+              heartRateExists: !!ppgData.heartRate,
+              heartRateLength: ppgData.heartRate?.length || 0,
+              heartRateSample: ppgData.heartRate?.slice(0, 5) || 'undefined',
+              rmssdExists: !!ppgData.rmssd,
+              rmssdLength: ppgData.rmssd?.length || 0,
+              sdnnExists: !!ppgData.sdnn,
+              sdnnLength: ppgData.sdnn?.length || 0
+            });
+            
             // 모든 PPG 메트릭에 대한 통계 계산
             const hrStats = calculateStatistics(ppgData.heartRate);
+            
+            // 디버깅: hrStats 결과 확인
+            console.log('📊 hrStats 계산 결과:', {
+              hrStatsMean: hrStats.mean,
+              hrStatsCount: hrStats.count,
+              heartRateArray: ppgData.heartRate,
+              isValidNumber: !isNaN(hrStats.mean) && hrStats.mean !== 0,
+              formatValueResult: formatValue(hrStats.mean)
+            });
             const hrvStats = calculateStatistics(ppgData.hrv);
             const rmssdStats = calculateStatistics(ppgData.rmssd);
             const pnn50Stats = calculateStatistics(ppgData.pnn50);
@@ -933,10 +954,155 @@ const MeasurementDataDetailView: React.FC<MeasurementDataDetailViewProps> = ({
             
             return (
               <div className="bg-white p-4 rounded-md shadow-sm mb-4">
-                <h4 className="font-semibold mb-3 text-gray-800 flex items-center">
-                  <Activity className="w-4 h-4 mr-2 text-red-500" />
-                  PPG 시계열 데이터 통계 (초단위)
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-gray-800 flex items-center">
+                    <Activity className="w-4 h-4 mr-2 text-red-500" />
+                    PPG 시계열 데이터 통계 (초단위)
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      disabled={isAnalyzing}
+                      onClick={() => {
+                        console.log('🎯 PPG AI 분석 실행 요청:', data)
+                        
+                        // PPG 통계 데이터 구조화 - EEG와 동일한 방식으로 processedTimeSeries 기반
+                        const structuredPPGData = {
+                          ...data,
+                          // 기본 사용자 정보
+                          personalInfo: {
+                            name: data.userName || data.subjectName || '익명',
+                            age: data.userAge || 30,
+                            gender: data.userGender === '남성' ? 'male' : data.userGender === '여성' ? 'female' : 'unknown',
+                            occupation: data.userOccupation || '미지정'
+                          },
+                          
+                          // PPG 시계열 통계 데이터
+                          ppgTimeSeriesStats: {
+                            heartRate: {
+                              mean: hrStats.mean,
+                              std: hrStats.std,
+                              min: hrStats.min,
+                              max: hrStats.max,
+                              normalRange: getNormalRangeInfo('BPM')?.range || '60-100 BPM',
+                              status: getValueStatus(hrStats.mean, 'BPM'),
+                              interpretation: getClinicalInterpretation(hrStats.mean, 'BPM')
+                            },
+                            hrvTimeMetrics: {
+                              rmssd: {
+                                mean: rmssdStats.mean,
+                                std: rmssdStats.std,
+                                min: rmssdStats.min,
+                                max: rmssdStats.max,
+                                normalRange: getNormalRangeInfo('RMSSD')?.range || '20-50 ms',
+                                status: getValueStatus(rmssdStats.mean, 'RMSSD'),
+                                interpretation: getClinicalInterpretation(rmssdStats.mean, 'RMSSD')
+                              },
+                              sdnn: {
+                                mean: sdnnStats.mean,
+                                std: sdnnStats.std,
+                                min: sdnnStats.min,
+                                max: sdnnStats.max,
+                                normalRange: getNormalRangeInfo('SDNN')?.range || '32-93 ms',
+                                status: getValueStatus(sdnnStats.mean, 'SDNN'),
+                                interpretation: getClinicalInterpretation(sdnnStats.mean, 'SDNN')
+                              },
+                              pnn50: {
+                                mean: pnn50Stats.mean,
+                                std: pnn50Stats.std,
+                                min: pnn50Stats.min,
+                                max: pnn50Stats.max,
+                                normalRange: getNormalRangeInfo('pNN50')?.range || '15-25%',
+                                status: getValueStatus(pnn50Stats.mean, 'pNN50'),
+                                interpretation: getClinicalInterpretation(pnn50Stats.mean, 'pNN50')
+                              },
+                              pnn20: {
+                                mean: pnn20Stats.mean,
+                                std: pnn20Stats.std,
+                                min: pnn20Stats.min,
+                                max: pnn20Stats.max,
+                                normalRange: getNormalRangeInfo('pNN20')?.range || '30-40%',
+                                status: getValueStatus(pnn20Stats.mean, 'pNN20'),
+                                interpretation: getClinicalInterpretation(pnn20Stats.mean, 'pNN20')
+                              }
+                            },
+                            hrvFrequencyMetrics: {
+                              vlfPower: {
+                                mean: vlfStats.mean,
+                                std: vlfStats.std,
+                                min: vlfStats.min,
+                                max: vlfStats.max,
+                                normalRange: getNormalRangeInfo('VLF Power')?.range || '300-600 ms²',
+                                status: getValueStatus(vlfStats.mean, 'VLF Power'),
+                                interpretation: getClinicalInterpretation(vlfStats.mean, 'VLF Power')
+                              },
+                              lfPower: {
+                                mean: lfStats.mean,
+                                std: lfStats.std,
+                                min: lfStats.min,
+                                max: lfStats.max,
+                                normalRange: getNormalRangeInfo('LF Power')?.range || '1200-1500 ms²',
+                                status: getValueStatus(lfStats.mean, 'LF Power'),
+                                interpretation: getClinicalInterpretation(lfStats.mean, 'LF Power')
+                              },
+                              hfPower: {
+                                mean: hfStats.mean,
+                                std: hfStats.std,
+                                min: hfStats.min,
+                                max: hfStats.max,
+                                normalRange: getNormalRangeInfo('HF Power')?.range || '800-1200 ms²',
+                                status: getValueStatus(hfStats.mean, 'HF Power'),
+                                interpretation: getClinicalInterpretation(hfStats.mean, 'HF Power')
+                              },
+                              totalPower: {
+                                mean: totalPowerPPGStats.mean,
+                                std: totalPowerPPGStats.std,
+                                min: totalPowerPPGStats.min,
+                                max: totalPowerPPGStats.max,
+                                normalRange: getNormalRangeInfo('Total Power')?.range || '2000-3000 ms²',
+                                status: getValueStatus(totalPowerPPGStats.mean, 'Total Power'),
+                                interpretation: getClinicalInterpretation(totalPowerPPGStats.mean, 'Total Power')
+                              },
+                              lfHfRatio: {
+                                mean: lfHfStats.mean,
+                                std: lfHfStats.std,
+                                min: lfHfStats.min,
+                                max: lfHfStats.max,
+                                normalRange: getNormalRangeInfo('LF/HF Ratio')?.range || '1.5-4.0',
+                                status: getValueStatus(lfHfStats.mean, 'LF/HF Ratio'),
+                                interpretation: getClinicalInterpretation(lfHfStats.mean, 'LF/HF Ratio')
+                              },
+                              autonomicBalance: {
+                                mean: autonomicStats.mean,
+                                std: autonomicStats.std,
+                                min: autonomicStats.min,
+                                max: autonomicStats.max,
+                                normalRange: getNormalRangeInfo('Autonomic Balance')?.range || '1.0-3.0',
+                                status: getValueStatus(autonomicStats.mean, 'Autonomic Balance'),
+                                interpretation: getClinicalInterpretation(autonomicStats.mean, 'Autonomic Balance')
+                              }
+                            }
+                          }
+                        }
+                        
+                        handleRunAIAnalysis(structuredPPGData)
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700 transition-colors"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          분석 중...
+                        </>
+                      ) : (
+                        <>
+                          <Activity className="w-4 h-4 mr-1" />
+                          PPG AI 분석 생성
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full table-fixed text-sm border-collapse border border-gray-200">
                     <colgroup>

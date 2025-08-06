@@ -383,12 +383,37 @@ export function DataQualityScreen({ onQualityConfirmed, onBack, onError, onModeC
     const ppgSummary = ppgAnalysis?.indices ? {
       averageHeartRate: ppgAnalysis.indices.heartRate || 72,
       heartRateVariability: analysisMetricsService.getCurrentRMSSD() || ppgAnalysis.indices.rmssd || 35,
-      qualityScore: signalQuality.ppg
+      qualityScore: signalQuality.ppg,
+      // 추가 HRV 지표들
+      sdnn: analysisMetricsService.getCurrentSDNN() || ppgAnalysis.indices.sdnn || 45,
+      pnn50: analysisMetricsService.getCurrentPNN50() || ppgAnalysis.indices.pnn50 || 20,
+      pnn20: analysisMetricsService.getCurrentPNN20() || 40,
+      lfPower: analysisMetricsService.getCurrentLfPower() || ppgAnalysis.indices.lfPower || 500,
+      hfPower: analysisMetricsService.getCurrentHfPower() || ppgAnalysis.indices.hfPower || 300,
+      lfHfRatio: analysisMetricsService.getCurrentLfHfRatio() || ppgAnalysis.indices.lfHfRatio || 1.67,
+      stressIndex: analysisMetricsService.getCurrentStressIndex() || 30,
+      spo2: 98,
+      avnn: analysisMetricsService.getCurrentAVNN() || 833,
+      sdsd: analysisMetricsService.getCurrentSDSD() || 25,
+      hrMax: analysisMetricsService.getCurrentHRMax() || 85,
+      hrMin: analysisMetricsService.getCurrentHRMin() || 65
     } : {
       // 🔧 폴백 값들 (측정 실패 시) - AnalysisMetricsService 우선 적용
       averageHeartRate: 72,
       heartRateVariability: analysisMetricsService.getCurrentRMSSD() || 38.5,
-      qualityScore: signalQuality.ppg
+      qualityScore: signalQuality.ppg,
+      sdnn: analysisMetricsService.getCurrentSDNN() || 45,
+      pnn50: analysisMetricsService.getCurrentPNN50() || 20,
+      pnn20: analysisMetricsService.getCurrentPNN20() || 40,
+      lfPower: analysisMetricsService.getCurrentLfPower() || 500,
+      hfPower: analysisMetricsService.getCurrentHfPower() || 300,
+      lfHfRatio: analysisMetricsService.getCurrentLfHfRatio() || 1.67,
+      stressIndex: analysisMetricsService.getCurrentStressIndex() || 30,
+      spo2: 98,
+      avnn: analysisMetricsService.getCurrentAVNN() || 833,
+      sdsd: analysisMetricsService.getCurrentSDSD() || 25,
+      hrMax: analysisMetricsService.getCurrentHRMax() || 85,
+      hrMin: analysisMetricsService.getCurrentHRMin() || 65
     };
     
     console.log('PPG 분석 결과:', {

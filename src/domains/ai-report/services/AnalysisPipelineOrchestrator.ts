@@ -314,55 +314,128 @@ export class AnalysisPipelineOrchestrator {
 
       if (!config.options?.skipPPG && config.measurementData.ppg && this.ppgEngine) {
         this.updateProgress(PipelineStatus.RUNNING_PPG, 10, 'PPG 분석 시작...');
+        
         // PPG 엔진이 기대하는 형식으로 데이터 변환
         const ppgData = config.measurementData.ppg;
         
-        // PPG 데이터 구조 정규화 - 객체 형태로 유지하되 숫자 값 확보
-        const ppgTimeSeriesStats = {
-          hrvTimeMetrics: ppgData.hrvTimeMetrics || {
-            meanRR: { 
-              mean: ppgData.meanRR?.mean || 800, 
-              std: ppgData.meanRR?.std || 50, 
-              min: ppgData.meanRR?.min || 600, 
-              max: ppgData.meanRR?.max || 1000 
+        console.log('🔍 PPG 파이프라인 - processedTimeSeries 확인:', {
+          hasProcessedTimeSeries: !!config.processedTimeSeries,
+          processedTimeSeriesKeys: config.processedTimeSeries ? Object.keys(config.processedTimeSeries) : [],
+          ppgDataKeys: Object.keys(ppgData),
+          ppgTimeSeriesStatsExists: !!ppgData.ppgTimeSeriesStats
+        });
+        
+        // processedTimeSeries에서 PPG 데이터 추출
+        let ppgTimeSeriesStats;
+        if (config.processedTimeSeries?.ppg) {
+          console.log('✅ processedTimeSeries.ppg 데이터 사용');
+          const processedPPGData = config.processedTimeSeries.ppg;
+          
+          // processedTimeSeries에서 실제 시계열 데이터로 통계 계산
+          const heartRateStats = this.calculateStatistics(processedPPGData.heartRate || []);
+          const rmssdStats = this.calculateStatistics(processedPPGData.rmssd || []);
+          const sdnnStats = this.calculateStatistics(processedPPGData.sdnn || []);
+          const pnn50Stats = this.calculateStatistics(processedPPGData.pnn50 || []);
+          const pnn20Stats = this.calculateStatistics(processedPPGData.pnn20 || []);
+          const avnnStats = this.calculateStatistics(processedPPGData.avnn || []);
+          const sdsdStats = this.calculateStatistics(processedPPGData.sdsd || []);
+          const lfStats = this.calculateStatistics(processedPPGData.lf || []);
+          const hfStats = this.calculateStatistics(processedPPGData.hf || []);
+          const vlfStats = this.calculateStatistics(processedPPGData.vlf || []);
+          const totalPowerStats = this.calculateStatistics(processedPPGData.totalPower || []);
+          const lfHfRatioStats = this.calculateStatistics(processedPPGData.lfHfRatio || []);
+          const autonomicBalanceStats = this.calculateStatistics(processedPPGData.autonomicBalance || []);
+          const stressLevelStats = this.calculateStatistics(processedPPGData.stressLevel || []);
+          
+          ppgTimeSeriesStats = {
+            heartRate: {
+              mean: heartRateStats.mean,
+              std: heartRateStats.std,
+              min: heartRateStats.min,
+              max: heartRateStats.max
             },
-            sdnn: { 
-              mean: ppgData.sdnn?.mean || 50, 
-              std: ppgData.sdnn?.std || 15, 
-              min: ppgData.sdnn?.min || 20, 
-              max: ppgData.sdnn?.max || 100 
+            hrvTimeMetrics: {
+              sdnn: sdnnStats.mean,
+              rmssd: rmssdStats.mean,
+              pnn50: pnn50Stats.mean,
+              pnn20: pnn20Stats.mean,
+              avnn: avnnStats.mean,
+              sdsd: sdsdStats.mean
             },
-            rmssd: { 
-              mean: ppgData.rmssd?.mean || 40, 
-              std: ppgData.rmssd?.std || 15, 
-              min: ppgData.rmssd?.min || 15, 
-              max: ppgData.rmssd?.max || 80 
-            },
-            pnn50: { 
-              mean: ppgData.pnn50?.mean || 25, 
-              std: ppgData.pnn50?.std || 15, 
-              min: ppgData.pnn50?.min || 5, 
-              max: ppgData.pnn50?.max || 50 
-            },
-            pnn20: { 
-              mean: ppgData.pnn20?.mean || 50, 
-              std: ppgData.pnn20?.std || 20, 
-              min: ppgData.pnn20?.min || 10, 
-              max: ppgData.pnn20?.max || 80 
+            hrvFrequencyMetrics: {
+              vlfPower: vlfStats.mean,
+              lfPower: lfStats.mean,
+              hfPower: hfStats.mean,
+              totalPower: totalPowerStats.mean,
+              lfHfRatio: lfHfRatioStats.mean,
+              autonomicBalance: autonomicBalanceStats.mean,
+              stressIndex: stressLevelStats.mean
             }
-          },
-          heartRate: { 
-            mean: ppgData.heartRate?.mean || 75, 
-            std: ppgData.heartRate?.std || 10, 
-            min: ppgData.heartRate?.min || 50, 
-            max: ppgData.heartRate?.max || 100 
-          },
-          hrvFrequencyMetrics: ppgData.hrvFrequencyMetrics || {
-            lfPower: ppgData.lf?.mean || ppgData.lfPower || 1200,
-            hfPower: ppgData.hf?.mean || ppgData.hfPower || 800,
-            lfHfRatio: ppgData.lfHfRatio?.mean || ppgData.lfHfRatio || 1.5,
-            stressIndex: ppgData.stressLevel?.mean || ppgData.stressIndex?.mean || ppgData.stressIndex || 45
-          },
+          };
+          
+          console.log('📊 processedTimeSeries 기반 PPG 통계:', {
+            heartRate: ppgTimeSeriesStats.heartRate.mean,
+            rmssd: ppgTimeSeriesStats.hrvTimeMetrics.rmssd,
+            sdnn: ppgTimeSeriesStats.hrvTimeMetrics.sdnn,
+            lfPower: ppgTimeSeriesStats.hrvFrequencyMetrics.lfPower,
+            hfPower: ppgTimeSeriesStats.hrvFrequencyMetrics.hfPower
+          });
+        } else if (ppgData.ppgTimeSeriesStats) {
+          console.log('✅ ppgTimeSeriesStats 구조화된 데이터 사용');
+          // ppgTimeSeriesStats에서 mean 값 추출
+          ppgTimeSeriesStats = {
+            heartRate: ppgData.ppgTimeSeriesStats.heartRate || { mean: 75, std: 10, min: 50, max: 100 },
+            hrvTimeMetrics: {
+              sdnn: ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.sdnn?.mean || ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.sdnn || 50,
+              rmssd: ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.rmssd?.mean || ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.rmssd || 40,
+              pnn50: ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.pnn50?.mean || ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.pnn50 || 25,
+              pnn20: ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.pnn20?.mean || ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.pnn20 || 50,
+              avnn: ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.avnn?.mean || ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.avnn || 830,
+              sdsd: ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.sdsd?.mean || ppgData.ppgTimeSeriesStats.hrvTimeMetrics?.sdsd || 35
+            },
+            hrvFrequencyMetrics: {
+              vlfPower: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.vlfPower?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.vlfPower || 300,
+              lfPower: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfPower?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfPower || 1200,
+              hfPower: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.hfPower?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.hfPower || 800,
+              totalPower: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.totalPower?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.totalPower || 2300,
+              lfHfRatio: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfHfRatio?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfHfRatio || 1.5,
+              autonomicBalance: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.autonomicBalance?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.autonomicBalance || 1.5,
+              stressIndex: ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.stressIndex?.mean || ppgData.ppgTimeSeriesStats.hrvFrequencyMetrics?.stressIndex || 45
+            }
+          };
+        } else {
+          console.log('⚠️ PPG 데이터 구조 정규화 - 폴백 값 사용');
+          // PPG 데이터 구조 정규화 - PPGAdvancedGeminiEngine 인터페이스에 맞게 숫자 값으로 변환
+          ppgTimeSeriesStats = {
+            hrvTimeMetrics: ppgData.hrvTimeMetrics || {
+              sdnn: ppgData.sdnn?.mean || ppgData.hrvTimeMetrics?.sdnn || 50,
+              rmssd: ppgData.rmssd?.mean || ppgData.hrvTimeMetrics?.rmssd || 40,
+              pnn50: ppgData.pnn50?.mean || ppgData.hrvTimeMetrics?.pnn50 || 25,
+              pnn20: ppgData.pnn20?.mean || ppgData.hrvTimeMetrics?.pnn20 || 50,
+              avnn: ppgData.avnn?.mean || ppgData.hrvTimeMetrics?.avnn || 830,
+              sdsd: ppgData.sdsd?.mean || ppgData.hrvTimeMetrics?.sdsd || 35
+            },
+            heartRate: { 
+              mean: ppgData.heartRate?.mean || 75, 
+              std: ppgData.heartRate?.std || 10, 
+              min: ppgData.heartRate?.min || 50, 
+              max: ppgData.heartRate?.max || 100 
+            },
+            hrvFrequencyMetrics: ppgData.hrvFrequencyMetrics || {
+              vlfPower: ppgData.vlf?.mean || ppgData.vlfPower || 300,
+              lfPower: ppgData.lf?.mean || ppgData.lfPower || 1200,
+              hfPower: ppgData.hf?.mean || ppgData.hfPower || 800,
+              totalPower: ppgData.totalPower?.mean || ppgData.totalPower || 2300,
+              lfHfRatio: ppgData.lfHfRatio?.mean || ppgData.lfHfRatio || 1.5,
+              autonomicBalance: ppgData.autonomicBalance?.mean || ppgData.autonomicBalance || ppgData.lfHfRatio?.mean || ppgData.lfHfRatio || 1.5,
+              stressIndex: ppgData.stressLevel?.mean || ppgData.stressIndex?.mean || ppgData.stressIndex || 45
+            }
+          };
+        }
+        
+        // 나머지 PPG 메트릭 추가
+        const finalPPGTimeSeriesStats = {
+          ...ppgTimeSeriesStats,
           oxygenSaturation: { 
             mean: ppgData.oxygenSaturation?.mean || 97, 
             std: ppgData.oxygenSaturation?.std || 1.5, 
@@ -381,15 +454,26 @@ export class AnalysisPipelineOrchestrator {
           qualityMetrics: ppgData.qualityMetrics || {
             signalQuality: 0.8,
             measurementDuration: 60
-          }
+          },
+          // RR intervals 데이터 추가
+          rrIntervals: ppgData.rrIntervals ? {
+            values: Array.isArray(ppgData.rrIntervals) ? ppgData.rrIntervals : ppgData.rrIntervals.values || [],
+            timestamps: ppgData.rrIntervals.timestamps,
+            count: Array.isArray(ppgData.rrIntervals) ? ppgData.rrIntervals.length : ppgData.rrIntervals.count || ppgData.rrIntervals.values?.length || 0,
+            quality: {
+              validCount: ppgData.rrIntervals.quality?.validCount || (Array.isArray(ppgData.rrIntervals) ? ppgData.rrIntervals.length : ppgData.rrIntervals.values?.length || 0),
+              artifactCount: ppgData.rrIntervals.quality?.artifactCount || 0,
+              coverage: ppgData.rrIntervals.quality?.coverage || 1.0
+            }
+          } : undefined
         };
         
         const ppgAnalysisData = {
           personalInfo: config.personalInfo,
           measurementData: {
-            ppgMetrics: ppgTimeSeriesStats
+            ppgMetrics: finalPPGTimeSeriesStats
           },
-          ppgTimeSeriesStats: ppgTimeSeriesStats
+          ppgTimeSeriesStats: finalPPGTimeSeriesStats
         };
         analysisPromises.push(this.runPPGAnalysis(ppgAnalysisData));
       }
@@ -701,6 +785,23 @@ export class AnalysisPipelineOrchestrator {
     
     console.log('✅ 시계열 통계 계산 완료:', result);
     return result;
+  }
+
+  /**
+   * 배열 데이터의 통계 계산
+   */
+  private calculateStatistics(data: number[]): { mean: number; std: number; min: number; max: number } {
+    if (!data || data.length === 0) {
+      return { mean: 0, std: 0, min: 0, max: 0 };
+    }
+    
+    const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
+    const variance = data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+    const std = Math.sqrt(variance);
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    
+    return { mean, std, min, max };
   }
 
   /**

@@ -509,6 +509,19 @@ export interface AggregatedMeasurementData {
     averageHeartRate: number;
     heartRateVariability: number;
     qualityScore: number;
+    // 추가 HRV 지표들
+    sdnn?: number;
+    pnn50?: number;
+    pnn20?: number;
+    lfPower?: number;
+    hfPower?: number;
+    lfHfRatio?: number;
+    stressIndex?: number;
+    spo2?: number;
+    avnn?: number;
+    sdsd?: number;
+    hrMax?: number;
+    hrMin?: number;
   };
   accSummary: {
     movementLevel: number;

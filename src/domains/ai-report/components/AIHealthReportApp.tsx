@@ -227,19 +227,19 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
       },
       ppgSummary: {
         bpm: measurementData.ppgSummary?.averageHeartRate || 72,
-        sdnn: 45,
+        sdnn: measurementData.ppgSummary?.sdnn || 45,
         rmssd: measurementData.ppgSummary?.heartRateVariability || 45,
-        pnn50: 20,
-        lfPower: 500,
-        hfPower: 300,
-        lfHfRatio: 1.67,
-        stressIndex: 30,
-        spo2: 98,
-        avnn: 833,
-        pnn20: 40,
-        sdsd: 25,
-        hrMax: 85,
-        hrMin: 65
+        pnn50: measurementData.ppgSummary?.pnn50 || 20,
+        lfPower: measurementData.ppgSummary?.lfPower || 500,
+        hfPower: measurementData.ppgSummary?.hfPower || 300,
+        lfHfRatio: measurementData.ppgSummary?.lfHfRatio || 1.67,
+        stressIndex: measurementData.ppgSummary?.stressIndex || 30,
+        spo2: measurementData.ppgSummary?.spo2 || 98,
+        avnn: measurementData.ppgSummary?.avnn || 833,
+        pnn20: measurementData.ppgSummary?.pnn20 || 40,
+        sdsd: measurementData.ppgSummary?.sdsd || 25,
+        hrMax: measurementData.ppgSummary?.hrMax || 85,
+        hrMin: measurementData.ppgSummary?.hrMin || 65
       },
       accSummary: {
         activityState: 'sitting',
@@ -439,7 +439,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
         const detailedMeasurementData = {
           sessionId: sessionId,
           userId: currentUser.uid,
-          organizationId: organizationId, // 🔧 조직 ID 추가
+          organizationId: organizationId || undefined, // 🔧 조직 ID 추가
           measurementDate: new Date(convertedData.measurementInfo?.startTime || Date.now()),
           duration: convertedData.measurementInfo?.duration || 60,
           
@@ -583,7 +583,7 @@ export function AIHealthReportApp({ onClose }: AIHealthReportAppProps) {
           errorMessage: detailError instanceof Error ? detailError.message : String(detailError),
           errorStack: detailError instanceof Error ? detailError.stack : 'No stack',
           sessionId: sessionId,
-          hasProcessedTimeSeries: !!detailedMeasurementData.processedTimeSeries
+          hasProcessedTimeSeries: false
         });
         // 세션은 저장되었으므로 계속 진행
       }
