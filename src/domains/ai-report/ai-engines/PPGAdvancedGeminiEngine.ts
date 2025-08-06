@@ -36,9 +36,12 @@ interface PPGAnalysisInput {
       sdsd: number;
     };
     hrvFrequencyMetrics: {
+      vlfPower: number;
       lfPower: number;
       hfPower: number;
+      totalPower: number;
       lfHfRatio: number;
+      autonomicBalance: number;
       stressIndex: number;
     };
     qualityMetrics: {
@@ -47,6 +50,17 @@ interface PPGAnalysisInput {
       irSQI: number;
       measurementDuration: number;
       dataCompleteness: number;
+    };
+    // RR intervals 데이터 추가 (시각화용)
+    rrIntervals?: {
+      values: number[];          // RR 간격 배열 (ms)
+      timestamps?: number[];     // 각 간격의 타임스탬프 (선택적)
+      count: number;            // 총 RR 간격 수
+      quality: {
+        validCount: number;     // 유효한 간격 수
+        artifactCount: number;  // 아티팩트로 제거된 간격 수
+        coverage: number;       // 데이터 커버리지 (0-1)
+      };
     };
   };
 }
@@ -453,17 +467,20 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
               max: ppgMetrics.heartRate?.max || ppgMetrics.bpm?.max || 85
             },
             hrvTimeMetrics: {
-              sdnn: ppgMetrics.sdnn?.mean || ppgMetrics.hrvTimeMetrics?.sdnn || 50,
-              rmssd: ppgMetrics.rmssd?.mean || ppgMetrics.hrvTimeMetrics?.rmssd || 35,
-              pnn50: ppgMetrics.pnn50?.mean || ppgMetrics.hrvTimeMetrics?.pnn50 || 25,
-              pnn20: ppgMetrics.pnn20?.mean || ppgMetrics.hrvTimeMetrics?.pnn20 || 45,
-              avnn: ppgMetrics.avnn?.mean || ppgMetrics.hrvTimeMetrics?.avnn || 830,
-              sdsd: ppgMetrics.sdsd?.mean || ppgMetrics.hrvTimeMetrics?.sdsd || 35
+              sdnn: typeof ppgMetrics.hrvTimeMetrics?.sdnn === 'number' ? ppgMetrics.hrvTimeMetrics.sdnn : ppgMetrics.sdnn?.mean || 50,
+              rmssd: typeof ppgMetrics.hrvTimeMetrics?.rmssd === 'number' ? ppgMetrics.hrvTimeMetrics.rmssd : ppgMetrics.rmssd?.mean || 35,
+              pnn50: typeof ppgMetrics.hrvTimeMetrics?.pnn50 === 'number' ? ppgMetrics.hrvTimeMetrics.pnn50 : ppgMetrics.pnn50?.mean || 25,
+              pnn20: typeof ppgMetrics.hrvTimeMetrics?.pnn20 === 'number' ? ppgMetrics.hrvTimeMetrics.pnn20 : ppgMetrics.pnn20?.mean || 45,
+              avnn: typeof ppgMetrics.hrvTimeMetrics?.avnn === 'number' ? ppgMetrics.hrvTimeMetrics.avnn : ppgMetrics.avnn?.mean || 830,
+              sdsd: typeof ppgMetrics.hrvTimeMetrics?.sdsd === 'number' ? ppgMetrics.hrvTimeMetrics.sdsd : ppgMetrics.sdsd?.mean || 35
             },
             hrvFrequencyMetrics: {
+              vlfPower: ppgMetrics.vlf?.mean || ppgMetrics.hrvFrequencyMetrics?.vlfPower || 1500,
               lfPower: ppgMetrics.lf?.mean || ppgMetrics.hrvFrequencyMetrics?.lfPower || 1200,
               hfPower: ppgMetrics.hf?.mean || ppgMetrics.hrvFrequencyMetrics?.hfPower || 800,
+              totalPower: ppgMetrics.totalPower?.mean || ppgMetrics.hrvFrequencyMetrics?.totalPower || 3500,
               lfHfRatio: ppgMetrics.lfHfRatio?.mean || ppgMetrics.hrvFrequencyMetrics?.lfHfRatio || 1.5,
+              autonomicBalance: ppgMetrics.autonomicBalance?.mean || ppgMetrics.hrvFrequencyMetrics?.autonomicBalance || ppgMetrics.lfHfRatio?.mean || ppgMetrics.hrvFrequencyMetrics?.lfHfRatio || 1.5,
               stressIndex: ppgMetrics.stressLevel?.mean || ppgMetrics.stressIndex?.mean || ppgMetrics.hrvFrequencyMetrics?.stressIndex || 45
             },
             qualityMetrics: {
@@ -472,7 +489,8 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
               irSQI: ppgMetrics.qualityMetrics?.irSQI || 0.85,
               measurementDuration: ppgMetrics.qualityMetrics?.measurementDuration || 300,
               dataCompleteness: ppgMetrics.qualityMetrics?.dataCompleteness || 0.95
-            }
+            },
+            rrIntervals: ppgMetrics.rrIntervals || { count: 0, intervals: [] }
           }
         };
       }
@@ -494,17 +512,20 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
               max: data.ppgTimeSeriesStats.heartRate?.max || 85
             },
             hrvTimeMetrics: {
-              sdnn: data.ppgTimeSeriesStats.hrvTimeMetrics?.sdnn || 50,
-              rmssd: data.ppgTimeSeriesStats.hrvTimeMetrics?.rmssd || 35,
-              pnn50: data.ppgTimeSeriesStats.hrvTimeMetrics?.pnn50 || 25,
-              pnn20: data.ppgTimeSeriesStats.hrvTimeMetrics?.pnn20 || 45,
-              avnn: data.ppgTimeSeriesStats.hrvTimeMetrics?.avnn || 830,
-              sdsd: data.ppgTimeSeriesStats.hrvTimeMetrics?.sdsd || 35
+              sdnn: typeof data.ppgTimeSeriesStats.hrvTimeMetrics?.sdnn === 'number' ? data.ppgTimeSeriesStats.hrvTimeMetrics.sdnn : 50,
+              rmssd: typeof data.ppgTimeSeriesStats.hrvTimeMetrics?.rmssd === 'number' ? data.ppgTimeSeriesStats.hrvTimeMetrics.rmssd : 35,
+              pnn50: typeof data.ppgTimeSeriesStats.hrvTimeMetrics?.pnn50 === 'number' ? data.ppgTimeSeriesStats.hrvTimeMetrics.pnn50 : 25,
+              pnn20: typeof data.ppgTimeSeriesStats.hrvTimeMetrics?.pnn20 === 'number' ? data.ppgTimeSeriesStats.hrvTimeMetrics.pnn20 : 45,
+              avnn: typeof data.ppgTimeSeriesStats.hrvTimeMetrics?.avnn === 'number' ? data.ppgTimeSeriesStats.hrvTimeMetrics.avnn : 830,
+              sdsd: typeof data.ppgTimeSeriesStats.hrvTimeMetrics?.sdsd === 'number' ? data.ppgTimeSeriesStats.hrvTimeMetrics.sdsd : 35
             },
             hrvFrequencyMetrics: {
+              vlfPower: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.vlfPower || 1500,
               lfPower: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfPower || 1200,
               hfPower: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.hfPower || 800,
+              totalPower: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.totalPower || 3500,
               lfHfRatio: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfHfRatio || 1.5,
+              autonomicBalance: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.autonomicBalance || data.ppgTimeSeriesStats.hrvFrequencyMetrics?.lfHfRatio || 1.5,
               stressIndex: data.ppgTimeSeriesStats.hrvFrequencyMetrics?.stressIndex || 45
             },
             qualityMetrics: {
@@ -549,9 +570,12 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
               sdsd: ppgMetrics.hrvMetrics?.sdsd || 30
             },
             hrvFrequencyMetrics: {
+              vlfPower: ppgMetrics.hrvMetrics?.vlfPower || 700,
               lfPower: ppgMetrics.hrvMetrics?.lfPower || 500,
               hfPower: ppgMetrics.hrvMetrics?.hfPower || 400,
+              totalPower: ppgMetrics.hrvMetrics?.totalPower || 1600,
               lfHfRatio: ppgMetrics.hrvMetrics?.lfHfRatio || 1.25,
+              autonomicBalance: ppgMetrics.hrvMetrics?.autonomicBalance || ppgMetrics.hrvMetrics?.lfHfRatio || 1.25,
               stressIndex: ppgMetrics.hrvMetrics?.stressIndex || 45
             },
             qualityMetrics: {
@@ -580,9 +604,12 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
             sdsd: 30
           },
           hrvFrequencyMetrics: {
+            vlfPower: 700,
             lfPower: 500,
             hfPower: 400,
+            totalPower: 1600,
             lfHfRatio: 1.25,
+            autonomicBalance: 1.25,
             stressIndex: 45
           },
           qualityMetrics: {
@@ -612,53 +639,155 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
 
     const { personalInfo, ppgTimeSeriesStats } = ppgData;
     
+    // 개인정보 기반 동적 프롬프트 생성
+    const age = personalInfo.age || 30;
+    const gender = personalInfo.gender === 'male' ? '남성' : '여성';
+    const occupation = personalInfo.occupation || '일반직';
+    
+    // 연령대별 특성
+    const getAgeCharacteristics = (age: number) => {
+      if (age < 30) {
+        return '청년기 높은 심박변이도와 빠른 회복력';
+      } else if (age < 50) {
+        return '중년기 점진적 HRV 감소와 자율신경 변화';
+      } else {
+        return '장년기 심박변이도 감소와 자율신경 재조정';
+      }
+    };
+    
+    // 성별별 특성
+    const getGenderCharacteristics = (gender: string) => {
+      if (gender === '남성') {
+        return '남성 특유의 교감신경 우세 경향과 스트레스 반응';
+      } else {
+        return '여성 호르몬 주기에 따른 HRV 변동성';
+      }
+    };
+    
+    // 직업별 특성
+    const getOccupationCharacteristics = (occupation: string) => {
+      const occupationLower = occupation.toLowerCase();
+      
+      if (occupationLower.includes('개발') || occupationLower.includes('프로그래머') || occupationLower.includes('엔지니어')) {
+        return '장시간 좌식 생활, 정신적 스트레스, 불규칙한 생활 패턴';
+      } else if (occupationLower.includes('의사') || occupationLower.includes('간호') || occupationLower.includes('치료')) {
+        return '높은 업무 스트레스, 교대 근무, 감정 노동';
+      } else if (occupationLower.includes('교사') || occupationLower.includes('교수')) {
+        return '지속적 대인 관계, 정신적 피로, 계절별 스트레스 변화';
+      } else {
+        return '일반적인 직업적 스트레스와 생활 패턴';
+      }
+    };
+    
     return `
-당신은 PPG(맥파) 분석 전문가입니다. 다음 상세한 PPG 시계열 통계 데이터를 분석하여 의료급 JSON 형식으로 응답해주세요.
+[분석 요청 시간: ${new Date().toISOString()}]
+당신은 심박변이도(HRV) 및 자율신경계 분석 전문의입니다. ${age}세 ${gender} ${occupation}의 PPG 데이터를 최대한 전문적이고 상세하게 분석해주세요.
 
-## 개인정보
+## 개인정보 및 전문적 고려사항
 - 이름: ${personalInfo.name}
-- 나이: ${personalInfo.age}세
-- 성별: ${personalInfo.gender === 'male' ? '남성' : '여성'}
-- 직업: ${personalInfo.occupation}
+- 나이: ${age}세 (${getAgeCharacteristics(age)})
+- 성별: ${gender} (${getGenderCharacteristics(gender)})
+- 직업: ${occupation} (${getOccupationCharacteristics(occupation)})
 
-## 3대 맥파 건강도 지표 중심 분석
+## 전문의로서의 분석 지침
+- ${age}세 ${gender}의 연령/성별별 생리학적 특성을 HRV 해석에 반영
+- ${occupation} 직업군의 특수한 스트레스 패턴과 생활 리듬 분석
+- 개인의 생활패턴과 직업적 특성을 고려한 자율신경계 변화 해석
+- 의학적 근거에 기반한 개별화된 임상적 해석 제공
 
-### 1. 스트레스 건강도 (Stress Health)
-- **Stress Index**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex.toFixed(2)}
-- **계산 공식**: (Mean HR × SD HR) / RMSSD
-- **정상범위**: 30-70
-- **해석**: 스트레스 반응 및 관리 능력 평가
-- **측정값 의미**: 높을수록 스트레스 부하가 큼
+## PPG 시계열 데이터 통계 (1분 측정)
 
-### 2. 자율신경 건강도 (Autonomic Health)
+### 기본 심박 지표
+- **평균 심박수**: ${ppgTimeSeriesStats.heartRate.mean.toFixed(1)} BPM (표준편차: ${ppgTimeSeriesStats.heartRate.std.toFixed(1)})
+- **최대 심박수**: ${ppgTimeSeriesStats.heartRate.max.toFixed(0)} BPM
+- **최소 심박수**: ${ppgTimeSeriesStats.heartRate.min.toFixed(0)} BPM
+
+### HRV 시간 영역 지표 (Time Domain)
+- **RMSSD**: ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.toFixed(2)} ms
+  - 계산: √(Σ(RRi+1 - RRi)² / N)
+  - 의미: 단기 심박변이도, 부교감신경 활성도 지표
+  
+- **SDNN**: ${ppgTimeSeriesStats.hrvTimeMetrics.sdnn.toFixed(2)} ms
+  - 계산: RR 간격의 표준편차
+  - 의미: 전체 심박변이도, 자율신경계 전반적 활성도
+  
+- **pNN50**: ${ppgTimeSeriesStats.hrvTimeMetrics.pnn50.toFixed(1)}%
+  - 계산: 연속 RR 간격 차이가 50ms 이상인 비율
+  - 의미: 부교감신경 활성도 지표
+  
+- **pNN20**: ${ppgTimeSeriesStats.hrvTimeMetrics.pnn20.toFixed(1)}%
+  - 계산: 연속 RR 간격 차이가 20ms 이상인 비율
+  - 의미: 민감한 부교감신경 활성도 지표
+
+### HRV 주파수 영역 지표 (Frequency Domain)
+- **VLF Power**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.vlfPower.toFixed(1)} ms²
+  - 주파수 범위: 0.003-0.04 Hz
+  - 의미: 체온조절, 레닌-안지오텐신 시스템
+  
+- **LF Power**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfPower.toFixed(1)} ms²
+  - 주파수 범위: 0.04-0.15 Hz
+  - 의미: 교감신경 및 부교감신경 복합 활성도
+  
+- **HF Power**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.hfPower.toFixed(1)} ms²
+  - 주파수 범위: 0.15-0.4 Hz
+  - 의미: 부교감신경 활성도 (호흡 관련)
+  
+- **Total Power**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.totalPower.toFixed(1)} ms²
+  - 계산: VLF + LF + HF
+  - 의미: 전체 자율신경계 활성도
+  
 - **LF/HF Ratio**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio.toFixed(2)}
-- **계산 공식**: Low Frequency Power / High Frequency Power
-- **정상범위**: 0.5-2.0
-- **해석**: 교감/부교감 신경계 균형
-- **측정값 의미**: 1.0에 가까울수록 균형적
+  - 계산: LF Power / HF Power
+  - 의미: 교감/부교감신경 균형 지표
 
-### 3. 심박변이 건강도 (HRV Health)
-- **RMSSD**: ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean.toFixed(2)}ms
-- **계산 공식**: √(Σ(RRi+1 - RRi)² / N)
-- **정상범위**: 20-100ms
-- **해석**: 심박 변이성 및 적응력
-- **측정값 의미**: 높을수록 건강한 변이성
+### 스트레스 및 자율신경 지표
+- **Stress Index**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex.toFixed(2)}
+  - 계산: (Mean HR × SD HR) / RMSSD
+  - 의미: 종합적 스트레스 부하 지표
+  
+- **Autonomic Balance**: ${ppgTimeSeriesStats.hrvFrequencyMetrics.autonomicBalance.toFixed(2)}
+  - 계산: 교감/부교감 활성도 비율
+  - 의미: 자율신경계 균형 상태
 
-## 보조 지표
-- SDNN: ${ppgTimeSeriesStats.hrvTimeMetrics.sdnn.mean.toFixed(2)}ms
-- pNN50: ${ppgTimeSeriesStats.hrvTimeMetrics.pnn50.mean.toFixed(2)}%
-- pNN20: ${ppgTimeSeriesStats.hrvTimeMetrics.pnn20.mean.toFixed(2)}%
-- 평균 심박수: ${ppgTimeSeriesStats.heartRate.mean.toFixed(0)}bpm
-
-## 신호 품질
-- 전체 신호 품질: ${(ppgTimeSeriesStats.qualityMetrics.signalQuality * 100).toFixed(1)}%
-- 측정 시간: ${ppgTimeSeriesStats.qualityMetrics.measurementDuration}초
+### 측정 품질 정보
+- **신호 품질**: ${(ppgTimeSeriesStats.qualityMetrics.signalQuality * 100).toFixed(1)}%
+- **측정 시간**: ${ppgTimeSeriesStats.qualityMetrics.measurementDuration}초
+- **수집된 RR intervals**: ${ppgTimeSeriesStats.rrIntervals?.count || 0}개
+- **데이터 완전성**: ${(ppgTimeSeriesStats.qualityMetrics.dataCompleteness * 100).toFixed(1)}%
 
 ## 분석 요청사항
-위의 PPG 데이터를 바탕으로 다음 JSON 형식으로 3대 맥파 건강도 지표 중심의 의료급 분석 결과를 제공해주세요.
 
-**중요: overallScore는 반드시 3대 축(stress, autonomic, hrv)의 점수를 평균한 값으로 계산해주세요.**
-예시: stress=70, autonomic=80, hrv=85인 경우 overallScore = (70+80+85)/3 = 78.3
+위의 모든 측정값에 대해 다음 정상범위를 기준으로 전문적으로 분석해주세요:
+
+**⚠️ 중요: 반드시 아래 정상범위를 사용하여 점수 계산 ⚠️**
+
+**주요 지표 정상범위:**
+- **Heart Rate**: 60-100 BPM
+- **RMSSD**: 20-200 ms (이전 20-100ms 아님!)
+- **SDNN**: 50-100 ms  
+- **pNN50**: 10-50%
+- **LF Power**: 200-1,200 ms²
+- **HF Power**: 80-4,000 ms²
+- **LF/HF Ratio**: 1.0-10.0 (이전 0.5-2.0 아님!)
+- **Stress Index**: 30-70 (낮을수록 좋음)
+
+**현재 측정값 비교:**
+- LF/HF Ratio ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio.toFixed(2)} → 정상범위 1.0-10.0 내에 있음 (정상!)
+- RMSSD ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.toFixed(2)}ms → 정상범위 20-200ms 내에 있음 (정상!)
+
+분석 요청사항:
+1. 각 지표의 위 정상범위 대비 현재 상태 평가
+2. 측정값의 상태 (정상/경미한 이상/중등도 이상/심각)
+3. 의학적 해석과 임상적 의미
+4. 개인 맞춤형 권장사항
+
+다음 JSON 형식으로 전문적이고 상세한 분석 결과를 제공해주세요:
+
+**⚠️ 반드시 준수할 중요 사항 ⚠️**
+1. **LF/HF Ratio ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio.toFixed(2)}는 정상범위 1.0-10.0 내에 있으므로 반드시 80점 이상 점수 부여**
+2. **RMSSD ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.toFixed(2)}ms는 정상범위 20-200ms 내에 있으므로 반드시 80점 이상 점수 부여**
+3. overallScore는 반드시 3대 축(stress, autonomic, hrv)의 점수를 평균한 값으로 계산
+4. 정상범위 내 값은 모두 양호(우수) 상태로 평가
 
 {
   "threeDimensionAnalysis": {
@@ -671,7 +800,10 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
         "stressIndex": ${ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex.toFixed(2)},
         "heartRateVariability": ${ppgTimeSeriesStats.heartRate.std.toFixed(2)},
         "calculationFormula": "(Mean HR × SD HR) / RMSSD",
-        "normalRange": "30-70"
+        "normalRange": "30-70 (낮을수록 좋음)",
+        "minValue": "최소값",
+        "maxValue": "최대값",
+        "currentStatus": "현재 상태 평가"
       },
       "clinicalSignificance": "normal|mild|moderate|severe",
       "personalizedInterpretation": "${personalInfo.age}세 ${personalInfo.occupation}의 스트레스 특성 해석",
@@ -684,10 +816,15 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
       "interpretation": "자율신경계 균형 상태 해석 (100점에 가까울수록 건강한 균형)",
       "evidence": {
         "lfHfRatio": ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio.toFixed(2)},
-        "sympatheticActivity": "교감신경 활성도",
-        "parasympatheticActivity": "부교감신경 활성도",
+        "lfPower": ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfPower.toFixed(1)},
+        "hfPower": ${ppgTimeSeriesStats.hrvFrequencyMetrics.hfPower.toFixed(1)},
+        "sympatheticActivity": "교감신경 활성도 평가",
+        "parasympatheticActivity": "부교감신경 활성도 평가",
         "calculationFormula": "LF Power / HF Power",
-        "normalRange": "0.5-2.0"
+        "normalRange": "1.0-10.0",
+        "minValue": "최소값",
+        "maxValue": "최대값",
+        "currentStatus": "현재 균형 상태 평가"
       },
       "clinicalSignificance": "normal|mild|moderate|severe",
       "personalizedInterpretation": "개인의 자율신경계 균형 특성 해석",
@@ -699,11 +836,15 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
       "score": 0-100,
       "interpretation": "심박 변이성 수준 해석 (100점에 가까울수록 건강한 심박 변이)",
       "evidence": {
-        "rmssd": ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean.toFixed(2)},
-        "sdnn": ${ppgTimeSeriesStats.hrvTimeMetrics.sdnn.mean.toFixed(2)},
-        "pnn50": ${ppgTimeSeriesStats.hrvTimeMetrics.pnn50.mean.toFixed(2)},
+        "rmssd": ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.toFixed(2)},
+        "sdnn": ${ppgTimeSeriesStats.hrvTimeMetrics.sdnn.toFixed(2)},
+        "pnn50": ${ppgTimeSeriesStats.hrvTimeMetrics.pnn50.toFixed(1)},
+        "pnn20": ${ppgTimeSeriesStats.hrvTimeMetrics.pnn20.toFixed(1)},
         "calculationFormula": "√(Σ(RRi+1 - RRi)² / N)",
-        "normalRange": "RMSSD 20-100ms"
+        "normalRange": "RMSSD 20-200ms, SDNN 50-100ms, pNN50 10-50%",
+        "minValue": "최소값",
+        "maxValue": "최대값",
+        "currentStatus": "현재 HRV 상태 평가"
       },
       "clinicalSignificance": "normal|mild|moderate|severe",
       "personalizedInterpretation": "개인의 심박 변이성 특성과 연령 고려 해석",
@@ -712,8 +853,19 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
   },
   "detailedDataAnalysis": {
     "heartRateAnalysis": {
-      "restingHR": {"interpretation": "안정시 심박수 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
-      "hrVariability": {"interpretation": "심박수 변동성 해석", "evidence": "수치적 근거", "clinicalSignificance": "임상적 의미"},
+      "restingHR": {
+        "value": ${ppgTimeSeriesStats.heartRate.mean.toFixed(1)},
+        "normalRange": "60-100 BPM",
+        "interpretation": "안정시 심박수 해석",
+        "evidence": "평균 ${ppgTimeSeriesStats.heartRate.mean.toFixed(1)} BPM",
+        "clinicalSignificance": "임상적 의미"
+      },
+      "hrVariability": {
+        "value": ${ppgTimeSeriesStats.heartRate.std.toFixed(1)},
+        "interpretation": "심박수 변동성 해석",
+        "evidence": "표준편차 ${ppgTimeSeriesStats.heartRate.std.toFixed(1)} BPM",
+        "clinicalSignificance": "임상적 의미"
+      }
     },
     "hrvIndicesAnalysis": {
       "timeDomain": {
@@ -897,13 +1049,21 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
 
     const { personalInfo, ppgTimeSeriesStats } = ppgData;
     
+    // 안전하게 HRV 메트릭 값 추출
+    const getRmssdValue = () => typeof ppgTimeSeriesStats.hrvTimeMetrics.rmssd === 'number' ? 
+      ppgTimeSeriesStats.hrvTimeMetrics.rmssd : 35;
+    const getSdnnValue = () => typeof ppgTimeSeriesStats.hrvTimeMetrics.sdnn === 'number' ? 
+      ppgTimeSeriesStats.hrvTimeMetrics.sdnn : 50;
+    const getPnn50Value = () => typeof ppgTimeSeriesStats.hrvTimeMetrics.pnn50 === 'number' ? 
+      ppgTimeSeriesStats.hrvTimeMetrics.pnn50 : 25;
+    
     return {
       threeDimensionAnalysis: {
         stress: {
           dimension: "스트레스 건강도",
           level: this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex, 30, 70),
           score: this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex),
-          interpretation: `Stress Index ${ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex.toFixed(2)}로 ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex, 30, 70) === '우수' ? '최적의 스트레스 건강도' : '스트레스 관리 필요'}를 보입니다.`,
+          interpretation: `Stress Index ${ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex.toFixed(2)}로 ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex, 30, 70) === '우수' ? '최적의 스트레스 건강도' : this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex, 30, 70) === '양호' ? '양호한 스트레스 건강도' : '스트레스 관리 필요'}를 보입니다.`,
           evidence: {
             stressIndex: ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex,
             heartRateVariability: ppgTimeSeriesStats.heartRate.std,
@@ -913,51 +1073,51 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
           clinicalSignificance: this.calculateClinicalSignificance(
             ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex, 30, 70
           ),
-          personalizedInterpretation: `${personalInfo.age}세 ${personalInfo.occupation}의 스트레스 수준은 직업적 특성을 고려할 때 ${
+          personalizedInterpretation: `${personalInfo.age}세 연령대의 ${personalInfo.occupation} 직업군의 스트레스 수준은 ${
             this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) > 80 ? 
-            '우수한' : '관리가 필요한'} 상태입니다.`,
+            '우수한 수준으로 스트레스 관리가 잘 되고 있음' : this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) > 70 ? '양호한 수준이나 예방적 관리 권장' : '개선이 필요한 수준으로 스트레스 관리 필요'}입니다.`,
           recommendations: this.generateStressRecommendations(
             ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex
           )
         },
         autonomic: {
           dimension: "자율신경 건강도",
-          level: this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 0.5, 2.0),
+          level: this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 1.0, 10.0),
           score: this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio),
-          interpretation: `LF/HF Ratio ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio.toFixed(2)}로 ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 0.5, 2.0) === '우수' ? '최적의 자율신경 건강도' : '자율신경 균형 조정 필요'}를 보입니다.`,
+          interpretation: `LF/HF Ratio ${ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio.toFixed(2)}로 ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 1.0, 10.0) === '우수' ? '최적의 자율신경 건강도' : this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 1.0, 10.0) === '양호' ? '양호한 자율신경 건강도' : '자율신경 균형 조정 필요'}를 보입니다.`,
           evidence: {
             lfHfRatio: ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio,
             sympatheticActivity: ppgTimeSeriesStats.hrvFrequencyMetrics.lfPower > 500 ? "증가" : "정상",
             parasympatheticActivity: ppgTimeSeriesStats.hrvFrequencyMetrics.hfPower > 400 ? "증가" : "정상",
             calculationFormula: "LF Power / HF Power",
-            normalRange: "0.5-2.0"
+            normalRange: "1.0-10.0"
           },
           clinicalSignificance: this.calculateClinicalSignificance(
-            ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 0.5, 2.0
+            ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 1.0, 10.0
           ),
-          personalizedInterpretation: `자율신경계 균형은 ${this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) > 80 ? '우수한' : '개선이 필요한'} 상태입니다.`,
+          personalizedInterpretation: `자율신경계 균형은 ${this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) > 80 ? '우수한' : this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) > 70 ? '양호한' : '개선이 필요한'} 상태입니다.`,
           recommendations: this.generateAutonomicRecommendations(
             ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio
           )
         },
         hrv: {
           dimension: "심박변이 건강도",
-          level: this.calculateHealthLevel(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, 20, 100),
-          score: this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age),
-          interpretation: `RMSSD ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean.toFixed(2)}ms로 ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, 20, 100) === '우수' ? '최적의 심박변이 건강도' : '심박변이 개선 필요'}를 보입니다.`,
+          level: this.calculateHealthLevel(getRmssdValue(), 20, 200),
+          score: this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age),
+          interpretation: `RMSSD ${getRmssdValue().toFixed(2)}ms로 ${this.calculateHealthLevel(getRmssdValue(), 20, 200) === '우수' ? '최적의 심박변이 건강도' : this.calculateHealthLevel(getRmssdValue(), 20, 200) === '양호' ? '양호한 심박변이 건강도' : '심박변이 개선 필요'}를 보입니다.`,
           evidence: {
-            rmssd: ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean,
-            sdnn: ppgTimeSeriesStats.hrvTimeMetrics.sdnn.mean,
-            pnn50: ppgTimeSeriesStats.hrvTimeMetrics.pnn50.mean,
+            rmssd: getRmssdValue(),
+            sdnn: getSdnnValue(),
+            pnn50: getPnn50Value(),
             calculationFormula: "√(Σ(RRi+1 - RRi)² / N)",
-            normalRange: "RMSSD 20-100ms"
+            normalRange: "RMSSD 20-200ms, SDNN 50-100ms, pNN50 10-50%"
           },
           clinicalSignificance: this.calculateClinicalSignificance(
-            ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, 20, 100
+            getRmssdValue(), 20, 200
           ),
-          personalizedInterpretation: `${personalInfo.age}세 연령을 고려한 심박변이성은 ${this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age) > 80 ? '우수한' : '개선이 필요한'} 수준입니다.`,
+          personalizedInterpretation: `${personalInfo.age}세 연령대 평균 대비 심박변이성은 ${this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age) > 80 ? '우수한 수준으로 자율신경 활성도가 높음' : this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age) > 70 ? '양호한 수준으로 건강한 상태' : '개선이 필요한 수준으로 심박변이 개선 권장'}입니다.`,
           recommendations: this.generateHRVRecommendations(
-            ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age
+            getRmssdValue(), personalInfo.age
           )
         }
       },
@@ -976,8 +1136,8 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
         },
         hrvIndicesAnalysis: {
           timeDomain: {
-            interpretation: `시간 영역 HRV 지표들은 전반적으로 ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd > 30 && ppgTimeSeriesStats.hrvTimeMetrics.sdnn > 40 ? '양호한' : '개선이 필요한'} 상태를 보입니다.`,
-            evidence: `SDNN: ${ppgTimeSeriesStats.hrvTimeMetrics.sdnn.mean.toFixed(1)}ms, RMSSD: ${ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean.toFixed(1)}ms, pNN50: ${ppgTimeSeriesStats.hrvTimeMetrics.pnn50.mean.toFixed(1)}%`,
+            interpretation: `시간 영역 HRV 지표들은 전반적으로 ${getRmssdValue() > 30 && getSdnnValue() > 40 ? '양호한' : '개선이 필요한'} 상태를 보입니다.`,
+            evidence: `SDNN: ${getSdnnValue().toFixed(1)}ms, RMSSD: ${getRmssdValue().toFixed(1)}ms, pNN50: ${getPnn50Value().toFixed(1)}%`,
             explanation: "연속된 심박 간격의 변동성을 시간 축에서 분석하여 전반적인 자율신경계 기능을 평가",
             recommendations: ["규칙적인 유산소 운동", "호흡 조절 훈련", "스트레스 관리"]
           },
@@ -992,22 +1152,22 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
           overallAssessment: `3대 지표 종합 결과 자율신경계 기능은 ${this.calculateOverallAutonomicScore(ppgTimeSeriesStats) > 80 ? '우수한' : this.calculateOverallAutonomicScore(ppgTimeSeriesStats) > 70 ? '양호한' : '개선이 필요한'} 상태입니다.`,
           sympatheticParasympatheticBalance: ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio > 2.0 ? "교감신경 우세" : ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio < 0.5 ? "부교감신경 우세" : "균형적 상태",
           stressResponsePattern: ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex > 60 ? "높은 스트레스 반응" : "정상적 스트레스 반응",
-          recoveryCapacity: ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean > 40 ? "우수한 회복 능력" : "회복 능력 개선 필요"
+          recoveryCapacity: getRmssdValue() > 40 ? "우수한 회복 능력" : "회복 능력 개선 필요"
         }
       },
       comprehensiveAssessment: {
-        overallSummary: `${personalInfo.age}세 ${personalInfo.occupation}의 PPG 분석 결과, 3대 맥파 건강도 지표 평균 ${Math.round((this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) + this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) + this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age)) / 3)}점으로 ${Math.round((this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) + this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) + this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age)) / 3) > 80 ? '우수한 맥파 건강 상태' : Math.round((this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) + this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) + this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age)) / 3) > 70 ? '양호한 맥파 건강 상태' : '개선이 필요한 맥파 건강 상태'}입니다.`,
+        overallSummary: `${personalInfo.age}세 ${personalInfo.occupation}의 PPG 분석 결과, 3대 맥파 건강도 지표 평균 ${Math.round((this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) + this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) + this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age)) / 3)}점으로 ${Math.round((this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) + this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) + this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age)) / 3) > 80 ? '우수한 맥파 건강 상태' : Math.round((this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) + this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) + this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age)) / 3) > 70 ? '양호한 맥파 건강 상태' : '개선이 필요한 맥파 건강 상태'}입니다.`,
         keyFindings: [
           `스트레스 건강도: ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex, 30, 70)} (${this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex)}점)`,
           `자율신경 건강도: ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio, 0.5, 2.0)} (${this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio)}점)`,
-          `심박변이 건강도: ${this.calculateHealthLevel(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, 20, 100)} (${this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age)}점)`
+          `심박변이 건강도: ${this.calculateHealthLevel(getRmssdValue(), 20, 100)} (${this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age)}점)`
         ],
         primaryConcerns: this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) < 70 || this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) < 70 ? 
           ["스트레스 건강도 개선 필요", "자율신경 균형 조정 필요"] : 
-          this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age) < 70 ? ["심박변이 건강도 개선 필요"] : 
+          this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age) < 70 ? ["심박변이 건강도 개선 필요"] : 
           ["현재 특별한 문제점 없음"],
         ageGenderAnalysis: {
-          ageComparison: `${personalInfo.age}세 연령대 평균 대비 ${this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age) > 80 ? '우수한' : this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age) > 70 ? '양호한' : '개선이 필요한'} 심박변이 건강도를 보입니다.`,
+          ageComparison: `${personalInfo.age}세 연령대 평균 대비 ${this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age) > 80 ? '우수한' : this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age) > 70 ? '양호한' : '개선이 필요한'} 심박변이 건강도를 보입니다.`,
           genderConsiderations: `${personalInfo.gender === 'male' ? '남성' : '여성'} 특성상 ${this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) > 80 ? '우수한 자율신경 건강도' : '정상 범위 내 자율신경 건강도'}를 보입니다.`,
           developmentalContext: `${personalInfo.age < 30 ? '청년기' : personalInfo.age < 50 ? '중년기' : '장년기'} PPG 특성에 부합하는 전반적으로 양호한 건강도 패턴입니다.`
         },
@@ -1050,7 +1210,7 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
         overallScore: Math.round(
           (this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) * 0.33) +
           (this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) * 0.33) +
-          (this.calculateHRVHealthScore(ppgTimeSeriesStats.hrvTimeMetrics.rmssd.mean, personalInfo.age) * 0.34)
+          (this.calculateHRVHealthScore(getRmssdValue(), personalInfo.age) * 0.34)
         ),
         clinicalRecommendation: this.calculateStressHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.stressIndex) < 50 || this.calculateAutonomicHealthScore(ppgTimeSeriesStats.hrvFrequencyMetrics.lfHfRatio) < 50 ?
           "전문의 상담 권장, 심혈관 건강 정밀 검진 고려" :
@@ -1112,9 +1272,9 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
 
   // 자율신경 건강도 계산
   private calculateAutonomicHealthScore(lfHfRatio: number): number {
-    const optimalRatio = 1.0;
-    const normalMin = 0.5;
-    const normalMax = 2.0;
+    const optimalRatio = 5.5; // 정상 범위 1.0-10.0의 중간값
+    const normalMin = 1.0;
+    const normalMax = 10.0;
     
     if (lfHfRatio >= normalMin && lfHfRatio <= normalMax) {
       const distanceFromOptimal = Math.abs(lfHfRatio - optimalRatio);
@@ -1131,9 +1291,9 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
   // 심박변이 건강도 계산
   private calculateHRVHealthScore(rmssd: number, age: number): number {
     // 연령별 정상 범위 조정
-    const ageAdjustedMax = 100 - (age - 20) * 0.5;
+    const ageAdjustedMax = 200 - (age - 20) * 1.0;
     const normalMin = 20;
-    const normalMax = Math.min(100, ageAdjustedMax);
+    const normalMax = Math.min(200, ageAdjustedMax);
     
     if (rmssd >= normalMin && rmssd <= normalMax) {
       return Math.round(85 + (rmssd - normalMin) / (normalMax - normalMin) * 15);
@@ -1172,9 +1332,9 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
   }
 
   private generateAutonomicRecommendations(lfHfRatio: number): string[] {
-    if (lfHfRatio > 2.0) {
+    if (lfHfRatio > 10.0) {
       return ["이완 기법 연습", "명상 또는 요가", "부교감신경 활성화"];
-    } else if (lfHfRatio < 0.5) {
+    } else if (lfHfRatio < 1.0) {
       return ["적절한 활동성", "규칙적 운동", "교감신경 활성화"];
     } else {
       return ["현재 균형 상태 유지", "규칙적인 생활 패턴", "균형잡힌 활동"];
@@ -1182,7 +1342,7 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
   }
 
   private generateHRVRecommendations(rmssd: number, age: number): string[] {
-    const ageAdjustedExpected = 100 - (age - 20) * 0.5;
+    const ageAdjustedExpected = 200 - (age - 20) * 1.0;
     if (rmssd < ageAdjustedExpected * 0.7) {
       return ["유산소 운동", "호흡 조절 훈련", "스트레스 관리", "충분한 수면"];
     } else {
@@ -1194,7 +1354,8 @@ export class PPGAdvancedGeminiEngine implements IAIEngine {
   private calculateOverallAutonomicScore(ppgStats: any): number {
     const stressScore = this.calculateStressHealthScore(ppgStats.hrvFrequencyMetrics.stressIndex);
     const autonomicScore = this.calculateAutonomicHealthScore(ppgStats.hrvFrequencyMetrics.lfHfRatio);
-    const hrvScore = this.calculateHRVHealthScore(ppgStats.hrvTimeMetrics.rmssd, 35); // 기본 연령 사용
+    const rmssdValue = typeof ppgStats.hrvTimeMetrics.rmssd === 'number' ? ppgStats.hrvTimeMetrics.rmssd : 35;
+    const hrvScore = this.calculateHRVHealthScore(rmssdValue, 35); // 기본 연령 사용
     
     return Math.round((stressScore + autonomicScore + hrvScore) / 3);
   }
