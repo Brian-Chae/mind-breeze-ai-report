@@ -59,6 +59,13 @@ export interface IntegratedAnalysisResult {
       brainArousal: number;
       stressLevel: number;
     };
+    brainwaveMetrics?: {
+      alpha: number;
+      beta: number;
+      gamma: number;
+      theta: number;
+      delta: number;
+    };
   };
   
   // PPG 분석 요약
@@ -69,6 +76,12 @@ export interface IntegratedAnalysisResult {
       stressHealth: number;
       autonomicHealth: number;
       hrvHealth: number;
+    };
+    heartRateMetrics?: {
+      restingHR: number;
+    };
+    hrvMetrics?: {
+      overallHRV: number;
     };
   };
   
@@ -768,18 +781,18 @@ PPG 종합 의견: ${ppgData?.comprehensiveAssessment?.overallSummary || ppgAnal
       
       // metrics 필드 추가 (AnalysisResult 인터페이스 필수 필드)
       metrics: {
-        eeg: {
-          alpha: 100,
-          beta: 100,
-          gamma: 100,
-          theta: 100,
-          delta: 100
-        },
-        ppg: {
-          heartRate: 75,
-          hrv: 50,
-          stressIndex: 50
-        }
+        eeg: result.eegSummary ? {
+          alpha: result.eegSummary.brainwaveMetrics?.alpha || 100,
+          beta: result.eegSummary.brainwaveMetrics?.beta || 100,
+          gamma: result.eegSummary.brainwaveMetrics?.gamma || 100,
+          theta: result.eegSummary.brainwaveMetrics?.theta || 100,
+          delta: result.eegSummary.brainwaveMetrics?.delta || 100
+        } : undefined,
+        ppg: result.ppgSummary ? {
+          heartRate: result.ppgSummary.heartRateMetrics?.restingHR || 75,
+          hrv: result.ppgSummary.hrvMetrics?.overallHRV || 50,
+          stressIndex: result.ppgSummary.axisScores.stressHealth || 50
+        } : undefined
       },
       
       processingTime: Date.now() - startTime,
