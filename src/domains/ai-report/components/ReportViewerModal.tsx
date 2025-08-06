@@ -204,7 +204,10 @@ export function ReportViewerModal({
         
         setReportContent({
           isPPGAdvanced: true,
-          jsonData: ppgAdvancedData,
+          jsonData: {
+            ...ppgAdvancedData,
+            rawData: report.rawData // 실제 측정 데이터 포함
+          },
           metadata: {
             analysisDate: new Date().toLocaleDateString(),
             engineName: 'PPG Advanced Gemini v1',
@@ -1105,7 +1108,7 @@ export function ReportViewerModal({
     if (reportContent?.isPPGAdvanced) {
       return (
         <div id="report-content" className="p-6 space-y-6">
-          <PPGAdvancedReportComponent data={reportContent.jsonData} />
+          <PPGAdvancedReportComponent report={reportContent.jsonData} />
         </div>
       );
     }
